@@ -72,4 +72,5 @@ or
 if chans > 2
        audio = audio(:,1:2,:); % use only the first two channels
        disp('Only the first two channels have been used.')
+end
 }}}
