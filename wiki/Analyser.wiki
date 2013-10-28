@@ -74,3 +74,11 @@ if chans > 2
        disp('Only the first two channels have been used.')
 end
 }}}
+
+== Function Settings ==
+
+When running an analyser from the AARAE GUI, the user-controlled settings for an analyser need to be entered using a dialog box. Fortunately it is quite easy to add a rudimentary dialog box to a Matlab function, which is often all that is required.
+
+== Charts and Other Outputs ==
+
+== Format of Data Returned by the Analyser Function ==
