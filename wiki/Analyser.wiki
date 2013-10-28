@@ -15,7 +15,7 @@ Audio data and metadata in AARAE is kept within a structure. An analyser for AAR
 
 The currently available fields within this structure include:
 
-|| *Field* || ** Description and comment** ||
+|| *Field* || * Description and comment* ||
 || .audio || this contains the audio waveform, descending in time down the columns. Dimension 2 is used for channels, and dimension 3 is used for bands (e.g. octave-band filtered data). Analysers should be written to anticipate a potentially 3-dimensional waveform matrix, rather than returning an error if the input is multi-channel and/or multi-band. ||
 || .fs || this is the audio sampling rate in Hz. ||
 || .bands || this is a list of frequencies (or numbers of some type) associated with each band. ||
