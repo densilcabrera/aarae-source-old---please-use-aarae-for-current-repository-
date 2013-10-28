@@ -35,3 +35,5 @@ else
 end
 % then do something with the data and metadata ...
 }}}
+
+In the above example, the second and third input arguments are ignored if the first input argument is a structure. However if the first input argument is a vector or matrix, it will be used directly as the audio waveform, and the second and third input arguments are required (notwithstanding further code to set default values).
