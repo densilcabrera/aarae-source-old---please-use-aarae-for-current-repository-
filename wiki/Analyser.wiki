@@ -18,8 +18,8 @@ The currently available fields within this structure include:
 || *Field* || * Description and comment* ||
 || .audio || this contains the audio waveform, descending in time down the columns. Dimension 2 is used for channels, and dimension 3 is used for bands (e.g. octave-band filtered data). Analysers should be written to anticipate a potentially 3-dimensional waveform matrix, rather than returning an error if the input is multi-channel and/or multi-band. ||
 || .fs || this is the audio sampling rate in Hz. ||
-|| .bands || this is a list of frequencies (or numbers of some type) associated with each band. ||
-|| .chans || this is a list of channel identifiers (e.g. angles in the case of beam-formed audio) - which has not been implemented yet. ||
+|| .bandID || this is a list of frequencies (or numbers of some type) associated with each band. ||
+|| .chanID || this is a list of channel identifiers (e.g. angles in the case of beam-formed audio) - which has not been implemented yet. ||
 || .cal || this is a calibration offset in decibels such that 10*log10(wave.^2)+cal yields the appropriate level (e.g., sound pressure level). ||
 
 It is best practice to write an analyser function to accept structure input, as well accepting as a set of discrete input arguments (which can be more convenient if the function is not being called via the GUI). This can be achieved using an isstruct() test, for example:
