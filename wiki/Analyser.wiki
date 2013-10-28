@@ -1,0 +1,37 @@
+#summary Guide on how to add an analyser to AARAE.
+
+= Introduction =
+
+An analyser in AARAE primarily aims to provide user-readable output, for example in the form of a visualisation, numeric data. An analyser can also provide auralization or sonification, but in some cases it may be better as a processor rather than an analyser (if the audio content of the auralization/sonification is the main purpose of the function).
+
+
+= Analyser Inputs =
+
+The inputs to an analyser are likely to include audio data, metadata (e.g. sampling rate), and user-controlled settings for the analyser.
+
+== Audio Data and Metadata ==
+
+Audio data and metadata in AARAE is kept within a structure. An analyser for AARAE should have this structure as its first input argument.
+
+The currently available fields within this structure include:
+
+|| *Field* || ** Description and comment* ||
+|| .audio || this contains the audio waveform, descending in time down the columns. Dimension 2 is used for channels, and dimension 3 is used for bands (e.g. octave-band filtered data). Analysers should be written to anticipate a potentially 3-dimensional waveform matrix, rather than returning an error if the input is multi-channel and/or multi-band. ||
+|| .fs || this is the audio sampling rate in Hz. ||
+|| .bands || this is a list of frequencies (or numbers of some type) associated with each band. ||
+|| .chans || this is a list of channel identifiers (e.g. angles in the case of beam-formed audio) - which has not been implemented yet. ||
+|| .cal || this is a calibration offset in decibels such that 10*log10(wave.^2)+cal yields the appropriate level (e.g., sound pressure level). ||
+
+It is best practice to write an analyser function to accept both structure input, as well as a set of discrete arguments (which can be more convenient if the function is not being called via the GUI). This can be achieved using an isstruct() test, for example:
+
+{{{
+function dosomething(in, fs, cal)
+if instruct(in)
+       audio = in.audio; % audio wave data
+       fs = in.fs; % audio sampling rate in Hz
+      cal = in.cal; % calibration offset in dB
+else
+audio = in;
+end
+% then do something with the data and metadata ...
+}}}
