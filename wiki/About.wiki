@@ -1,4 +1,4 @@
-#Audio and Acoustical Response Analysis Environment in Matlab - a free open source resource to support teaching and research in audio and acoustics.
+#summary Audio and Acoustical Response Analysis Environment in Matlab - a free open source resource to support teaching and research in audio and acoustics.
 
 = Introduction =
 
