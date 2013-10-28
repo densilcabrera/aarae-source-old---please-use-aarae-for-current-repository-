@@ -2,7 +2,7 @@
 
 = Introduction =
 
-An analyser in AARAE primarily aims to provide user-readable output, for example in the form of a visualisation, numeric data. An analyser can also provide auralization or sonification, but in some cases it may be better as a processor rather than an analyser (if the audio content of the auralization/sonification is the main purpose of the function).
+An analyser in AARAE primarily aims to provide user-readable output, for example in the form of a visualisation, numeric data. An analyser can also provide auralization or sonification, but in some cases it may be better as a _processor_ rather than an _analyser_ (if the audio content of the auralization/sonification is the main purpose of the function).
 
 
 = Analyser Inputs =
