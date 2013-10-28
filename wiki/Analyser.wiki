@@ -22,7 +22,7 @@ The currently available fields within this structure include:
 || .chans || this is a list of channel identifiers (e.g. angles in the case of beam-formed audio) - which has not been implemented yet. ||
 || .cal || this is a calibration offset in decibels such that 10*log10(wave.^2)+cal yields the appropriate level (e.g., sound pressure level). ||
 
-It is best practice to write an analyser function to accept both structure input, as well as a set of discrete arguments (which can be more convenient if the function is not being called via the GUI). This can be achieved using an isstruct() test, for example:
+It is best practice to write an analyser function to accept structure input, as well accepting as a set of discrete input arguments (which can be more convenient if the function is not being called via the GUI). This can be achieved using an isstruct() test, for example:
 
 {{{
 function dosomething(in, fs, cal)
@@ -31,7 +31,7 @@ if instruct(in)
        fs = in.fs; % audio sampling rate in Hz
       cal = in.cal; % calibration offset in dB
 else
-audio = in;
+       audio = in;
 end
 % then do something with the data and metadata ...
 }}}
