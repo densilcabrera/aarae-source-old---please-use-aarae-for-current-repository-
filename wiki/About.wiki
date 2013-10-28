@@ -22,7 +22,7 @@ Generators are used to generate signals for use in measurement. Examples include
 A processor has audio input and audio output - it is used to modify audio in some way. Filtering and beamforming are examples of processes that are very commonly used in audio and acoustic measurement, but there are many other types of processors that can contribute to exploration.
 
 == Analysers ==
-An analyser is primarily concerned with generating a user-comprehensible output, which is typically numeric and/or graphical. There is, perhaps, a grey area between analysers and processors - where a function returns both audio and user-comprehensible results.
+An analyser is primarily concerned with generating a user-readable output, which is typically numeric and/or graphical. There is, perhaps, a grey area between analysers and processors - where a function returns both audio and user-readable results - in which case the code author needs to decide what the best category is.
 
 
 
