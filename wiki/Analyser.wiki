@@ -37,3 +37,39 @@ end
 }}}
 
 In the above example, the second and third input arguments are ignored if the first input argument is a structure. However if the first input argument is a vector or matrix, it will be used directly as the audio waveform, and the second and third input arguments are required (notwithstanding further code to set default values).
+
+Considering that the audio waveform might be 1, 2 or 3-dimensional, it may be important to be able to read its size. The following code provides this information:
+
+{{{
+S = size(audio); % size of the audio matrix
+ndim = length(S); % number of dimensions
+switch ndim
+    case 1
+        len = S(1); % number of samples in audio
+        chans = 1; % number of channels
+        bands = 1; % number of bands
+    case 2
+        len = S(1); % number of samples in audio
+        chans = S(2); % number of channels
+        bands = 1; % number of bands
+    case 3
+        len = S(1); % number of samples in audio
+        chans = S(2); % number of channels
+        bands = S(3); % number of bands
+end
+}}}
+
+Having obtained this information, we then need to decide what to do with it. Some analysers will work perfectly well on any number of channels and bands, while others may be designed only for 1 channel, 2 channels, 1 band, or some other constraints. One option is to return an error if the input is incorrectly dimensioned. Another option is to truncate and/or mix the data as required. For example:
+
+{{{
+audio = mean(audio,3); % mix all bands together (removing the third dimension)
+disp('Multiband audio has been mixed into a single band.')
+}}}
+
+or
+
+{{{
+if chans > 2
+       audio = audio(:,1:2,:); % use only the first two channels
+       disp('Only the first two channels have been used.')
+}}}
