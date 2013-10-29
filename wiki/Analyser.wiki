@@ -129,6 +129,8 @@ This issue is still under development.
 
 == License ==
 
+AARAE uses the BSD 3-Clause license for the project as a whole, and therefore  contributed code within the project should also use it to avoid license conflicts.
+
 Except, perhaps, in the case of minor contributions, please add the following license to your Matlab function as a comment. Change the YEAR, OWNER and ORGANISATION fields as appropriate.
 
 {{{
