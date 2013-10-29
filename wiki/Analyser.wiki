@@ -16,11 +16,11 @@ Audio data and metadata in AARAE is kept within a structure. An analyser for AAR
 The currently available fields within this structure include:
 
 || *Field* || * Description and comment* ||
-|| .audio || this contains the audio waveform, descending in time down the columns. Dimension 2 is used for channels, and dimension 3 is used for bands (e.g. octave-band filtered data). Analysers should be written to anticipate a potentially 3-dimensional waveform matrix, rather than returning an error if the input is multi-channel and/or multi-band. ||
-|| .fs || this is the audio sampling rate in Hz. ||
-|| .bandID || this is a list of frequencies (or numbers of some type) associated with each band. ||
-|| .chanID || this is a list of channel identifiers (e.g. angles in the case of beam-formed audio) - which has not been implemented yet. ||
-|| .cal || this is a calibration offset in decibels such that 10*log10(wave.^2)+cal yields the appropriate level (e.g., sound pressure level). ||
+|| .audio || This contains the audio waveform, descending in time down the columns. Dimension 2 is used for channels, and dimension 3 is used for bands (e.g. octave-band filtered data). Analysers should be written to anticipate a potentially 3-dimensional waveform matrix, rather than returning an error if the input is multi-channel and/or multi-band. ||
+|| .fs || This is the audio sampling rate in Hz. ||
+|| .bandID || This is a list of frequencies (or numbers of some type) associated with each band. ||
+|| .chanID || This is a list of channel identifiers (e.g. angles in the case of beam-formed audio) - which has not been implemented yet. ||
+|| .cal || This is a calibration offset in decibels such that 10*log10(wave.^2)+cal yields the appropriate level (e.g., sound pressure level). ||
 
 It is best practice to write an analyser function to accept structure input, as well accepting as a set of discrete input arguments (which can be more convenient if the function is not being called via the GUI). This can be achieved using an isstruct() test, for example:
 
@@ -87,8 +87,38 @@ end
 
 == Function Settings ==
 
-When running an analyser from the AARAE GUI, the user-controlled settings for an analyser need to be entered using a dialog box. Fortunately it is quite easy to add a rudimentary dialog box to a Matlab function, which is often all that is required. Matlab's inputdlg() is one way of achieving this (refer to Matlab's help).
+When running an analyser from the AARAE GUI, the user-controlled settings for an analyser need to be entered using a dialog box. Fortunately it is quite easy to add a rudimentary dialog box to a Matlab function, which is often all that is required. Matlab's inputdlg() is one way of achieving this (refer to Matlab's help). The following is an example of a dialog box with three user-set parameters:
+
+{{{
+% Dialog box for settings
+
+% Prompt for 3 named parameters:
+    prompt = {'Threshold for IR start detection', ...
+        'Bands per octave (1 | 3)', ...
+        'Plot (0|1)'};
+
+% Title of the dialog box
+    dlg_title = 'Settings'; 
+    num_lines = 1;
+
+% Default values
+    def = {'-20','1','1'}; 
+    answer = inputdlg(prompt,dlg_title,num_lines,def);
+    
+% Set function variables from dialog box user-input values
+    if ~isempty(answer)
+        startthresh = str2num(answer{1,1});
+        bpo = str2num(answer{2,1});
+        doplot = str2num(answer{3,1});
+    end
+}}}
+
+
 
 == Charts and Other Outputs ==
 
+
+
 == Format of Data Returned by the Analyser Function ==
+
+This issue is still under development.
