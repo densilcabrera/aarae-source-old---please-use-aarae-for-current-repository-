@@ -129,6 +129,6 @@ This issue is still under development.
 
 == Integrating the Analyser into AARAE ==
 
-Once a function has been appropriately prepared, it can be integrated into AARAE simply by putting it into the appropriate subdirectory within the Analysers directory in the AARAE file structure.
+Once a function has been appropriately prepared, it can be integrated into AARAE simply by putting it into the appropriate subdirectory within the Analysers directory in the AARAE file structure. If required, a new subdirectory can be added (but please avoid unnecessarily adding subdirectories).
 
 If you are a contributor to this Google Code group, you can add it to the repository via Subversion. Otherwise contact Densil Cabrera directly.
