@@ -1,4 +1,4 @@
-#summary Guide on how to add an analyser to AARAE.
+#summary The concept of analysers, categories of analysers, and how to add an analyser to AARAE.
 
 <wiki:toc max_depth="3" />
 
