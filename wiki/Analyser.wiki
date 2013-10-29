@@ -129,7 +129,7 @@ This issue is still under development.
 
 == License ==
 
-Except, perhaps, in the case of minor contributions, please add the following license to your Matlab function as a comment. Change the <YEAR>, <OWNER> and <ORGANISATION> fields as appropriate.
+Except, perhaps, in the case of minor contributions, please add the following license to your Matlab function as a comment. Change the YEAR, OWNER and ORGANISATION fields as appropriate.
 
 {{{
 %**************************************************************************
