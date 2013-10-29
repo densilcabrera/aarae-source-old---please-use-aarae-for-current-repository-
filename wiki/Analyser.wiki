@@ -10,7 +10,7 @@ Usually it is quite easy to adapt a pre-existing (or newly written) Matlab funct
 = Name and Description =
 The name of the function is what a user sees within the GUI, so contributed functions need to have helpful names. In some cases, there may be several analyser functions that do similar things (e.g. different ways of estimating reverberation time from an impulse response), and so the function name should be specific enough to allow the alternative functions. In other words, it is not a good idea to call a function 'reverbtime', but instead the name should have more particular information (such as the algorithm used, etc).
 
-Within the GUI, hovering the mouse over the name of the function will bring up a description of the function (if one has been written. This description is the continuous comments within the function immediately following the function declaration. Please consider what text should be included there.
+Within the GUI, hovering the mouse over the name of the function will bring up a description of the function (if one has been written). This description is the continuous comments within the function immediately following the function declaration. Please consider what text should be included there.
 
 
 = Analyser Inputs =
