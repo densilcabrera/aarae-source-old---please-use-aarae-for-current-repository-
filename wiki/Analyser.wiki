@@ -6,18 +6,49 @@ An analyser in AARAE primarily aims to provide user-readable output, for example
 
 Usually it is quite easy to adapt a pre-existing (or newly written) Matlab function so that it can be integrated into AARAE as an analyser. This page provides information on how this can be done, and there are also many analysers already in AARAE that can serve as examples.
 
+= Overview of Analysers in AARAE =
 
-= Name and Description =
+The collection of analysers in AARAE is organised into directories each for a general category of analyser. From time to time these directories may change or be added to.
+
+== Binaural ==
+
+This category of analyser is concerned with the analysis of binaural impulse responses or signals. This can include examining head-related transfer function, deriving binaural room acoustical parameters, and so on. There may be some binaural analysers that are not in this folder (e.g., a binaural speech intelligibility model is more likely to be in the _Speech_ directory.
+
+== Energy Ratios ==
+
+Energy ratios are used in several ways in room acoustics, and this category of analyser is concerned with parameters such as clarity index, definition, centre time, stage support, voice support, direct-to-reverberant ratio, etc.
+
+== Reverberation ==
+
+This category of analyser is primarily concerned with the calculation of reverberation time, early decay time, and related parameters.
+
+== Spatial Analysis ==
+
+== Speech ==
+
+This category of analyser is concerned with aspects of speech, including speech intelligibility and speech level. It contains analysers that follow IEC and ANSI standards for estimating speech intelligibility from acoustic response data.
+
+== Statistics ==
+
+== Strength ==
+
+== Temporal Diffusivity ==
+
+== Visualisation ==
+
+= Adding an Analyser to AARAE=
+
+== Name and Description ==
 The name of the function is what a user sees within the GUI, so contributed functions need to have helpful names. In some cases, there may be several analyser functions that do similar things (e.g. different ways of estimating reverberation time from an impulse response), and so the function name should be specific enough to accommodate the alternative functions. In other words, it is not a good idea to call a function 'reverbtime', but instead the name should have more particular information (such as the algorithm used, etc).
 
 Within the GUI, hovering the mouse over the name of the function will bring up a description of the function (if one has been written). This description is the continuous comments within the function immediately following the function declaration. Please consider what text should be included there.
 
 
-= Analyser Inputs =
+== Analyser Inputs ==
 
 The inputs to an analyser are likely to include audio data, metadata (e.g. sampling rate), and user-controlled settings for the analyser.
 
-== Audio Data and Metadata ==
+=== Audio Data and Metadata ===
 
 Audio data and metadata in AARAE is kept within a structure. An analyser for AARAE should have this structure as its first input argument.
 
@@ -93,7 +124,7 @@ else
 end
 }}}
 
-== Function Settings ==
+=== Function Settings ===
 
 When running an analyser from the AARAE GUI, the user-controlled settings for an analyser need to be entered using a dialog box. Fortunately it is quite easy to add a rudimentary dialog box to a Matlab function, which is often all that is required. Matlab's inputdlg() is one way of achieving this (refer to Matlab's help). The following is an example of a dialog box with three user-set parameters:
 
@@ -125,17 +156,17 @@ When running an analyser from the AARAE GUI, the user-controlled settings for an
 
 
 
-= Charts and Other Outputs =
+== Charts and Other Outputs ==
 
 It is worth thinking about how the result of running the analyser can be best represented. Charts are usually helpful, and other options include numerical tables, sonification, etc.
 
 Sometimes a while loop could make it easier to work with multiple output options (so the user can choose whether or not to generate each output type, and indeed to discard the analysis results).
 
-== Format of Data Returned by the Analyser Function ==
+=== Format of Data Returned by the Analyser Function ===
 
 This issue is still under development.
 
-= License =
+== License ==
 
 AARAE uses the BSD 3-Clause license for the project as a whole, and therefore  contributed code within the project should also use it to avoid license conflicts.
 
@@ -173,7 +204,7 @@ Except, perhaps, in the case of minor contributions, please add the following li
 %**************************************************************************
 }}}
 
-= Integrating the Analyser into AARAE =
+== Integrating the Analyser into AARAE ==
 
 Once a function has been appropriately prepared, it can be integrated into AARAE simply by putting it into the appropriate subdirectory within the Analysers directory in the AARAE file structure. If required, a new subdirectory can be added (but please avoid unnecessarily adding subdirectories).
 
