@@ -75,6 +75,16 @@ if chans > 2
 end
 }}}
 
+Sometimes a field that would be used by the analyser is not present in the input structure. For example, the calibration offset might not be present if the data has not been calibrated.
+
+{{{
+if exist(in.cal, 'var')
+      cal = in.cal; % get the calibration offset from the input structure
+else
+      cal = 0; % set to default value (but it would be more useful to get a value via a dialog box)
+end
+}}}
+
 == Function Settings ==
 
 When running an analyser from the AARAE GUI, the user-controlled settings for an analyser need to be entered using a dialog box. Fortunately it is quite easy to add a rudimentary dialog box to a Matlab function, which is often all that is required.
