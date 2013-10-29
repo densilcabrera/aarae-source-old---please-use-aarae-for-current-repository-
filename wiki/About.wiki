@@ -23,6 +23,7 @@ A processor has audio input and audio output - it is used to modify audio in som
 === Analysers ===
 An analyser is primarily concerned with generating a user-readable output, which is typically numeric and/or graphical. There is, perhaps, a grey area between analysers and processors - where a function returns both audio and user-readable results - in which case the code author needs to decide what the best category is.
 
+See the wiki page on how to make an Analyser.
 
 
 This page is under construction.
