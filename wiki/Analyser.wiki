@@ -177,4 +177,6 @@ Except, perhaps, in the case of minor contributions, please add the following li
 
 Once a function has been appropriately prepared, it can be integrated into AARAE simply by putting it into the appropriate subdirectory within the Analysers directory in the AARAE file structure. If required, a new subdirectory can be added (but please avoid unnecessarily adding subdirectories).
 
-If you are a contributor to this Google Code group, you can add it to the repository via Subversion. Otherwise contact Densil Cabrera directly.
+Make sure that the analyser works as intended (both as as a stand-alone function, and via the AARAE GUI). If you are hoping that other people will find the analyser helpful, make sure that it is adequately documented (at least by comments within the m file).
+
+If you are a contributor to this Google Code group, you can add it to the repository via Subversion (svn). Otherwise contact Densil Cabrera directly.
