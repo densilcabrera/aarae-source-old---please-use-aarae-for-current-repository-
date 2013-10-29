@@ -26,7 +26,7 @@ It is best practice to write an analyser function to accept structure input, as 
 
 {{{
 function dosomething(in, fs, cal)
-if instruct(in)
+if isstruct(in)
        audio = in.audio; % audio wave data
        fs = in.fs; % audio sampling rate in Hz
       cal = in.cal; % calibration offset in dB
