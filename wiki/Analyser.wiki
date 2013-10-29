@@ -126,3 +126,9 @@ Sometimes a while loop could make it easier to work with multiple output options
 == Format of Data Returned by the Analyser Function ==
 
 This issue is still under development.
+
+== Integrating the Analyser into AARAE ==
+
+Once a function has been appropriately prepared, it can be integrated into AARAE simply by putting it into the appropriate subdirectory within the Analysers directory in the AARAE file structure.
+
+If you are a contributor to this Google Code group, you can add it to the repository via Subversion.
