@@ -30,10 +30,15 @@ This category of analyser is primarily concerned with the calculation of reverbe
 == Speech ==
 
 This category of analyser is concerned with aspects of speech, including speech intelligibility and speech level. It contains analysers that follow IEC and ANSI standards for estimating speech intelligibility from acoustic response data.
+
 * SII_IR: an analyser that derives the speech intelligibility index from an impulse response, and signal and noise level data, using the modulation transfer function of the impulse response.
+
 * STI_from_speech: an experimental analyser, which derives an approximate modulation transfer function from a 2-channel speech recording (where one channel is 'dry', and the other is affected by reverberation and noise). STI is derived in the normal manner from the modulation transfer function.
+
 * STI_IR: an analyser that derives the speech transmission index from an impulse response, and signal and noise level data, using the modulation transfer function of the impulse response.
+
 * STIPA_direct: an analyser to derive STIPA from a recording of the STIPA signal (which can be generated using the STIPA_signal AARAE generator).
+
 * STIspeechlevel: an analyser to calculate the speech level, as described by Annex J of IEC 602268-16 (2011), to support the calculation of the speech transmission index. 
 
 == Statistics ==
