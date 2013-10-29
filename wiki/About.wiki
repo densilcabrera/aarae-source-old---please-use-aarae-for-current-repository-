@@ -13,7 +13,7 @@ The main code of AARAE is authored by Densil Cabrera and Daniel Ricardo Jimenez 
 == Extensible Components==
 AARAE has four categories of functions that can be easily added to by a user:
 === Calculators ===
-Calculators are implementations of theoretical or empirical models that may be helpful in understanding acoustic or audio systems or processes, but with are not directly concerned with measurement. For example, a calculator could implement an acoustic model of a room, which a user might then compare to measurements made in a real room of the same dimensions.
+Calculators are implementations of theoretical or empirical models that may be helpful in understanding acoustic or audio systems or processes, but which are not directly concerned with measurement. For example, a calculator could implement an acoustic model of a room, which a user might then compare to measurements made in a real room of the same dimensions.
 
 === Generators ===
 Generators are used to generate signals for use in measurement. Examples include generators of swept sinusoids, impulses, noise, STIPA, and so on. A generator can return both a primary and secondary signal (e.g., an inverse sweep for deriving an impulse response from a sinusoidal sweep).
