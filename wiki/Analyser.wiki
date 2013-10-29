@@ -63,7 +63,7 @@ switch ndim
 end
 }}}
 
-(Note that the Matlab function size() returns two values even if there is only one dimension.)
+(Note that the Matlab function size() returns two values if there is only one dimension.)
 
 Having obtained this information, we then need to decide what to do with it. Some analysers will work perfectly well on any number of channels and bands, while others may be designed only for 1 channel, 2 channels, 1 band, or some other constraints. One option is to return an error if the input is incorrectly dimensioned. Another option is to truncate and/or mix the data as required. For example:
 
