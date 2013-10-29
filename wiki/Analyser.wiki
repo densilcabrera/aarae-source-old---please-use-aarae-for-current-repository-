@@ -44,7 +44,7 @@ This category of analyser is concerned with aspects of speech, including speech 
 == Name and Description ==
 The name of the function is what a user sees within the GUI, so contributed functions need to have helpful names. In some cases, there may be several analyser functions that do similar things (e.g. different ways of estimating reverberation time from an impulse response), and so the function name should be specific enough to accommodate the alternative functions. In other words, it is not a good idea to call a function 'reverbtime', but instead the name should have more particular information (such as the algorithm used, etc).
 
-Within the GUI, hovering the mouse over the name of the function will bring up a description of the function (if one has been written). This description is the continuous comments within the function immediately following the function declaration. Please consider what text should be included there.
+Within the GUI, hovering the mouse over the name of the function will bring up a description of the function (if one has been written). This description is the continuous comments within the function immediately following the function declaration. Please consider what text should be included there - such as a brief statement of what the function does, a reference to a publication (if relevant), and some guidance on how to use the analyser. It is a good idea to include the author, version and date in this text.
 
 
 == Analyser Inputs ==
@@ -173,7 +173,7 @@ This issue is still under development.
 
 AARAE uses the BSD 3-Clause license for the project as a whole, and therefore  contributed code within the project should also use it to avoid license conflicts.
 
-Except, perhaps, in the case of minor contributions, please add the following license to your Matlab function as a comment. Change the YEAR, OWNER and ORGANISATION fields as appropriate.
+Except, perhaps, in the case of minor contributions, please add the following license to your Matlab function as a comment. Change the YEAR, OWNER and ORGANISATION fields as appropriate. The license comment could be at the end of the m file.
 
 {{{
 %**************************************************************************
