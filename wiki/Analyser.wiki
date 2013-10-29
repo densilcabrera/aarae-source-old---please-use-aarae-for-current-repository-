@@ -129,7 +129,7 @@ It is worth thinking about how the result of running the analyser can be best re
 
 Sometimes a while loop could make it easier to work with multiple output options (so the user can choose whether or not to generate each output type, and indeed to discard the analysis results.
 
-= Format of Data Returned by the Analyser Function =
+== Format of Data Returned by the Analyser Function ==
 
 This issue is still under development.
 
