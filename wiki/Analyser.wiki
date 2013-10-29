@@ -127,7 +127,7 @@ When running an analyser from the AARAE GUI, the user-controlled settings for an
 
 It is worth thinking about how the result of running the analyser can be best represented. Charts are usually helpful, and other options include numerical tables, sonification, etc.
 
-Sometimes a while loop could make it easier to work with multiple output options (so the user can choose whether or not to generate each output type, and indeed to discard the analysis results.
+Sometimes a while loop could make it easier to work with multiple output options (so the user can choose whether or not to generate each output type, and indeed to discard the analysis results).
 
 == Format of Data Returned by the Analyser Function ==
 
