@@ -52,10 +52,6 @@ Considering that the audio waveform might be 1, 2 or 3-dimensional, it may be im
 S = size(audio); % size of the audio matrix
 ndim = length(S); % number of dimensions
 switch ndim
-    case 1
-        len = S(1); % number of samples in audio
-        chans = 1; % number of channels
-        bands = 1; % number of bands
     case 2
         len = S(1); % number of samples in audio
         chans = S(2); % number of channels
@@ -66,6 +62,8 @@ switch ndim
         bands = S(3); % number of bands
 end
 }}}
+
+(Note that the Matlab function size() returns two values even if there is only in dimension.)
 
 Having obtained this information, we then need to decide what to do with it. Some analysers will work perfectly well on any number of channels and bands, while others may be designed only for 1 channel, 2 channels, 1 band, or some other constraints. One option is to return an error if the input is incorrectly dimensioned. Another option is to truncate and/or mix the data as required. For example:
 
