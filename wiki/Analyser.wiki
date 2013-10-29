@@ -12,7 +12,7 @@ The collection of analysers in AARAE is organised into directories each for a ge
 
 == Binaural ==
 
-This category of analyser is concerned with the analysis of binaural impulse responses or signals. This can include examining head-related transfer function, deriving binaural room acoustical parameters, and so on. There may be some binaural analysers that are not in this folder (e.g., a binaural speech intelligibility model is more likely to be in the _Speech_ directory.
+This category of analyser is concerned with the analysis of binaural impulse responses or signals. This can include examining head-related transfer function, deriving binaural room acoustical parameters, and so on. There may be some binaural analysers that are not in this folder (e.g., a binaural speech intelligibility model is more likely to be in the _Speech_ directory).
 
 == Energy Ratios ==
 
