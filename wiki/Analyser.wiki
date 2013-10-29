@@ -1,5 +1,8 @@
 #summary Guide on how to add an analyser to AARAE.
 
+<wiki:toc max_depth="3" />
+
+
 = Introduction =
 
 An analyser in AARAE primarily aims to provide user-readable output, for example in the form of a visualisation together with numeric data. An analyser can also provide auralization or sonification, but some such cases may be better as a _processor_ rather than an _analyser_ (if the audio content of the auralization/sonification is the main purpose of the function).
