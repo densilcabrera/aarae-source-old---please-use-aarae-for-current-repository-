@@ -2,6 +2,6 @@
 
 = Introduction =
 
-In AARAE, a generator is used to create an audio signal, mostly for the purpose of measuring and audio or acoustical system.
+In AARAE, a generator is used to create an audio signal, mostly for the purpose of measuring an audio or acoustical system.
 
 This page is under construction.
