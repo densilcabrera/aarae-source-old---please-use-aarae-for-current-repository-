@@ -77,7 +77,7 @@ The currently available fields within this structure include:
 || .cal || This is a calibration offset in decibels such that 10*log10(wave.^2)+cal yields the appropriate level (e.g., sound pressure level). ||
 || .signaltype || This is a string describing the type of signal. ||
 
-It is best practice to write an analyser function to accept structure input, as well accepting as a set of discrete input arguments (which can be more convenient if the function is not being called via the GUI). This can be achieved using an isstruct() test, for example:
+It is best practice to write an analyser function to accept structure input, as well accepting as a set of discrete input arguments (which can be more convenient if the function is not being called via the GUI, for example if it is doing a large scale scripted analysis during which dialog boxes would be a nuisance). This can be achieved using an isstruct() test, for example:
 
 {{{
 function dosomething(in, fs, cal)
