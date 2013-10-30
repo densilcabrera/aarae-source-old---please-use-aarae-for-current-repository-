@@ -1,0 +1,7 @@
+#summary The concept of calculators, categories of calculators, and how to add a calculator to AARAE.
+
+= Introduction =
+
+In AARAE, a calculator is a Matlab function accessible from the AARAE GUI that is not directly concerned with the measurement, processing an analysis of audio and acoustical systems, but which may be helpful in that context. Hence, calculators might be thought of as the _miscellaneous_ category of AARAE function.
+
+This page is under construction.
