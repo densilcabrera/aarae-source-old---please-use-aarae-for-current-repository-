@@ -1,11 +1,11 @@
 #sidebar TableOfContents
- *[About]
+ * [About]
 
  * [Calculators]
 
  * [Generators]
 
- *[Processors]
+ * [Processors]
 
  * [Analysers]
 
