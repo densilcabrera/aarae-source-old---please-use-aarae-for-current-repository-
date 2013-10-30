@@ -2,7 +2,7 @@
 
 = Introduction =
 
-Utilities in AARAE are Matlab functions that are not directly accessible from the graphical user interface, but which may be used by various functions (calculators, generators, processors and analysers) within AARAE. Utilities are kept in the 'Utilities' directory.
+Utilities in AARAE are Matlab functions that are not directly accessible from the AARAE graphical user interface, but which may be used by various functions (calculators, generators, processors and analysers) within AARAE. Utilities are kept in the 'Utilities' directory.
 
 
 This page is under construction
