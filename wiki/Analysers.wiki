@@ -75,6 +75,7 @@ The currently available fields within this structure include:
 || .bandID || This is a list of frequencies (or numbers of some type) associated with each band. ||
 || .chanID || This is a list of channel identifiers (e.g. angles in the case of beam-formed audio) - which has not been implemented yet. ||
 || .cal || This is a calibration offset in decibels such that 10*log10(wave.^2)+cal yields the appropriate level (e.g., sound pressure level). ||
+|| .signaltype || This is a string describing the type of signal. ||
 
 It is best practice to write an analyser function to accept structure input, as well accepting as a set of discrete input arguments (which can be more convenient if the function is not being called via the GUI). This can be achieved using an isstruct() test, for example:
 
