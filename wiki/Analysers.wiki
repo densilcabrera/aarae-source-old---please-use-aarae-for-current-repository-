@@ -79,7 +79,7 @@ The currently available fields within this structure include:
 
 It is best practice to write an analyser function to accept structure input, as well accepting as a set of discrete input arguments (which can be more convenient if the function is not being called via the GUI, for example if it is doing a large scale scripted analysis during which dialog boxes would be a nuisance). This can be achieved using an isstruct() test, for example:
 
-{{{
+<pre>
 function dosomething(in, fs, cal)
 if isstruct(in)
        audio = in.audio; % audio wave data
@@ -89,13 +89,13 @@ else
        audio = in;
 end
 % then do something with the data and metadata ...
-}}}
+</pre>
 
 In the above example, the second and third input arguments are ignored if the first input argument is a structure. However if the first input argument is a vector or matrix, it will be used directly as the audio waveform, and the second and third input arguments are required (notwithstanding further code to set default values).
 
 Considering that the audio waveform might be 1, 2 or 3-dimensional, it may be important to be able to read its size. The following code provides this information:
 
-{{{
+<pre>
 S = size(audio); % size of the audio matrix
 ndim = length(S); % number of dimensions
 switch ndim
@@ -108,43 +108,43 @@ switch ndim
         chans = S(2); % number of channels
         bands = S(3); % number of bands
 end
-}}}
+</pre>
 
 (Note that the Matlab function size() returns two values if there is only one dimension.)
 
 Having obtained this information, we then need to decide what to do with it. Some analysers will work perfectly well on any number of channels and bands, while others may be designed only for 1 channel, 2 channels, 1 band, or some other constraints. One option is to return an error if the input is incorrectly dimensioned. Another option is to truncate and/or mix the data as required. For example:
 
-{{{
+<pre>
 if bands > 1
       audio = mean(audio,3); % mix all bands together (removing the third dimension)
       disp('Multiband audio has been mixed into a single band.')
 end
-}}}
+</pre>
 
 or
 
-{{{
+<pre>
 if chans > 2
        audio = audio(:,1:2,:); % use only the first two channels
        disp('Only the first two channels have been used.')
 end
-}}}
+</pre>
 
 Sometimes a field that would be used by the analyser is not present in the input structure. For example, the calibration offset might not be present if the data has not been calibrated. The following example shows how this can be dealt with.
 
-{{{
+<pre>
 if exist(in.cal, 'var')
       cal = in.cal; % get the calibration offset from the input structure
 else
       cal = 0; % set to default value (but it would be more useful to get a value via a dialog box)
 end
-}}}
+</pre>
 
 === Function Settings ===
 
 When running an analyser from the AARAE GUI, the user-controlled settings for an analyser need to be entered using a dialog box. Fortunately it is quite easy to add a rudimentary dialog box to a Matlab function, which is often all that is required. Matlab's inputdlg() is one way of achieving this (refer to Matlab's help). The following is an example of a dialog box with three user-set parameters:
 
-{{{
+<pre>
 % Dialog box for settings
 
 % Prompt for 3 named parameters:
@@ -168,7 +168,7 @@ When running an analyser from the AARAE GUI, the user-controlled settings for an
         bpo = str2num(answer{2,1});
         doplot = str2num(answer{3,1});
     end
-}}}
+</pre>
 
 
 
@@ -188,7 +188,7 @@ AARAE uses the BSD 3-Clause license for the project as a whole, and therefore  c
 
 Except, perhaps, in the case of minor contributions, please add the following license to your Matlab function as a comment. Change the YEAR, OWNER and ORGANISATION fields as appropriate. The license comment could be at the end of the m file.
 
-{{{
+<pre>
 %**************************************************************************
 % Copyright (c) <YEAR>, <OWNER>
 % All rights reserved.
@@ -218,7 +218,7 @@ Except, perhaps, in the case of minor contributions, please add the following li
 % NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 % SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 %**************************************************************************
-}}}
+</pre>
 
 == Incorporating the Analyser into AARAE ==
 
