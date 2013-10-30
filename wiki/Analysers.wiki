@@ -5,7 +5,7 @@
 
 = Introduction =
 
-An analyser in AARAE primarily aims to provide user-readable output, for example in the form of a visualisation together with numeric data. An analyser can also provide auralization or sonification, but some such cases may be better as a _processor_ rather than an _analyser_ (if the audio content of the auralization/sonification is the main purpose of the function - see Processors).
+An analyser in AARAE primarily aims to provide user-readable output, for example in the form of a visualisation together with numeric data. An analyser can also provide auralization or sonification, but some such cases may be better as a _processor_ rather than an _analyser_ (if the audio content of the auralization/sonification is the main purpose of the function - see [Processors]).
 
 Usually it is quite easy to adapt a pre-existing (or newly written) Matlab function so that it can be integrated into AARAE as an analyser. This page provides information on how this can be done, and there are also many analysers already in AARAE that can serve as examples.
 
