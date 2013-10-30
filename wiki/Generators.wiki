@@ -1,0 +1,7 @@
+#summary The concept of generators, categories of generators, and how to add a generator to AARAE.
+
+= Introduction =
+
+In AARAE, a generator is used to create an audio signal, mostly for the purpose of measuring and audio or acoustical system.
+
+This page is under construction.
