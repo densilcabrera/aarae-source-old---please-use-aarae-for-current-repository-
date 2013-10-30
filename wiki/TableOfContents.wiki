@@ -1,7 +1,12 @@
 #sidebar TableOfContents
 [About]
+
 [Calculators]
+
 [Generators]
+
 [Processors]
+
 [Analysers]
+
 [Utilities]
