@@ -130,7 +130,7 @@ if chans > 2
 end
 }}}
 
-Sometimes a field that would be used by the analyser is not present in the input structure. For example, the calibration offset might not be present if the data has not been calibrated.
+Sometimes a field that would be used by the analyser is not present in the input structure. For example, the calibration offset might not be present if the data has not been calibrated. The following example shows how this can be dealt with.
 
 {{{
 if exist(in.cal, 'var')
