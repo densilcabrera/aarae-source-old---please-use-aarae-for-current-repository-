@@ -69,7 +69,9 @@ The currently available fields within this structure include:
 
 || *Field* || * Description and comment* ||
 || .audio || This contains the audio waveform, descending in time down the columns. Dimension 2 is used for channels, and dimension 3 is used for bands (e.g. octave-band filtered data). Analysers should be written to anticipate a potentially 3-dimensional waveform matrix, rather than returning an error if the input is multi-channel and/or multi-band. ||
+|| .invaudio || This is a complementary audio waveform, such as an inverse filter used to transform a recorded sweep into an impulse response. Some AARAE generator (but not all) create this field, and in many cases it might not be present in the audio structure at the analyser stage ||
 || .fs || This is the audio sampling rate in Hz. ||
+|| .nbits || This is the bit depth of the audio. ||
 || .bandID || This is a list of frequencies (or numbers of some type) associated with each band. ||
 || .chanID || This is a list of channel identifiers (e.g. angles in the case of beam-formed audio) - which has not been implemented yet. ||
 || .cal || This is a calibration offset in decibels such that 10*log10(wave.^2)+cal yields the appropriate level (e.g., sound pressure level). ||
