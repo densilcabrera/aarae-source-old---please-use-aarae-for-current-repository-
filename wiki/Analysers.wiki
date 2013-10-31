@@ -64,7 +64,7 @@ The inputs to an analyser are likely to include audio data, metadata (e.g. sampl
 
 === Audio Data and Metadata ===
 
-Audio data and metadata in AARAE are kept within a structure. An analyser for AARAE should have this structure as its first input argument.
+Audio data and metadata in AARAE are kept within a structure. *An analyser for AARAE should have this structure as its first input argument.*
 
 The currently available fields within this structure include:
 
