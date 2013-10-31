@@ -1,4 +1,5 @@
 #summary Overview of utilities in AARAE
+#sidebar TableOfContents
 
 = Introduction =
 
