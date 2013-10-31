@@ -1,4 +1,5 @@
 #summary Audio and Acoustical Response Analysis Environment in Matlab - a free open-source extensible resource to support exploration, teaching and research in audio and acoustics.
+#sidebar TableOfContents
 
 = Introduction =
 AARAE is a Matlab-hosted environment for measurement, processing and analysis of audio system and acoustic system responses. It is designed to run through a simple graphical user interface, but also to be useable by directly calling particular AARAE functions.
