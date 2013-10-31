@@ -1,5 +1,5 @@
 #summary The concept of analysers, categories of analysers, and how to add an analyser to AARAE.
-#sidebar [TableOfContents]
+#sidebar TableOfContents
 
 <wiki:toc max_depth="3" />
 
