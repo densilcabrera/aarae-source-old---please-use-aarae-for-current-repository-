@@ -1,4 +1,5 @@
 #summary The concept of calculators, categories of calculators, and how to add a calculator to AARAE.
+#sidebar TableOfContents
 
 = Introduction =
 
