@@ -190,7 +190,6 @@ AARAE uses the BSD 3-Clause license for the project as a whole, and therefore  c
 Except, perhaps, in the case of minor contributions, please add the following license to your Matlab function as a comment. Change the YEAR, OWNER and ORGANISATION fields as appropriate. The license comment could be at the end of the m file.
 
 <pre>
-%**************************************************************************
 % Copyright (c) <YEAR>, <OWNER>
 % All rights reserved.
 %
@@ -218,7 +217,7 @@ Except, perhaps, in the case of minor contributions, please add the following li
 % LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING 
 % NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 % SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-%**************************************************************************
+
 </pre>
 
 == Incorporating the Analyser into AARAE ==
