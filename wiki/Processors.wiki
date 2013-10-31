@@ -1,7 +1,6 @@
 #summary The concept of processors, categories of processors, and how to add a processor to AARAE.
+#sidebar TableOfContents
 
 = Introduction =
 
 Under construction
-
-
