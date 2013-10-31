@@ -1,5 +1,5 @@
 #summary The concept of generators, categories of generators, and how to add a generator to AARAE.
-#sidebar TableOfContents
+
 
 = Introduction =
 
