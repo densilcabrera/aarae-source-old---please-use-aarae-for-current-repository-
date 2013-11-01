@@ -187,7 +187,7 @@ This issue is still under development.
 
 AARAE uses the BSD 3-Clause license for the project as a whole, and we encourage contributors to use the same license so as to avoid license conflicts.
 
-Except, perhaps, in the case of minor contributions, to use the BSD 3-Clause license please add the following text to your Matlab function as a comment. Change the YEAR, OWNER and ORGANISATION fields as appropriate. The license comment could be at the end of the m file.
+To use the BSD 3-Clause license please add the following text to your Matlab function as a comment. Change the YEAR, OWNER and ORGANISATION fields as appropriate. The license comment could be at the end of the m file.
 
 <code language="m">
 % %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
