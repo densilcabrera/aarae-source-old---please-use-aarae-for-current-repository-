@@ -12,7 +12,7 @@ The initial code infrastructure of AARAE is authored by Densil Cabrera and Danie
 
 == Using Matlab for Audio and Acoustic Measurement and Signal Processing ==
 
-In the academic environment, it is very common for Matlab to be used for audio and acoustics measurement and signal processing. Commonly, each researcher or teacher has developed and collected Matlab based tools and techniques, and each has their own way of working. Matlab is not easy for beginners, and students can find it difficult to learn to use these tools and techniques. Nevertheless, Matlab is very well suited to the tasks undertaken in this field.
+In the academic environment, it is very common for Matlab to be used for audio and acoustics measurement and signal processing. Commonly, each researcher or teacher has developed and collected Matlab based tools and techniques, and each has their own way of working. We decided to start the AARAE project partly to organise our Matlab code, to make it easier for others to use, and to facilitate the sharing of code for research and education.
 
 AARAE aims to improve the usefulness and accessibility of Matlab in this context by:
  * providing a graphical user interface to run diverse functions;
@@ -22,6 +22,12 @@ AARAE aims to improve the usefulness and accessibility of Matlab in this context
  * organising functions into categories;
  * providing for constituent functions to be run either from scripts (or other functions, or from the GUI);
  * keeping track of workflow;
+
+== Open Source  and Extensible ==
+
+While there are many audio and acoustic measurement/analysis tools available, not many are open source. We found problems, limitations and errors using closed source software which, of course, we could not fix because they were closed. Open source software also can have problems, limitations and errors, but these can be fixed and the software can evolve. Open source software also allows a user to inspect the implementation, and so learn from it and/or receive assurance that the implementation is appropriate. This is especially important in education and research.
+
+
 
 == Extensible Components==
 AARAE has four categories of functions that can be easily added to by a user:
