@@ -145,7 +145,7 @@ end
 Sometimes a field that would be used by the analyser is not present in the input structure. For example, the calibration offset might not be present if the data has not been calibrated. The following example shows how this can be dealt with.
 
 <code language="m">
-if exist(in.cal, 'var')
+if isfield(in, 'cal')
       cal = in.cal; % get the calibration offset from the input structure
 else
       cal = 0; % set to default value (but it would be more useful to get a value via a dialog box)
@@ -196,9 +196,9 @@ This issue is still under development.
 
 == License ==
 
-AARAE uses the BSD 3-Clause license for the project as a whole, and we encourage contributors to use the same license so as to avoid license conflicts.
+AARAE uses the BSD 3-Clause license for the project as a whole, and we encourage contributors to use the same license so as to minimise license conflicts.
 
-To use the BSD 3-Clause license please add the following text to your Matlab function as a comment. Change the YEAR, OWNER and ORGANISATION fields as appropriate. The license comment could be at the end of the m file.
+To use the BSD 3-Clause license, add the following text to your Matlab function as a comment. Change the YEAR, OWNER and ORGANISATION fields as appropriate. The license comment could be at the end of the m file.
 
 <code language="m">
 % %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
