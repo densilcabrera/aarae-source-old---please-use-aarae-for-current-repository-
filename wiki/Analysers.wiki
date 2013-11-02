@@ -52,6 +52,17 @@ This category of analyser is concerned with aspects of speech, including speech 
 
 = Adding an Analyser to AARAE=
 
+== Options for Adding an Analyser ==
+Analysers are added to AARAE simply by putting m files (containing functions) in the appropriate subdirectory of the Analysers directory.
+
+There are two ways by which this can be approached: 
+ # The analyser can be a function in a single m file; or
+ # The core function or functions in the analyser can be in a folder within the subdirectory, with a calling function added to the subdirectory. In this case, the contents of the analyser's own subdirectory will not be visible in the AARAE GUI, but the calling function will be visible (and it is used to interface with AARAE).
+
+The first approach may be suitable for new analysers that are not very complex. The second approach is convenient for interfacing pre-existing toolboxes with AARAE, or for adding pre-existing code without changing it in any way (which may be a license requirement), or for adding complex analysers that are best stored using multiple files.
+
+In either case, the issues raised below may need to be engaged with (either within the single function itself, or within the calling function).
+
 == Name and Description ==
 The name of the function is what a user sees within the GUI, so contributed functions need to have helpful names. In some cases, there may be several analyser functions that do similar things (e.g. different ways of estimating reverberation time from an impulse response), and so the function name should be specific enough to accommodate the alternative functions. In other words, it is not a good idea to call a function 'reverbtime', but instead the name should have more particular information (such as the algorithm used, etc).
 
