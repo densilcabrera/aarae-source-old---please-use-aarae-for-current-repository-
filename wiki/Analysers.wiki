@@ -232,7 +232,7 @@ To use the BSD 3-Clause license, add the following text to your Matlab function 
 % %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 </code>
 
-If your contributed code uses a different license, please ensure that the license is easily found by a user, and that the license is not incompatible with that of AARAE.
+If your contributed code uses a different license, please ensure that the license is easily found by a user, and that the license is not incompatible with that of AARAE. In particular, the license must permit redistribution.
 
 == Incorporating the Analyser into AARAE ==
 
