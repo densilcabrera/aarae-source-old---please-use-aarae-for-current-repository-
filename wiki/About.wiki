@@ -6,7 +6,7 @@ AARAE is a Matlab-hosted environment for measurement, processing and analysis of
 AARAE aims to encourage exploration of measurement and analysis possibilities, rather than only presenting the best or the standard method. Hence easy extensibility is a key feature of AARAE - with only a little additional code, users can drag and drop their own functions into AARAE, so that they add to the exploratory tools accessible through the graphical user interface.
 
 = Authorship and Community =
-The initial code infrastructure of AARAE is authored by Densil Cabrera and Daniel Ricardo Jimenez Pinilla. AARAE is intended to be a community project, and we hope that the amount of community-contributed code will grow to be substantially larger than the core infrastructure. Contributors of code retain their own copyright, and all code is distributed under the BSD 3-clause license. 
+The initial code infrastructure of AARAE is authored by Densil Cabrera and Daniel Ricardo Jimenez Pinilla. AARAE is intended to be a community project, and we hope that the amount of community-contributed code will grow to be substantially larger than the core infrastructure. Contributors of code retain their own copyright, and contributors are encouraged to use the BSD 3-clause license (which is used for the core code of AARAE). 
 
 = Main Concepts =
 
