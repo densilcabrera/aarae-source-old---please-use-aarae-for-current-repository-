@@ -6,9 +6,11 @@ function out = permute23_aarae(in)
 
     if isfield(in,'bandID')
         out.chanID = in.bandID;
+
     end
 
     if isfield(in,'chanID')
         out.bandID = in.chanID;
+
     end
 end

@@ -13,7 +13,7 @@ end
     'ListString',num2str(param'),...
     'ListSize', [160 320]);
 
-if ok == 1
+if ok == 1 && ~isempty(S)
     out.audio = in.audio(:,S,:);
     if isfield(in,'chanID')
         out.chanID = in.chanID(S);
