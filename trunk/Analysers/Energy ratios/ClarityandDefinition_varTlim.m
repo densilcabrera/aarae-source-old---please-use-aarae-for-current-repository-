@@ -1,4 +1,4 @@
-function out = ClarityandDefinition_varTlim(data, fs, startthresh, highestband, lowestband, bpo, doplot,endtime)
+function out = ClarityandDefinition_varTlim(data, fs, startthresh, highestband, lowestband, bpo, maxtlim, doplot,endtime)
 % This function calculates Clarity Index and Definition from an impulse
 % response, using a range of integration times (from 10 ms to 100 ms, in 
 % 5 ms steps).
@@ -40,10 +40,11 @@ if isstruct(data)
         'Highest band (Hz)', ...
         'Lowest band (Hz)', ...
         'End truncation time (s)', ...
+        'Maximum early-late time (s)', ...
         'Plot (0|1)'};
     dlg_title = 'Settings';
     num_lines = 1;
-    def = {'-20','1','4000','125','60','1'};
+    def = {'-20','1','4000','125','60', '0.1','1'};
     answer = inputdlg(prompt,dlg_title,num_lines,def);
     
     if ~isempty(answer)
@@ -52,7 +53,8 @@ if isstruct(data)
         highestband  = str2num(answer{3,1});
         lowestband  = str2num(answer{4,1});
         endtime  = str2num(answer{5,1});
-        doplot = str2num(answer{6,1});
+        maxtlim = str2num(answer{6,1});
+        doplot = str2num(answer{7,1});
     end
     
 else
@@ -124,7 +126,8 @@ flist = exact2nom_oct(flist);
 %--------------------------------------------------------------------------
 
 % List of temporal energy summation limits
-tlim = 0.01:0.005:0.1;
+if maxtlim < 0.08, maxtlim = 0.08; end
+tlim = 0.01:0.005:maxtlim;
 index35 = find(tlim == 0.035, 1, 'first');
 index50 = find(tlim == 0.05, 1, 'first');
 index80 = find(tlim == 0.08, 1, 'first');
