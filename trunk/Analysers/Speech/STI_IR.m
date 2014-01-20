@@ -16,7 +16,7 @@ function [M_STI, F_STI, Verbose]=STI_IR(IR, Lsignal, Lnoise, AuditoryMasking, No
 % unless it is assumed that noise is negligible.
 %
 % Code by Doheon Lee and Densil Cabrera
-% version 1.06 (15 November 2013)
+% version 1.07 (21 January 2014)
 %
 % * For further information type 'doc STI_IR' in the MATLAB command line and
 %   click on 'View code for STI_IR'.
@@ -87,11 +87,10 @@ function [M_STI, F_STI, Verbose]=STI_IR(IR, Lsignal, Lnoise, AuditoryMasking, No
 %   specified within that structure.
 %
 % FilterVersion
-%   0: use 6th order Butterworth octave band filters, generated using
-%      explicit simple code (default)
-%   1: use 6th order Butterworth octave band filters, generated using
-%      Matlab's filterbuilder (this might not be as compatible across
-%      versions of Matlab, and it is noticeably slower).
+%   0: use 8th order Butterworth octave band filters, generated using
+%      explicit simple code with filtfilt to make them linear phase (default)
+%   1: use AARAE's 6th order Butterworth octave band filters, generated using
+%      Matlab's filterbuilder (these filters are not linear phase).
 %   Note that the differences between these approaches can be seen as small
 %   deviations in the MTF values, but they are unlikely to affect
 %   calculated STI values.
@@ -443,8 +442,8 @@ end
 % DEFAULT SETTINGS
 
 if ~validate
-    % simple filters by default
-    if nargin < 8, FilterVersion = 0; end
+    % Class 0 6th order filters by default
+    if nargin < 8, FilterVersion = 1; end
     
     % do plot by default
     if nargin < 6, doplot = 1; end
@@ -518,13 +517,14 @@ if ~validate
     f_low=fc./10^(0.15*bandwidth); % low cut-off frequency in Hz
     f_hi=fc.*10^(0.15*bandwidth); % high cut-off frequency in Hz
     
-    % use filter order of 6 (half-order = 3)
-    halforder = 3; % half of the filter order: a value of 3 yields a 6th order filter
+    halforder = 2; 
     
     b = zeros(halforder*2+1,length(fc)); % pre-allocate filter coefficients
     a = b; % pre-allocate filter coefficients
     
     % calculate filter coefficients
+    % These filters are not class 1 or class 0 (passband is not flat
+    % enough)
     for k = 1:length(fc)
         [b(:,k), a(:,k)]=butter(halforder, [f_low(k)/Nyquist f_hi(k)/Nyquist]);
     end
@@ -588,24 +588,68 @@ for ch = 1:chans
     
     %***************************************************************
     % Calculate Modulation Transfer Function (MTF) for 14 modulation
-    % frequencies and 7 octave bands.
+    % frequencies and 7 octave bands
     
     if ~validate
+        mtfmethod = 1; % for testing purposes only. Set to ~=1 to try
+        % FFT-based MTF analysis (see 'else...')
+        
         % Modulation Transfer Function (MTF) calculations
         P_octave=zeros(length(data(:,ch)), length(length(fc)));
         MTF_ch=zeros(length(mf), length(fc));
-        if FilterVersion
+        if FilterVersion == 1
             P_octave = octavebandfilters(data(:,ch), fs);
+        elseif FilterVersion == 2
+            % linear phase filters
+            P_octave = octbandfilter(data(:,ch), fs, fc, 0);
         end
         for k=1:length(fc);
-            if ~FilterVersion
-                P_octave(:,k)=filter(b(:,k),a(:,k), data(:,ch)); % filter
+            if FilterVersion == 0
+                P_octave(:,k)=filtfilt(b(:,k),a(:,k), data(:,ch)); % linear phase filter
             end
-            for j=1:length(mf)
-                % derive MTF using Schroeder's formula
-                MTF_num=abs(sum(P_octave(:,k).^2.*exp(-2i*pi*mf(j).*time)));
-                MTF_den=sum(P_octave(:,k).^2);
-                MTF_ch(j,k)=MTF_num/MTF_den;
+            if mtfmethod == 1
+                for j=1:length(mf)
+                    % number of whole number cycles to use for each modulation frequency
+                    Fm_cycles = floor(len .* mf(j)./fs);
+                    
+                    % number of samples to use for each modulation frequency
+                    Fm_len = floor(fs.*Fm_cycles ./ mf(j));
+                    
+                    % derive MTF using Schroeder's formula
+                    
+                    % direct implementation of calculation
+                    MTF_num=abs(sum(P_octave(1:Fm_len,k).^2.*exp(-2i*pi*mf(j).*time(1:Fm_len))));
+                    MTF_den=sum(P_octave(1:1:Fm_len,k).^2);
+                    
+                    MTF_ch(j,k)=MTF_num/MTF_den;
+                end
+            else
+                % FFT-derived modulation transfer function
+                % This code is not optimised (it is not neccessary for it
+                % to be in a for loop), and it was just added for
+                % testing purposes.
+                % This method is not recommended because there is unlikely
+                % to be a good match between the modulation frequencies and
+                % the fft components in the low frequency range. Using a
+                % longer FFT solves this, but adds unnecessarily to
+                % computational load.
+                fftlen = len*1; % use a value > 1 (e.g. 10) to improve the
+                % match between desired and actual frequencies. When this
+                % number is large, the results are similar to the other
+                % method.
+                
+                % magnitude spectrum of the squared envelope
+                envspectrum = abs(fft(P_octave(:,k).^2,fftlen));
+                
+                % frequency vector
+                f_env = fs * (0:(fftlen-1)) / fftlen;
+                
+                for j = 1:length(mf)
+                    % find closest match to mf
+                    ind = find(abs(mf(j)-f_env) == min(abs(mf(j)-f_env)),1,'first');
+                    % modulation transfer ratio value
+                    MTF_ch(j,k) = envspectrum(ind) ./ envspectrum(1);
+                end
             end
         end
     end
@@ -727,7 +771,7 @@ for ch = 1:chans
         plot(MTF_ch(:,7),'Color',colors(7,:),'DisplayName','8 kHz');
         
         % Uncomment the following line to add a legend
-        %legend('show');
+        % legend('show');
         
         % y-axis limits
         ylim([0 1]);
@@ -736,7 +780,7 @@ for ch = 1:chans
         xlabel('Modulation Frequency (Hz)');
         
         % Create ylabel
-        ylabel('Modulation Transfer Coefficient');
+        ylabel('Modulation Transfer Ratio');
         
         % Create title
         if chans == 1
@@ -830,32 +874,32 @@ for ch = 1:chans
         legend('show','Location','EastOutside');
         hold off
         
-        
-        f = figure('Name',['STI_IR Channel ',num2str(ch),': STI, MTI & MTF'], ...
-            'Position',[200 200 630 540]);
-        %[left bottom width height]
-        dat1 = MTF_ch;
-        cnames1 = {'125', '250', '500', '1k', '2k', '4k', '8k'};
-        rnames1 = {'0.63', '0.8', '1', '1.25', '1.6', '2',...
-            '2.5', '3.15','4','5','6.3','8','10','12.5'};
-        t1 =uitable('Data',dat1,'ColumnName',cnames1,'RowName',rnames1);
-        %set(t,'ColumnWidth',{60});
-        
-        dat2 = [MTI(ch,:);Lsignal(ch,:);Lnoise(ch,:)];
-        cnames2 = {'125', '250', '500', '1k', '2k', '4k', '8k'};
-        rnames2 = {'MTI', 'Signal SPL (dB)', 'Noise SPL (dB)'};
-        t2 =uitable('Data',dat2,'ColumnName',cnames2,'RowName',rnames2);
-        %set(t,'ColumnWidth',{60});
-        
-        
-        dat3 = [M_STI(ch);F_STI(ch);STIPA(ch)];
-        cnames3 = {'value'};
-        rnames3 = {'STI male','STI female','STIPA(IR)'};
-        t3 =uitable('Data',dat3,'ColumnName',cnames3,'RowName',rnames3);
-        %set(t,'ColumnWidth',{100});
-        
-        disptables(f,[t3 t2 t1]);
-        
+        if isstruct(IR)
+            f = figure('Name',['STI_IR Channel ',num2str(ch),': STI, MTI & MTF'], ...
+                'Position',[200 200 630 540]);
+            %[left bottom width height]
+            dat1 = MTF_ch;
+            cnames1 = {'125', '250', '500', '1k', '2k', '4k', '8k'};
+            rnames1 = {'0.63', '0.8', '1', '1.25', '1.6', '2',...
+                '2.5', '3.15','4','5','6.3','8','10','12.5'};
+            t1 =uitable('Data',dat1,'ColumnName',cnames1,'RowName',rnames1);
+            %set(t,'ColumnWidth',{60});
+            
+            dat2 = [MTI(ch,:);Lsignal(ch,:);Lnoise(ch,:)];
+            cnames2 = {'125', '250', '500', '1k', '2k', '4k', '8k'};
+            rnames2 = {'MTI', 'Signal SPL (dB)', 'Noise SPL (dB)'};
+            t2 =uitable('Data',dat2,'ColumnName',cnames2,'RowName',rnames2);
+            %set(t,'ColumnWidth',{60});
+            
+            
+            dat3 = [M_STI(ch);F_STI(ch);STIPA(ch)];
+            cnames3 = {'value'};
+            rnames3 = {'STI male','STI female','STIPA(IR)'};
+            t3 =uitable('Data',dat3,'ColumnName',cnames3,'RowName',rnames3);
+            %set(t,'ColumnWidth',{100});
+            
+            disptables(f,[t3 t2 t1]);
+        end
     end % if doplot
     
     
