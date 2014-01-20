@@ -1,4 +1,8 @@
-function [OUT,varargout] = octbandfilter(IN,fs,param)
+function [OUT,varargout] = octbandfilter(IN,fs,param,method)
+% method: 1 normal filtering
+%         0 filter forwards & backwards (time reversed), linear phase
+%        -1 filter time reversed
+        if nargin < 4, method = 1; end
         B = 1;
         N = 6;
         ok = 0;
@@ -10,6 +14,7 @@ function [OUT,varargout] = octbandfilter(IN,fs,param)
                                      'ListString',[num2str(param') repmat(' Hz',length(param),1)]);
             param = param(S);
         else
+            S = zeros(size(param));
             for i = 1:length(param)
                 check = find(nominalfreq == param(i));
                 if isempty(check), check = 0; end
@@ -29,25 +34,50 @@ function [OUT,varargout] = octbandfilter(IN,fs,param)
             end
         end
     if ~isempty(param) && ~isempty(fs)
-        if fs <= 44100, param = param(find(param<adjustF0(16000))); end
+        if fs <= 44100, param = param(param<adjustF0(16000)); end
         if ok == 1 && isdir([cd '/Processors/Filterbanks/' num2str(fs) 'Hz'])
             content = load([cd '/Processors/Filterbanks/' num2str(fs) 'Hz/OctaveBandFilterBank.mat']);
             filterbank = content.filterbank;
             centerf = zeros(size(param));
+            filtered = zeros(size(audio,1),size(audio,2),length(param));
             for i = 1:length(param)
                 for j = 1:size(audio,2)
                     centerf(i) = param(1,i);
-                    filtered(:,j,i) = filter(filterbank(1,S(1,i)),audio(:,j));
+                    switch method
+                        case -1
+                            % reverse time filter
+                            filtered(:,j,i) = ...
+                                flipud(filter(filterbank(1,S(1,i)),flipud(audio(:,j))));
+                        case 0
+                            % double filter reverse & normal time
+                            filtered(:,j,i) = ...
+                                filter(filterbank(1,S(1,i)),flipud(filter(filterbank(1,S(1,i)),flipud(audio(:,j)))));
+                        otherwise
+                            % normal filter
+                            filtered(:,j,i) = filter(filterbank(1,S(1,i)),audio(:,j));
+                    end
                 end
             end
         else
             F0 = param;
             centerf = zeros(size(param));
+            filtered = zeros(size(audio,1),size(audio,2),length(param));
             for i = 1:length(param)
                 for j = 1:size(audio,2)
                     centerf(i) = param(1,i);
                     filterbank = octband(B, N, adjustF0(F0(i)), fs);
-                    filtered(:,j,i) = filter(filterbank,audio(:,j));
+                    switch method
+                        case -1
+                            % reverse time filter
+                            filtered(:,j,i) = flipud(filter(filterbank,flipud(audio(:,j))));
+                        case 0
+                            % double filter
+                            filtered(:,j,i) = ...
+                            filter(filterbank,flipud(filter(filterbank,flipud(audio(:,j)))));
+                        otherwise
+                            % normal filter
+                            filtered(:,j,i) = filter(filterbank,audio(:,j));
+                    end
                 end
             end 
         end
@@ -119,7 +149,7 @@ validcenterfrequencies(validcenterfrequencies>20000)=[]; % Upper limit 20 kHz
 validcenterfrequencies(validcenterfrequencies<20)=[];    % Lower limit 20 Hz
 
 validFreq = validcenterfrequencies;
-if isempty(find(f0 == validFreq)),
+if isempty(find(f0 == validFreq, 1)),
     [~, idx] = min(abs(f0-validFreq));
     validf = validFreq(idx);
 else

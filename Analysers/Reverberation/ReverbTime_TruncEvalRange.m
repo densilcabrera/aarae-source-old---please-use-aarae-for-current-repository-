@@ -214,7 +214,7 @@ if ~isempty(audio) && ~isempty(fs)
     IRend = round(fs/10:truncstep*fs/1000:len);
     
     % list of evaluation range end indices
-    ERendL = -10:-abs(evalrangestep):-60;
+    ERendL = -10:-abs(evalrangestep):-65;
     
     % check validity of start level
     if startlevel < (ERendL(1)+3)
