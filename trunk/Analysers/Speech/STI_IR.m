@@ -16,7 +16,7 @@ function [M_STI, F_STI, Verbose]=STI_IR(IR, Lsignal, Lnoise, AuditoryMasking, No
 % unless it is assumed that noise is negligible.
 %
 % Code by Doheon Lee and Densil Cabrera
-% version 1.07 (21 January 2014)
+% version 1.08 (22 January 2014)
 %
 % * For further information type 'doc STI_IR' in the MATLAB command line and
 %   click on 'View code for STI_IR'.
@@ -91,6 +91,8 @@ function [M_STI, F_STI, Verbose]=STI_IR(IR, Lsignal, Lnoise, AuditoryMasking, No
 %      explicit simple code with filtfilt to make them linear phase (default)
 %   1: use AARAE's 6th order Butterworth octave band filters, generated using
 %      Matlab's filterbuilder (these filters are not linear phase).
+%   2: use AARAE's linear phase filters (this is the method that best
+%      complies with the standard)
 %   Note that the differences between these approaches can be seen as small
 %   deviations in the MTF values, but they are unlikely to affect
 %   calculated STI values.
@@ -442,8 +444,8 @@ end
 % DEFAULT SETTINGS
 
 if ~validate
-    % Class 0 6th order filters by default
-    if nargin < 8, FilterVersion = 1; end
+    % AARAE's linear phase filters by default
+    if nargin < 8, FilterVersion = 2; end
     
     % do plot by default
     if nargin < 6, doplot = 1; end
@@ -600,8 +602,11 @@ for ch = 1:chans
         if FilterVersion == 1
             P_octave = octavebandfilters(data(:,ch), fs);
         elseif FilterVersion == 2
-            % linear phase filters
-            P_octave = octbandfilter(data(:,ch), fs, fc, 0);
+            % use AARAE's linear phase filters  (recommended)
+            % 6th order pseudo-Butterworth response
+            order = 6;
+            P_octave = octbandfilter_linphase(data(:,ch),fs,...
+                [125,250,500,1000,2000,4000,8000],order);
         end
         for k=1:length(fc);
             if FilterVersion == 0
