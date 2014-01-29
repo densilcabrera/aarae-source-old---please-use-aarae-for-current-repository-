@@ -23,7 +23,7 @@ function varargout = aarae(varargin)
 
 % Edit the above text to modify the response to help aarae
 
-% Last Modified by GUIDE v2.5 12-Dec-2013 12:19:34
+% Last Modified by GUIDE v2.5 27-Jan-2014 20:34:37
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -180,12 +180,23 @@ if ~isempty(getappdata(hMain,'testsignal'))
     else
         iconPath = fullfile(matlabroot,'/toolbox/matlab/icons/notesicon.gif');
     end
+    leafname = isfield(handles,genvarname(newleaf));
+    if leafname == 1
+        index = 1;
+        % This while cycle is just to make sure no signals are
+        % overwriten
+        while isfield(handles,genvarname([newleaf,'_',num2str(index)])) == 1
+            index = index + 1;
+        end
+        newleaf = [newleaf,' ',num2str(index)];
+    end
     handles.(genvarname(newleaf)) = uitreenode('v0', newleaf,  newleaf,  iconPath, true);
     handles.(genvarname(newleaf)).UserData = signaldata;
     handles.testsignals.add(handles.(genvarname(newleaf)));
     handles.mytree.reloadNode(handles.testsignals);
     handles.mytree.expand(handles.testsignals);
     handles.mytree.setSelectedNode(handles.(genvarname(newleaf)));
+    set([handles.clrall_btn,handles.export_btn],'Enable','on')
     fprintf(handles.fid, [' ' datestr(now,16) ' - Generated ' newleaf ': duration = ' num2str(length(signaldata.audio)/signaldata.fs) 's ; fs = ' num2str(signaldata.fs) 'Hz ; bit depth = ' num2str(signaldata.nbits) '\n']);
 end
 guidata(hObject, handles);
@@ -340,6 +351,7 @@ if filename ~= 0
         handles.mytree.reloadNode(handles.(genvarname(signaldata.datatype)));
         handles.mytree.expand(handles.(genvarname(signaldata.datatype)));
         handles.mytree.setSelectedNode(handles.(genvarname(newleaf)));
+        set([handles.clrall_btn,handles.export_btn],'Enable','on')
         fprintf(handles.fid, [' ' datestr(now,16) ' - Loaded "' filename '" to branch "' char(handles.(genvarname(signaldata.datatype)).getName) '"\n']);
     end
     guidata(hObject, handles);
@@ -378,6 +390,7 @@ if ~isempty(getappdata(hMain,'testsignal'))
     handles.mytree.reloadNode(handles.measurements);
     handles.mytree.expand(handles.measurements);
     handles.mytree.setSelectedNode(handles.(genvarname(newleaf)));
+    set([handles.clrall_btn,handles.export_btn],'Enable','on')
     fprintf(handles.fid, [' ' datestr(now,16) ' - Recorded "' newleaf '": duration = ' num2str(length(signaldata.audio)/signaldata.fs) 's\n']);
 end
 guidata(hObject, handles);
@@ -393,8 +406,6 @@ function edit_btn_Callback(hObject, eventdata, handles)
 hMain = getappdata(0,'hMain');
 signaldata = getappdata(hMain,'testsignal');
 
-% Modify selected leaf
-selectedNodes = handles.mytree.getSelectedNodes;
 if isempty(signaldata), warndlg('No signal loaded!','Whoops...!');
 %elseif ndims(signaldata.audio) > 2, warndlg('Cannot edit file!','Whoops...!');
 else
@@ -402,12 +413,8 @@ else
     [xi xf] = edit_signal('main_stage1', handles.aarae);
     % Update tree with edited signal
     if ~isempty(xi) && ~isempty(xf)
-        signaldata = getappdata(hMain,'testsignal');
+        selectedNodes = handles.mytree.getSelectedNodes;
         selectedNodes = selectedNodes(1);
-        selectedNodes.handle.UserData = signaldata;
-        selectedParent = selectedNodes.getParent;
-        handles.mytree.reloadNode(selectedParent);
-        handles.mytree.setSelectedNode(selectedNodes);
         fprintf(handles.fid, [' ' datestr(now,16) ' - Edited "' char(selectedNodes.getName) '": cropped from %fs to %fs; new duration = ' num2str(length(signaldata.audio)/signaldata.fs) 's\n'],xi,xf);
     else
         handles.mytree.setSelectedNode(handles.root);
@@ -477,7 +484,7 @@ else
         addpath(genpath([cd '/Projects']))
         fprintf(handles.fid, [' ' datestr(now,16) ' - Exported ' num2str(size(leafnames,1)) ' data files and ' num2str(size(nfigs,1)) ' figures to "%s" \n'],current);
         set(hObject,'BackgroundColor',[0.94 0.94 0.94]);
-        set(hObject,'Enable','on');
+        set(hObject,'Enable','off');
     end
 end
 guidata(hObject,handles)
@@ -488,11 +495,20 @@ function finish_btn_Callback(hObject, eventdata, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
-%hMain = getappdata(0,'hMain');
-%all = getappdata(hMain);
-%save('currentprogress.mat','all');
-
-uiresume(handles.aarae);
+if strcmp(get(handles.export_btn,'Enable'),'on')
+    choice = questdlg('Are you sure to want to finish this AARAE session? Unexported data will be lost.',...
+                      'Exit AARAE',...
+                      'Yes','No','Export all & exit','Yes');
+    switch choice
+        case 'Yes'
+            uiresume(handles.aarae);
+        case 'Export all & exit'
+            export_btn_Callback(handles.export_btn,eventdata,handles)
+            uiresume(handles.aarae);
+    end
+else
+    uiresume(handles.aarae);
+end
 
 
 % --- Executes on button press in delete_btn.
@@ -516,6 +532,7 @@ switch delete
         handles.mytree.remove(selectedNodes(1));
         handles.mytree.reloadNode(selectedParent);
         handles.mytree.setSelectedNode(handles.root);
+        handles = rmfield(handles,genvarname(char(selectedNodes(1).getName)));
         fprintf(handles.fid, [' ' datestr(now,16) ' - Deleted "' char(selectedNodes(1).getName) '" from branch "' char(selectedParent.getName) '"\n']);
         guidata(hObject, handles);
     case 'No'
@@ -597,6 +614,7 @@ if ~isempty(getappdata(hMain,'testsignal'))
     handles.mytree.reloadNode(handles.measurements);
     handles.mytree.expand(handles.measurements);
     handles.mytree.setSelectedNode(handles.(genvarname(newleaf)));
+    set([handles.clrall_btn,handles.export_btn],'Enable','on')
     fprintf(handles.fid, [' ' datestr(now,16) ' - Processed "' char(selectedNodes(1).getName) '" to generate an impulse response of ' num2str(IRlength) ' points\n']);
 end
 set(handles.IR_btn, 'Visible', 'off');
@@ -694,12 +712,23 @@ if ~isempty(handles.funname) && ~isempty(audiodata)
         else
             iconPath = fullfile(matlabroot,'/toolbox/matlab/icons/notesicon.gif');
         end
+        leafname = isfield(handles,genvarname(newleaf));
+        if leafname == 1
+            index = 1;
+            % This while cycle is just to make sure no signals are
+            % overwriten
+            while isfield(handles,genvarname([newleaf,'_',num2str(index)])) == 1
+                index = index + 1;
+            end
+            newleaf = [newleaf,' ',num2str(index)];
+        end
         handles.(genvarname(newleaf)) = uitreenode('v0', newleaf,  newleaf,  iconPath, true);
         handles.(genvarname(newleaf)).UserData = signaldata;
         handles.results.add(handles.(genvarname(newleaf)));
         handles.mytree.reloadNode(handles.results);
         handles.mytree.expand(handles.results);
         handles.mytree.setSelectedNode(handles.(genvarname(newleaf)));
+        set([handles.clrall_btn,handles.export_btn],'Enable','on')
     end
     fprintf(handles.fid, [' ' datestr(now,16) ' - Analyzed "' char(selectedNodes(1).getName) '" using ' handles.funname ' in ' handles.funcat '\n']);% In what category???
     %result = msgbox(evalc('out'),'Result');
@@ -900,13 +929,24 @@ for multi = 1:size(file,1)
             end
             newdata.datatype = 'processed';
             iconPath = fullfile(matlabroot,'/toolbox/fixedpoint/fixedpointtool/resources/plot.png');
+            leafname = isfield(handles,genvarname(newleaf));
+            if leafname == 1
+                index = 1;
+                % This while cycle is just to make sure no signals are
+                % overwriten
+                while isfield(handles,genvarname([newleaf,'_',num2str(index)])) == 1
+                    index = index + 1;
+                end
+                newleaf = [newleaf,' ',num2str(index)];
+            end
             handles.(genvarname(newleaf)) = uitreenode('v0', newleaf,  newleaf,  iconPath, true);
             handles.(genvarname(newleaf)).UserData = newdata;
             handles.processed.add(handles.(genvarname(newleaf)));
             handles.mytree.reloadNode(handles.processed);
             handles.mytree.expand(handles.processed);
-            fprintf(handles.fid, [' ' datestr(now,16) ' - Processed "' name '" using ' char(file(multi,:)) ' in ' handles.procat ' and stored the result in the "Processed" branch\n']);
+            set([handles.clrall_btn,handles.export_btn],'Enable','on')
         end
+        fprintf(handles.fid, [' ' datestr(now,16) ' - Processed "' name '" using ' funname ' in ' handles.procat '\n']);
     else
         newleaf = [];
     end
@@ -1298,6 +1338,7 @@ plottype = get(hObject,'Value');
 selectedNodes = handles.mytree.getSelectedNodes;
 signaldata = selectedNodes(1).handle.UserData;
 if ~isempty(signaldata) && isfield(signaldata,'audio')
+    t = linspace(0,length(signaldata.audio),length(signaldata.audio))./signaldata.fs;
     f = signaldata.fs .* ((1:length(signaldata.audio))-1) ./ length(signaldata.audio);
     if ndims(signaldata.audio) > 2
         line(:,:) = signaldata.audio(:,str2double(get(handles.IN_nchannel,'String')),:);
@@ -1305,13 +1346,30 @@ if ~isempty(signaldata) && isfield(signaldata,'audio')
         line = signaldata.audio;
     end
 
-    if plottype == 1, line = 10.*log10(abs(fft(line)).^2); end
-    if plottype == 2, line = abs(fft(line)).^2; end
-    if plottype == 3, line = abs(fft(line)); end
-    
-    semilogx(handles.axes3,f,line) % Plot signal in frequency domain
-    xlabel(handles.axes3,'Frequency [Hz]');
-    xlim(handles.axes3,[20 20000])
+    if plottype == 2, line = line.^2; end
+    if plottype == 3, line = 10.*log10(line.^2); end
+    if plottype == 4, line = abs(hilbert(line)); end
+    if plottype == 5, line = medfilt1(diff([angle(hilbert(line)); zeros(1,size(line,2))])*signaldata.fs/2/pi, 5); end
+    if plottype == 6, line = real(line); end
+    if plottype == 7, line = imag(line); end
+    if plottype == 8, line = 10*log10(abs(fft(line)).^2); end %freq
+    if plottype == 9, line = abs(fft(line)).^2; end
+    if plottype == 10, line = abs(fft(line)); end
+    if plottype == 11, line = real(fft(line)); end
+    if plottype == 12, line = imag(fft(line)); end
+    if plottype == 13, line = angle(fft(line)); end
+    if plottype == 14, line = unwrap(angle(fft(line))); end
+    if plottype == 15, line = angle(fft(line)) .* 180/pi; end
+    if plottype == 16, line = angle(fft(line)) ./(2*pi); end
+    if plottype <= 7
+        plot(handles.axes3,t,line) % Plot signal in time domain
+        xlabel(handles.axes3,'Time [s]');
+    end
+    if plottype >= 8
+        semilogx(handles.axes3,f,line) % Plot signal in frequency domain
+        xlabel(handles.axes3,'Frequency [Hz]');
+        xlim(handles.axes3,[20 20000])
+    end
 end
 
 % --- Executes during object creation, after setting all properties.
@@ -1341,17 +1399,37 @@ selectedNodes = handles.mytree.getSelectedNodes;
 signaldata = selectedNodes(1).handle.UserData;
 if ~isempty(signaldata) && isfield(signaldata,'audio')
     t = linspace(0,length(signaldata.audio),length(signaldata.audio))./signaldata.fs;
+    f = signaldata.fs .* ((1:length(signaldata.audio))-1) ./ length(signaldata.audio);
     if ndims(signaldata.audio) > 2
         line(:,:) = signaldata.audio(:,str2double(get(handles.IN_nchannel,'String')),:);
     else
         line = signaldata.audio;
     end
 
-    if plottype == 2, line = 10.*log10(line.^2); end
-    if plottype == 3, line = abs(hilbert(line)); end
-    
-    plot(handles.axes2,t,line) % Plot signal in time domain
-    xlabel(handles.axes2,'Time [s]');
+    if plottype == 2, line = line.^2; end
+    if plottype == 3, line = 10.*log10(line.^2); end
+    if plottype == 4, line = abs(hilbert(line)); end
+    if plottype == 5, line = medfilt1(diff([angle(hilbert(line)); zeros(1,size(line,2))])*signaldata.fs/2/pi, 5); end
+    if plottype == 6, line = real(line); end
+    if plottype == 7, line = imag(line); end
+    if plottype == 8, line = 10*log10(abs(fft(line)).^2); end %freq
+    if plottype == 9, line = abs(fft(line)).^2; end
+    if plottype == 10, line = abs(fft(line)); end
+    if plottype == 11, line = real(fft(line)); end
+    if plottype == 12, line = imag(fft(line)); end
+    if plottype == 13, line = angle(fft(line)); end
+    if plottype == 14, line = unwrap(angle(fft(line))); end
+    if plottype == 15, line = angle(fft(line)) .* 180/pi; end
+    if plottype == 16, line = angle(fft(line)) ./(2*pi); end
+    if plottype <= 7
+        plot(handles.axes2,t,line) % Plot signal in time domain
+        xlabel(handles.axes2,'Time [s]');
+    end
+    if plottype >= 8
+        semilogx(handles.axes2,f,line) % Plot signal in frequency domain
+        xlabel(handles.axes2,'Frequency [Hz]');
+        xlim(handles.axes2,[20 20000])
+    end
 end
 
 % --- Executes during object creation, after setting all properties.
@@ -1516,3 +1594,71 @@ else
     end
 end
 guidata(hObject, handles);
+
+
+% --- Executes on button press in clrall_btn.
+function clrall_btn_Callback(hObject, eventdata, handles)
+% hObject    handle to clrall_btn (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+root = handles.root; % Get selected leaf
+root = root(1);
+first = root.getFirstChild;
+branches{1,:} = char(first.getValue);
+next = first.getNextSibling;
+for n = 1:root.getChildCount-1
+    branches{n+1,:} = char(next.getValue);
+    next = next.getNextSibling;
+end
+branches = char(branches);
+
+i = 0;
+for n = 1:size(branches,1)
+    currentbranch = handles.(genvarname(branches(n,:)));
+    if currentbranch.getChildCount ~= 0
+        i = i + 1;
+        first = currentbranch.getFirstChild;
+        leafnames(i,:) = first.getName;
+        leaves{i,:} = char(first.getValue);
+        next = first.getNextSibling;
+        if ~isempty(next)
+            for m = 1:currentbranch.getChildCount-1
+                i = i + 1;
+                leafnames(i,:) = next.getName;
+                leaves{i,:} = char(next.getValue);
+                next = next.getNextSibling;
+            end
+        end
+    end
+end
+if ~exist('leafnames')
+    warndlg('Nothing to delete!','AARAE info');
+else
+    leafnames = char(leafnames);
+    leaves = char(leaves);
+    delete = questdlg('Current workspace will be cleared, would you like to proceed?',...
+        'Warning',...
+        'Yes','No','Yes');
+    switch delete
+        case 'Yes'
+        set(hObject,'BackgroundColor','red');
+        set(hObject,'Enable','off');
+        for i = 1:size(leafnames,1)
+            current = handles.(genvarname(leaves(i,:)));
+            handles.mytree.remove(current);
+            handles = rmfield(handles,genvarname(leaves(i,:)));
+        end
+        handles.mytree.reloadNode(handles.root);
+        handles.mytree.setSelectedNode(handles.root);
+        rmpath([cd '/Utilities/Temp']);
+        rmdir([cd '/Utilities/Temp'],'s');
+        mkdir([cd '/Utilities/Temp']);
+        addpath([cd '/Utilities/Temp']);
+        set(handles.result_box,'String',[]);
+        fprintf(handles.fid, [' ' datestr(now,16) ' - Cleared workspace \n']);
+        set(hObject,'BackgroundColor',[0.94 0.94 0.94]);
+        set(hObject,'Enable','off');
+        set(handles.export_btn,'Enable','off');
+    end
+end
+guidata(hObject,handles)

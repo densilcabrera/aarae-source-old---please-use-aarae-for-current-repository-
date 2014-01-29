@@ -1,10 +1,18 @@
-function [OUT,varargout] = octbandfilter_linphase(IN,fs,param,order,zeropad)
+function [OUT,varargout] = octbandfilter_linphase(IN,fs,param,orderin,orderout,zeropad,minfftlenfactor)
 % This function does zero and linear phase octave band filtering using a
 % single large fft. Rather than brick-wall filters, this implementation
 % has Butterworth-like magnitude responses. Hence the 'order' input
 % argument determines the slope of the filter skirts, in analogy to
-% Butterworth filter orders. Use 6  (36 dB/oct skirts) or more for most
-% purposes.
+% Butterworth filter orders. However, the in-band and out-of-band filter
+% order can be different in this implementation (in-band
+% refers to frequencies between the upper and lower cut-offs). This allows
+% the filter skirts and in-band magnitude response to be specified
+% separately (e.g., the filter could be high order in-band, and
+% comparitively lower order out-of-band.
+%
+% Filters that meet IEC class 0 criteria can be designed with appropriate
+% selection of filter order. The out-of-band order must be at least 6 (i.e.
+% at least 36 dB/octave filter skirts).
 %
 % param is a list of octave band centre frequencies (nominal freqencies
 % only allowed)
@@ -15,29 +23,35 @@ function [OUT,varargout] = octbandfilter_linphase(IN,fs,param,order,zeropad)
 % rather than zero phase.
 %
 % Code by Densil Cabrera
-% Version 1.00 (22 January 2013)
+% Version 1.01 (29 January 2013)
 
 
 % Spectral resolution can be increased (or reduced) by adjusting the value
 % of minfftlenfactor (below). Increasing it increases the minimum FFT 
 % length, which may increase computational load (processing time and memory
-% utilization).
+% utilization). The actual FFT length is always an integer power of 2.
 
 % minimum number of spectral compoments up to the lowest octave band fc:
-minfftlenfactor = 2000; % adjust this to get the required spectral resolution
+if nargin < 7
+    minfftlenfactor = 1000; % adjust this to get the required spectral resolution
+else
+    minfftlenfactor = round(abs(minfftlenfactor));
+end
 
 
 
-if nargin < 5
+if nargin < 6
     zeropad = 0;
 else
     zeropad = round(abs(zeropad));
 end
 
 if nargin < 4
-    order = 6; % default filter pseudo-order
+    orderin = 12; % default filter in-band pseudo-order
+    orderout = 8; % default filter out-of-band pseudo-order
 else
-    order = abs(order); 
+    orderin = abs(orderin); 
+    orderout = abs(orderout); 
 end
 
 if isstruct(IN)
@@ -83,23 +97,29 @@ else
 end
 
 if ok == 1 && isstruct(IN) && nargin < 4
-    param1 = inputdlg({'Pseudo-Butterworth filer order';... 
+    param1 = inputdlg({'Pseudo-Butterworth filter in-band order';... 
+        'Pseudo-Butterworth filter out-of-band order';... 
         'Number of samples to zero-pad before and after the wave data'},...
         'Filter settings',... 
         [1 60],... 
-        {num2str(order);num2str(zeropad)}); 
+        {num2str(orderin);num2str(orderout);num2str(zeropad)}); 
     
     param1 = str2num(char(param1)); 
     
-    if length(param1) < 2, param1 = []; end 
+    if length(param1) < 3, param1 = []; end 
     
     if ~isempty(param1) 
-        order = param1(1);
-        zeropad = param1(2);
+        orderin = param1(1);
+        orderout = param1(2);
+        zeropad = param1(3);
     end
 end
     
-
+% if the input is already multiband, then mixdown first
+if size(audio,3) > 1
+    audio = sum(audio,3);
+    disp('Multi-band audio has been mixed-down prior to octave band filtering')
+end
 
 if ok == 1
     chans = size(audio,2);
@@ -130,28 +150,44 @@ if ok == 1
         
         % index of low cut-off
         flo = exactfreq(b) / 10.^0.15;
-        %indlo = find(abs(f(1:end/2)-flo) == min(abs(f(1:end/2)-flo)),1,'first');
+        indlo = find(abs(f(1:end/2)-flo) == min(abs(f(1:end/2)-flo)),1,'first');
         
         % index of high cut-off
         fhi = exactfreq(b) * 10.^0.15;
-        %indhi = find(abs(f(1:end/2)-fhi) == min(abs(f(1:end/2)-fhi)),1,'first');
+        indhi = find(abs(f(1:end/2)-fhi) == min(abs(f(1:end/2)-fhi)),1,'first');
         
         % centre frequency index
         indfc = find(abs(f(1:end/2)-exactfreq(b)) ...
             == min(abs(f(1:end/2)-exactfreq(b))),1,'first');
         
+       
+        
         % magnitude envelope
         
         mag = zeros(fftlen,1); % preallocate and set DC to 0
         
-        % below centre frequency
-        mag(2:indfc-1) = ...
-            (1 ./ (1 + (f(2:indfc-1)./ flo ).^(-2*order))).^0.5;
+         % below centre frequency
+         % out-of-band
+         mag(2:indlo-1) = ...
+             (1 ./ (1 + (f(2:indlo-1)./ flo ).^(-2*orderout))).^0.5;
+         
+         % in-band
+         mag(indlo:indfc-1) = ...
+             (1 ./ (1 + (f(indlo:indfc-1)./ flo ).^(-2*orderin))).^0.5;
         
-        % from centre frequency to Nyquist frequency
-        mag(indfc:fftlen/2+1) = ...
-            (1 ./ (1 + (f(indfc:fftlen/2+1)./ fhi ).^(2*order))).^0.5;
+         % from centre frequency to Nyquist frequency
+         % in-band
+         mag(indfc:indhi) = ...
+            (1 ./ (1 + (f(indfc:indhi)./ fhi ).^(2*orderin))).^0.5;
         
+        % out-of-band
+        mag(indhi+1:fftlen/2+1) = ...
+            (1 ./ (1 + (f(indhi+1:fftlen/2+1)./ fhi ).^(2*orderout))).^0.5;
+        
+        % normalize gain
+        % mag = mag ./ mag(indfc); 
+        
+        % above Nyquist frequency
         mag(fftlen/2+2:end) = flipud(mag(2:fftlen/2));
         
         % apply magnitude coefficients
