@@ -72,7 +72,7 @@ else
     handles.recordedsignal = [];
     handles.position = get(handles.audio_recorder,'Position');
     handles.OUT_axes_position = get(handles.OUT_axes,'Position');
-    if ~isempty(handles.signaldata) % If there's a signal loaded in the 'desktop'...
+    if ~isempty(handles.signaldata) && ndims(handles.signaldata.audio) < 3% If there's a signal loaded in the 'desktop'...
         % Allow visibility of playback option along with the specs of
         % the playback signal
         mainHandles = guidata(handles.main_stage1);
@@ -82,9 +82,10 @@ else
         handles.dur = length(handles.outputdata.audio)/handles.outputdata.fs;
         handles.t = linspace(0,handles.dur,length(handles.outputdata.audio));
         output_settings{1} = ['Playback audio loaded: ' selectednode(1).getName.char];
-        output_settings{2} = ['Sampling frequency = ',num2str(handles.outputdata.fs),' samples/s'];
-        output_settings{3} = ['Bit depth = ',num2str(handles.outputdata.nbits)];
-        output_settings{4} = ['Duration = ',num2str(handles.dur),' s'];
+        output_settings{2} = ['Number of audio channels: ' num2str(size(handles.outputdata.audio,2))];
+        output_settings{3} = ['Sampling frequency = ',num2str(handles.outputdata.fs),' samples/s'];
+        output_settings{4} = ['Bit depth = ',num2str(handles.outputdata.nbits)];
+        output_settings{5} = ['Duration = ',num2str(handles.dur),' s'];
         plot(handles.OUT_axes,handles.t,handles.outputdata.audio)
         set(handles.output_settings,'String',output_settings);
         set(handles.text1,'String','Add time');

@@ -116,12 +116,23 @@ if nargout(handles.funname) == 1
             iconPath = fullfile(matlabroot,'/toolbox/matlab/icons/notesicon.gif');
         end
         signaldata.datatype = 'results';
+        leafname = isfield(mainHandles,genvarname(handles.funname));
+        if leafname == 1
+            index = 1;
+            % This while cycle is just to make sure no signals are
+            % overwriten
+            while isfield(handles,genvarname([handles.funname,'_',num2str(index)])) == 1
+                index = index + 1;
+            end
+            handles.funname = [handles.funname,' ',num2str(index)];
+        end
         mainHandles.(genvarname(handles.funname)) = uitreenode('v0', handles.funname,  handles.funname,  iconPath, true);
         mainHandles.(genvarname(handles.funname)).UserData = signaldata;
         mainHandles.results.add(mainHandles.(genvarname(handles.funname)));
         mainHandles.mytree.reloadNode(mainHandles.results);
         mainHandles.mytree.expand(mainHandles.results);
         mainHandles.mytree.setSelectedNode(mainHandles.(genvarname(handles.funname)));
+        set([mainHandles.clrall_btn,mainHandles.export_btn],'Enable','on')
         fprintf(mainHandles.fid, [' ' datestr(now,16) ' - Used calculator ' handles.funname '\n']);
     end
 else

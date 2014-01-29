@@ -23,7 +23,7 @@ function varargout = edit_signal(varargin)
 
 % Edit the above text to modify the response to help edit_signal
 
-% Last Modified by GUIDE v2.5 05-Dec-2013 13:04:26
+% Last Modified by GUIDE v2.5 28-Jan-2014 19:09:28
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -79,11 +79,16 @@ if dontOpen
 else
     % Call the 'desktop'
     hMain = getappdata(0,'hMain');
-    signaldata = getappdata(hMain,'testsignal');
-    % Bring up the data from the selected leaf to be edited
     handles.version = 1;
-    handles.testsignal(handles.version) = signaldata;
-    handles.fs = signaldata.fs;
+    handles.testsignal(handles.version) = getappdata(hMain,'testsignal');
+    % Bring up the data from the selected leaf to be edited
+    audiodata = handles.testsignal(handles.version);
+    mainHandles = guidata(handles.main_stage1);
+    selectedNodes = mainHandles.mytree.getSelectedNodes;
+    handles.selNodeName = selectedNodes(1).getName.char;
+    audiodatatext = evalc('audiodata');
+    set(handles.audiodatatext,'String',['Selected: ' handles.selNodeName audiodatatext]);
+    handles.fs = audiodata.fs;
     dur = length(handles.testsignal(handles.version).audio)/handles.fs;
     % Allocate memory space for the edited signal
     handles.rel_time = linspace(0,dur,length(handles.testsignal(handles.version).audio));
@@ -108,7 +113,6 @@ else
     plot(handles.IN_axes,handles.rel_time,line)
     xlabel(handles.IN_axes,'Time');
     set(handles.IN_axes,'XTickLabel',num2str(get(handles.IN_axes,'XTick').'))
-%    handles.line = findobj(gcf,'type','line');
     % Update handles structure
     guidata(hObject, handles);
     % UIWAIT makes edit_signal wait for user response (see UIRESUME)
@@ -130,26 +134,28 @@ varargout{2} = handles.xf(handles.version);
 delete(hObject);
 
 
-% --- Executes on button press in ok_btn.
-function ok_btn_Callback(hObject, eventdata, handles)
-% hObject    handle to ok_btn (see GCBO)
+% --- Executes on button press in oo_btn.
+function oo_btn_Callback(hObject, eventdata, handles)
+% hObject    handle to oo_btn (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
 % Call the main window handles (Consider removing)
 mainHandles = guidata(handles.main_stage1);
-% Call the 'desktop'
-hMain = getappdata(0,'hMain');
 
 % Check if there's a chunk or not
 if ~isempty(handles.testsignal(handles.version))
-    % Update signal structure by replacing the original with the cropped
-    % version
-    %xi = str2num(get(handles.OUT_start,'String'));
-    %xf = str2num(get(handles.OUT_end,'String'));
-    %audiodata.audio = audiodata.audio(round(xi*handles.fs)+1:round(xf*handles.fs),:,:);
-    audiodata = handles.testsignal(handles.version);
-    setappdata(hMain,'testsignal',audiodata);
+    aarae_fig = findobj('type','figure','tag','aarae');
+    selectedNodes = mainHandles.mytree.getSelectedNodes;
+    removefield = genvarname(selectedNodes(1).getName.char);
+    set(mainHandles.(genvarname(removefield)),'Name',handles.selNodeName);
+    set(mainHandles.(genvarname(removefield)),'Value',handles.selNodeName);
+    mainHandles.(genvarname(handles.selNodeName)) = mainHandles.(genvarname(removefield));
+    if ~strcmp(selectedNodes(1).getName.char,handles.selNodeName), mainHandles = rmfield(mainHandles,removefield); end
+    mainHandles.(genvarname(handles.selNodeName)).UserData = handles.testsignal(handles.version);
+    mainHandles.mytree.reloadNode(mainHandles.(genvarname(handles.selNodeName)).getParent);
+    mainHandles.mytree.setSelectedNode(mainHandles.(genvarname(handles.selNodeName)));
+    guidata(aarae_fig, mainHandles);
 end
 guidata(hObject,handles);
 uiresume(handles.edit_signal);
@@ -225,6 +231,11 @@ if ((click == handles.IN_axes) || strcmp(obj,'line')) % If user clicks anywhere 
         plot(handles.IN_axes,handles.rel_time,line);
         xlabel(handles.IN_axes,'Time');
         set(handles.IN_axes,'XTickLabel',num2str(get(handles.IN_axes,'XTick').'))
+        audiodata = handles.testsignal(handles.version);
+        mainHandles = guidata(handles.main_stage1);
+        selectedNodes = mainHandles.mytree.getSelectedNodes;
+        audiodatatext = evalc('audiodata');
+        set(handles.audiodatatext,'String',['Selected: ' handles.selNodeName audiodatatext]);
         guidata(hObject,handles);
     else % Display out of boundaries warnings
         warndlg('Data selection out of boundaries','WARNING');
@@ -232,7 +243,6 @@ if ((click == handles.IN_axes) || strcmp(obj,'line')) % If user clicks anywhere 
         set(handles.OUT_end,'String',num2str(handles.xf(handles.version)));
     end
 end
-uiwait(hObject);
 
 
 
@@ -277,6 +287,11 @@ if ~isempty(xi) && ~isempty(xf) && xi >= min(handles.rel_time) && xi ~= xf
     plot(handles.IN_axes,handles.rel_time,line);
     xlabel(handles.IN_axes,'Time');
     set(handles.IN_axes,'XTickLabel',num2str(get(handles.IN_axes,'XTick').'))
+    audiodata = handles.testsignal(handles.version);
+    mainHandles = guidata(handles.main_stage1);
+    selectedNodes = mainHandles.mytree.getSelectedNodes;
+    audiodatatext = evalc('audiodata');
+    set(handles.audiodatatext,'String',['Selected: ' handles.selNodeName audiodatatext]);
 else % Display out of boundaries warnings
     addsilence = questdlg('Would you like to add silence before the audio data displayed?',...
                           'Data selection out of boundaries',...
@@ -314,6 +329,11 @@ else % Display out of boundaries warnings
             plot(handles.IN_axes,handles.rel_time,line);
             xlabel(handles.IN_axes,'Time');
             set(handles.IN_axes,'XTickLabel',num2str(get(handles.IN_axes,'XTick').'))
+            audiodata = handles.testsignal(handles.version);
+            mainHandles = guidata(handles.main_stage1);
+            selectedNodes = mainHandles.mytree.getSelectedNodes;
+            audiodatatext = evalc('audiodata');
+            set(handles.audiodatatext,'String',['Selected: ' handles.selNodeName audiodatatext]);
         case 'No'
             set(handles.OUT_start,'String',num2str(handles.xi(handles.version)));
             set(handles.OUT_end,'String',num2str(handles.xf(handles.version)));
@@ -364,8 +384,13 @@ if ~isempty(xi) && ~isempty(xf) && xf <= max(handles.rel_time) && xi ~= xf
     plot(handles.IN_axes,handles.rel_time,line);
     xlabel(handles.IN_axes,'Time');
     set(handles.IN_axes,'XTickLabel',num2str(get(handles.IN_axes,'XTick').'))
+    audiodata = handles.testsignal(handles.version);
+    mainHandles = guidata(handles.main_stage1);
+    selectedNodes = mainHandles.mytree.getSelectedNodes;
+    audiodatatext = evalc('audiodata');
+    set(handles.audiodatatext,'String',['Selected: ' handles.selNodeName audiodatatext]);
 else % Display out of boundaries warnings
-    addsilence = questdlg('Would you like to add silence before the audio data displayed?',...
+    addsilence = questdlg('Would you like to add silence after the audio data displayed?',...
                           'Data selection out of boundaries',...
                           'Yes', 'No', 'No');
     switch addsilence
@@ -401,6 +426,11 @@ else % Display out of boundaries warnings
             plot(handles.IN_axes,handles.rel_time,line);
             xlabel(handles.IN_axes,'Time');
             set(handles.IN_axes,'XTickLabel',num2str(get(handles.IN_axes,'XTick').'))
+            audiodata = handles.testsignal(handles.version);
+            mainHandles = guidata(handles.main_stage1);
+            selectedNodes = mainHandles.mytree.getSelectedNodes;
+            audiodatatext = evalc('audiodata');
+            set(handles.audiodatatext,'String',['Selected: ' handles.selNodeName audiodatatext]);
         case 'No'
             set(handles.OUT_start,'String',num2str(handles.xi(handles.version)));
             set(handles.OUT_end,'String',num2str(handles.xf(handles.version)));
@@ -417,13 +447,13 @@ function reset_btn_Callback(hObject, eventdata, handles)
     
 % Call the 'desktop'
 hMain = getappdata(0,'hMain');
-signaldata = getappdata(hMain,'testsignal');
+audiodata = getappdata(hMain,'testsignal');
 % Bring up the data from the selected leaf to be edited
 handles.version = handles.version + 1;
 set(handles.undo_btn,'Enable','on');
 set([handles.redo_btn hObject],'Enable','off');
-handles.testsignal(handles.version) = signaldata;
-handles.fs = signaldata.fs;
+handles.testsignal(handles.version) = audiodata;
+handles.fs = audiodata.fs;
 dur = length(handles.testsignal(handles.version).audio)/handles.fs;
 % Allocate memory space for the edited signal
 handles.rel_time = linspace(0,dur,length(handles.testsignal(handles.version).audio));
@@ -454,6 +484,11 @@ end
 plot(handles.IN_axes,handles.rel_time,line)
 xlabel(handles.IN_axes,'Time');
 set(handles.IN_axes,'XTickLabel',num2str(get(handles.IN_axes,'XTick').'))
+audiodata = handles.testsignal(handles.version);
+mainHandles = guidata(handles.main_stage1);
+selectedNodes = mainHandles.mytree.getSelectedNodes;
+audiodatatext = evalc('audiodata');
+set(handles.audiodatatext,'String',['Selected: ' handles.selNodeName audiodatatext]);
 %    handles.line = findobj(gcf,'type','line');
 % Update handles structure
 guidata(hObject, handles);
@@ -513,42 +548,51 @@ function apply_btn_Callback(hObject, eventdata, handles)
 set(hObject,'BackgroundColor','red');
 set(hObject,'Enable','off');
 handles.version = handles.version + 1;
-set([handles.undo_btn handles.reset_btn],'Enable','on');
-set(handles.redo_btn,'Enable','off');
 processed = feval(handles.funname,handles.testsignal(handles.version - 1));
-if isstruct(processed)
-    dif = intersect(fieldnames(handles.testsignal(handles.version - 1)),fieldnames(processed));
-    newdata = handles.testsignal(handles.version - 1);
-    for i = 1:size(dif,1)
-        newdata.(dif{i,1}) = processed.(dif{i,1});
+if ~isempty(processed)
+    set([handles.undo_btn handles.reset_btn],'Enable','on');
+    set(handles.redo_btn,'Enable','off');
+    if isstruct(processed)
+        dif = intersect(fieldnames(handles.testsignal(handles.version - 1)),fieldnames(processed));
+        newdata = handles.testsignal(handles.version - 1);
+        for i = 1:size(dif,1)
+            newdata.(dif{i,1}) = processed.(dif{i,1});
+        end
+    else
+        newdata = handles.testsignal(handles.version - 1);
+        newdata.audio = processed;
     end
+    handles.testsignal(handles.version) = newdata;
+    handles.xi(handles.version) = handles.xi(handles.version - 1);
+    handles.xf(handles.version) = handles.xf(handles.version - 1);
+    handles.timescale(handles.version) = get(handles.timescale_popup,'Value');
+    handles.testsignal = handles.testsignal(1:handles.version);
+    handles.xi = handles.xi(1:handles.version);
+    handles.xf = handles.xf(1:handles.version);
+    handles.timescale = handles.timescale(1:handles.version);
+    handles.rel_time = linspace(handles.xi(handles.version),handles.xf(handles.version),length(handles.testsignal(handles.version).audio));
+    if ndims(handles.testsignal(handles.version).audio) > 2
+        set(handles.channel_panel,'Visible','on');
+        line(:,:) = handles.testsignal(handles.version).audio(:,str2double(get(handles.IN_nchannel,'String')),:);
+        cmap = colormap(hsv(size(handles.testsignal(handles.version).audio,3)));
+        set(handles.edit_signal,'DefaultAxesColorOrder',cmap)
+    else
+        set(handles.channel_panel,'Visible','off');
+        line = handles.testsignal(handles.version).audio;
+        cmap = colormap(lines(size(handles.testsignal(handles.version).audio,2)));
+        set(handles.edit_signal,'DefaultAxesColorOrder',cmap)
+    end
+    plot(handles.IN_axes,handles.rel_time,line)
+    xlabel(handles.IN_axes,'Time');
+    set(handles.IN_axes,'XTickLabel',num2str(get(handles.IN_axes,'XTick').'))
+    audiodata = handles.testsignal(handles.version);
+    mainHandles = guidata(handles.main_stage1);
+    selectedNodes = mainHandles.mytree.getSelectedNodes;
+    audiodatatext = evalc('audiodata');
+    set(handles.audiodatatext,'String',['Selected: ' handles.selNodeName audiodatatext]);
 else
-    newdata = handles.testsignal(handles.version - 1);
-    newdata.audio = processed;
+    handles.version = handles.version - 1;
 end
-handles.testsignal(handles.version) = newdata;
-handles.xi(handles.version) = handles.xi(handles.version - 1);
-handles.xf(handles.version) = handles.xf(handles.version - 1);
-handles.timescale(handles.version) = get(handles.timescale_popup,'Value');
-handles.testsignal = handles.testsignal(1:handles.version);
-handles.xi = handles.xi(1:handles.version);
-handles.xf = handles.xf(1:handles.version);
-handles.timescale = handles.timescale(1:handles.version);
-handles.rel_time = linspace(handles.xi(handles.version),handles.xf(handles.version),length(handles.testsignal(handles.version).audio));
-if ndims(handles.testsignal(handles.version).audio) > 2
-    set(handles.channel_panel,'Visible','on');
-    line(:,:) = handles.testsignal(handles.version).audio(:,str2double(get(handles.IN_nchannel,'String')),:);
-    cmap = colormap(hsv(size(handles.testsignal(handles.version).audio,3)));
-    set(handles.edit_signal,'DefaultAxesColorOrder',cmap)
-else
-    set(handles.channel_panel,'Visible','off');
-    line = handles.testsignal(handles.version).audio;
-    cmap = colormap(lines(size(handles.testsignal(handles.version).audio,2)));
-    set(handles.edit_signal,'DefaultAxesColorOrder',cmap)
-end
-plot(handles.IN_axes,handles.rel_time,line)
-xlabel(handles.IN_axes,'Time');
-set(handles.IN_axes,'XTickLabel',num2str(get(handles.IN_axes,'XTick').'))
 set(hObject,'BackgroundColor',[0.94 0.94 0.94]);
 set(hObject,'Enable','on');
 guidata(hObject, handles);
@@ -608,8 +652,13 @@ if handles.timescale(handles.version) == 1 && strcmp(timescale,'Samples')
     set(handles.OUT_start,'String',num2str(handles.xi(handles.version)));
     set(handles.OUT_end,'String',num2str(handles.xf(handles.version)));
     handles.rel_time = linspace(handles.xi(handles.version),handles.xf(handles.version),length(handles.testsignal(handles.version).audio));
-    plot(handles.IN_axes,handles.rel_time,handles.testsignal(handles.version).audio)
-    xlabel(handles.IN_axes,'Time');
+    if ndims(handles.testsignal(handles.version).audio) > 2
+        line(:,:) = handles.testsignal(handles.version).audio(:,str2double(get(handles.IN_nchannel,'String')),:);
+    else
+        line = handles.testsignal(handles.version).audio;
+    end
+    plot(handles.IN_axes,handles.rel_time,line)
+    xlabel(handles.IN_axes,'Samples');
     set(handles.IN_axes,'XTickLabel',num2str(get(handles.IN_axes,'XTick').'))
 elseif handles.timescale(handles.version) == 2 && strcmp(timescale,'Seconds')
     handles.xi(handles.version) = handles.xi(handles.version)/handles.testsignal(handles.version).fs;
@@ -617,7 +666,12 @@ elseif handles.timescale(handles.version) == 2 && strcmp(timescale,'Seconds')
     set(handles.OUT_start,'String',num2str(handles.xi(handles.version)));
     set(handles.OUT_end,'String',num2str(handles.xf(handles.version)));
     handles.rel_time = linspace(handles.xi(handles.version),handles.xf(handles.version),length(handles.testsignal(handles.version).audio));
-    plot(handles.IN_axes,handles.rel_time,handles.testsignal(handles.version).audio)
+    if ndims(handles.testsignal(handles.version).audio) > 2
+        line(:,:) = handles.testsignal(handles.version).audio(:,str2double(get(handles.IN_nchannel,'String')),:);
+    else
+        line = handles.testsignal(handles.version).audio;
+    end
+    plot(handles.IN_axes,handles.rel_time,line)
     xlabel(handles.IN_axes,'Time');
     set(handles.IN_axes,'XTickLabel',num2str(get(handles.IN_axes,'XTick').'))
 end
@@ -666,6 +720,11 @@ else
     set(handles.edit_signal,'DefaultAxesColorOrder',cmap)
 end
 plot(handles.IN_axes,handles.rel_time,line);
+audiodata = handles.testsignal(handles.version);
+mainHandles = guidata(handles.main_stage1);
+selectedNodes = mainHandles.mytree.getSelectedNodes;
+audiodatatext = evalc('audiodata');
+set(handles.audiodatatext,'String',['Selected: ' handles.selNodeName audiodatatext]);
 if handles.version == 1, set(hObject,'Enable','off'); end
 guidata(hObject,handles);
 
@@ -694,7 +753,171 @@ if handles.version <= length(handles.testsignal)
         set(handles.edit_signal,'DefaultAxesColorOrder',cmap)
     end
     plot(handles.IN_axes,handles.rel_time,line);
+    audiodata = handles.testsignal(handles.version);
+    mainHandles = guidata(handles.main_stage1);
+    selectedNodes = mainHandles.mytree.getSelectedNodes;
+    audiodatatext = evalc('audiodata');
+    set(handles.audiodatatext,'String',['Selected: ' handles.selNodeName audiodatatext]);
     if handles.version == 1, set(hObject,'Enable','off'); end
     if handles.version == length(handles.testsignal), set(hObject,'Enable','off'); end
     guidata(hObject,handles);
 end
+
+
+% --- Executes on selection change in device_popup.
+function device_popup_Callback(hObject, eventdata, handles)
+% hObject    handle to device_popup (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: contents = cellstr(get(hObject,'String')) returns device_popup contents as cell array
+%        contents{get(hObject,'Value')} returns selected item from device_popup
+
+selection = get(hObject,'Value');
+handles.odeviceid = handles.odeviceidlist(selection);
+guidata(hObject,handles);
+
+
+% --- Executes during object creation, after setting all properties.
+function device_popup_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to device_popup (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: popupmenu controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+devinfo = audiodevinfo; % Get available device information
+odevicelist = {devinfo.output.Name}; % Populate list
+handles.odeviceidlist =  cell2mat({devinfo.output.ID});
+handles.odeviceid = handles.odeviceidlist(1,1);
+set(hObject,'String',odevicelist);
+guidata(hObject,handles);
+
+
+% --- Executes on button press in play_btn.
+function play_btn_Callback(hObject, eventdata, handles)
+% hObject    handle to play_btn (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Call the 'desktop'
+hMain = getappdata(0,'hMain');
+audiodata = getappdata(hMain,'testsignal');
+
+if isempty(audiodata)
+    warndlg('No signal loaded!');
+else
+    % Retrieve information from the selected leaf
+    testsignal = handles.testsignal(handles.version).audio./max(max(max(abs(handles.testsignal(handles.version).audio))));
+    fs = handles.testsignal(handles.version).fs;
+    nbits = handles.testsignal(handles.version).nbits;
+    doesSupport = audiodevinfo(0, handles.odeviceid, fs, nbits, size(testsignal,2));
+    if doesSupport && ndims(testsignal) < 3
+        % Play signal
+        handles.player = audioplayer(testsignal,fs,nbits,handles.odeviceid);
+        play(handles.player);
+        set(handles.stop_btn,'Visible','on');
+    else
+        warndlg('Device not supported for playback!');
+    end
+end
+guidata(hObject, handles);
+
+
+% --- Executes on button press in stop_btn.
+function stop_btn_Callback(hObject, eventdata, handles)
+% hObject    handle to stop_btn (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+if isplaying(handles.player)
+    stop(handles.player);
+end
+guidata(hObject,handles);
+
+
+% --- Executes on button press in editfield_btn.
+function editfield_btn_Callback(hObject, eventdata, handles)
+% hObject    handle to editfield_btn (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+mainHandles = guidata(handles.main_stage1);
+selectedNodes = mainHandles.mytree.getSelectedNodes;
+if isfield(handles.testsignal(handles.version),'cal')
+    prompt = {'Name','Sampling frequency [samples/s]','Bit depth [8,16,32,64]','Calibration offset'};
+    defans = {handles.selNodeName,num2str(handles.testsignal(handles.version).fs),num2str(handles.testsignal(handles.version).nbits),num2str(handles.testsignal(handles.version).cal)};
+    fields = inputdlg(prompt,'Edit fields',[1 60],defans);
+    if ~isempty(fields) && ~isempty(fields{1,1}) && str2num(fields{2,1}) > 0 && (str2num(fields{3,1}) == 8 || str2num(fields{3,1}) == 16 ||str2num(fields{3,1}) == 32 ||str2num(fields{3,1}) == 64) && str2num(fields{4,1})
+        oktoedit = 1;
+    else
+        oktoedit = 0;
+    end
+else
+    prompt = {'Name','Sampling frequency [samples/s]','Bit depth [8,16,32,64]'};
+    defans = {handles.selNodeName,num2str(handles.testsignal(handles.version).fs),num2str(handles.testsignal(handles.version).nbits)};
+    fields = inputdlg(prompt,'Edit fields',[1 60],defans);
+    if ~isempty(fields) && ~isempty(fields{1,1}) && str2num(fields{2,1}) > 0 && (str2num(fields{3,1}) == 8 || str2num(fields{3,1}) == 16 ||str2num(fields{3,1}) == 32 ||str2num(fields{3,1}) == 64)
+        oktoedit = 1;
+    else
+        oktoedit = 0;
+    end
+end
+if oktoedit == 1
+    handles.version = handles.version + 1;
+    handles.testsignal(handles.version) = handles.testsignal(handles.version - 1);
+    handles.xi(handles.version) = handles.xi(handles.version - 1);
+    handles.xf(handles.version) = handles.xf(handles.version - 1);
+    handles.timescale(handles.version) = get(handles.timescale_popup,'Value');
+    handles.testsignal = handles.testsignal(1:handles.version);
+    handles.xi = handles.xi(1:handles.version);
+    handles.xf = handles.xf(1:handles.version);
+    handles.timescale = handles.timescale(1:handles.version);
+    handles.selNodeName = fields{1,1};
+    handles.testsignal(handles.version).fs = str2num(fields{2,1});
+    handles.testsignal(handles.version).nbits = str2num(fields{3,1});
+    if isfield(handles.testsignal(handles.version),'cal'), handles.testsignal(handles.version).nbits = str2num(fields{4,1}); end
+    audiodata = handles.testsignal(handles.version);
+    audiodatatext = evalc('audiodata');
+    set(handles.audiodatatext,'String',['Selected: ' handles.selNodeName audiodatatext]);
+else
+    warndlg('Check inputs and try again','AARAE info');
+end
+guidata(hObject,handles)
+
+
+% --- Executes on button press in wn_btn.
+function wn_btn_Callback(hObject, eventdata, handles)
+% hObject    handle to wn_btn (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+mainHandles = guidata(handles.main_stage1);
+if ~isempty(handles.testsignal(handles.version))
+    aarae_fig = findobj('type','figure','tag','aarae');
+    iconPath = fullfile(matlabroot,'/toolbox/fixedpoint/fixedpointtool/resources/plot.png');
+    mainHandles.(genvarname(handles.selNodeName)) = uitreenode('v0', handles.selNodeName, handles.selNodeName,  iconPath, true);
+    switch handles.testsignal(handles.version).datatype
+        case 'testsignals', ivalue = 1;
+        case 'measurements', ivalue = 2;
+        case 'processed', ivalue = 3;
+        case 'results', ivalue = 4;
+    end
+    [branch,ok] = listdlg('ListString',{'Test signals','Measurements','Processed','Results'},'SelectionMode','single','PromptString','Save edited audio in:','InitialValue',ivalue);
+    if ok == 0
+        mainHandles.genvarname(handles.testsignal(handles.version).datatype).add(mainHandles.(genvarname(handles.selNodeName)));
+    else
+        if branch == 1, mainHandles.testsignals.add(mainHandles.(genvarname(handles.selNodeName))); handles.testsignal(handles.version).datatype = 'testsignals'; end
+        if branch == 2, mainHandles.measurements.add(mainHandles.(genvarname(handles.selNodeName))); handles.testsignal(handles.version).datatype = 'measurements'; end
+        if branch == 3, mainHandles.processed.add(mainHandles.(genvarname(handles.selNodeName))); handles.testsignal(handles.version).datatype = 'processed'; end
+        if branch == 4, mainHandles.results.add(mainHandles.(genvarname(handles.selNodeName))); handles.testsignal(handles.version).datatype = 'results'; end
+    end
+    mainHandles.(genvarname(handles.selNodeName)).UserData = handles.testsignal(handles.version);
+    mainHandles.mytree.reloadNode(mainHandles.(genvarname(handles.selNodeName)).getParent);
+    mainHandles.mytree.setSelectedNode(mainHandles.(genvarname(handles.selNodeName)));
+    guidata(aarae_fig, mainHandles);
+end
+guidata(hObject,handles);
+uiresume(handles.edit_signal);

@@ -87,12 +87,13 @@ function [M_STI, F_STI, Verbose]=STI_IR(IR, Lsignal, Lnoise, AuditoryMasking, No
 %   specified within that structure.
 %
 % FilterVersion
-%   0: use 8th order Butterworth octave band filters, generated using
-%      explicit simple code with filtfilt to make them linear phase (default)
+%   0: use 8x 1st order Butterworth octave band filters, generated using
+%      explicit simple code with filtfilt to make them linear phase 
 %   1: use AARAE's 6th order Butterworth octave band filters, generated using
 %      Matlab's filterbuilder (these filters are not linear phase).
 %   2: use AARAE's linear phase filters (this is the method that best
-%      complies with the standard)
+%      complies with the standard). The filter pseudo-order can be edited 
+%      in the code (default)
 %   Note that the differences between these approaches can be seen as small
 %   deviations in the MTF values, but they are unlikely to affect
 %   calculated STI values.
@@ -603,14 +604,17 @@ for ch = 1:chans
             P_octave = octavebandfilters(data(:,ch), fs);
         elseif FilterVersion == 2
             % use AARAE's linear phase filters  (recommended)
-            % 6th order pseudo-Butterworth response
-            order = 6;
+            % pseudo-Butterworth response
+            orderin = 12; % in-band filter pseudo-order
+            orderout = 12; % out-of-band filter pseudo-order
             P_octave = octbandfilter_linphase(data(:,ch),fs,...
-                [125,250,500,1000,2000,4000,8000],order);
+                [125,250,500,1000,2000,4000,8000],orderin,orderout);
         end
         for k=1:length(fc);
             if FilterVersion == 0
-                P_octave(:,k)=filtfilt(b(:,k),a(:,k), data(:,ch)); % linear phase filter
+                % linear phase filter, but frequency selectivity does not
+                % meet class 0 or 1
+                P_octave(:,k)=filtfilt(b(:,k),a(:,k), data(:,ch)); 
             end
             if mtfmethod == 1
                 for j=1:length(mf)
