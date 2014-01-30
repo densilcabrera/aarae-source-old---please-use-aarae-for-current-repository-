@@ -907,7 +907,7 @@ if ~isempty(handles.testsignal(handles.version))
     end
     [branch,ok] = listdlg('ListString',{'Test signals','Measurements','Processed','Results'},'SelectionMode','single','PromptString','Save edited audio in:','InitialValue',ivalue);
     if ok == 0
-        mainHandles.genvarname(handles.testsignal(handles.version).datatype).add(mainHandles.(genvarname(handles.selNodeName)));
+        mainHandles.(genvarname(handles.testsignal(handles.version).datatype)).add(mainHandles.(genvarname(handles.selNodeName)));
     else
         if branch == 1, mainHandles.testsignals.add(mainHandles.(genvarname(handles.selNodeName))); handles.testsignal(handles.version).datatype = 'testsignals'; end
         if branch == 2, mainHandles.measurements.add(mainHandles.(genvarname(handles.selNodeName))); handles.testsignal(handles.version).datatype = 'measurements'; end

@@ -23,7 +23,7 @@ function varargout = aarae(varargin)
 
 % Edit the above text to modify the response to help aarae
 
-% Last Modified by GUIDE v2.5 27-Jan-2014 20:34:37
+% Last Modified by GUIDE v2.5 30-Jan-2014 19:08:04
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -384,6 +384,16 @@ if ~isempty(getappdata(hMain,'testsignal'))
     signaldata.nbits = getappdata(hMain,'nbits');
     signaldata.datatype = 'measurements';
     iconPath = fullfile(matlabroot,'/toolbox/fixedpoint/fixedpointtool/resources/plot.png');
+    leafname = isfield(handles,genvarname(newleaf));
+    if leafname == 1
+        index = 1;
+        % This while cycle is just to make sure no signals are
+        % overwriten
+        while isfield(handles,genvarname([newleaf,'_',num2str(index)])) == 1
+            index = index + 1;
+        end
+        newleaf = [newleaf,' ',num2str(index)];
+    end
     handles.(genvarname(newleaf)) = uitreenode('v0', newleaf,  newleaf,  iconPath, true);
     handles.(genvarname(newleaf)).UserData = signaldata;
     handles.measurements.add(handles.(genvarname(newleaf)));
@@ -1073,6 +1083,7 @@ if (click == handles.axes2) || (get(click,'Parent') == handles.axes2)
             data = signaldata.audio;
         end
         t = linspace(0,length(data),length(data))./signaldata.fs;
+        f = signaldata.fs .* ((1:length(data))-1) ./ length(data);
         if ndims(data) > 2
             channel = str2double(get(handles.IN_nchannel,'String'));
             line(:,:) = data(:,channel,:);
@@ -1083,10 +1094,42 @@ if (click == handles.axes2) || (get(click,'Parent') == handles.axes2)
         end
         h = figure;
         set(h,'DefaultAxesColorOrder',cmap);
-        if get(handles.time_popup,'Value') == 2, line = 10.*log10(line.^2); end
-        if get(handles.time_popup,'Value') == 3, line = abs(hilbert(line)); end
-        plot(t,line); % Plot signal in time domain
+        plottype = get(handles.time_popup,'Value');
+        if plottype == 2, line = 10.*log10(line.^2); end
+        if plottype == 3, line = abs(hilbert(line)); end
+        if plottype == 2, line = line.^2; end
+        if plottype == 3, line = 10.*log10(line.^2); end
+        if plottype == 4, line = abs(hilbert(line)); end
+        if plottype == 5, line = medfilt1(diff([angle(hilbert(line)); zeros(1,size(line,2))])*signaldata.fs/2/pi, 5); end
+        if plottype == 6, line = real(line); end
+        if plottype == 7, line = imag(line); end
+        if plottype == 8, line = 10*log10(abs(fft(line)).^2); end %freq
+        if plottype == 9, line = abs(fft(line)).^2; end
+        if plottype == 10, line = abs(fft(line)); end
+        if plottype == 11, line = real(fft(line)); end
+        if plottype == 12, line = imag(fft(line)); end
+        if plottype == 13, line = angle(fft(line)); end
+        if plottype == 14, line = unwrap(angle(fft(line))); end
+        if plottype == 15, line = angle(fft(line)) .* 180/pi; end
+        if plottype == 16, line = angle(fft(line)) ./(2*pi); end
+    if plottype <= 7
+        plot(t,line) % Plot signal in time domain
         xlabel('Time [s]');
+    end
+    if plottype >= 8
+        if plottype == 8
+            smoothfactor = get(handles.smoothtime_popup,'Value');
+            if smoothfactor == 2, octsmooth = 1; end
+            if smoothfactor == 3, octsmooth = 3; end
+            if smoothfactor == 4, octsmooth = 6; end
+            if smoothfactor == 5, octsmooth = 12; end
+            if smoothfactor == 6, octsmooth = 24; end
+            if smoothfactor ~= 1, line = octavesmoothing(line, octsmooth, signaldata.fs); end
+        end
+        semilogx(f,line) % Plot signal in frequency domain
+        xlabel('Frequency [Hz]');
+        xlim([20 20000])
+    end
         handles.alternate = 0;
     end
 end
@@ -1099,6 +1142,7 @@ if (click == handles.axes3) || (get(click,'Parent') == handles.axes3)
         else
             data = signaldata.audio;
         end
+        t = linspace(0,length(data),length(data))./signaldata.fs;
         f = signaldata.fs .* ((1:length(data))-1) ./ length(data);
         if ndims(data) > 2
             channel = str2double(get(handles.IN_nchannel,'String'));
@@ -1111,12 +1155,42 @@ if (click == handles.axes3) || (get(click,'Parent') == handles.axes3)
 
         h = figure;
         set(h,'DefaultAxesColorOrder',cmap);
-        if get(handles.freq_popup,'Value') == 1, line = 10.*log10(abs(fft(line)).^2); end
-        if get(handles.freq_popup,'Value') == 2, line = abs(fft(line)).^2; end
-        if get(handles.freq_popup,'Value') == 3, line = abs(fft(line)); end
-        semilogx(f,line); % Plot signal in frequency domain
+        plottype = get(handles.freq_popup,'Value');
+        if plottype == 2, line = 10.*log10(line.^2); end
+        if plottype == 3, line = abs(hilbert(line)); end
+        if plottype == 2, line = line.^2; end
+        if plottype == 3, line = 10.*log10(line.^2); end
+        if plottype == 4, line = abs(hilbert(line)); end
+        if plottype == 5, line = medfilt1(diff([angle(hilbert(line)); zeros(1,size(line,2))])*signaldata.fs/2/pi, 5); end
+        if plottype == 6, line = real(line); end
+        if plottype == 7, line = imag(line); end
+        if plottype == 8, line = 10*log10(abs(fft(line)).^2); end %freq
+        if plottype == 9, line = abs(fft(line)).^2; end
+        if plottype == 10, line = abs(fft(line)); end
+        if plottype == 11, line = real(fft(line)); end
+        if plottype == 12, line = imag(fft(line)); end
+        if plottype == 13, line = angle(fft(line)); end
+        if plottype == 14, line = unwrap(angle(fft(line))); end
+        if plottype == 15, line = angle(fft(line)) .* 180/pi; end
+        if plottype == 16, line = angle(fft(line)) ./(2*pi); end
+    if plottype <= 7
+        plot(t,line) % Plot signal in time domain
+        xlabel('Time [s]');
+    end
+    if plottype >= 8
+        if plottype == 8
+            smoothfactor = get(handles.smoothfreq_popup,'Value');
+            if smoothfactor == 2, octsmooth = 1; end
+            if smoothfactor == 3, octsmooth = 3; end
+            if smoothfactor == 4, octsmooth = 6; end
+            if smoothfactor == 5, octsmooth = 12; end
+            if smoothfactor == 6, octsmooth = 24; end
+            if smoothfactor ~= 1, line = octavesmoothing(line, octsmooth, signaldata.fs); end
+        end
+        semilogx(f,line) % Plot signal in frequency domain
         xlabel('Frequency [Hz]');
         xlim([20 20000])
+    end
         handles.alternate = 0;
     end
 end
@@ -1337,6 +1411,7 @@ function freq_popup_Callback(hObject, eventdata, handles)
 plottype = get(hObject,'Value');
 selectedNodes = handles.mytree.getSelectedNodes;
 signaldata = selectedNodes(1).handle.UserData;
+set(handles.smoothfreq_popup,'Visible','off');
 if ~isempty(signaldata) && isfield(signaldata,'audio')
     t = linspace(0,length(signaldata.audio),length(signaldata.audio))./signaldata.fs;
     f = signaldata.fs .* ((1:length(signaldata.audio))-1) ./ length(signaldata.audio);
@@ -1352,7 +1427,7 @@ if ~isempty(signaldata) && isfield(signaldata,'audio')
     if plottype == 5, line = medfilt1(diff([angle(hilbert(line)); zeros(1,size(line,2))])*signaldata.fs/2/pi, 5); end
     if plottype == 6, line = real(line); end
     if plottype == 7, line = imag(line); end
-    if plottype == 8, line = 10*log10(abs(fft(line)).^2); end %freq
+    if plottype == 8, line = 10*log10(abs(fft(line)).^2); set(handles.smoothfreq_popup,'Visible','on','Value',1); end %freq
     if plottype == 9, line = abs(fft(line)).^2; end
     if plottype == 10, line = abs(fft(line)); end
     if plottype == 11, line = real(fft(line)); end
@@ -1362,15 +1437,20 @@ if ~isempty(signaldata) && isfield(signaldata,'audio')
     if plottype == 15, line = angle(fft(line)) .* 180/pi; end
     if plottype == 16, line = angle(fft(line)) ./(2*pi); end
     if plottype <= 7
+        set(handles.logfreq_chk,'Visible','off','Value',0);
         plot(handles.axes3,t,line) % Plot signal in time domain
         xlabel(handles.axes3,'Time [s]');
+        set(handles.axes3,'XTickLabel',num2str(get(handles.axes3,'XTick').'))
     end
     if plottype >= 8
+        set(handles.logfreq_chk,'Visible','on','Value',1);
         semilogx(handles.axes3,f,line) % Plot signal in frequency domain
         xlabel(handles.axes3,'Frequency [Hz]');
         xlim(handles.axes3,[20 20000])
+        set(handles.axes3,'XTickLabel',num2str(get(handles.axes3,'XTick').'))
     end
 end
+guidata(hObject,handles)
 
 % --- Executes during object creation, after setting all properties.
 function freq_popup_CreateFcn(hObject, eventdata, handles)
@@ -1397,6 +1477,7 @@ function time_popup_Callback(hObject, eventdata, handles)
 plottype = get(hObject,'Value');
 selectedNodes = handles.mytree.getSelectedNodes;
 signaldata = selectedNodes(1).handle.UserData;
+
 if ~isempty(signaldata) && isfield(signaldata,'audio')
     t = linspace(0,length(signaldata.audio),length(signaldata.audio))./signaldata.fs;
     f = signaldata.fs .* ((1:length(signaldata.audio))-1) ./ length(signaldata.audio);
@@ -1405,14 +1486,14 @@ if ~isempty(signaldata) && isfield(signaldata,'audio')
     else
         line = signaldata.audio;
     end
-
+    set(handles.smoothtime_popup,'Visible','off');
     if plottype == 2, line = line.^2; end
     if plottype == 3, line = 10.*log10(line.^2); end
     if plottype == 4, line = abs(hilbert(line)); end
     if plottype == 5, line = medfilt1(diff([angle(hilbert(line)); zeros(1,size(line,2))])*signaldata.fs/2/pi, 5); end
     if plottype == 6, line = real(line); end
     if plottype == 7, line = imag(line); end
-    if plottype == 8, line = 10*log10(abs(fft(line)).^2); end %freq
+    if plottype == 8, line = 10*log10(abs(fft(line)).^2); set(handles.smoothtime_popup,'Visible','on','Value',1); end %freq
     if plottype == 9, line = abs(fft(line)).^2; end
     if plottype == 10, line = abs(fft(line)); end
     if plottype == 11, line = real(fft(line)); end
@@ -1422,13 +1503,17 @@ if ~isempty(signaldata) && isfield(signaldata,'audio')
     if plottype == 15, line = angle(fft(line)) .* 180/pi; end
     if plottype == 16, line = angle(fft(line)) ./(2*pi); end
     if plottype <= 7
+        set(handles.logtime_chk,'Visible','off','Value',0);
         plot(handles.axes2,t,line) % Plot signal in time domain
         xlabel(handles.axes2,'Time [s]');
+        set(handles.axes2,'XTickLabel',num2str(get(handles.axes2,'XTick').'))
     end
     if plottype >= 8
+        set(handles.logtime_chk,'Visible','on','Value',1);
         semilogx(handles.axes2,f,line) % Plot signal in frequency domain
         xlabel(handles.axes2,'Frequency [Hz]');
         xlim(handles.axes2,[20 20000])
+        set(handles.axes2,'XTickLabel',num2str(get(handles.axes2,'XTick').'))
     end
 end
 
@@ -1662,3 +1747,122 @@ else
     end
 end
 guidata(hObject,handles)
+
+
+% --- Executes on selection change in smoothfreq_popup.
+function smoothfreq_popup_Callback(hObject, eventdata, handles)
+% hObject    handle to smoothfreq_popup (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: contents = cellstr(get(hObject,'String')) returns smoothfreq_popup contents as cell array
+%        contents{get(hObject,'Value')} returns selected item from smoothfreq_popup
+smoothfactor = get(hObject,'Value');
+selectedNodes = handles.mytree.getSelectedNodes;
+signaldata = selectedNodes(1).handle.UserData;
+%if ~isempty(signaldata) && isfield(signaldata,'audio')
+%    t = linspace(0,length(signaldata.audio),length(signaldata.audio))./signaldata.fs;
+f = signaldata.fs .* ((1:length(signaldata.audio))-1) ./ length(signaldata.audio);
+if ndims(signaldata.audio) > 2
+    line(:,:) = signaldata.audio(:,str2double(get(handles.IN_nchannel,'String')),:);
+else
+    line = signaldata.audio;
+end
+line = 10*log10(abs(fft(line)).^2);
+if smoothfactor == 2, octsmooth = 1; end
+if smoothfactor == 3, octsmooth = 3; end
+if smoothfactor == 4, octsmooth = 6; end
+if smoothfactor == 5, octsmooth = 12; end
+if smoothfactor == 6, octsmooth = 24; end
+if smoothfactor ~= 1, line = octavesmoothing(line, octsmooth, signaldata.fs); end
+semilogx(handles.axes3,f,line) % Plot signal in frequency domain
+xlabel(handles.axes3,'Frequency [Hz]');
+xlim(handles.axes3,[20 20000])
+set(handles.axes3,'XTickLabel',num2str(get(handles.axes3,'XTick').'))
+
+% --- Executes during object creation, after setting all properties.
+function smoothfreq_popup_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to smoothfreq_popup (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: popupmenu controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+
+% --- Executes on selection change in smoothtime_popup.
+function smoothtime_popup_Callback(hObject, eventdata, handles)
+% hObject    handle to smoothtime_popup (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: contents = cellstr(get(hObject,'String')) returns smoothtime_popup contents as cell array
+%        contents{get(hObject,'Value')} returns selected item from smoothtime_popup
+smoothfactor = get(hObject,'Value');
+selectedNodes = handles.mytree.getSelectedNodes;
+signaldata = selectedNodes(1).handle.UserData;
+%if ~isempty(signaldata) && isfield(signaldata,'audio')
+%    t = linspace(0,length(signaldata.audio),length(signaldata.audio))./signaldata.fs;
+f = signaldata.fs .* ((1:length(signaldata.audio))-1) ./ length(signaldata.audio);
+if ndims(signaldata.audio) > 2
+    line(:,:) = signaldata.audio(:,str2double(get(handles.IN_nchannel,'String')),:);
+else
+    line = signaldata.audio;
+end
+line = 10*log10(abs(fft(line)).^2);
+if smoothfactor == 2, octsmooth = 1; end
+if smoothfactor == 3, octsmooth = 3; end
+if smoothfactor == 4, octsmooth = 6; end
+if smoothfactor == 5, octsmooth = 12; end
+if smoothfactor == 6, octsmooth = 24; end
+if smoothfactor ~= 1, line = octavesmoothing(line, octsmooth, signaldata.fs); end
+semilogx(handles.axes2,f,line) % Plot signal in frequency domain
+xlabel(handles.axes2,'Frequency [Hz]');
+xlim(handles.axes2,[20 20000])
+set(handles.axes2,'XTickLabel',num2str(get(handles.axes2,'XTick').'))
+
+% --- Executes during object creation, after setting all properties.
+function smoothtime_popup_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to smoothtime_popup (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: popupmenu controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+
+% --- Executes on button press in logfreq_chk.
+function logfreq_chk_Callback(hObject, eventdata, handles)
+% hObject    handle to logfreq_chk (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hint: get(hObject,'Value') returns toggle state of logfreq_chk
+logfreq_check = get(hObject,'Value');
+if logfreq_check == 1
+    set(handles.axes3,'XScale','log')
+    set(handles.axes3,'XTickLabel',num2str(get(handles.axes3,'XTick').'))
+else
+    set(handles.axes3,'XScale','linear','XTickLabelMode','auto')
+end
+
+% --- Executes on button press in logtime_chk.
+function logtime_chk_Callback(hObject, eventdata, handles)
+% hObject    handle to logtime_chk (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hint: get(hObject,'Value') returns toggle state of logtime_chk
+logtime_check = get(hObject,'Value');
+if logtime_check == 1
+    set(handles.axes2,'XScale','log')
+    set(handles.axes2,'XTickLabel',num2str(get(handles.axes2,'XTick').'))
+else
+    set(handles.axes2,'XScale','linear','XTickLabelMode','auto')
+end
