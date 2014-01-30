@@ -1,20 +1,19 @@
-function [OUT,varargout] = octbandfilter_linphase(IN,fs,param,orderin,orderout,zeropad,minfftlenfactor,test)
+function [OUT,varargout] = octbandfilter_linphase(IN,fs,param,order,zeropad,minfftlenfactor,test)
 % This function does zero and linear phase octave band filtering using a
 % single large fft. Rather than brick-wall filters, this implementation
-% has Butterworth-like magnitude responses. Hence the 'order' input
-% argument determines the slope of the filter skirts, in analogy to
-% Butterworth filter orders. However, the in-band and out-of-band filter
-% order can be different in this implementation (in-band
-% refers to frequencies between the upper and lower cut-offs). This allows
-% the filter skirts and in-band magnitude response to be specified
-% separately (e.g., the filter could be high order in-band, and
-% comparitively lower order out-of-band.
+% has somewhat Butterworth-like magnitude responses. Hence the 'order' input
+% argument determines the slope of the filter skirts, and the flatness of 
+% the in-band response. If desired, a different order can be used for the 
+% in-band and out-of-band frequency ranges. When calling this function
+% directly, this can be done by supplying a two value vector instead of a
+% single value for 'order' (the first value is for in-band, the second for
+% out-of-band).
 %
 % Filters that meet IEC class 0 criteria can be designed with appropriate
-% selection of filter order. The minimum in-band AND out-of-band order that
-% meets class 0 criteria is 7 (based on testing with a 1 s duration
-% waveform at fs = 48 kHz). Note that the tested filter performance at low
-% frequencies depends on the test signal duration.
+% selection of filter order. The minimum in-band order that meets class 0 
+% criteria is 7, and the minimum out-of-band order is 5 (based on testing 
+% with a 2 s duration waveform at fs = 48 kHz). Note that the tested filter 
+% performance at low frequencies depends on the test signal duration.
 %
 % param is a list of octave band centre frequencies (nominal freqencies
 % only allowed)
@@ -24,10 +23,16 @@ function [OUT,varargout] = octbandfilter_linphase(IN,fs,param,orderin,orderout,z
 % non-zero zeropad value will result in a delay, making the filter linear
 % rather than zero phase.
 %
+% If test == 1, then a plot is produced for each band, showing the tested
+% filter magnitude response together with IEC 61260 limit curves for class
+% 0, class 1 and class 2 octave band filters. These plots are derived from
+% an analysis of an impulse centred in time using a audio wave that has the
+% same number of samples as the analysed wave.
+%
 % Code by Densil Cabrera
-% Version 1.01 (29 January 2013)
+% Version 1.03 (30 January 2013)
 
-if nargin < 8
+if ~exist('test','var')
     test = 0;
 end
 
@@ -37,7 +42,7 @@ end
 % utilization). The actual FFT length is always an integer power of 2.
 
 % minimum number of spectral compoments up to the lowest octave band fc:
-if nargin < 7
+if ~exist('minfftlenfactor','var')
     minfftlenfactor = 1000; % adjust this to get the required spectral resolution
 else
     minfftlenfactor = round(abs(minfftlenfactor));
@@ -45,18 +50,25 @@ end
 
 
 
-if nargin < 6
+if ~exist('zeropad','var')
     zeropad = 0;
 else
     zeropad = round(abs(zeropad));
 end
 
-if nargin < 4
+if ~exist('order','var')
     orderin = 12; % default filter in-band pseudo-order
     orderout = 12; % default filter out-of-band pseudo-order
 else
-    orderin = abs(orderin); 
-    orderout = abs(orderout); 
+    if length(order) == 1
+        orderin = abs(order); 
+        orderout = abs(order);
+    elseif length(order) == 2
+        orderin = abs(order(1)); 
+        orderout = abs(order(2));
+    else
+        error('order input argument is incorrectly dimensioned')
+    end
 end
 
 if isstruct(IN)
@@ -64,6 +76,9 @@ if isstruct(IN)
     fs = IN.fs;
 else
     audio = IN;
+    if ~exist('fs','var')
+        error('fs must be specified')
+    end
 end
 
 maxfrq = fs / 2.^1.51; % maximum possible octave band centre frequency
@@ -103,7 +118,7 @@ end
 
 if ok == 1 && isstruct(IN) && nargin < 4
     param1 = inputdlg({'Pseudo-Butterworth filter in-band order';... 
-        'Pseudo-Butterworth filter out-of-band order';... 
+        'Filter out-of-band order';... 
         'Number of samples to zero-pad before and after the wave data';...
         'Test filter response [0|1]'},...
         'Filter settings',... 
@@ -181,9 +196,11 @@ if ok == 1
         mag = zeros(fftlen,1); % preallocate and set DC to 0
         
          % below centre frequency
-         % out-of-band
+         % out-of-band, using exact 6n dB/oct skirts
          mag(2:indlo-1) = ...
-             (1 ./ (1 + (f(2:indlo-1)./ flo ).^(-2*orderout))).^0.5;
+             (f(2:indlo-1)./ flo ).^(orderout) ./2.^0.5;
+         % the following alternative uses Butterworth skirts
+             %(1 ./ (1 + (f(2:indlo-1)./ flo ).^(-2*orderout))).^0.5;
          
          % in-band
          mag(indlo:indfc-1) = ...
@@ -194,9 +211,11 @@ if ok == 1
          mag(indfc:indhi) = ...
             (1 ./ (1 + (f(indfc:indhi)./ fhi ).^(2*orderin))).^0.5;
         
-        % out-of-band
+        % out-of-band, using exact 6n dB/oct skirts
         mag(indhi+1:fftlen/2+1) = ...
-            (1 ./ (1 + (f(indhi+1:fftlen/2+1)./ fhi ).^(2*orderout))).^0.5;
+            (f(indhi+1:fftlen/2+1) ./ fhi).^(-orderout) ./ 2.^0.5;
+        % the following alternative uses Butterworth skirts
+            %(1 ./ (1 + (f(indhi+1:fftlen/2+1)./ fhi ).^(2*orderout))).^0.5;
         
         % normalize gain
         mag = mag ./ mag(indfc); 
@@ -299,16 +318,20 @@ if ok == 1
             semilogx(testfreq,class2uppergain,'Color',[1,0.8,0.8]); 
             hold on
             semilogx(testfreq,class2lowergain,'Color',[1,0.8,0.8]);
+            text(testfreq(end-1),-53,'Class 2','Color',[1,0.8,0.8]);
             
             semilogx(testfreq,class1uppergain,'Color',[1,0.5,0.5]);
             semilogx(testfreq,class1lowergain,'Color',[1,0.5,0.5]);
+            text(testfreq(end-1),-59,'Class 1','Color',[1,0.5,0.5]);
             
             semilogx(testfreq,class0lowergain,'r');
             semilogx(testfreq,class0uppergain,'r');
+            text(testfreq(end-1),-73,'Class 0','Color','r');
             
             semilogx(frequencies(2:round(end/2)), ...
                 testlevel(2:round(end/2),1,b),'b');
             semilogx([frequencies(2),1e99],[-3,-3],':k')
+            text(testfreq(end-1),-1,'-3 dB','Color','k');
             %legend('show','Location','EastOutside');
             xlim([testfreq(1),testfreq(end)])
             ylim([-90,10])
