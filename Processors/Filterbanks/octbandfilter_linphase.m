@@ -1,4 +1,4 @@
-function [OUT,varargout] = octbandfilter_linphase(IN,fs,param,orderin,orderout,zeropad,minfftlenfactor)
+function [OUT,varargout] = octbandfilter_linphase(IN,fs,param,orderin,orderout,zeropad,minfftlenfactor,test)
 % This function does zero and linear phase octave band filtering using a
 % single large fft. Rather than brick-wall filters, this implementation
 % has Butterworth-like magnitude responses. Hence the 'order' input
@@ -11,8 +11,10 @@ function [OUT,varargout] = octbandfilter_linphase(IN,fs,param,orderin,orderout,z
 % comparitively lower order out-of-band.
 %
 % Filters that meet IEC class 0 criteria can be designed with appropriate
-% selection of filter order. The out-of-band order must be at least 6 (i.e.
-% at least 36 dB/octave filter skirts).
+% selection of filter order. The minimum in-band AND out-of-band order that
+% meets class 0 criteria is 7 (based on testing with a 1 s duration
+% waveform at fs = 48 kHz). Note that the tested filter performance at low
+% frequencies depends on the test signal duration.
 %
 % param is a list of octave band centre frequencies (nominal freqencies
 % only allowed)
@@ -25,6 +27,9 @@ function [OUT,varargout] = octbandfilter_linphase(IN,fs,param,orderin,orderout,z
 % Code by Densil Cabrera
 % Version 1.01 (29 January 2013)
 
+if nargin < 8
+    test = 0;
+end
 
 % Spectral resolution can be increased (or reduced) by adjusting the value
 % of minfftlenfactor (below). Increasing it increases the minimum FFT 
@@ -48,7 +53,7 @@ end
 
 if nargin < 4
     orderin = 12; % default filter in-band pseudo-order
-    orderout = 8; % default filter out-of-band pseudo-order
+    orderout = 12; % default filter out-of-band pseudo-order
 else
     orderin = abs(orderin); 
     orderout = abs(orderout); 
@@ -99,19 +104,21 @@ end
 if ok == 1 && isstruct(IN) && nargin < 4
     param1 = inputdlg({'Pseudo-Butterworth filter in-band order';... 
         'Pseudo-Butterworth filter out-of-band order';... 
-        'Number of samples to zero-pad before and after the wave data'},...
+        'Number of samples to zero-pad before and after the wave data';...
+        'Test filter response [0|1]'},...
         'Filter settings',... 
         [1 60],... 
-        {num2str(orderin);num2str(orderout);num2str(zeropad)}); 
+        {num2str(orderin);num2str(orderout);num2str(zeropad);'0'}); 
     
     param1 = str2num(char(param1)); 
     
-    if length(param1) < 3, param1 = []; end 
+    if length(param1) < 4, param1 = []; end 
     
     if ~isempty(param1) 
         orderin = param1(1);
         orderout = param1(2);
         zeropad = param1(3);
+        test = param1(4);
     end
 end
     
@@ -129,7 +136,12 @@ if ok == 1
     
     len = size(audio,1);
     filtered = zeros(len,chans,length(param));
-    
+        
+    if test == 1
+        testaudio = zeros(len,1);
+        testaudio(round(len/2)) = 1;
+        testaudioout = zeros(len,1,length(param));
+    end
     
     
     minfftlen = 2.^nextpow2((fs/min(param)) * minfftlenfactor);
@@ -141,7 +153,9 @@ if ok == 1
     end
     
     spectrum = fft(audio, fftlen);
-    
+    if test == 1
+        testspectrum = fft(testaudio, fftlen);
+    end
     
     for b = 1: length(param)
         
@@ -185,7 +199,7 @@ if ok == 1
             (1 ./ (1 + (f(indhi+1:fftlen/2+1)./ fhi ).^(2*orderout))).^0.5;
         
         % normalize gain
-        % mag = mag ./ mag(indfc); 
+        mag = mag ./ mag(indfc); 
         
         % above Nyquist frequency
         mag(fftlen/2+2:end) = flipud(mag(2:fftlen/2));
@@ -195,6 +209,113 @@ if ok == 1
         
         % truncate waveform and send to filtered waveform matrix
         filtered(:,:,b) = bandfiltered(1:len,:);
+        
+        if test
+            testaudiofiltered = ifft(testspectrum .* mag);
+            testaudioout(:,1,b) = testaudiofiltered(1:len,:);
+        end
+        
+    end
+    
+    if test == 1
+        testlevel = 10*log10(abs(fft(testaudioout)).^2);
+        frequencies = fs .* ((1:length(testlevel))-1) ./ length(testlevel);
+        class0uppergain = [0.15;
+                            0.15;
+                            0.15;
+                            0.15;
+                            0.15;
+                            -2.3;
+                            -18.0;
+                            -42.5;
+                            -62;
+                            -75];
+        class0uppergain = [flipud(class0uppergain(2:end));class0uppergain];                
+        class0lowergain = [-0.15;
+                            -0.2;
+                            -0.4;
+                            -1.1;
+                            -4.5;
+                            -4.5;
+                            -1e10; % should be -inf, but this plots better
+                            -1e10;
+                            -1e10;
+                            -1e10]; 
+        class0lowergain = [flipud(class0lowergain(2:end));class0lowergain];
+        
+        class1uppergain = [0.3;
+                            0.3;
+                            0.3;
+                            0.3;
+                            0.3;
+                            -2;
+                            -17.5;
+                            -42;
+                            -61;
+                            -70];
+        class1uppergain = [flipud(class1uppergain(2:end));class1uppergain];                
+        class1lowergain = [-0.3;
+                            -0.4;
+                            -0.6;
+                            -1.3;
+                            -5;
+                            -5;
+                            -1e10; % should be -inf, but this plots better
+                            -1e10;
+                            -1e10;
+                            -1e10]; 
+        class1lowergain = [flipud(class1lowergain(2:end));class1lowergain];
+        
+        class2uppergain = [0.5;
+                            0.5;
+                            0.5;
+                            0.5;
+                            0.5;
+                            -1.6;
+                            -16.5;
+                            -41;
+                            -55;
+                            -60];
+        class2uppergain = [flipud(class2uppergain(2:end));class2uppergain];                
+        class2lowergain = [-0.5;
+                            -0.6;
+                            -0.8;
+                            -1.6;
+                            -5.5;
+                            -5.5;
+                            -1e10; % should be -inf, but this plots better
+                            -1e10;
+                            -1e10;
+                            -1e10]; 
+        class2lowergain = [flipud(class2lowergain(2:end));class2lowergain];
+        
+        
+        for b = 1:length(param)
+            testfreq = exactfreq(b) .* 10.^(3/10).^ ...
+            [-4;-3;-2;-1;-1/2;-1/2;-3/8;-1/4;-1/8;0;...
+                1/8;1/4;3/8;1/2;1/2;1;2;3;4];
+            figure('Name',[num2str(param(b)), ' Hz Band'])
+            
+            semilogx(testfreq,class2uppergain,'Color',[1,0.8,0.8]); 
+            hold on
+            semilogx(testfreq,class2lowergain,'Color',[1,0.8,0.8]);
+            
+            semilogx(testfreq,class1uppergain,'Color',[1,0.5,0.5]);
+            semilogx(testfreq,class1lowergain,'Color',[1,0.5,0.5]);
+            
+            semilogx(testfreq,class0lowergain,'r');
+            semilogx(testfreq,class0uppergain,'r');
+            
+            semilogx(frequencies(2:round(end/2)), ...
+                testlevel(2:round(end/2),1,b),'b');
+            semilogx([frequencies(2),1e99],[-3,-3],':k')
+            %legend('show','Location','EastOutside');
+            xlim([testfreq(1),testfreq(end)])
+            ylim([-90,10])
+            xlabel('Frequency (Hz)')
+            ylabel('Gain (dB)')
+            hold off
+        end
     end
     
     if isstruct(IN) && ~isempty(filtered)
