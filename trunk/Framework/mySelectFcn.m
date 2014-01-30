@@ -22,6 +22,10 @@ function nodes = mySelectFcn(tree, value)
             set([mainHandles.edit_btn mainHandles.cal_btn],'Enable','on');
             set(mainHandles.time_popup,'Visible','on','Value',1);
             set(mainHandles.freq_popup,'Visible','on','Value',8);
+            set(mainHandles.smoothtime_popup,'Visible','off','Value',1);
+            set(mainHandles.smoothfreq_popup,'Visible','on','Value',1);
+            set(mainHandles.logtime_chk,'Visible','off','Value',0);
+            set(mainHandles.logfreq_chk,'Visible','on','Value',1);
             set(mainHandles.process_panel,'Visible','on');
             set(mainHandles.playback_panel,'Visible','on');
             set(mainHandles.channel_panel,'Visible','off');
@@ -74,7 +78,9 @@ function nodes = mySelectFcn(tree, value)
             set(mainHandles.IR_btn,'Visible','off');
             set(mainHandles.tools_panel,'Visible','on');
             set([mainHandles.edit_btn mainHandles.cal_btn],'Enable','off')
-            set([mainHandles.time_popup mainHandles.freq_popup],'Visible','off');
+            set([mainHandles.time_popup mainHandles.freq_popup mainHandles.smoothtime_popup mainHandles.smoothfreq_popup],'Visible','off');
+            set(mainHandles.logtime_chk,'Visible','off');
+            set(mainHandles.logfreq_chk,'Visible','off');
             set(mainHandles.process_panel,'Visible','off');
             set(mainHandles.analysis_panel,'Visible','off');
             set(mainHandles.playback_panel,'Visible','off');
@@ -100,7 +106,9 @@ function nodes = mySelectFcn(tree, value)
             set(mainHandles.analysis_panel,'Visible','off');
             set(mainHandles.playback_panel,'Visible','off');
             set(mainHandles.channel_panel,'Visible','off');
-            set([mainHandles.time_popup mainHandles.freq_popup],'Visible','off');
+            set([mainHandles.time_popup mainHandles.freq_popup mainHandles.smoothtime_popup mainHandles.smoothfreq_popup],'Visible','off');
+            set(mainHandles.logtime_chk,'Visible','off');
+            set(mainHandles.logfreq_chk,'Visible','off');
             setappdata(hMain,'testsignal', []);
         end
     end
