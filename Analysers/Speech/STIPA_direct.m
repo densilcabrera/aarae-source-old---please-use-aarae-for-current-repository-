@@ -8,7 +8,8 @@ function out = STIPA_direct(in, fs, cal, refsignal)
 % need to be calibrated to make a correct measurement. The loudspeaker may
 % also need to be equalized to produce the correct STIPA spectrum levels.
 % Analyse the recorded signal using this function. The recommended signal
-% duration is 20 s or greater.
+% duration is 20 s or greater (accuracy should improve with greater
+% duration).
 %
 % This function gives the option of using a reference signal - which could
 % either be the original STIPA signal (to correct for minor errors in the
@@ -17,16 +18,12 @@ function out = STIPA_direct(in, fs, cal, refsignal)
 % reference point of a head and torso simulator) to correct for transducer
 % effects. 
 %
-% Currently (in version 1.03) a STIPA analysis of the original test
-% signal yields an STIPA value greater than 0.99, but the octave band MTI
-% values in the lowest 3 bands are not always equal to 1. This random error
-% is affected by the filters used, and so possibly it can be fixed by
-% further work on the filters (octave band and lowpass). Using the
-% abovementioned reference signal in the analysis corrects for this minor 
-% error.
+% This version uses AARAE's linear (actually zero) phase octave band filters. 
+% Steep filter skirts return the best results, so currently 144 dB/oct 
+% skirts are used (achieved by setting filterorder to 24).
 %
 % Code by Densil Cabrera
-% version 1.03 (4 January 2014)
+% version 1.04 (31 January 2014)
 
 
 % INPUTS AND SETTINGS
@@ -86,9 +83,9 @@ audio = audio .* calgain; % apply calibration
 
 
 % Define the octave band filter parameters
-bandnumber=21:3:39; % filter band numbers
-fc=10.^(bandnumber./10); % filter centre frequencies in Hz
-
+%bandnumber=21:3:39; % filter band numbers
+%fc=10.^(bandnumber./10); % filter centre frequencies in Hz
+fc = [125, 250, 500, 1000, 2000, 4000, 8000]; % nominal centre freq
 
 % list of modulation frequencies
 Fm = [1.6, 8;...
@@ -382,36 +379,10 @@ function [MTF, I, Level] = STIPA_direct_MTF(audio,fs,fc,Fm)
 % FILTER INTO OCTAVE BANDS AND SQUARE
 % -------------------------------------------------------------------------
 
-% octave band filter cutoff frequencies
-bandwidth = 1; % set to 0.5 instead of 1 if you want to try half-octave bandwidths
-f_low=fc./10^(0.15*bandwidth); % low cut-off frequency in Hz
-f_hi=fc.*10^(0.15*bandwidth); % high cut-off frequency in Hz
-
-halforder = 1; % half of the filter order
-
-b = zeros(halforder*2+1,length(fc)); % pre-allocate filter coefficients
-a = b; % pre-allocate filter coefficients
-
-% Nyquist frequency
-Nyquist=fs/2;
-
-% calculate filter coefficients
-for k = 1:length(fc)
-    [b(:,k), a(:,k)]=butter(halforder, [f_low(k)/Nyquist f_hi(k)/Nyquist]);
-end
-
-
-% Filter and square the data
+% Use AARAE's linear phase octave band filters
 [len, chans]= size(audio);
-Intensity = zeros(len,chans,7);
-
-% low order zero phase filters are cascaded to avoid introducing 
-% significant errors
-for k = 1:7
-    Intensity(:,:,k)=(filtfilt(b(:,k),a(:,k),filtfilt(b(:,k),a(:,k),...
-        filtfilt(b(:,k),a(:,k),filtfilt(b(:,k),a(:,k), audio))))).^2; % filter & square
-end
-
+filterorder = 24; % very steep filter skirts improve the performance
+Intensity = octbandfilter_linphase(audio,fs,fc,filterorder) .^2;
 I = mean(Intensity); % mean square intensity
 Level = 10*log10(I); % intensity expressed in decibels
 
@@ -425,7 +396,7 @@ Level = 10*log10(I); % intensity expressed in decibels
 
 % low-pass filter at 100 Hz to filter the envelope (as per standard)
 % this filter also is zero phase to minimise impact on MDR
-[bl, al] = butter(1,100/Nyquist,'low');
+[bl, al] = butter(1,100/(0.5*fs),'low');
 Intensity = filtfilt(bl, al, Intensity);
 
 % truncate start and end to remove filter build-up period
