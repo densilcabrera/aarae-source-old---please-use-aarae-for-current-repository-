@@ -19,14 +19,18 @@ dlg_title = 'Gain';
 num_lines = 1;
 def = {num2str(-Lmax)};
 answer = inputdlg(prompt,dlg_title,num_lines,def);
-gain = answer{1,1};
-if ischar(gain)
-    % normalize column channel individually
-    maxval = max(abs(in.audio));
-    out = in.audio ./ repmat(maxval,[length(in.audio),1,1]);
+if ~isempty(answer)
+    gain = answer{1,1};
+    if ischar(gain)
+        % normalize column channel individually
+        maxval = max(abs(in.audio));
+        out = in.audio ./ repmat(maxval,[length(in.audio),1,1]);
+    else
+        gain = str2num(gain);
+        out = in.audio * 10.^(gain/20);
+    end
 else
-    gain = str2num(gain);
-    out = in.audio * 10.^(gain/20);
+    out = [];
 end
 
 end

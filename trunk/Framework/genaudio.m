@@ -124,6 +124,9 @@ if ~isempty(handles.signaldata)
         handles.signaldata.audio = [handles.signaldata.audio;zeros(handles.signaldata.fs,1)];
         handles.signaldata.audio = repmat(handles.signaldata.audio,handles.cycles,1);
     end
+    if ~isfield(handles.signaldata,'chanID')
+        handles.signaldata.chanID = cellstr([repmat('Chan',size(handles.signaldata.audio,2),1) num2str((1:size(handles.signaldata.audio,2))')]);
+    end
     duration = length(handles.signaldata.audio)/handles.signaldata.fs;
     time = linspace(0,duration,length(handles.signaldata.audio));
     plot(time,handles.signaldata.audio); % Plot the generated signal

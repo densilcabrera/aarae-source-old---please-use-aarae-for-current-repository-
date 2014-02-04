@@ -573,6 +573,7 @@ if ~isempty(processed)
     handles.rel_time = linspace(handles.xi(handles.version),handles.xf(handles.version),length(handles.testsignal(handles.version).audio));
     if ndims(handles.testsignal(handles.version).audio) > 2
         set(handles.channel_panel,'Visible','on');
+        set(handles.tchannels,'String',['/ ' num2str(size(handles.testsignal(handles.version).audio,2))]);
         line(:,:) = handles.testsignal(handles.version).audio(:,str2double(get(handles.IN_nchannel,'String')),:);
         cmap = colormap(hsv(size(handles.testsignal(handles.version).audio,3)));
         set(handles.edit_signal,'DefaultAxesColorOrder',cmap)

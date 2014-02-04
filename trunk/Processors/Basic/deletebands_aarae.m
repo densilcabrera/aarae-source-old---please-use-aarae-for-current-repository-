@@ -5,22 +5,26 @@ function out = deletebands_aarae(in)
 if isfield(in,'bandID')
     param = in.bandID;
 else
-    param = 1:size(in.audio,3);
+    param = [];
 end
 
-[S,ok] = listdlg('Name','Band selection',...
-    'PromptString','Delete unselected bands',...
-    'ListString',num2str(param'),...
-    'ListSize', [160 320]);
+if ~isempty(param)
+    [S,ok] = listdlg('Name','Band selection',...
+        'PromptString','Delete unselected bands',...
+        'ListString',num2str(param'),...
+        'ListSize', [160 320]);
 
-if ok == 1 && ~isempty(S)
-    out.audio = in.audio(:,:,S);
-    if isfield(in,'bandID')
-        out.bandID = in.bandID(S);
+    if ok == 1 && ~isempty(S)
+        out.audio = in.audio(:,:,S);
+        if isfield(in,'bandID')
+            out.bandID = in.bandID(S);
+        else
+            out.bandID = S;
+        end
     else
-        out.bandID = S;
+        out = [];
     end
 else
-    out = in;
-end
+    out = [];
+    warndlg('No bands available','AARAE info');
 end
