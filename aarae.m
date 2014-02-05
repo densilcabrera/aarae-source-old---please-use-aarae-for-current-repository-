@@ -23,7 +23,7 @@ function varargout = aarae(varargin)
 
 % Edit the above text to modify the response to help aarae
 
-% Last Modified by GUIDE v2.5 03-Feb-2014 18:57:47
+% Last Modified by GUIDE v2.5 04-Feb-2014 10:49:56
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -914,6 +914,22 @@ for multi = 1:size(file,1)
     elseif strcmp(ext,'.m')
         [~,funname] = fileparts(char(file(multi,:)));
         processed = feval(funname,signaldata);
+        h = findobj('type','figure','-not','tag','aarae');
+        if ~isempty(h)
+            index = 1;
+            filename = dir([cd '/Utilities/Temp/' handles.funname num2str(index) '.fig']);
+            if ~isempty(filename)
+                while isempty(dir([cd '/Utilities/Temp/' handles.funname num2str(index) '.fig'])) == 0
+                    index = index + 1;
+                end
+            end
+            for i = 1:length(h)
+                saveas(h(i),[cd '/Utilities/Temp/' handles.funname num2str(index) '.fig']);
+                index = index + 1;
+            end
+            results = dir([cd '/Utilities/Temp']);
+            set(handles.result_box,'String',[' ';cellstr({results(3:length(results)).name}')]);
+        end
     else
         processed = [];
     end
@@ -1120,7 +1136,7 @@ if (click == handles.axestime) || (get(click,'Parent') == handles.axestime)
                 plot(f,line)
             end
             xlabel('Frequency [Hz]');
-            xlim([20 20000])
+            xlim([f(2) signaldata.fs/2])
         end
         handles.alternate = 0;
     end
@@ -1186,7 +1202,7 @@ if (click == handles.axesfreq) || (get(click,'Parent') == handles.axesfreq)
             plot(f,line)
         end
         xlabel('Frequency [Hz]');
-        xlim([20 20000])
+        xlim([f(2) signaldata.fs/2])
     end
         handles.alternate = 0;
     end
