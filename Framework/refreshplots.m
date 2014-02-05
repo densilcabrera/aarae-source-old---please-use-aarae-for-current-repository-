@@ -44,7 +44,7 @@ end
 if plottype >= 8
     semilogx(handles.(genvarname(['axes' axes])),f,line) % Plot signal in frequency domain
     xlabel(handles.(genvarname(['axes' axes])),'Frequency [Hz]');
-    xlim(handles.(genvarname(['axes' axes])),[20 20000])
+    xlim(handles.(genvarname(['axes' axes])),[f(2) signaldata.fs/2])
     set(handles.(genvarname(['log' axes '_chk'])),'Visible','on');
     log_check = get(handles.(genvarname(['log' axes '_chk'])),'Value');
     if log_check == 1
@@ -52,5 +52,6 @@ if plottype >= 8
         set(handles.(genvarname(['axes' axes])),'XTickLabel',num2str(get(handles.(genvarname(['axes' axes])),'XTick').'))
     else
         set(handles.(genvarname(['axes' axes])),'XScale','linear','XTickLabelMode','auto')
+        set(handles.(genvarname(['axes' axes])),'XTickLabel',num2str(get(handles.(genvarname(['axes' axes])),'XTick').'))
     end
 end
