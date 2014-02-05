@@ -23,7 +23,7 @@ function varargout = edit_signal(varargin)
 
 % Edit the above text to modify the response to help edit_signal
 
-% Last Modified by GUIDE v2.5 28-Jan-2014 19:09:28
+% Last Modified by GUIDE v2.5 04-Feb-2014 09:55:37
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;

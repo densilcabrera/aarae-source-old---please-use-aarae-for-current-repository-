@@ -23,7 +23,7 @@ function varargout = genaudio(varargin)
 
 % Edit the above text to modify the response to help genaudio
 
-% Last Modified by GUIDE v2.5 10-Oct-2013 19:10:16
+% Last Modified by GUIDE v2.5 04-Feb-2014 09:49:56
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -132,6 +132,7 @@ if ~isempty(handles.signaldata)
     plot(time,handles.signaldata.audio); % Plot the generated signal
     xlabel('Time [s]');
     set(handles.axes1,'XTickLabel',num2str(get(handles.axes1,'XTick').'))
+    set(handles.play_btn,'Enable','on')
 else
     plot(0,0)
     xlabel('Time [s]');
@@ -291,3 +292,73 @@ function signal_box_CreateFcn(hObject, eventdata, handles)
 if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
     set(hObject,'BackgroundColor','white');
 end
+
+
+% --- Executes on selection change in device_popup.
+function device_popup_Callback(hObject, eventdata, handles)
+% hObject    handle to device_popup (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: contents = cellstr(get(hObject,'String')) returns device_popup contents as cell array
+%        contents{get(hObject,'Value')} returns selected item from device_popup
+
+selection = get(hObject,'Value');
+handles.odeviceid = handles.odeviceidlist(selection);
+guidata(hObject,handles);
+
+% --- Executes during object creation, after setting all properties.
+function device_popup_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to device_popup (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: popupmenu controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+devinfo = audiodevinfo; % Get available device information
+odevicelist = {devinfo.output.Name}; % Populate list
+handles.odeviceidlist =  cell2mat({devinfo.output.ID});
+handles.odeviceid = handles.odeviceidlist(1,1);
+set(hObject,'String',odevicelist);
+guidata(hObject,handles);
+
+
+% --- Executes on button press in play_btn.
+function play_btn_Callback(hObject, eventdata, handles)
+% hObject    handle to play_btn (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+if isempty(handles.signaldata)
+    warndlg('No signal loaded!');
+else
+    % Retrieve information from the selected leaf
+    testsignal = handles.signaldata.audio./max(max(max(abs(handles.signaldata.audio))));
+    fs = handles.signaldata.fs;
+    nbits = 16;
+    doesSupport = audiodevinfo(0, handles.odeviceid, fs, nbits, size(testsignal,2));
+    if doesSupport && ndims(testsignal) < 3
+        % Play signal
+        handles.player = audioplayer(testsignal,fs,nbits,handles.odeviceid);
+        play(handles.player);
+        set(handles.stop_btn,'Visible','on');
+    else
+        warndlg('Device not supported for playback!');
+    end
+end
+guidata(hObject, handles);
+
+% --- Executes on button press in stop_btn.
+function stop_btn_Callback(hObject, eventdata, handles)
+% hObject    handle to stop_btn (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+if isplaying(handles.player)
+    stop(handles.player);
+end
+guidata(hObject,handles);
