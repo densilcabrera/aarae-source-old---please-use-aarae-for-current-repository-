@@ -1,10 +1,10 @@
 function out = linRT(data, fs, startthresh, bpo, doplot)
 % This function calculates reverberation time and related ISO 3382
-% sound energy parameters (C50, D50, etc.) from a .wav impulse response in
+% sound energy parameters (C50, D50, etc.) from an impulse response in
 % a linear least squares sense.
 %
 % Code by Grant Cuthbert & Densil Cabrera
-% Version 1.00 (22 October 2013)
+% Version 1.01 (6 February 2014)
 %
 %--------------------------------------------------------------------------
 % INPUT VARIABLES
@@ -175,18 +175,18 @@ bands = length(fc);
 
 % - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 if multibandIR == 0
-    
-    f_low = fc./10^(0.15*bandwidth); % low cut-off frequency in Hz
-    f_hi = fc.*10^(0.15*bandwidth); % high cut-off frequency in Hz
-    nyquist = fs/2; % Nyquist frequency
-    b = zeros(halforder*2+1,length(fc)); % pre-allocate filter coefficients
-    a = b; % pre-allocate filter coefficients
-    
-    % calculate filter coefficients
-    for band = 1:bands
-        [b(:,band), a(:,band)]=butter(halforder, ...
-            [f_low(band)/nyquist f_hi(band)/nyquist]);
-    end
+    % OLD FILTERS (not class 0  compliant
+    %     f_low = fc./10^(0.15*bandwidth); % low cut-off frequency in Hz
+    %     f_hi = fc.*10^(0.15*bandwidth); % high cut-off frequency in Hz
+    %     nyquist = fs/2; % Nyquist frequency
+    %     b = zeros(halforder*2+1,length(fc)); % pre-allocate filter coefficients
+    %     a = b; % pre-allocate filter coefficients
+    %
+    %     % calculate filter coefficients
+    %     for band = 1:bands
+    %         [b(:,band), a(:,band)]=butter(halforder, ...
+    %             [f_low(band)/nyquist f_hi(band)/nyquist]);
+    %     end
     
     % preallocate
     iroct = zeros(len,chans,bands);
@@ -196,57 +196,75 @@ if multibandIR == 0
     late80oct = zeros(length(late80),chans,bands);
     
     % filter IR and Early/Late
-    for chan = 1:chans
-        for band = 1:bands
-            iroct(:,chan,band) = filter(b(:,band),a(:,band), ir(:,chan)); % IR
-            early50oct(:,chan,band) = filter(b(:,band),a(:,band), early50(:,chan)); % Early50
-            early80oct(:,chan,band) = filter(b(:,band),a(:,band), early80(:,chan)); % Early80
-            late50oct(:,chan,band) = filter(b(:,band),a(:,band), late50(:,chan)); % Late50
-            late80oct(:,chan,band) = filter(b(:,band),a(:,band), late80(:,chan)); % Late80
-        end
+    %     for chan = 1:chans
+    %         for band = 1:bands
+    %             iroct(:,chan,band) = filter(b(:,band),a(:,band), ir(:,chan)); % IR
+    %             early50oct(:,chan,band) = filter(b(:,band),a(:,band), early50(:,chan)); % Early50
+    %             early80oct(:,chan,band) = filter(b(:,band),a(:,band), early80(:,chan)); % Early80
+    %             late50oct(:,chan,band) = filter(b(:,band),a(:,band), late50(:,chan)); % Late50
+    %             late80oct(:,chan,band) = filter(b(:,band),a(:,band), late80(:,chan)); % Late80
+    %         end
+    %     end
+    
+    % use AARAE's zero phase filters
+    fcnom = exact2nom_oct(fc);
+    if bpo == 1
+        iroct = octbandfilter_linphase(ir,fs,fcnom,[12,12]);
+        early50oct = octbandfilter_linphase(early50,fs,fcnom,[12,12]);
+        early80oct = octbandfilter_linphase(early80,fs,fcnom,[12,12]);
+        late50oct = octbandfilter_linphase(late50,fs,fcnom,[12,12]);
+        late80oct = octbandfilter_linphase(late80,fs,fcnom,[12,12]);
+        
+    else
+        iroct = thirdoctbandfilter_linphase(ir,fs,fcnom,[36,24]);
+        early50oct = thirdoctbandfilter_linphase(early50,fs,fcnom,[36,24]);
+        early80oct = thirdoctbandfilter_linphase(early80,fs,fcnom,[36,24]);
+        late50oct = thirdoctbandfilter_linphase(late50,fs,fcnom,[36,24]);
+        late80oct = thirdoctbandfilter_linphase(late80,fs,fcnom,[36,24]);
     end
+    
     
     %----------------------------------------------------------------------
     % CALCULATE ENERGY PARAMETERS
     %----------------------------------------------------------------------
     
-    early50oct = squeeze(sum(early50oct.^2))';
-    early80oct = squeeze(sum(early80oct.^2))';
-    late50oct = squeeze(sum(late50oct.^2))';
-    late80oct = squeeze(sum(late80oct.^2))';
-    alloct = squeeze(sum(iroct.^2))';
+    early50oct = sum(early50oct.^2);
+    early80oct = sum(early80oct.^2);
+    late50oct = sum(late50oct.^2);
+    late80oct = sum(late80oct.^2);
+    alloct = sum(iroct.^2);
     
-    if chans == 2
-        C50_ch1 = 10*log10(early50oct(:,1) ./ late50oct(:,1))'; % C50
-        C50_ch2 = 10*log10(early50oct(:,2) ./ late50oct(:,2))';
-        C80_ch1 = 10*log10(early80oct(:,1) ./ late80oct(:,1))'; % C80
-        C80_ch2 = 10*log10(early80oct(:,2) ./ late80oct(:,2))';
-        D50_ch1 = (early50oct(:,1) ./ alloct(:,1))'; % D50
-        D50_ch2 = (early50oct(:,2) ./ alloct(:,2))';
-        D80_ch1 = (early80oct(:,1) ./ alloct(:,1))'; % D80
-        D80_ch2 = (early80oct(:,2) ./ alloct(:,2))';
-        
-        % time values of IR in seconds
-        tstimes_ch1 = (0:(length(iroct(:,1,:))-1))' ./ fs;
-        tstimes_ch2 = (0:(length(iroct(:,2,:))-1))' ./ fs;
-        
-        Ts_ch1 = (squeeze(sum(iroct(:,1,:).^2 .* ...
-            repmat(tstimes_ch1,[1,1,bands])))./alloct(:,1,:))'; % Ts
-        Ts_ch2 = (squeeze(sum(iroct(:,2,:).^2 .* ...
-            repmat(tstimes_ch2,[1,1,bands])))./alloct(:,2,:))';
-        
-    elseif chans == 1
-        C50 = 10*log10(early50oct ./ late50oct); % C50
-        C80 = 10*log10(early80oct ./ late80oct); % C80
-        D50 = (early50oct ./ alloct); % D50
-        D80 = (early80oct ./ alloct); % D80
-        
-        % time values of IR in seconds
-        tstimes = (0:(length(iroct)-1))' ./ fs;
-        
-        Ts = (squeeze(sum(iroct.^2 .* ...
-            repmat(tstimes,[1,chans,bands])))./alloct')'; % Ts
-    end
+    %     if chans == 2
+    %         C50_ch1 = 10*log10(early50oct(:,1) ./ late50oct(:,1))'; % C50
+    %         C50_ch2 = 10*log10(early50oct(:,2) ./ late50oct(:,2))';
+    %         C80_ch1 = 10*log10(early80oct(:,1) ./ late80oct(:,1))'; % C80
+    %         C80_ch2 = 10*log10(early80oct(:,2) ./ late80oct(:,2))';
+    %         D50_ch1 = (early50oct(:,1) ./ alloct(:,1))'; % D50
+    %         D50_ch2 = (early50oct(:,2) ./ alloct(:,2))';
+    %         D80_ch1 = (early80oct(:,1) ./ alloct(:,1))'; % D80
+    %         D80_ch2 = (early80oct(:,2) ./ alloct(:,2))';
+    %
+    %         % time values of IR in seconds
+    %         tstimes_ch1 = (0:(length(iroct(:,1,:))-1))' ./ fs;
+    %         tstimes_ch2 = (0:(length(iroct(:,2,:))-1))' ./ fs;
+    %
+    %         Ts_ch1 = (squeeze(sum(iroct(:,1,:).^2 .* ...
+    %             repmat(tstimes_ch1,[1,1,bands])))./alloct(:,1,:))'; % Ts
+    %         Ts_ch2 = (squeeze(sum(iroct(:,2,:).^2 .* ...
+    %             repmat(tstimes_ch2,[1,1,bands])))./alloct(:,2,:))';
+    %
+    %     elseif chans == 1
+    C50 = 10*log10(early50oct ./ late50oct); % C50
+    C80 = 10*log10(early80oct ./ late80oct); % C80
+    D50 = (early50oct ./ alloct); % D50
+    D80 = (early80oct ./ alloct); % D80
+    
+    % time values of IR in seconds
+    tstimes = (0:(length(iroct)-1))' ./ fs;
+    
+    Ts = (sum(iroct.^2 .* ...
+        repmat(tstimes,[1,chans,bands])))./alloct; % Ts
+    %     end
     
 end % if multibandIR == 0
 % - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -256,25 +274,25 @@ if multibandIR == 1
     % do not output energy parameters if early/late cannot be filtered
     % separately
     
-    if chans == 2
-        C50_ch1 = [];
-        C50_ch2 = [];
-        C80_ch1 = [];
-        C80_ch2 = [];
-        D50_ch1 = [];
-        D50_ch2 = [];
-        D80_ch1 = [];
-        D80_ch2 = [];
-        Ts_ch1 = [];
-        Ts_ch2 = [];
-        
-    elseif chans == 1
-        C50 = [];
-        C80 = [];
-        D50 = [];
-        D80 = [];
-        Ts = [];
-    end
+    %     if chans == 2
+    %         C50_ch1 = [];
+    %         C50_ch2 = [];
+    %         C80_ch1 = [];
+    %         C80_ch2 = [];
+    %         D50_ch1 = [];
+    %         D50_ch2 = [];
+    %         D80_ch1 = [];
+    %         D80_ch2 = [];
+    %         Ts_ch1 = [];
+    %         Ts_ch2 = [];
+    %
+    %     elseif chans == 1
+    C50 = [];
+    C80 = [];
+    D50 = [];
+    D80 = [];
+    Ts = [];
+    %     end
     
     iroct = ir;
     
@@ -308,29 +326,16 @@ o = zeros(2, chans, bands);
 p = zeros(2, chans, bands);
 q = zeros(2, chans, bands);
 
-if chans == 2
-    EDT_ch1 = zeros(1, 1, bands);
-    EDT_ch2 = zeros(1, 1, bands);
-    T20_ch1 = zeros(1, 1, bands);
-    T20_ch2 = zeros(1, 1, bands);
-    T30_ch1 = zeros(1, 1, bands);
-    T30_ch2 = zeros(1, 1, bands);
-    EDTr2_ch1 = zeros(1, 1, bands);
-    EDTr2_ch2 = zeros(1, 1, bands);
-    T20r2_ch1 = zeros(1, 1, bands);
-    T20r2_ch2 = zeros(1, 1, bands);
-    T30r2_ch1 = zeros(1, 1, bands);
-    T30r2_ch2 = zeros(1, 1, bands);
-end
 
-if chans == 1
-    EDT = zeros(1, chans, bands);
-    T20 = zeros(1, chans, bands);
-    T30 = zeros(1, chans, bands);
-    EDTr2 = zeros(1, chans, bands);
-    T20r2 = zeros(1, chans, bands);
-    T30r2 = zeros(1, chans, bands);
-end
+
+
+EDT = zeros(1, chans, bands);
+T20 = zeros(1, chans, bands);
+T30 = zeros(1, chans, bands);
+EDTr2 = zeros(1, chans, bands);
+T20r2 = zeros(1, chans, bands);
+T30r2 = zeros(1, chans, bands);
+
 
 for dim2 = 1:chans
     for dim3 = 1:bands
@@ -348,29 +353,14 @@ for dim2 = 1:chans
         o(:,dim2,dim3) = polyfit((irstart:edtend)', ...
             levdecay(irstart:edtend,dim2,dim3),1)';
         
-        if chans ==2
-            % EDT
-            EDT_ch1(1,1,dim3) = 6*((o(2,1,dim3)-10)/o(1,1,dim3) ...
-                -(o(2,1,dim3)-0)/o(1,1,dim3))/fs;
-            EDT_ch2(1,1,dim3) = 6*((o(2,2,dim3)-10)/o(1,2,dim3) ...
-                -(o(2,2,dim3)-0)/o(1,2,dim3))/fs;
-            
-            % correlation coefficient, EDT
-            EDTr2_ch1(1,1,dim3) = corr(levdecay(irstart:edtend,1,dim3), ...
-                (irstart:edtend)' * o(1,1,dim3) + ...
-                o(2,1,dim3)).^2; % correlation coefficient, EDT
-            EDTr2_ch2(1,1,dim3) = corr(levdecay(irstart:edtend,2,dim3), ...
-                (irstart:edtend)' * o(1,2,dim3) + ...
-                o(2,2,dim3)).^2; % correlation coefficient, EDT
-            
-        else
-            
-            EDT(1,dim2,dim3) = 6*((o(2,dim2,dim3)-10)/o(1,dim2,dim3) ...
-                -(o(2,dim2,dim3)-0)/o(1,dim2,dim3))/fs; % EDT
-            EDTr2(1,dim2,dim3) = corr(levdecay(irstart:edtend,dim2,dim3), ...
-                (irstart:edtend)' * o(1,dim2,dim3) + ...
-                o(2,dim2,dim3)).^2; % correlation coefficient, EDT
-        end
+        
+        
+        EDT(1,dim2,dim3) = 6*((o(2,dim2,dim3)-10)/o(1,dim2,dim3) ...
+            -(o(2,dim2,dim3)-0)/o(1,dim2,dim3))/fs; % EDT
+        EDTr2(1,dim2,dim3) = corr(levdecay(irstart:edtend,dim2,dim3), ...
+            (irstart:edtend)' * o(1,dim2,dim3) + ...
+            o(2,dim2,dim3)).^2; % correlation coefficient, EDT
+        
         
         %******************************************************************
         % linear regression for T20
@@ -378,30 +368,16 @@ for dim2 = 1:chans
         p(:,dim2,dim3) = polyfit((tstart:t20end)', ...
             levdecay(tstart:t20end,dim2,dim3),1)';
         
-        if chans == 2
-            
-            % reverberation time, T20
-            T20_ch1(1,1,dim3) = 3*((p(2,1,dim3)-25)/p(1,1,dim3) ...
-                -(p(2,1,dim3)-5)/p(1,1,dim3))/fs;
-            T20_ch2(1,1,dim3) = 3*((p(2,2,dim3)-25)/p(1,2,dim3) ...
-                -(p(2,2,dim3)-5)/p(1,2,dim3))/fs;
-            
-            % correlation coefficient, T20
-            T20r2_ch1(1,1,dim3) = corr(levdecay(tstart:t20end,1,dim3), ...
-                (tstart:t20end)'*p(1,1,dim3) + p(2,1,dim3)).^2;
-            T20r2_ch2(1,1,dim3) = corr(levdecay(tstart:t20end,2,dim3), ...
-                (tstart:t20end)'*p(1,2,dim3) + p(2,2,dim3)).^2;
-            
-        else
-            
-            T20(1,dim2, dim3) = 3*((p(2,dim2,dim3)-25)/p(1,dim2,dim3) ...
-                -(p(2,dim2,dim3)-5)/ ...
-                p(1,dim2,dim3))/fs; % reverberation time, T20
-            T20r2(1,dim2, dim3) = corr(levdecay(tstart:t20end,dim2,dim3), ...
-                (tstart:t20end)'*p(1,dim2,dim3) ...
-                + p(2,dim2,dim3)).^2; % correlation coefficient, T20
-            
-        end
+        
+        
+        T20(1,dim2, dim3) = 3*((p(2,dim2,dim3)-25)/p(1,dim2,dim3) ...
+            -(p(2,dim2,dim3)-5)/ ...
+            p(1,dim2,dim3))/fs; % reverberation time, T20
+        T20r2(1,dim2, dim3) = corr(levdecay(tstart:t20end,dim2,dim3), ...
+            (tstart:t20end)'*p(1,dim2,dim3) ...
+            + p(2,dim2,dim3)).^2; % correlation coefficient, T20
+        
+        
         
         %******************************************************************
         % linear regression for T30
@@ -409,66 +385,33 @@ for dim2 = 1:chans
         q(:,dim2,dim3) = polyfit((tstart:t30end)', ...
             levdecay(tstart:t30end,dim2,dim3),1)'; % linear regression
         
-        if chans == 2
-            
-            % reverberation time, T30
-            T30_ch1(1,1,dim3) = 2*((q(2,1,dim3)-35)/q(1,1,dim3) ...
-                -(q(2,1,dim3)-5)/q(1,1,dim3))/fs;
-            T30_ch2(1,1,dim3) = 2*((q(2,2,dim3)-35)/q(1,2,dim3) ...
-                -(q(2,2,dim3)-5)/q(1,2,dim3))/fs;
-            
-            % correlation coefficient, T30
-            T30r2_ch1(1,1,dim3) = corr(levdecay(tstart:t30end,1,dim3), ...
-                (tstart:t30end)'*q(1,1,dim3) + q(2,1,dim3)).^2;
-            T30r2_ch2(1,1,dim3) = corr(levdecay(tstart:t30end,2,dim3), ...
-                (tstart:t30end)'*q(1,2,dim3) + q(2,2,dim3)).^2;
-            
-        else
-            
-            T30(1,dim2, dim3) = 2*((q(2,dim2,dim3)-35)/q(1,dim2,dim3) ...
-                -(q(2,dim2,dim3)-5)/ ...
-                q(1,dim2,dim3))/fs; % reverberation time, T30
-            T30r2(1,dim2, dim3) = corr(levdecay(tstart:t30end,dim2,dim3), ...
-                (tstart:t30end)'*q(1,dim2,dim3) ...
-                + q(2,dim2,dim3)).^2; % correlation coefficient, T30
-            
-        end
+        
+        
+        T30(1,dim2, dim3) = 2*((q(2,dim2,dim3)-35)/q(1,dim2,dim3) ...
+            -(q(2,dim2,dim3)-5)/ ...
+            q(1,dim2,dim3))/fs; % reverberation time, T30
+        T30r2(1,dim2, dim3) = corr(levdecay(tstart:t30end,dim2,dim3), ...
+            (tstart:t30end)'*q(1,dim2,dim3) ...
+            + q(2,dim2,dim3)).^2; % correlation coefficient, T30
+        
+        
         
     end % dim3
 end % dim2
 
 %--------------------------------------------------------------------------
-if chans == 2 && bpo == 1
-    
-    % percentage difference T20 to T30
-    T20T30r_ch1 = (T20_ch1./T30_ch1)*100;
-    T20T30r_ch2 = (T20_ch2./T30_ch2)*100;
-    
-    % Average T30 of 500 Hz and 1 kHz octave bands
-    T30mid_ch1 = mean([T30_ch1(:,:,3) T30_ch1(:,:,4)]);
-    T30mid_ch2 = mean([T30_ch2(:,:,3) T30_ch2(:,:,4)]);
-end
 
-if chans == 2 && bpo == 3
-    
-    T20T30r_ch1 = [];
-    T20T30r_ch2 = [];
-    
-    % Average T30 of 500 Hz and 1 kHz octave bands
-    T30mid_ch1 = [];
-    T30mid_ch2 = [];
-end
 
-if chans ==1 && bpo == 1
+if  bpo == 1
     
     % percentage difference T20 to T30
     T20T30r = (T20./T30)*100;
     
-    % Average T30 of 500 Hz and 1 kHz octave bands
+    % Average T30 of 500 Hz and 1 kHz octave bands NEED TO FIX THIS SO OTHER FREQ CAN BE USED!
     T30mid = mean([T30(:,:,3) T30(:,:,4)]);
 end
 
-if chans ==1 && bpo == 3
+if  bpo == 3
     
     T20T30r = [];
     
@@ -493,120 +436,72 @@ end
 
 out.bandfc = bandfc;
 
-if chans == 2
-    out.EDT_ch1 = permute(EDT_ch1,[2,3,1]);
-    out.EDT_ch2 = permute(EDT_ch2,[2,3,1]);
-    out.T20_ch1 = permute(T20_ch1,[2,3,1]);
-    out.T20_ch2 = permute(T20_ch2,[2,3,1]);
-    out.T30_ch1 = permute(T30_ch1,[2,3,1]);
-    out.T30_ch2 = permute(T30_ch2,[2,3,1]);
-    out.C50_ch1 = C50_ch1;
-    out.C50_ch2 = C50_ch2;
-    out.C80_ch1 = C80_ch1;
-    out.C80_ch2 = C80_ch2;
-    out.D50_ch1 = D50_ch1;
-    out.D50_ch2 = D50_ch2;
-    out.D80_ch1 = D80_ch1;
-    out.D80_ch2 = D80_ch2;
-    out.Ts_ch1 = Ts_ch1;
-    out.Ts_ch2 = Ts_ch2;
-    out.EDTr2_ch1 = permute(EDTr2_ch1,[2,3,1]);
-    out.EDTr2_ch2 = permute(EDTr2_ch2,[2,3,1]);
-    out.T20r2_ch1 = permute(T20r2_ch1,[2,3,1]);
-    out.T20r2_ch2 = permute(T20r2_ch2,[2,3,1]);
-    out.T30r2_ch1 = permute(T30r2_ch1,[2,3,1]);
-    out.T30r2_ch2 = permute(T30r2_ch2,[2,3,1]);
-    
-    if bpo == 1
-        out.T20T30r_ch1 = permute(T20T30r_ch1,[2,3,1]);
-        out.T20T30r_ch2 = permute(T20T30r_ch2,[2,3,1]);
-        out.T30mid_ch1 = permute(T30mid_ch1,[2,3,1]);
-        out.T30mid_ch2 = permute(T30mid_ch2,[2,3,1]);
-    end
-    
-end % if chans == 2
+
+out.EDT = permute(EDT,[2,3,1]);
+out.T20 = permute(T20,[2,3,1]);
+out.T30 = permute(T30,[2,3,1]);
+out.C50 = permute(C50,[2,3,1]);
+out.C80 = permute(C80,[2,3,1]);
+out.D50 = permute(D50,[2,3,1]);
+out.D80 = permute(D80,[2,3,1]);
+out.Ts = permute(Ts,[2,3,1]);
+out.EDTr2 = permute(EDTr2,[2,3,1]);
+out.T20r2 = permute(T20r2,[2,3,1]);
+out.T30r2 = permute(T30r2,[2,3,1]);
+
+if bpo == 1
+    out.T20T30ratio = permute(T20T30r,[2,3,1]);
+    out.T30mid = permute(T30mid,[2,3,1]);
+end
+
+
 
 if chans == 1
-    out.EDT = permute(EDT,[2,3,1]);
-    out.T20 = permute(T20,[2,3,1]);
-    out.T30 = permute(T30,[2,3,1]);
-    out.C50 = C50;
-    out.C80 = C80;
-    out.D50 = D50;
-    out.D80 = D80;
-    out.Ts = Ts;
-    out.EDTr2 = permute(EDTr2,[2,3,1]);
-    out.T20r2 = permute(T20r2,[2,3,1]);
-    out.T30r2 = permute(T30r2,[2,3,1]);
-    
-    if bpo == 1
-        out.T20T30r = permute(T20T30r,[2,3,1]);
-        out.T30mid = permute(T30mid,[2,3,1]);
+    disp(out)
+else
+    disp(['bandfc:' ,num2str(out.bandfc), ' Hz'])
+    disp('Early Decay Time (s):')
+    disp(out.EDT)
+    disp('Reverberation Time T20 (s):')
+    disp(out.T20)
+    disp('Reverberation Time T30 (s):')
+    disp(out.T30)
+    disp('Clarity Index C50 (dB):')
+    disp(out.C50)
+    disp('Clarity Index C80 (dB):')
+    disp(out.C80)
+    disp('Definition D50:')
+    disp(out.D50)
+    disp('Definition D80:')
+    disp(out.D80)
+    disp('Centre Time (s):')
+    disp(out.Ts)
+    disp('EDT squared correlation coefficient:')
+    disp(out.EDTr2)
+    disp('T20 squared correlation coefficient:')
+    disp(out.T20r2)
+    disp('T30 squared correlation coefficient:')
+    disp(out.T30r2)
+    if bpo ==1
+        disp('Ratio of T20 to T30 (%):')
+        disp(out.T20T30ratio)
+        disp('Mid-frequency T30 (s):')
+        disp(out.T30mid)
     end
-    
-end % if chans == 1
-
-
-disp(out)
+end
 
 %--------------------------------------------------------------------------
 % AARAE TABLE
 %--------------------------------------------------------------------------
 
 if isstruct(data)
-    f = figure('Name','Reverberation Parameters', ...
+    for ch = 1:chans
+        f = figure('Name','Reverberation Parameters', ...
         'Position',[200 200 620 360]);
-    %[left bottom width height]
-    if chans == 2
-        dat1 = [out.EDT_ch1;...
-            out.EDT_ch2;...
-            out.T20_ch1;...
-            out.T20_ch2;...
-            out.T30_ch1;...
-            out.T30_ch2;...
-            out.C50_ch1;...
-            out.C50_ch2;...
-            out.C80_ch1;...
-            out.C80_ch2;...
-            out.D50_ch1;...
-            out.D50_ch2;...
-            out.D80_ch1;...
-            out.D80_ch2;...
-            out.Ts_ch1;...
-            out.Ts_ch2;...
-            out.EDTr2_ch1;...
-            out.EDTr2_ch2;...
-            out.T20r2_ch1;...
-            out.T20r2_ch2;...
-            out.T30r2_ch1;...
-            out.T30r2_ch2];
-        cnames1 = num2cell(bandfc);
-        rnames1 = {'Early decay time ch1 (s)','Early decay time ch2 (s)',...
-            'Reverberation time T20 ch1 (s)','Reverberation time T20 ch2 (s)',...
-            'Reverberation time T30 ch1 (s)','Reverberation time T30 ch2 (s)',...
-            'Clarity index C50 ch1 (dB)','Clarity index C50 ch2 (dB)',...
-            'Clarity index C80 ch1 (dB)','Clarity index C80 ch2 (dB)',...
-            'Definition D50 ch1','Definition D50 ch2',...
-            'Definition D80 ch1','Definition D80 ch2',...
-            'Centre time Ts ch1 (s)', 'Centre time Ts ch2 (s)',...
-            'Correlation coefficient EDT r^2 ch1','Correlation coefficient EDT r^2 ch2',...
-            'Correlation coefficient T20 r^2 ch1','Correlation coefficient T20 r^2 ch2',...
-            'Correlation coefficient T30 r^2 ch1','Correlation coefficient T30 r^2 ch2'};
-        t1 =uitable('Data',dat1,'ColumnName',cnames1,'RowName',rnames1);
-        set(t1,'ColumnWidth',{60});
-        if bpo == 1
-            dat2 = [out.T20T30r_ch1;out.T20T30r_ch2];
-            cnames2 = num2cell(bandfc);
-            rnames2 = {'Ratio of T20 to T30 ch1', 'Ratio of T20 to T30 ch2'};
-            t2 =uitable('Data',dat2,'ColumnName',cnames2,'RowName',rnames2);
-            set(t2,'ColumnWidth',{60});
-            disptables(f,[t1 t2]);
-        else
-            disptables(f,t1);
-        end
-    else
-        dat1 = [out.EDT;out.T20;out.T30;out.C50;out.C80;out.D50; ...
-            out.D80;out.Ts;out.EDTr2;out.T20r2;out.T30r2];
+        dat1 = [out.EDT(ch,:);out.T20(ch,:);out.T30(ch,:);out.C50(ch,:);...
+            out.C80(ch,:);out.D50(ch,:); ...
+            out.D80(ch,:);out.Ts(ch,:); ...
+            out.EDTr2(ch,:);out.T20r2(ch,:);out.T30r2(ch,:)];
         cnames1 = num2cell(bandfc);
         rnames1 = {'Early decay time (s)',...
             'Reverberation time T20 (s)',...
@@ -623,7 +518,7 @@ if isstruct(data)
         set(t1,'ColumnWidth',{60});
         
         if bpo == 1
-            dat2 = [out.T20T30r];
+            dat2 = [out.T20T30ratio(ch,:)];
             cnames2 = num2cell(bandfc);
             rnames2 = {'Ratio of T20 to T30 ch1'};
             t2 =uitable('Data',dat2,'ColumnName',cnames2,'RowName',rnames2);
