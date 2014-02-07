@@ -1,6 +1,8 @@
-function [OUT,varargout] = octbandfilter_linphase(IN,fs,param,order,zeropad,minfftlenfactor,test,phasemode)
-% This function does zero and linear phase octave band filtering using a
-% single large fft. Rather than brick-wall filters, this implementation
+function [OUT,varargout] = thirdoctbandfilter_zerominmax_phase(IN,fs,param,order,zeropad,minfftlenfactor,test,phasemode)
+% This function does zero, linear, minimum and maximum phase filtering, 
+% using a single large fft.
+%
+% Rather than brick-wall filters, this implementation
 % has somewhat Butterworth-like magnitude responses. Hence the 'order' input
 % argument determines the slope of the filter skirts, and the flatness of 
 % the in-band response. If desired, a different order can be used for the 
@@ -10,13 +12,13 @@ function [OUT,varargout] = octbandfilter_linphase(IN,fs,param,order,zeropad,minf
 % out-of-band).
 %
 % Filters that meet IEC class 0 criteria can be designed with appropriate
-% selection of filter order. The minimum in-band order that meets class 0 
-% criteria is 7, and the minimum out-of-band order is 5 (based on testing 
-% with a 2 s duration waveform at fs = 48 kHz). Note that the tested filter 
-% performance at low frequencies depends on the test signal duration.
+% selection of filter order. 'Test' allows this to be checked (see below).
 %
-% param is a list of octave band centre frequencies (nominal freqencies
-% only allowed)
+% param is a list of octave band centre frequencies (nominal freqencies)
+%
+% phasemode = 0 for zero phase (or linear phase if a delay is used)
+% phasemode = 1 for minimum phase
+% phasemode = -1 for maximum phase
 %
 % zeropad is the number of samples added both before and after the input
 % audio, to capture the filters' (acausal) build-up and decay. Hence a
@@ -25,12 +27,12 @@ function [OUT,varargout] = octbandfilter_linphase(IN,fs,param,order,zeropad,minf
 %
 % If test == 1, then a plot is produced for each band, showing the tested
 % filter magnitude response together with IEC 61260 limit curves for class
-% 0, class 1 and class 2 octave band filters. These plots are derived from
+% 0, class 1 and class 2 1/3-octave band filters. These plots are derived from
 % an analysis of an impulse centred in time using a audio wave that has the
 % same number of samples as the analysed wave.
 %
 % Code by Densil Cabrera
-% Version 1.03 (30 January 2013)
+% Version 1.01 (7 February 2013)
 
 if ~exist('test','var')
     test = 0;
@@ -60,8 +62,8 @@ else
 end
 
 if ~exist('order','var')
-    orderin = 12; % default filter in-band pseudo-order
-    orderout = 12; % default filter out-of-band pseudo-order
+    orderin = 36; % default filter in-band pseudo-order
+    orderout = 24; % default filter out-of-band pseudo-order
 else
     if length(order) == 1
         orderin = abs(order); 
@@ -84,12 +86,20 @@ else
     end
 end
 
-maxfrq = fs / 2.^1.51; % maximum possible octave band centre frequency
-% potential nominal centre frequencies
-nominalfreq = [31.5,63,125,250,500,1000, ...
-    2000,4000,8000,16000,31500,63000,125000,250000,500000,1000000];
+if exist('param','var')
+    % nominal frequencies only allowed
+    param = exact2nom_oct(param);
+end
 
-exactfreq = 10.^((15:3:60)/10);
+maxfrq = fs / 2.^1.16; % maximum possible octave band centre frequency
+% potential nominal centre frequencies
+nominalfreq = [25,31.5,40,50,63,80,100,125,160,200,250,315,400,...
+    500,630,800,1000,1250,1600,2000,2500,3150,4000,5000,6300,...
+    8000,10000,12500,16000,20000,25000,31500,40000,50000,63000,...
+    80000,100000,125000,160000,200000,250000,315000,400000,500000,...
+    630000,800000,1000000];
+
+exactfreq = 10.^((14:60)/10);
 % possible nominal frequencies
 nominalfreq = nominalfreq(exactfreq <= maxfrq);
 exactfreq = exactfreq(exactfreq <= maxfrq);
@@ -97,7 +107,7 @@ exactfreq = exactfreq(exactfreq <= maxfrq);
 
 if nargin < 3
     param = nominalfreq;
-    [S,ok] = listdlg('Name','Octave band filter input parameters',...
+    [S,ok] = listdlg('Name','1/3-Octave band filter input parameters',...
         'PromptString','Center frequencies [Hz]',...
         'ListString',[num2str(param') repmat(' Hz',length(param),1)]);
     param = param(S);
@@ -184,11 +194,11 @@ if ok == 1
         f = ((1:fftlen)'-1) * fs / fftlen;
         
         % index of low cut-off
-        flo = exactfreq(b) / 10.^0.15;
+        flo = exactfreq(b) / 10.^0.05;
         indlo = find(abs(f(1:end/2)-flo) == min(abs(f(1:end/2)-flo)),1,'first');
         
         % index of high cut-off
-        fhi = exactfreq(b) * 10.^0.15;
+        fhi = exactfreq(b) * 10.^0.05;
         indhi = find(abs(f(1:end/2)-fhi) == min(abs(f(1:end/2)-fhi)),1,'first');
         
         % centre frequency index
@@ -229,7 +239,7 @@ if ok == 1
         % above Nyquist frequency
         mag(fftlen/2+2:end) = flipud(mag(2:fftlen/2));
         
-        if phasemode == 1
+       if phasemode == 1
             % convert mag to min phase complex coefficients
             mag = minphasefreqdomain(mag); 
         elseif phasemode == -1
@@ -246,10 +256,7 @@ if ok == 1
 
         
         % truncate waveform and send to filtered waveform matrix
-
-            filtered(:,:,b) = bandfiltered(1:len,:);
-
-        
+        filtered(:,:,b) = bandfiltered(1:len,:);
         
         if test
             testaudiofiltered = ifft(testspectrum .* mag);
@@ -332,7 +339,7 @@ if ok == 1
         
         
         for b = 1:length(param)
-            testfreq = exactfreq(b) .* 10.^(3/10).^ ...
+            testfreq = exactfreq(b) .* 10.^(1/10).^ ...
             [-4;-3;-2;-1;-1/2;-1/2;-3/8;-1/4;-1/8;0;...
                 1/8;1/4;3/8;1/2;1/2;1;2;3;4];
             figure('Name',[num2str(param(b)), ' Hz Band'])

@@ -23,7 +23,7 @@ function out = STIPA_direct(in, fs, cal, refsignal)
 % skirts are used (achieved by setting filterorder to 24).
 %
 % Code by Densil Cabrera
-% version 1.04 (31 January 2014)
+% version 1.05 (7 February 2014)
 
 
 % INPUTS AND SETTINGS
@@ -382,7 +382,7 @@ function [MTF, I, Level] = STIPA_direct_MTF(audio,fs,fc,Fm)
 % Use AARAE's linear phase octave band filters
 [len, chans]= size(audio);
 filterorder = 24; % very steep filter skirts improve the performance
-Intensity = octbandfilter_linphase(audio,fs,fc,filterorder) .^2;
+Intensity = octbandfilter_zerominmax_phase(audio,fs,fc,filterorder) .^2;
 I = mean(Intensity); % mean square intensity
 Level = 10*log10(I); % intensity expressed in decibels
 
