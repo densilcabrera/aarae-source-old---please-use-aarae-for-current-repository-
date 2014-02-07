@@ -1,10 +1,10 @@
-function out = linRT(data, fs, startthresh, bpo, doplot)
+function out = linRT(data, fs, startthresh, bpo, doplot,filterstrength,phasemode,noisecomp,autotrunc)
 % This function calculates reverberation time and related ISO 3382
 % sound energy parameters (C50, D50, etc.) from an impulse response in
 % a linear least squares sense.
 %
 % Code by Grant Cuthbert & Densil Cabrera
-% Version 1.01 (6 February 2014)
+% Version 1.02 (7 February 2014)
 %
 %--------------------------------------------------------------------------
 % INPUT VARIABLES
@@ -86,21 +86,33 @@ if isstruct(data)
     % Dialog box for settings
     prompt = {'Threshold for IR start detection', ...
         'Bands per octave (1 | 3)', ...
+        'Filter strength', ...
+        'Zero phase (0), Maximum phase (-1) or Minimum phase (1) filters',...
+        'Noise compensation: None (0), Chu (1)', ...
+        'Automatic truncation: No (0), NOT IMPLEMENTED YET',...
         'Plot (0|1)'};
     dlg_title = 'Settings';
     num_lines = 1;
-    def = {'-20','1','1'};
+    def = {'-20','1','1','0','0','0','1'};
     answer = inputdlg(prompt,dlg_title,num_lines,def);
     
     if ~isempty(answer)
         startthresh = str2num(answer{1,1});
         bpo = str2num(answer{2,1});
-        doplot = str2num(answer{3,1});
+        filterstrength = str2num(answer{3,1});
+        phasemode = str2num(answer{4,1});
+        noisecomp = str2num(answer{5,1});
+        autotrunc = str2num(answer{6,1});
+        doplot = str2num(answer{7,1});
     end
     
 else
     
     ir = data;
+    if nargin < 9, autotrunc = 0; end
+    if nargin < 8, noisecomp = 0; end
+    if nargin < 7, phasemode = 0; end
+    if nargin < 6, filterstrength = 1; end
     if nargin < 5, doplot = 1; end
     if nargin < 4, bpo = 1; end
     if nargin < 3, startthresh = -20; end
@@ -128,6 +140,11 @@ switch ndim
         chans = s(2); % number of channels
         multibandIR = 1; % multiband IR (do not filter; do not output ...
         % energy parameters
+end
+
+% Get last 10 % for Chu noise compensation if set
+if noisecomp == 1
+    ir_end10 = ir(round(0.9*len):end,:,:);
 end
 
 % Preallocate
@@ -175,52 +192,37 @@ bands = length(fc);
 
 % - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 if multibandIR == 0
-    % OLD FILTERS (not class 0  compliant
-    %     f_low = fc./10^(0.15*bandwidth); % low cut-off frequency in Hz
-    %     f_hi = fc.*10^(0.15*bandwidth); % high cut-off frequency in Hz
-    %     nyquist = fs/2; % Nyquist frequency
-    %     b = zeros(halforder*2+1,length(fc)); % pre-allocate filter coefficients
-    %     a = b; % pre-allocate filter coefficients
-    %
-    %     % calculate filter coefficients
-    %     for band = 1:bands
-    %         [b(:,band), a(:,band)]=butter(halforder, ...
-    %             [f_low(band)/nyquist f_hi(band)/nyquist]);
-    %     end
     
-    % preallocate
     iroct = zeros(len,chans,bands);
     early50oct = zeros(length(early50),chans,bands);
     early80oct = zeros(length(early80),chans,bands);
     late50oct = zeros(length(late50),chans,bands);
     late80oct = zeros(length(late80),chans,bands);
     
-    % filter IR and Early/Late
-    %     for chan = 1:chans
-    %         for band = 1:bands
-    %             iroct(:,chan,band) = filter(b(:,band),a(:,band), ir(:,chan)); % IR
-    %             early50oct(:,chan,band) = filter(b(:,band),a(:,band), early50(:,chan)); % Early50
-    %             early80oct(:,chan,band) = filter(b(:,band),a(:,band), early80(:,chan)); % Early80
-    %             late50oct(:,chan,band) = filter(b(:,band),a(:,band), late50(:,chan)); % Late50
-    %             late80oct(:,chan,band) = filter(b(:,band),a(:,band), late80(:,chan)); % Late80
-    %         end
-    %     end
     
-    % use AARAE's zero phase filters
+    % use AARAE's fft-based filters
     fcnom = exact2nom_oct(fc);
     if bpo == 1
-        iroct = octbandfilter_linphase(ir,fs,fcnom,[12,12]);
-        early50oct = octbandfilter_linphase(early50,fs,fcnom,[12,12]);
-        early80oct = octbandfilter_linphase(early80,fs,fcnom,[12,12]);
-        late50oct = octbandfilter_linphase(late50,fs,fcnom,[12,12]);
-        late80oct = octbandfilter_linphase(late80,fs,fcnom,[12,12]);
+        order = [12,12]*filterstrength;
+        iroct = octbandfilter_zerominmax_phase(ir,fs,fcnom,order,0,1000,0,phasemode);
+        early50oct = octbandfilter_zerominmax_phase(early50,fs,fcnom,order,0,1000,0,phasemode);
+        early80oct = octbandfilter_zerominmax_phase(early80,fs,fcnom,order,0,1000,0,phasemode);
+        late50oct = octbandfilter_zerominmax_phase(late50,fs,fcnom,order,0,1000,0,phasemode);
+        late80oct = octbandfilter_zerominmax_phase(late80,fs,fcnom,order,0,1000,0,phasemode);
+        if noisecomp == 1
+            ir_end10oct = octbandfilter_zerominmax_phase(ir_end10,fs,fcnom,order,0,1000,0,phasemode);
+        end
         
     else
-        iroct = thirdoctbandfilter_linphase(ir,fs,fcnom,[36,24]);
-        early50oct = thirdoctbandfilter_linphase(early50,fs,fcnom,[36,24]);
-        early80oct = thirdoctbandfilter_linphase(early80,fs,fcnom,[36,24]);
-        late50oct = thirdoctbandfilter_linphase(late50,fs,fcnom,[36,24]);
-        late80oct = thirdoctbandfilter_linphase(late80,fs,fcnom,[36,24]);
+        order = [36,24] * filterstrength;
+        iroct = thirdoctbandfilter_linphase(ir,fs,fcnom,order);
+        early50oct = thirdoctbandfilter_linphase(early50,fs,fcnom,order);
+        early80oct = thirdoctbandfilter_linphase(early80,fs,fcnom,order);
+        late50oct = thirdoctbandfilter_linphase(late50,fs,fcnom,order);
+        late80oct = thirdoctbandfilter_linphase(late80,fs,fcnom,order);
+        if noisecomp == 1
+            ir_end10oct = thirdoctbandfilter_zerominmax_phase(ir_end10,fs,fcnom,order,0,1000,0,phasemode);
+        end
     end
     
     
@@ -234,26 +236,7 @@ if multibandIR == 0
     late80oct = sum(late80oct.^2);
     alloct = sum(iroct.^2);
     
-    %     if chans == 2
-    %         C50_ch1 = 10*log10(early50oct(:,1) ./ late50oct(:,1))'; % C50
-    %         C50_ch2 = 10*log10(early50oct(:,2) ./ late50oct(:,2))';
-    %         C80_ch1 = 10*log10(early80oct(:,1) ./ late80oct(:,1))'; % C80
-    %         C80_ch2 = 10*log10(early80oct(:,2) ./ late80oct(:,2))';
-    %         D50_ch1 = (early50oct(:,1) ./ alloct(:,1))'; % D50
-    %         D50_ch2 = (early50oct(:,2) ./ alloct(:,2))';
-    %         D80_ch1 = (early80oct(:,1) ./ alloct(:,1))'; % D80
-    %         D80_ch2 = (early80oct(:,2) ./ alloct(:,2))';
-    %
-    %         % time values of IR in seconds
-    %         tstimes_ch1 = (0:(length(iroct(:,1,:))-1))' ./ fs;
-    %         tstimes_ch2 = (0:(length(iroct(:,2,:))-1))' ./ fs;
-    %
-    %         Ts_ch1 = (squeeze(sum(iroct(:,1,:).^2 .* ...
-    %             repmat(tstimes_ch1,[1,1,bands])))./alloct(:,1,:))'; % Ts
-    %         Ts_ch2 = (squeeze(sum(iroct(:,2,:).^2 .* ...
-    %             repmat(tstimes_ch2,[1,1,bands])))./alloct(:,2,:))';
-    %
-    %     elseif chans == 1
+   
     C50 = 10*log10(early50oct ./ late50oct); % C50
     C80 = 10*log10(early80oct ./ late80oct); % C80
     D50 = (early50oct ./ alloct); % D50
@@ -266,34 +249,26 @@ if multibandIR == 0
         repmat(tstimes,[1,chans,bands])))./alloct; % Ts
     %     end
     
+    % mean square of last 10%
+    if noisecomp == 1
+        ir_end10oct = mean(ir_end10oct.^2);
+    else
+        ir_end10oct = zeros(1,chans,bands);
+    end
+    
+    
 end % if multibandIR == 0
 % - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 if multibandIR == 1
     
-    % do not output energy parameters if early/late cannot be filtered
-    % separately
-    
-    %     if chans == 2
-    %         C50_ch1 = [];
-    %         C50_ch2 = [];
-    %         C80_ch1 = [];
-    %         C80_ch2 = [];
-    %         D50_ch1 = [];
-    %         D50_ch2 = [];
-    %         D80_ch1 = [];
-    %         D80_ch2 = [];
-    %         Ts_ch1 = [];
-    %         Ts_ch2 = [];
-    %
-    %     elseif chans == 1
+  
     C50 = [];
     C80 = [];
     D50 = [];
     D80 = [];
     Ts = [];
-    %     end
-    
+   
     iroct = ir;
     
 end % if multibandIR == 1
@@ -306,8 +281,11 @@ end % if multibandIR == 1
 %***************************************
 % Derive the reverse-integrated decay curve(s)
 
+% square and correct for background noise (Chu method) if set
+iroct2 = iroct.^2 - repmat(ir_end10oct,[len,1,1]);
+iroct2(iroct2<0) = 1e-99; % almost zero
 % Reverse integrate squared IR, and express the result in decibels
-levdecay = 10*log10(flipdim(cumsum(flipdim(iroct.^2,1)),1));
+levdecay = 10*log10(flipdim(cumsum(flipdim(iroct2,1)),1));
 
 for dim2 = 1:chans
     for dim3 = 1:bands
@@ -616,7 +594,7 @@ if isstruct(data)
             
             if bpo == 1
                 legend('Level Decay','EDT','T20','T30', 'Location', ...
-                    'SouthEastOutside')
+                    'EastOutside')
             elseif bpo == 3
                 legend('Level Decay','EDT','T20','T30', 'Location', ...
                     'EastOutside')

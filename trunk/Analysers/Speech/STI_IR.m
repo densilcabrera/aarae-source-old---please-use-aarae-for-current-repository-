@@ -16,7 +16,7 @@ function [M_STI, F_STI, Verbose]=STI_IR(IR, Lsignal, Lnoise, AuditoryMasking, No
 % unless it is assumed that noise is negligible.
 %
 % Code by Doheon Lee and Densil Cabrera
-% version 1.09 (30 January 2014)
+% version 1.10 (7 February 2014)
 %
 % * For further information type 'doc STI_IR' in the MATLAB command line and
 %   click on 'View code for STI_IR'.
@@ -607,7 +607,7 @@ for ch = 1:chans
             % pseudo-Butterworth response
             orderin = 12; % in-band filter pseudo-order
             orderout = 12; % out-of-band filter pseudo-order
-            P_octave = octbandfilter_linphase(data(:,ch),fs,...
+            P_octave = octbandfilter_zerominmax_phase(data(:,ch),fs,...
                 [125,250,500,1000,2000,4000,8000],[orderin,orderout]);
         end
         for k=1:length(fc);

@@ -1,6 +1,8 @@
-function [OUT,varargout] = octbandfilter_linphase(IN,fs,param,order,zeropad,minfftlenfactor,test,phasemode)
-% This function does zero and linear phase octave band filtering using a
-% single large fft. Rather than brick-wall filters, this implementation
+function [OUT,varargout] = octbandfilter_zerominmax_phase(IN,fs,param,order,zeropad,minfftlenfactor,test,phasemode)
+% This function does zero, linear, minimum and maximum phase filtering, 
+% using a single large fft.
+%
+% Rather than brick-wall filters, this implementation
 % has somewhat Butterworth-like magnitude responses. Hence the 'order' input
 % argument determines the slope of the filter skirts, and the flatness of 
 % the in-band response. If desired, a different order can be used for the 
@@ -15,8 +17,11 @@ function [OUT,varargout] = octbandfilter_linphase(IN,fs,param,order,zeropad,minf
 % with a 2 s duration waveform at fs = 48 kHz). Note that the tested filter 
 % performance at low frequencies depends on the test signal duration.
 %
-% param is a list of octave band centre frequencies (nominal freqencies
-% only allowed)
+% param is a list of octave band centre frequencies (nominal freqencies)
+%
+% phasemode = 0 for zero phase (or linear phase if a delay is used)
+% phasemode = 1 for minimum phase
+% phasemode = -1 for maximum phase
 %
 % zeropad is the number of samples added both before and after the input
 % audio, to capture the filters' (acausal) build-up and decay. Hence a
@@ -30,7 +35,7 @@ function [OUT,varargout] = octbandfilter_linphase(IN,fs,param,order,zeropad,minf
 % same number of samples as the analysed wave.
 %
 % Code by Densil Cabrera
-% Version 1.03 (30 January 2013)
+% Version 1.05 (7 February 2014)
 
 if ~exist('test','var')
     test = 0;
@@ -84,12 +89,17 @@ else
     end
 end
 
+if exist('param','var')
+    % nominal frequencies only allowed
+    param = exact2nom_oct(param);
+end
+
 maxfrq = fs / 2.^1.51; % maximum possible octave band centre frequency
 % potential nominal centre frequencies
-nominalfreq = [31.5,63,125,250,500,1000, ...
+nominalfreq = [16,31.5,63,125,250,500,1000, ...
     2000,4000,8000,16000,31500,63000,125000,250000,500000,1000000];
 
-exactfreq = 10.^((15:3:60)/10);
+exactfreq = 10.^((12:3:60)/10);
 % possible nominal frequencies
 nominalfreq = nominalfreq(exactfreq <= maxfrq);
 exactfreq = exactfreq(exactfreq <= maxfrq);
