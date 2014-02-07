@@ -80,7 +80,7 @@ if audioplay
         wavout = out;
     end
     
-    sound(wavout, in.fs)
+    sound(sum(wavout,3)./max(max(abs(sum(wavout,3)))), in.fs)
         
     % Loop for replaying, saving and finishing
     choice = 'x'; % create a string
@@ -89,14 +89,17 @@ if audioplay
     while ~strcmp(choice,'Done')
         choice = questdlg('What next?', ...
             'Autoconvolution', ...
-            'Play again', 'Save audio', 'Done','Done');
+            'Play again', 'Save audio as .wav', 'Done','Done');
         switch choice
             case 'Play again'
-                sound(wavout, in.fs)
-            case 'Save audio'
+                sound(sum(wavout,3)./max(max(abs(sum(wavout,3)))), in.fs)
+            case 'Save audio as .wav'
                 [filename, pathname] = uiputfile({'*.wav'},'Save as');
-                if ~filename == 0
+                if ~filename == 0 && size(waveout,3)<3
                     audiowrite([pathname,filename],wavout,in.fs);
+                end
+                if size(waveout,3)>2
+                    disp('unable to save multiband audio as wav file')
                 end
         end % switch
     end % while
