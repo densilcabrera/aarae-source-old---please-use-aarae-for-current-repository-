@@ -125,7 +125,7 @@ else
 end
 
 %--------------------------------------------------------------------------
-% TRUNCATION
+% START TRUNCATION
 %--------------------------------------------------------------------------
 
 % Check the input data dimensions
@@ -193,20 +193,7 @@ bandfc = exact2nom_oct(fc); % nominal frequencies
 bands = length(bandfc);
 
 
-% 
-% 
-% if bpo == 3
-%     bandnumber = 20:37; % filter band numbers (1/3 octaves 100 Hz - 5 kHz)
-%     bandwidth = 1/3;
-%     halforder = 2; % half of the filter order
-% else
-%     bandnumber = 21:3:36; % filter band numbers (octave bands 125 Hz - 4 kHz)
-%     bandwidth = 1;
-%     halforder = 3; % half of the filter order
-% end
-% 
-% fc = 10.^(bandnumber./10); % filter centre frequencies in Hz
-% bands = length(fc);
+
 
 % - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 if multibandIR == 0
@@ -238,7 +225,7 @@ if multibandIR == 0
     
     
     %----------------------------------------------------------------------
-    % AUTO-TRUNCATION
+    % END AUTO-TRUNCATION
     %----------------------------------------------------------------------
     
     if autotrunc == 1
