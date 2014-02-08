@@ -563,75 +563,10 @@ if isstruct(data)
         end
         
         
-        if chans == 1
+       % if chans == 1
+       for ch = 1:chans
             
-            figure('Name','Level Decay and Regression Lines')
-            
-            for band = 1:bands
-                
-                if bpo == 1
-                    subplot(2,3,band)
-                elseif bpo == 3
-                    subplot(4,5,band)
-                end
-                
-                hold on
-                
-                % plot the level decay(s) on a single subplot
-                plot(((1:len)-1)./fs, levdecay(:,1,band),'Color',[0.2 0.2 0.2], ...
-                    'LineStyle',':','DisplayName','Level Decay')
-                
-                % linear regression for EDT
-                plot(((irstart(1,1,band):edtend(1,1,band))./fs), ...
-                    (irstart(1,1,band):edtend(1,1,band)).* ...
-                    o(1,1,band)+o(2,1,band), ...
-                    'Color',[0.9 0 0],'DisplayName','EDT')
-                
-                % linear regression for T20
-                plot(((tstart(1,1,band):t20end(1,1,band))./fs), ...
-                    (tstart(1,1,band):t20end(1,1,band)).* ...
-                    p(1,1,band)+p(2,1,band), ...
-                    'Color',[0 0.6 0],'DisplayName','T20')
-                
-                % linear regression for T30
-                plot(((tstart(1,1,band):t30end(1,1,band))./fs), ...
-                    (tstart(1,1,band):t30end(1,1,band)).* ...
-                    q(1,1,band)+q(2,1,band), ...
-                    'Color',[0 0 0.6],'DisplayName', 'T30')
-                
-                % x axis label (only on the bottom row of subplots)
-                if band > (c*r - c)
-                    xlabel('Time (s)')
-                end
-                
-                % y axis label (only on the left column of subplots)
-                if mod(band-1, c) == 0
-                    ylabel('Level (dB)')
-                end
-                
-                xlim([0 levdecayend(1,1,band)])
-                ylim([-65 0])
-                
-                title([num2str(bandfc(band)),' Hz'])
-                
-            end % for band
-            
-            
-            if bpo == 1
-                legend('Level Decay','EDT','T20','T30', 'Location', ...
-                    'EastOutside')
-            elseif bpo == 3
-                legend('Level Decay','EDT','T20','T30', 'Location', ...
-                    'EastOutside')
-            end
-            
-            hold off
-            
-            
-            %----------------------------------------------------------------------
-        elseif chans == 2
-            
-            figure('Name','Channel 1 - Level Decay and Regression Lines')
+            figure('Name',['Channel ', num2str(ch), ', Level Decay and Regression Lines'])
             
             for band = 1:bands
                 
@@ -644,25 +579,25 @@ if isstruct(data)
                 hold on
                 
                 % plot the level decay(s) on a single subplot
-                plot(((1:len)-1)./fs, levdecay(:,1,band),'Color',[0.2 0.2 0.2], ...
+                plot(((1:len)-1)./fs, levdecay(:,ch,band),'Color',[0.2 0.2 0.2], ...
                     'LineStyle',':','DisplayName','Level Decay')
                 
                 % linear regression for EDT
-                plot(((irstart(1,1,band):edtend(1,1,band))./fs), ...
-                    (irstart(1,1,band):edtend(1,1,band)).* ...
-                    o(1,1,band)+o(2,1,band), ...
+                plot(((irstart(1,ch,band):edtend(1,ch,band))./fs), ...
+                    (irstart(1,ch,band):edtend(1,ch,band)).* ...
+                    o(1,ch,band)+o(2,ch,band), ...
                     'Color',[0.9 0 0],'DisplayName','EDT')
                 
                 % linear regression for T20
-                plot(((tstart(1,1,band):t20end(1,1,band))./fs), ...
-                    (tstart(1,1,band):t20end(1,1,band)).* ...
-                    p(1,1,band)+p(2,1,band), ...
+                plot(((tstart(1,ch,band):t20end(1,ch,band))./fs), ...
+                    (tstart(1,ch,band):t20end(1,ch,band)).* ...
+                    p(1,ch,band)+p(2,ch,band), ...
                     'Color',[0 0.6 0],'DisplayName','T20')
                 
                 % linear regression for T30
-                plot(((tstart(1,1,band):t30end(1,1,band))./fs), ...
-                    (tstart(1,1,band):t30end(1,1,band)).* ...
-                    q(1,1,band)+q(2,1,band), ...
+                plot(((tstart(1,ch,band):t30end(1,ch,band))./fs), ...
+                    (tstart(1,ch,band):t30end(1,ch,band)).* ...
+                    q(1,ch,band)+q(2,ch,band), ...
                     'Color',[0 0 0.6],'DisplayName', 'T30')
                 
                 % x axis label (only on the bottom row of subplots)
@@ -675,84 +610,26 @@ if isstruct(data)
                     ylabel('Level (dB)')
                 end
                 
-                xlim([0 levdecayend(1,1,band)])
+                xlim([0 levdecayend(1,ch,band)])
                 ylim([-65 0])
                 
                 title([num2str(bandfc(band)),' Hz'])
                 
             end % for band
             
+            
             if bpo == 1
-                legend('Level Decay','EDT','T20','T30', 'Location', ...
-                    'SouthEastOutside')
+                legend('L','EDT','T20','T30', 'Location', ...
+                    'BestOutside')
             elseif bpo == 3
-                legend('Level Decay','EDT','T20','T30', 'Location', ...
-                    'EastOutside')
+                legend('L','EDT','T20','T30', 'Location', ...
+                    'BestOutside')
             end
             
             hold off
             
             
-            figure('Name','Channel 2 - Level Decay and Regression Lines')
-            
-            for band = 1:bands
-                
-                if bpo == 1
-                    subplot(2,3,band)
-                elseif bpo == 3
-                    subplot(4,5,band)
-                end
-                
-                hold on
-                
-                % plot the level decay(s) on a single subplot
-                plot(((1:len)-1)./fs, levdecay(:,2,band),'Color',[0.2 0.2 0.2], ...
-                    'LineStyle',':','DisplayName','Level Decay')
-                
-                % linear regression for EDT
-                plot(((irstart(1,2,band):edtend(1,2,band))./fs), ...
-                    (irstart(1,2,band):edtend(1,2,band)).* ...
-                    o(1,2,band)+o(2,2,band), ...
-                    'Color',[0.9 0 0],'DisplayName','EDT')
-                
-                % linear regression for T20
-                plot(((tstart(1,2,band):t20end(1,2,band))./fs), ...
-                    (tstart(1,2,band):t20end(1,2,band)).* ...
-                    p(1,2,band)+p(2,2,band), ...
-                    'Color',[0 0.6 0],'DisplayName','T20')
-                
-                % linear regression for T30
-                plot(((tstart(1,2,band):t30end(1,2,band))./fs), ...
-                    (tstart(1,2,band):t30end(1,2,band)).* ...
-                    q(1,2,band)+q(2,2,band), ...
-                    'Color',[0 0 0.6],'DisplayName', 'T30')
-                
-                % x axis label (only on the bottom row of subplots)
-                if band > (c*r - c)
-                    xlabel('Time (s)')
-                end
-                
-                % y axis label (only on the left column of subplots)
-                if mod(band-1, c) == 0
-                    ylabel('Level (dB)')
-                end
-                
-                xlim([0 levdecayend(1,2,band)])
-                ylim([-65 0])
-                
-                title([num2str(bandfc(band)),' Hz'])
-                
-            end % for band
-            
-            if bpo == 1
-                legend('Level Decay','EDT','T20','T30', 'Location', ...
-                    'SouthEastOutside')
-            elseif bpo == 3
-                legend('Level Decay','EDT','T20','T30', 'Location', ...
-                    'EastOutside')
-            end
-            
-            hold off
+
             
         end % if chans == 1 / elseif chans == 2
         
