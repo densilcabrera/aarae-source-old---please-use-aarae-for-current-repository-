@@ -4,7 +4,7 @@ function out = linRT(data, fs, startthresh, bpo, doplot,filterstrength,phasemode
 % a linear least squares sense.
 %
 % Code by Grant Cuthbert & Densil Cabrera
-% Version 1.02 (7 February 2014)
+% Version 1.03 (8 February 2014)
 %
 %--------------------------------------------------------------------------
 % INPUT VARIABLES
@@ -89,7 +89,7 @@ if isstruct(data)
         'Filter strength', ...
         'Zero phase (0), Maximum phase (-1) or Minimum phase (1) filters',...
         'Noise compensation: None (0), Chu (1)', ...
-        'Automatic truncation: No (0), NOT IMPLEMENTED YET',...
+        'Automatic end truncation: None (0), Lundeby (1)',...
         'Plot (0|1)'};
     dlg_title = 'Settings';
     num_lines = 1;
@@ -215,16 +215,41 @@ if multibandIR == 0
         
     else
         order = [36,24] * filterstrength;
-        iroct = thirdoctbandfilter_linphase(ir,fs,fcnom,order);
-        early50oct = thirdoctbandfilter_linphase(early50,fs,fcnom,order);
-        early80oct = thirdoctbandfilter_linphase(early80,fs,fcnom,order);
-        late50oct = thirdoctbandfilter_linphase(late50,fs,fcnom,order);
-        late80oct = thirdoctbandfilter_linphase(late80,fs,fcnom,order);
+        iroct = thirdoctbandfilter_zerominmax_phase(ir,fs,fcnom,order,0,1000,0,phasemode);
+        early50oct = thirdoctbandfilter_zerominmax_phase(early50,fs,fcnom,order,0,1000,0,phasemode);
+        early80oct = thirdoctbandfilter_zerominmax_phase(early80,fs,fcnom,order,0,1000,0,phasemode);
+        late50oct = thirdoctbandfilter_zerominmax_phase(late50,fs,fcnom,order,0,1000,0,phasemode);
+        late80oct = thirdoctbandfilter_zerominmax_phase(late80,fs,fcnom,order,0,1000,0,phasemode);
         if noisecomp == 1
             ir_end10oct = thirdoctbandfilter_zerominmax_phase(ir_end10,fs,fcnom,order,0,1000,0,phasemode);
         end
     end
     
+    
+    %----------------------------------------------------------------------
+    % AUTO-TRUNCATION
+    %----------------------------------------------------------------------
+    
+    if autotrunc == 1
+        % Lundeby crosspoint 
+        crosspoint = lundebycrosspoint(iroct(1:(end-min(min(startpoint))),:,:).^2, fs,fc);
+        
+        % autotruncation
+        for ch = 1:chans
+            for b = 1:bands
+                if crosspoint(1,ch,b) < len
+                    iroct(crosspoint(1,ch,b):end,ch,b) = 0;
+                    if crosspoint(1,ch,b) > fs*0.05
+                        late50oct(crosspoint(1,ch,b)-fs*0.05+1:end,ch,b)=0;
+                    end
+                    if crosspoint(1,ch,b) > fs*0.08
+                        late80oct(crosspoint(1,ch,b)-fs*0.08+1:end,ch,b)=0;
+                    end
+                end
+            end
+        end
+        
+    end
     
     %----------------------------------------------------------------------
     % CALCULATE ENERGY PARAMETERS
