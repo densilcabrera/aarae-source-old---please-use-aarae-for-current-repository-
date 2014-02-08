@@ -1,4 +1,4 @@
-function out = linRT(data, fs, startthresh, bpo, doplot,filterstrength,phasemode,noisecomp,autotrunc)
+function out = linRT(data,fs,startthresh,bpo,doplot,filterstrength,phasemode,noisecomp,autotrunc,f_low,f_hi)
 % This function calculates reverberation time and related ISO 3382
 % sound energy parameters (C50, D50, etc.) from an impulse response in
 % a linear least squares sense.
@@ -86,6 +86,8 @@ if isstruct(data)
     % Dialog box for settings
     prompt = {'Threshold for IR start detection', ...
         'Bands per octave (1 | 3)', ...
+        'Lowest centre frequency (Hz)', ...
+        'Highest centre frequency (Hz)', ...
         'Filter strength', ...
         'Zero phase (0), Maximum phase (-1) or Minimum phase (1) filters',...
         'Noise compensation: None (0), Chu (1)', ...
@@ -93,22 +95,25 @@ if isstruct(data)
         'Plot (0|1)'};
     dlg_title = 'Settings';
     num_lines = 1;
-    def = {'-20','1','1','0','0','0','1'};
+    def = {'-20','1','125','8000','1','0','0','0','1'};
     answer = inputdlg(prompt,dlg_title,num_lines,def);
     
     if ~isempty(answer)
         startthresh = str2num(answer{1,1});
         bpo = str2num(answer{2,1});
-        filterstrength = str2num(answer{3,1});
-        phasemode = str2num(answer{4,1});
-        noisecomp = str2num(answer{5,1});
-        autotrunc = str2num(answer{6,1});
-        doplot = str2num(answer{7,1});
+        f_low = str2num(answer{3,1});
+        f_hi = str2num(answer{4,1});
+        filterstrength = str2num(answer{5,1});
+        phasemode = str2num(answer{6,1});
+        noisecomp = str2num(answer{7,1});
+        autotrunc = str2num(answer{8,1});
+        doplot = str2num(answer{9,1});
     end
     
 else
     
     ir = data;
+    if nargin < 10, f_low = 125; f_hi = 8000; end
     if nargin < 9, autotrunc = 0; end
     if nargin < 8, noisecomp = 0; end
     if nargin < 7, phasemode = 0; end
@@ -177,51 +182,57 @@ late80 = ir(ceil(fs*0.08):end,:); % Truncate Late80
 % FILTERING
 %--------------------------------------------------------------------------
 
-if bpo == 3
-    bandnumber = 20:37; % filter band numbers (1/3 octaves 100 Hz - 5 kHz)
-    bandwidth = 1/3;
-    halforder = 2; % half of the filter order
+noctaves = log2(f_hi/f_low);
+if bpo == 1
+    f_low = 1000*2.^round(log2((f_low/1000))); % make sure it is oct
+    fc = f_low .* 2.^(0:round(noctaves)); % approx freqencies
 else
-    bandnumber = 21:3:36; % filter band numbers (octave bands 125 Hz - 4 kHz)
-    bandwidth = 1;
-    halforder = 3; % half of the filter order
+    fc = f_low .* 2.^(0:1/3:round(3*noctaves)/3);% approx freqencies
 end
+bandfc = exact2nom_oct(fc); % nominal frequencies
+bands = length(bandfc);
 
-fc = 10.^(bandnumber./10); % filter centre frequencies in Hz
-bands = length(fc);
+
+% 
+% 
+% if bpo == 3
+%     bandnumber = 20:37; % filter band numbers (1/3 octaves 100 Hz - 5 kHz)
+%     bandwidth = 1/3;
+%     halforder = 2; % half of the filter order
+% else
+%     bandnumber = 21:3:36; % filter band numbers (octave bands 125 Hz - 4 kHz)
+%     bandwidth = 1;
+%     halforder = 3; % half of the filter order
+% end
+% 
+% fc = 10.^(bandnumber./10); % filter centre frequencies in Hz
+% bands = length(fc);
 
 % - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 if multibandIR == 0
-    
-    iroct = zeros(len,chans,bands);
-    early50oct = zeros(length(early50),chans,bands);
-    early80oct = zeros(length(early80),chans,bands);
-    late50oct = zeros(length(late50),chans,bands);
-    late80oct = zeros(length(late80),chans,bands);
-    
-    
+        
     % use AARAE's fft-based filters
-    fcnom = exact2nom_oct(fc);
+    
     if bpo == 1
         order = [12,12]*filterstrength;
-        iroct = octbandfilter_zerominmax_phase(ir,fs,fcnom,order,0,1000,0,phasemode);
-        early50oct = octbandfilter_zerominmax_phase(early50,fs,fcnom,order,0,1000,0,phasemode);
-        early80oct = octbandfilter_zerominmax_phase(early80,fs,fcnom,order,0,1000,0,phasemode);
-        late50oct = octbandfilter_zerominmax_phase(late50,fs,fcnom,order,0,1000,0,phasemode);
-        late80oct = octbandfilter_zerominmax_phase(late80,fs,fcnom,order,0,1000,0,phasemode);
+        iroct = octbandfilter_zerominmax_phase(ir,fs,bandfc,order,0,1000,0,phasemode);
+        early50oct = octbandfilter_zerominmax_phase(early50,fs,bandfc,order,0,1000,0,phasemode);
+        early80oct = octbandfilter_zerominmax_phase(early80,fs,bandfc,order,0,1000,0,phasemode);
+        late50oct = octbandfilter_zerominmax_phase(late50,fs,bandfc,order,0,1000,0,phasemode);
+        late80oct = octbandfilter_zerominmax_phase(late80,fs,bandfc,order,0,1000,0,phasemode);
         if noisecomp == 1
-            ir_end10oct = octbandfilter_zerominmax_phase(ir_end10,fs,fcnom,order,0,1000,0,phasemode);
+            ir_end10oct = octbandfilter_zerominmax_phase(ir_end10,fs,bandfc,order,0,1000,0,phasemode);
         end
         
     else
         order = [36,24] * filterstrength;
-        iroct = thirdoctbandfilter_zerominmax_phase(ir,fs,fcnom,order,0,1000,0,phasemode);
-        early50oct = thirdoctbandfilter_zerominmax_phase(early50,fs,fcnom,order,0,1000,0,phasemode);
-        early80oct = thirdoctbandfilter_zerominmax_phase(early80,fs,fcnom,order,0,1000,0,phasemode);
-        late50oct = thirdoctbandfilter_zerominmax_phase(late50,fs,fcnom,order,0,1000,0,phasemode);
-        late80oct = thirdoctbandfilter_zerominmax_phase(late80,fs,fcnom,order,0,1000,0,phasemode);
+        iroct = thirdoctbandfilter_zerominmax_phase(ir,fs,bandfc,order,0,1000,0,phasemode);
+        early50oct = thirdoctbandfilter_zerominmax_phase(early50,fs,bandfc,order,0,1000,0,phasemode);
+        early80oct = thirdoctbandfilter_zerominmax_phase(early80,fs,bandfc,order,0,1000,0,phasemode);
+        late50oct = thirdoctbandfilter_zerominmax_phase(late50,fs,bandfc,order,0,1000,0,phasemode);
+        late80oct = thirdoctbandfilter_zerominmax_phase(late80,fs,bandfc,order,0,1000,0,phasemode);
         if noisecomp == 1
-            ir_end10oct = thirdoctbandfilter_zerominmax_phase(ir_end10,fs,fcnom,order,0,1000,0,phasemode);
+            ir_end10oct = thirdoctbandfilter_zerominmax_phase(ir_end10,fs,bandfc,order,0,1000,0,phasemode);
         end
     end
     
@@ -406,33 +417,82 @@ end % dim2
 
 
 if  bpo == 1
+    fc500 = find(bandfc == 500);
+    fc1000 = find(bandfc == 1000);
+    if ~isempty(fc500) && ~isempty(fc1000)
+    T30mid = mean([T30(1,:,fc500); T30(1,:,fc1000)]);
+    T20mid = mean([T20(1,:,fc500); T20(1,:,fc1000)]);
+    EDTmid = mean([EDT(1,:,fc500); EDT(1,:,fc1000)]);
+    else
+        [EDTmid,T20mid,T30mid] = deal(nan(1,chans));
+    end
     
-    % percentage difference T20 to T30
-    T20T30r = (T20./T30)*100;
+    fc125 = find(bandfc == 125);
+    fc250 = find(bandfc == 250);
+    if ~isempty(fc125) && ~isempty(fc250)
+    T30low = mean([T30(1,:,fc125); T30(1,:,fc250)]);
+    T20low = mean([T20(1,:,fc125); T20(1,:,fc250)]);
+    EDTlow = mean([EDT(1,:,fc125); EDT(1,:,fc250)]);
+    else
+        [EDTlow,T20low,T30low] = deal(nan(1,chans));
+    end
     
-    % Average T30 of 500 Hz and 1 kHz octave bands NEED TO FIX THIS SO OTHER FREQ CAN BE USED!
-    T30mid = mean([T30(:,:,3) T30(:,:,4)]);
+    fc2000 = find(bandfc == 2000);
+    fc4000 = find(bandfc == 4000);
+    if ~isempty(fc2000) && ~isempty(fc4000)
+    T30high = mean([T30(1,:,fc2000); T30(1,:,fc4000)]);
+    T20high = mean([T20(1,:,fc2000); T20(1,:,fc4000)]);
+    EDThigh = mean([EDT(1,:,fc2000); EDT(1,:,fc4000)]);
+    else
+        [EDThigh,T20high,T30high] = deal(nan(1,chans));
+    end
+    
+    % Bass ratio
+    if ~isempty(T30mid) && ~isempty(T30low)
+        BR_T30 = T30low ./ T30mid;
+        BR_T20 = T20low ./ T20mid;
+        BR_EDT = EDTlow ./ EDTmid;
+    else
+        [BR_EDT,BR_T20,BR_T30] = deal(nan(1,chans));
+    end
+    
+    if ~isempty(T30mid) && ~isempty(T30high)
+        TR_T30 = T30high ./ T30mid;
+        TR_T20 = T20high ./ T20mid;
+        TR_EDT = EDThigh ./ EDTmid;
+    else
+        [TR_EDT,TR_T20,TR_T30] = deal(nan(1,chans));
+    end
+    
 end
 
 if  bpo == 3
-    
-    T20T30r = [];
-    
     T30mid = [];
+        T20mid = [];
+        EDTmid = [];
+        T30low = [];
+        T20low = [];
+        EDTlow = [];
+        T30high = [];
+        T20high = [];
+        EDThigh = [];
+        BR_T30 = [];
+        BR_T20 = [];
+        BR_EDT = [];
+        TR_T30 = [];
+        TR_T20 = [];
+        TR_EDT = [];
 end
 
+% percentage difference T20 to T30
+    T20T30r = (T20./T30)*100;
 
 %--------------------------------------------------------------------------
 % OUTPUT
 %--------------------------------------------------------------------------
 
 
-if bpo == 3
-    bandfc = [100,125,160,200,250,315,400,500,630,800,1000,1250,1600, ...
-        2000,2500,3150,4000,5000];
-elseif bpo == 1
-    bandfc = [125,250,500,1000,2000,4000];
-end
+
 
 
 % Create output structure
@@ -451,13 +511,32 @@ out.Ts = permute(Ts,[2,3,1]);
 out.EDTr2 = permute(EDTr2,[2,3,1]);
 out.T20r2 = permute(T20r2,[2,3,1]);
 out.T30r2 = permute(T30r2,[2,3,1]);
-
-if bpo == 1
-    out.T20T30ratio = permute(T20T30r,[2,3,1]);
+out.T20T30ratio = permute(T20T30r,[2,3,1]);
+if ~isempty(EDTmid)
+    out.EDTmid = permute(EDTmid,[2,3,1]);
+    out.T20mid = permute(T20mid,[2,3,1]);
     out.T30mid = permute(T30mid,[2,3,1]);
 end
-
-
+if ~isempty(EDTlow)
+    out.EDTlow = permute(EDTlow,[2,3,1]);
+    out.T20low = permute(T20low,[2,3,1]);
+    out.T30low = permute(T30low,[2,3,1]);
+end
+if ~isempty(EDThigh)
+    out.EDThigh = permute(EDThigh,[2,3,1]);
+    out.T20high = permute(T20high,[2,3,1]);
+    out.T30high = permute(T30high,[2,3,1]);
+end
+if ~isempty(BR_EDT)
+    out.BR_EDT = permute(BR_EDT,[2,3,1]);
+    out.BR_T20 = permute(BR_T20,[2,3,1]);
+    out.BR_T30 = permute(BR_T30,[2,3,1]);
+end
+if ~isempty(TR_EDT)
+    out.TR_EDT = permute(TR_EDT,[2,3,1]);
+    out.TR_T20 = permute(TR_T20,[2,3,1]);
+    out.TR_T30 = permute(TR_T30,[2,3,1]);
+end
 
 if chans == 1
     disp(out)
@@ -485,9 +564,11 @@ else
     disp(out.T20r2)
     disp('T30 squared correlation coefficient:')
     disp(out.T30r2)
-    if bpo ==1
-        disp('Ratio of T20 to T30 (%):')
-        disp(out.T20T30ratio)
+    disp('Ratio of T20 to T30 (%):')
+    disp(out.T20T30ratio)
+    if ~isempty(T20mid)
+        disp('Mid-frequency T20 (s):')
+        disp(out.T20mid)
         disp('Mid-frequency T30 (s):')
         disp(out.T30mid)
     end
@@ -504,7 +585,8 @@ if isstruct(data)
         dat1 = [out.EDT(ch,:);out.T20(ch,:);out.T30(ch,:);out.C50(ch,:);...
             out.C80(ch,:);out.D50(ch,:); ...
             out.D80(ch,:);out.Ts(ch,:); ...
-            out.EDTr2(ch,:);out.T20r2(ch,:);out.T30r2(ch,:)];
+            out.EDTr2(ch,:);out.T20r2(ch,:);out.T30r2(ch,:);...
+            out.T20T30ratio(ch,:)];
         cnames1 = num2cell(bandfc);
         rnames1 = {'Early decay time (s)',...
             'Reverberation time T20 (s)',...
@@ -516,16 +598,21 @@ if isstruct(data)
             'Centre time Ts (s)',...
             'Correlation coefficient EDT r^2',...
             'Correlation coefficient T20 r^2',...
-            'Correlation coefficient T30 r^2'};
+            'Correlation coefficient T30 r^2',...
+            'Ratio of T20 to T30'};
         t1 =uitable('Data',dat1,'ColumnName',cnames1,'RowName',rnames1);
         set(t1,'ColumnWidth',{60});
         
         if bpo == 1
-            dat2 = [out.T20T30ratio(ch,:)];
-            cnames2 = num2cell(bandfc);
-            rnames2 = {'Ratio of T20 to T30 ch1'};
+
+                
+            dat2 = [out.EDTlow(ch),out.EDTmid(ch),out.EDThigh(ch),out.BR_EDT(ch),out.TR_EDT(ch);...
+                out.T20low(ch),out.T20mid(ch),out.T20high(ch),out.BR_T20(ch),out.TR_T20(ch);...
+                out.T30low(ch),out.T30mid(ch),out.T30high(ch),out.BR_T30(ch),out.TR_T30(ch)];
+            cnames2 = {'Low Freq','Mid Freq','High Freq','Bass Ratio','Treble Ratio'};
+            rnames2 = {'EDT', 'T20', 'T30'};
             t2 =uitable('Data',dat2,'ColumnName',cnames2,'RowName',rnames2);
-            set(t2,'ColumnWidth',{60});
+            set(t2,'ColumnWidth',{90});
             disptables(f,[t1 t2]);
         else
             disptables(f,t1);
@@ -539,13 +626,8 @@ if isstruct(data)
     
     if doplot
         % Define number of rows and columns (for y axis labelling)
-        if bpo == 1
-            r=2;
-            c=3;
-        elseif bpo == 3
-            r=4;
-            c=5;
-        end
+[r,c] = subplotpositions(bands+1,0.4);
+        
         
         % preallocate
         levdecayend = zeros(1,chans, bands);
@@ -563,18 +645,15 @@ if isstruct(data)
         end
         
         
-       % if chans == 1
        for ch = 1:chans
             
             figure('Name',['Channel ', num2str(ch), ', Level Decay and Regression Lines'])
             
             for band = 1:bands
                 
-                if bpo == 1
-                    subplot(2,3,band)
-                elseif bpo == 3
-                    subplot(4,5,band)
-                end
+                
+                subplot(r,c,band)
+                
                 
                 hold on
                 
@@ -617,13 +696,26 @@ if isstruct(data)
                 
             end % for band
             
+            % DIY legend
+            subplot(r,c,band+1)
             
-            if bpo == 1
-                legend('L','EDT','T20','T30', 'Location', ...
-                    'BestOutside')
-            elseif bpo == 3
-                legend('L','EDT','T20','T30', 'Location', ...
-                    'BestOutside')
+            
+            plot([0.1,0.4], [0.8,0.8],'Color',[0.2 0.2 0.2], ...
+                    'LineStyle',':','DisplayName','Level Decay')
+            xlim([0,1])
+            ylim([0,1])
+            hold on
+            text(0.5,0.8,'Decay');
+            plot([0.1,0.4], [0.6,0.6],'Color',[0.9 0 0],'DisplayName','EDT')
+            text(0.5,0.6,'EDT');
+            plot([0.1,0.4], [0.4,0.4],'Color',[0 0.6 0],'DisplayName','T20')
+            text(0.5,0.4,'T20');
+            plot([0.1,0.4], [0.2,0.2],'Color',[0 0 0.6],'DisplayName', 'T30')
+            text(0.5,0.2,'T30');
+            set(gca,'YTickLabel','',...
+            'YTick',zeros(1,0),...
+            'XTickLabel','',...
+            'XTick',zeros(1,0))
             end
             
             hold off
