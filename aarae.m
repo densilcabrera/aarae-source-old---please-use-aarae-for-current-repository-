@@ -1114,7 +1114,7 @@ if (click == handles.axestime) || (get(click,'Parent') == handles.axestime)
         if plottype == 13, line = angle(fft(line)); end
         if plottype == 14, line = unwrap(angle(fft(line))); end
         if plottype == 15, line = angle(fft(line)) .* 180/pi; end
-        if plottype == 16, line = unwrap(fft(line)) ./(2*pi); end
+        if plottype == 16, line = unwrap(angle(fft(line))) ./(2*pi); end
         if plottype <= 7
             plot(t,line) % Plot signal in time domain
             xlabel('Time [s]');
@@ -1180,7 +1180,7 @@ if (click == handles.axesfreq) || (get(click,'Parent') == handles.axesfreq)
         if plottype == 13, line = angle(fft(line)); end
         if plottype == 14, line = unwrap(angle(fft(line))); end
         if plottype == 15, line = angle(fft(line)) .* 180/pi; end
-        if plottype == 16, line = unwrap(fft(line)) ./(2*pi); end
+        if plottype == 16, line = unwrap(angle(fft(line))) ./(2*pi); end
     if plottype <= 7
         plot(t,line) % Plot signal in time domain
         xlabel('Time [s]');
