@@ -1,4 +1,4 @@
-function y	= sonifyHRIR_CabreraMartens2011(HRIR,fs)
+function out = sonifyHRIR_CabreraMartens2011(HRIR,fs)
 % A function to sonify head-related impulse responses, as described by
 % Densil Cabrera and William L. Martens,
 % "Sonifying head-related transfer functions",
@@ -7,7 +7,7 @@ function y	= sonifyHRIR_CabreraMartens2011(HRIR,fs)
 % New Jersey, World Scientific, 2011.
 %
 % Code by Densil Cabrera
-% version 1.1 (9 October 2013)
+% version 1.11 (10 February 2014)
 
 % INPUT ARGUMENTS
 %
@@ -25,6 +25,7 @@ function y	= sonifyHRIR_CabreraMartens2011(HRIR,fs)
 
 % Interpret input
 if isstruct(HRIR)
+    out = HRIR; % replicate fields
     data = squeeze(HRIR.audio(:,:,1)); % discard 3rd dimension if present
     fs = HRIR.fs;
 else
@@ -89,6 +90,13 @@ y	= (hiss+carrier.*envelope) ./ (1+10^(hisslevel/20));
 
 % Play the sonification.
 sound(y, fs)
+
+% Write to output
+if isstruct(HRIR)
+    out.audio = y;
+else
+    out = y;
+end
 
 % Loop for replaying, saving and finishing
 choice = 0;
@@ -243,3 +251,34 @@ y	= real(ifft(magnitude.*exp(1i*phase).*[noise,noise]));
 
 % normalise to rms
 y	= repmat(rms, outlength,1) .* y ./ repmat(mean(y.^2).^0.5, outlength,1);
+
+
+%**************************************************************************
+% Copyright (c) 2014, Densil Cabrera & William L. Martens
+% All rights reserved.
+%
+% Redistribution and use in source and binary forms, with or without
+% modification, are permitted provided that the following conditions are
+% met:
+%
+%  * Redistributions of source code must retain the above copyright notice,
+%    this list of conditions and the following disclaimer.
+%  * Redistributions in binary form must reproduce the above copyright
+%    notice, this list of conditions and the following disclaimer in the
+%    documentation and/or other materials provided with the distribution.
+%  * Neither the name of The University of Sydney nor the names of its contributors
+%    may be used to endorse or promote products derived from this software
+%    without specific prior written permission.
+%
+% THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+% "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED
+% TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A
+% PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER
+% OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+% EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+% PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+% PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+% LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+% NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+% SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+%**************************************************************************

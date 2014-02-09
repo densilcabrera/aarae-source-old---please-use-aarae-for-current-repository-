@@ -1,4 +1,4 @@
-function y = audio_shuffle(in,fs,windowlength,depthfactor, outduration, reverse)
+function out = audio_shuffle(in,fs,windowlength,depthfactor, outduration, reverse)
 % Fragments and shuffles an audio waveform to create a new audio texture.
 % The process is a bit like granular or concatenative synthesis.
 % This can be useful as a sonification tool.
@@ -9,7 +9,7 @@ function y = audio_shuffle(in,fs,windowlength,depthfactor, outduration, reverse)
 % Music Information Retrieval Conference, Kobe, Japan, 567-572.
 %
 % Code by Densil Cabrera
-% version 1.0 (12 October 2013)
+% version 1.01 (10 February 2014)
 %
 % INPUT ARGUMENTS
 % in is the audio data (can be multi-channel or single channel). It can be
@@ -34,6 +34,7 @@ function y = audio_shuffle(in,fs,windowlength,depthfactor, outduration, reverse)
 
 if isstruct(in)
     % required field of input structure
+    out = in; % replicate fields
     data = in.audio; % audio waveform
     fs = in.fs; % audio sampling rate
     
@@ -111,6 +112,12 @@ end
 %normalize
 y = y ./max(max(abs(y)));
 
+if isstruct(in)
+    out.audio = y;
+else
+    out = y;
+end
+
 if playaudio
     sound(y,fs)
     
@@ -133,5 +140,34 @@ if playaudio
 end
 
 
+%**************************************************************************
+% Copyright (c) 2014, Densil Cabrera
+% All rights reserved.
+%
+% Redistribution and use in source and binary forms, with or without
+% modification, are permitted provided that the following conditions are
+% met:
+%
+%  * Redistributions of source code must retain the above copyright notice,
+%    this list of conditions and the following disclaimer.
+%  * Redistributions in binary form must reproduce the above copyright
+%    notice, this list of conditions and the following disclaimer in the
+%    documentation and/or other materials provided with the distribution.
+%  * Neither the name of The University of Sydney nor the names of its contributors
+%    may be used to endorse or promote products derived from this software
+%    without specific prior written permission.
+%
+% THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+% "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED
+% TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A
+% PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER
+% OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+% EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+% PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+% PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+% LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+% NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+% SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+%**************************************************************************
 
 
