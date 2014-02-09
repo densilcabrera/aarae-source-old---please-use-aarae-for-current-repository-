@@ -14,7 +14,7 @@ function out = audification_simple(in)
 % * doing spectrum manipulations;
 %
 % Code by Densil Cabrera
-% version 1.0 (12 October 2013)
+% version 1.01 (10 February 2014)
 %
 % ABOUT THE SETTINGS
 % The default values result in no change in the audio
@@ -50,11 +50,15 @@ function out = audification_simple(in)
 %
 % The spectrum smoothign filter works in the same way as the envelope
 % smoothing filter, except that it is applied to the spectrum magnitude.
+%
+% Code by Densil Cabrera
+% version 1.01 (10 February 2014)
 
 
 
 % required field of input structure
-out = squeeze(in.audio(:,:,1)); % audio waveform, 2-d max
+out = in;
+out.audio = sum(out.audio,3); % audio waveform, 2-d max
 fs = in.fs; % audio sampling rate
 Nyquist  = fs/2;
 
@@ -73,7 +77,7 @@ def = {num2str(Nyquist),'0','1','0','1','1','1','1'};
 answer = inputdlg(prompt,dlg_title,num_lines,def);
 
 if isempty(answer)
-    out = [];
+    out.audio = [];
     return
 else
     hiF = str2num(answer{1,1});
@@ -91,7 +95,7 @@ spectrumsmooth = abs(round(spectrumsmooth-1))+1;
 % filtering
 if ~(hiF == Nyquist) || ~(loF == 0);
     % derive spectrum, even length
-    fftlen = 2*ceil(length(out)/2);
+    fftlen = 2*ceil(length(out.audio)/2);
     spectrum = fft(in.audio,fftlen);
     
     % lowpass filter
@@ -108,35 +112,35 @@ if ~(hiF == Nyquist) || ~(loF == 0);
     end
     
     % return to time domain
-    out = ifft(spectrum);
+    out.audio = ifft(spectrum);
 end
 
 
 % resampling
 if ~(speedupfactor == 1)
-    out = resample(out,fs,fs*speedupfactor);
+    out.audio = resample(out.audio,fs,fs*speedupfactor);
 end
 
 % time reversal
 if reverse
-    out = flipud(out);
+    out.audio = flipud(out.audio);
 end
 
 % envelope contrast and smoothing
 if ~(envelopeexp == 1) || ~(envelopesmooth == 1)
-    analytic = hilbert(out);
+    analytic = hilbert(out.audio);
     envelope = abs(analytic) .^ envelopeexp;
     if ~(envelopesmooth == 1)
         b = ones(1,envelopesmooth)/envelopesmooth;  % averaging filter
         envelope = fftfilt(b,envelope);% smooth the envelope
     end
-    % adjust output by envelope
-    out = envelope .* cos(angle(analytic));
+    % adjust out.audioput by envelope
+    out.audio = envelope .* cos(angle(analytic));
 end
 
 % spectrum contrast
 if ~(spectrumexp == 1) || ~(spectrumsmooth == 1)
-    spectrum = fft(out);
+    spectrum = fft(out.audio);
     magnitude = abs(spectrum).^(spectrumexp);
     phase = angle(spectrum);
     %phase = angle(spectrum);
@@ -145,12 +149,13 @@ if ~(spectrumexp == 1) || ~(spectrumsmooth == 1)
         magnitude = fftfilt(b,magnitude);% smooth the envelope
     end
     spectrum = magnitude .* exp(1i * phase);
-    out = real(ifft(spectrum));
+    out.audio = real(ifft(spectrum));
 end
 
 % play
 %normalize
-out = out ./max(max(abs(out)));
+out.audio = out.audio ./max(max(abs(out.audio)));
+
 
 % Loop for replaying, saving and finishing
 choice = 0;
@@ -163,16 +168,44 @@ while choice < 3
     switch choice
         
         case 1
-            sound(out,fs)
+            sound(out.audio,fs)
             
         case 2
             [filename, pathname] = uiputfile({'*.wav'},'Save as');
             if ischar(filename)
-                audiowrite([pathname,filename], out, fs);
+                audiowrite([pathname,filename], out.audio, fs);
             end
         case 3
-            out = [];
+            out.audio = [];
     end
 end
 
-
+%**************************************************************************
+% Copyright (c) 2014, Densil Cabrera
+% All rights reserved.
+%
+% Redistribution and use in source and binary forms, with or without
+% modification, are permitted provided that the following conditions are
+% met:
+%
+%  * Redistributions of source code must retain the above copyright notice,
+%    this list of conditions and the following disclaimer.
+%  * Redistributions in binary form must reproduce the above copyright
+%    notice, this list of conditions and the following disclaimer in the
+%    documentation and/or other materials provided with the distribution.
+%  * Neither the name of The University of Sydney nor the names of its contributors
+%    may be used to endorse or promote products derived from this software
+%    without specific prior written permission.
+%
+% THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+% "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED
+% TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A
+% PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER
+% OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+% EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+% PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+% PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+% LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+% NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+% SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+%**************************************************************************
