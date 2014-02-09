@@ -203,8 +203,8 @@ if get(handles.pb_enable,'Value') == 1
         handles.player = audioplayer(handles.outputdata.audio,handles.fs,handles.nbits,handles.outputid);
         handles.rec = audiorecorder(handles.fs,handles.nbits,handles.numchs,handles.inputid);
         trectime = ceil(handles.dur + handles.addtime);
-        play(handles.player);
         record(handles.rec, trectime);
+        play(handles.player);
         set(hObject,'BackgroundColor','red');
         set(hObject,'Enable','off');
         set(handles.stop_btn,'Visible','on');
