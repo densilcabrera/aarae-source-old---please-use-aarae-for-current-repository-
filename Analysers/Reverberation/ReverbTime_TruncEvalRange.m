@@ -16,7 +16,7 @@ function OUT = ReverbTime_TruncEvalRange(IN, fs, bpo, highestband, lowestband, t
 % analysis.
 %
 % Code by Densil Cabrera
-% version 1.00 (21 December 2013)
+% version 1.01 (9 February 2014)
 
 % -------------------------------------------------------------------------
 % INPUTS AND SETTINGS
@@ -193,10 +193,18 @@ if ~isempty(audio) && ~isempty(fs)
     if ~donotfilter
         if bpo == 3
             % 1/3-octave band filterbank
-            decay = thirdoctbandfilter(audio,fs,flist).^2;
+            % decay = thirdoctbandfilter(audio,fs,flist).^2;
+            
+            order = [36,24];
+            phasemode = 0;
+            decay = thirdoctbandfilter_zerominmax_phase(audio,fs,flist,order,0,1000,0,phasemode).^2;
         else
             % octave band filterbank
-            decay = octbandfilter(audio,fs,flist).^2;
+           % decay = octbandfilter(audio,fs,flist).^2;
+            
+            order = [12,12];
+            phasemode = 0;
+            decay = octbandfilter_zerominmax_phase(audio,fs,flist,order,0,1000,0,phasemode).^2;
         end
     else
         decay = audio.^2;
