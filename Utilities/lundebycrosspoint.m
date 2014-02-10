@@ -1,4 +1,4 @@
-function crosspoint = lundebycrosspoint(IR2, fs, fc)
+function [crosspoint, ok] = lundebycrosspoint(IR2, fs, fc)
 % This function implements the crosspoint finding algorithm
 % described in:
 % A. Lundeby, T.E. Vigran, H. Bietz and M. Vorlaender, "Uncertainties of
@@ -161,34 +161,39 @@ for ch = 1:chans
     end
 end
 
-ok = true;
+ok(1,chans,bands) = true;
 
 
 % ITERATE STEPS 7-9
 for iter = 1:5
-    if ok
-        
-        % 7. ESTIMATE THE BACKGROUND NOISE LEVEL
-        noisefloorindex = zeros(1,chans,bands);
-        for ch = 1:chans
-            for b = 1:bands
+    
+    
+    % 7. ESTIMATE THE BACKGROUND NOISE LEVEL
+    noisefloorindex = zeros(1,chans,bands);
+    for ch = 1:chans
+        for b = 1:bands
+            if ok(1,ch,b)
                 noisefloorindex(1,ch,b) = round((o(2,ch,b)+IR2taildB(1,ch,b)-10)/o(1,ch,b));
             end
         end
-        noisefloorindex(noisefloorindex > round(0.9*len)) = round(0.9*len);
-        
-        for ch = 1:chans
-            for b = 1:bands
+    end
+    noisefloorindex(noisefloorindex > round(0.9*len)) = round(0.9*len);
+    
+    for ch = 1:chans
+        for b = 1:bands
+            if ok(1,ch,b)
                 IR2tail(1,ch,b) = mean(IR2(noisefloorindex(1,ch,b):end,ch,b));
                 IR2taildB(1,ch,b) = 10*log10(IR2tail(1,ch,b))- maxIR2smoothdB(1,ch,b);
             end
         end
-        
-        
-        
-        % 8. ESTIMATE THE LATE DECAY SLOPE
-        for ch = 1:chans
-            for b = 1:bands
+    end
+    
+    
+    
+    % 8. ESTIMATE THE LATE DECAY SLOPE
+    for ch = 1:chans
+        for b = 1:bands
+            if ok(1,ch,b)
                 if IR2taildB(1,ch,b) < -35
                     LateSlopeEnddB = IR2taildB(1,ch,b) + 10;
                     LateSlopeStartdB = IR2taildB(1,ch,b) + 30;
@@ -205,18 +210,18 @@ for iter = 1:5
                     LateSlopeEnddB = IR2taildB(1,ch,b) + 5;
                     LateSlopeStartdB = IR2taildB(1,ch,b) + 15;
                 else
-                    ok = false; % give up - insufficient SNR
+                    ok(:,ch,b) = false; % give up - insufficient SNR
                 end
-                if ok
-                    tend = find(IR2smoothdB(maxind(1,ch,b):end,ch,b) <= LateSlopeEnddB, 1, 'first')+maxind(1,ch,b)-1; %
-                    tstart = find(IR2smoothdB(maxind(1,ch,b):end,ch,b) <= LateSlopeStartdB, 1, 'first')+maxind(1,ch,b)-1; %
-                    
-                    o(:,ch,b) = polyfit((tstart:tend)', ...
-                        IR2smoothdB(tstart:tend,ch,b),1)';
-                    
-                    % 9. FIND NEW CROSSPOINT
-                    crosspoint(1,ch,b) = -round((o(2,ch,b)-IR2taildB(1,ch,b))/o(1,ch,b));
-                end
+            end
+            if ok(1,ch,b)
+                tend = find(IR2smoothdB(maxind(1,ch,b):end,ch,b) <= LateSlopeEnddB, 1, 'first')+maxind(1,ch,b)-1; %
+                tstart = find(IR2smoothdB(maxind(1,ch,b):end,ch,b) <= LateSlopeStartdB, 1, 'first')+maxind(1,ch,b)-1; %
+                
+                o(:,ch,b) = polyfit((tstart:tend)', ...
+                    IR2smoothdB(tstart:tend,ch,b),1)';
+                
+                % 9. FIND NEW CROSSPOINT
+                crosspoint(1,ch,b) = -round((o(2,ch,b)-IR2taildB(1,ch,b))/o(1,ch,b));
             end
         end
     end
@@ -226,7 +231,7 @@ end
 for ch = 1:chans
     for b = 1:bands
         if crosspoint(1,ch,b) <= maxIR2smoothdB(1,ch,b)+0.05*fs || ... % at least 50 ms decay
-            crosspoint(1,ch,b) > len
+                crosspoint(1,ch,b) > len 
             crosspoint(1,ch,b) = len; % give up - no crosspoint found
         end
     end

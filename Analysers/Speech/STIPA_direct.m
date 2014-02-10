@@ -382,7 +382,7 @@ function [MTF, I, Level] = STIPA_direct_MTF(audio,fs,fc,Fm)
 % Use AARAE's linear phase octave band filters
 [len, chans]= size(audio);
 filterorder = 24; % very steep filter skirts improve the performance
-Intensity = octbandfilter_zerominmax_phase(audio,fs,fc,filterorder) .^2;
+Intensity = octbandfilter_viaFFT(audio,fs,fc,filterorder) .^2;
 I = mean(Intensity); % mean square intensity
 Level = 10*log10(I); % intensity expressed in decibels
 

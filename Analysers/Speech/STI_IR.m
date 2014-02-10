@@ -601,13 +601,14 @@ for ch = 1:chans
         P_octave=zeros(length(data(:,ch)), length(length(fc)));
         MTF_ch=zeros(length(mf), length(fc));
         if FilterVersion == 1
+            % Matlab's filterbuilder octave band filters (6th order)
             P_octave = octavebandfilters(data(:,ch), fs);
         elseif FilterVersion == 2
-            % use AARAE's linear phase filters  (recommended)
+            % AARAE's linear phase filters  (recommended)
             % pseudo-Butterworth response
             orderin = 12; % in-band filter pseudo-order
             orderout = 12; % out-of-band filter pseudo-order
-            P_octave = octbandfilter_zerominmax_phase(data(:,ch),fs,...
+            P_octave = octbandfilter_viaFFT(data(:,ch),fs,...
                 [125,250,500,1000,2000,4000,8000],[orderin,orderout]);
         end
         for k=1:length(fc);

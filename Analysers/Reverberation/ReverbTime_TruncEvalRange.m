@@ -197,14 +197,14 @@ if ~isempty(audio) && ~isempty(fs)
             
             order = [36,24];
             phasemode = 0;
-            decay = thirdoctbandfilter_zerominmax_phase(audio,fs,flist,order,0,1000,0,phasemode).^2;
+            decay = thirdoctbandfilter_viaFFT(audio,fs,flist,order,0,1000,0,phasemode).^2;
         else
             % octave band filterbank
            % decay = octbandfilter(audio,fs,flist).^2;
             
             order = [12,12];
             phasemode = 0;
-            decay = octbandfilter_zerominmax_phase(audio,fs,flist,order,0,1000,0,phasemode).^2;
+            decay = octbandfilter_viaFFT(audio,fs,flist,order,0,1000,0,phasemode).^2;
         end
     else
         decay = audio.^2;
