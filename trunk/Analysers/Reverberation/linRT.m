@@ -202,27 +202,31 @@ if multibandIR == 0
     
     if bpo == 1
         order = [12,12]*filterstrength;
-        iroct = octbandfilter_zerominmax_phase(ir,fs,bandfc,order,0,1000,0,phasemode);
-        early50oct = octbandfilter_zerominmax_phase(early50,fs,bandfc,order,0,1000,0,phasemode);
-        early80oct = octbandfilter_zerominmax_phase(early80,fs,bandfc,order,0,1000,0,phasemode);
-        late50oct = octbandfilter_zerominmax_phase(late50,fs,bandfc,order,0,1000,0,phasemode);
-        late80oct = octbandfilter_zerominmax_phase(late80,fs,bandfc,order,0,1000,0,phasemode);
+        iroct = octbandfilter_viaFFT(ir,fs,bandfc,order,0,1000,0,phasemode);
+        early50oct = octbandfilter_viaFFT(early50,fs,bandfc,order,0,1000,0,phasemode);
+        early80oct = octbandfilter_viaFFT(early80,fs,bandfc,order,0,1000,0,phasemode);
+        late50oct = octbandfilter_viaFFT(late50,fs,bandfc,order,0,1000,0,phasemode);
+        late80oct = octbandfilter_viaFFT(late80,fs,bandfc,order,0,1000,0,phasemode);
         if noisecomp == 1
-            ir_end10oct = octbandfilter_zerominmax_phase(ir_end10,fs,bandfc,order,0,1000,0,phasemode);
+            ir_end10oct = octbandfilter_viaFFT(ir_end10,fs,bandfc,order,0,1000,0,phasemode);
         end
         
     else
         order = [36,24] * filterstrength;
-        iroct = thirdoctbandfilter_zerominmax_phase(ir,fs,bandfc,order,0,1000,0,phasemode);
-        early50oct = thirdoctbandfilter_zerominmax_phase(early50,fs,bandfc,order,0,1000,0,phasemode);
-        early80oct = thirdoctbandfilter_zerominmax_phase(early80,fs,bandfc,order,0,1000,0,phasemode);
-        late50oct = thirdoctbandfilter_zerominmax_phase(late50,fs,bandfc,order,0,1000,0,phasemode);
-        late80oct = thirdoctbandfilter_zerominmax_phase(late80,fs,bandfc,order,0,1000,0,phasemode);
+        iroct = thirdoctbandfilter_viaFFT(ir,fs,bandfc,order,0,1000,0,phasemode);
+        early50oct = thirdoctbandfilter_viaFFT(early50,fs,bandfc,order,0,1000,0,phasemode);
+        early80oct = thirdoctbandfilter_viaFFT(early80,fs,bandfc,order,0,1000,0,phasemode);
+        late50oct = thirdoctbandfilter_viaFFT(late50,fs,bandfc,order,0,1000,0,phasemode);
+        late80oct = thirdoctbandfilter_viaFFT(late80,fs,bandfc,order,0,1000,0,phasemode);
         if noisecomp == 1
-            ir_end10oct = thirdoctbandfilter_zerominmax_phase(ir_end10,fs,bandfc,order,0,1000,0,phasemode);
+            ir_end10oct = thirdoctbandfilter_viaFFT(ir_end10,fs,bandfc,order,0,1000,0,phasemode);
         end
     end
     
+    % check the number of bands again, in case some were not ok to filter
+    bands = size(iroct,3); 
+    fc = fc(1:bands);
+    bandfc = bandfc(1:bands);
     
     %----------------------------------------------------------------------
     % END AUTO-TRUNCATION
