@@ -70,6 +70,8 @@ if nargin == 0
     elseif nargin < 8, display = 1;
     elseif nargin < 7, window = 0;
     elseif nargin < 6, nchan = 1;
+else
+    param = [];
 end
 if ~isempty(param) || nargin ~= 0
     % number of samples of the output wave
