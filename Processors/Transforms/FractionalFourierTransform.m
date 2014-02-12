@@ -14,4 +14,11 @@ else
     a = str2double(answer{1,1});
 end
 
-out.audio = frft(in.audio,a);
+out = in;
+
+[~,chans,bands] = size(in.audio);
+for ch = 1:chans
+    for b = 1:bands
+        out.audio(:,ch,b) = frft(in.audio(:,ch,b),a);
+    end
+end
