@@ -16,22 +16,7 @@ else
     doplay = 0;
 end
 
-S = size(data); % size of the audio
-ndim = length(S); % number of dimensions
-switch ndim
-    case 1
-        len = S(1); % number of samples in audio
-        chans = 1; % number of channels
-        bands = 1; % number of bands
-    case 2
-        len = S(1); % number of samples in audio
-        chans = S(2); % number of channels
-        bands = 1; % number of bands
-    case 3
-        len = S(1); % number of samples in audio
-        chans = S(2); % number of channels
-        bands = S(3); % number of bands
-end
+[len,chans,bands] = size(data);
 
 
 if isstruct(in)
@@ -78,6 +63,11 @@ if nsamples < length(data)
 else
     x = zeros(nsamples,chans,bands);
     x(1:length(data),:,:)=data;
+end
+
+if ~isreal(x)
+    disp('Real values only have been used for liftering')
+    x = real(x);
 end
 
 % cceps only operates on vectors (not matrices) - hence the following loop

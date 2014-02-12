@@ -72,16 +72,22 @@ if normalize
     out = out / max(max(max(abs(abs(out)))));
 end
 
+% only allow playback sampling rates that are unlikely to result in an error
+if (in.fs ~= 44100) || (in.fs ~= 48000)
+    audioplay = false;
+end
+
 if audioplay
     if ~isreal(out)
-        wavout = abs(out);
+        %wavout = abs(out);
+       
         disp('Autoconvolution output is complex.')
     else
         wavout = out;
     end
-    
+
     sound(sum(wavout,3)./max(max(abs(sum(wavout,3)))), in.fs)
-        
+
     % Loop for replaying, saving and finishing
     choice = 'x'; % create a string
     
