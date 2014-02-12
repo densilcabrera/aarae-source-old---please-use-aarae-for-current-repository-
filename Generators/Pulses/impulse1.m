@@ -15,6 +15,8 @@ if nargin == 0
         Amplitude = param(3);
         fs = param(4);
     end
+else
+    param = [];
 end
 if ~isempty(param) || nargin ~= 0
     samples_pre = round(duration_pre * fs);
