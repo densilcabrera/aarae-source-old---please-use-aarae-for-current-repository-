@@ -12,8 +12,8 @@ if nargin < 2
     end
 end
     if ~isempty(audio) && ~isempty(fs)
-        if isdir([cd '/Processors/Weighting/' num2str(fs) 'Hz'])
-            content = load([cd '/Processors/Weighting/' num2str(fs) 'Hz/A-WeightingFilter.mat']);
+        if isdir([cd '/Processors/Filters/' num2str(fs) 'Hz'])
+            content = load([cd '/Processors/Filters/' num2str(fs) 'Hz/A-WeightingFilter.mat']);
             filterbank = content.filterbank;
             processed = filter(filterbank,1,audio);
         end
