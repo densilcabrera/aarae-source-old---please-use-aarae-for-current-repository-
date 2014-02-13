@@ -337,7 +337,10 @@ if isempty(handles.signaldata)
     warndlg('No signal loaded!');
 else
     % Retrieve information from the selected leaf
-    testsignal = handles.signaldata.audio./max(max(max(abs(handles.signaldata.audio))));
+    testsignal = handles.signaldata.audio;
+    if size(testsignal,2) > 2, testsignal = mean(testsignal,2); end
+    if size(testsignal,3) > 1, testsignal = sum(testsignal,3); end
+    testsignal = testsignal./max(abs(testsignal));
     fs = handles.signaldata.fs;
     nbits = 16;
     doesSupport = audiodevinfo(0, handles.odeviceid, fs, nbits, size(testsignal,2));
