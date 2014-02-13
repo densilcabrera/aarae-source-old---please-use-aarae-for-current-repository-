@@ -11,11 +11,12 @@ else
     line = signaldata.audio;
 end
 set(handles.(genvarname(['smooth' axes '_popup'])),'Visible','off');
+if plottype == 1, line = real(line); end
 if plottype == 2, line = line.^2; end
 if plottype == 3, line = 10.*log10(line.^2); end
 if plottype == 4, line = abs(hilbert(line)); end
 if plottype == 5, line = medfilt1(diff([angle(hilbert(line)); zeros(1,size(line,2))])*signaldata.fs/2/pi, 5); end
-if plottype == 6, line = real(line); end
+if plottype == 6, line = abs(line); end
 if plottype == 7, line = imag(line); end
 if plottype == 8, line = 10*log10(abs(fft(line)).^2);  set(handles.(genvarname(['smooth' axes '_popup'])),'Visible','on'); end %freq
 if plottype == 9, line = abs(fft(line)).^2; end
