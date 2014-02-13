@@ -1,12 +1,13 @@
-function [OUT, varargout] = Golay(fs, N,silence)
+function [OUT, varargout] = Golay(fs,N,silence)
 % This function generates Golay complementary sequences for impulse response
 % measurement. 
 %
+% IMPORTANT:
 % To analyse the recorded signal, use the function "Golay_process", which
-% is in the "Cross and audio functions" Processor folder in AARAE.
+% is in the "Cross and auto functions" Processor folder in AARAE.
 %
 % This code is based on the tutorial by Edgar Berdahl and Julius
-% Smith "Impulse response meausrment using Golay complementary sequences",
+% Smith "Impulse response meausrement using Golay complementary sequences",
 % http://cnx.org/content/m15947/latest/ (accessed 13 February 2014).
 % Adapted by Densil Cabrera for AARAE
 % version 1.00 (13 February 2014)
@@ -15,8 +16,8 @@ function [OUT, varargout] = Golay(fs, N,silence)
 if nargin == 0 
     
     param = inputdlg({'Audio sampling rate (Hz)';... 
-        'Power of 2 for signal length';...
-        'Silence between signal pair (s)'},...
+        'Power of 2 for each signal length';...
+        'Silence duration between signal pair (s)'},...
         'Settings',... 
         [1 60],... 
         {'48000';'15';'1'}); 
@@ -66,7 +67,7 @@ end
             OUT.audio = audio; 
             OUT.fs = fs;
             OUT.audio2 = audio;
-            OUT.tag = ['Golay',num2str(N)'];
+            OUT.tag = ['Golay',num2str(N)];
         end
         
 
