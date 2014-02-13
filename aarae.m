@@ -1545,7 +1545,7 @@ else
     % Retrieve information from the selected leaf
     testsignal = audiodata.audio;
     len = length(testsignal);
-    len = 2 .* ceil(len./2);
+    %len = 2 .* ceil(len./2);
     spectrum = fft(testsignal,len);
     phase = angle(spectrum);
     rmsmag = mean(abs(spectrum).^2).^0.5; % root mean square magnitude
@@ -1553,7 +1553,7 @@ else
     % combine magnitude with phase
     changed_spectrum = ones(len,size(testsignal,2)).*repmat(rmsmag,size(testsignal,1),1) .* exp(1i .* phase);
     changed_spectrum(1) = 0; % make DC zero
-    changed_spectrum(len/2+1) = 0; % make Nyquist zero
+    changed_spectrum(ceil(len/2)) = 0; % make Nyquist zero
     testsignal = ifft(changed_spectrum);
     fs = audiodata.fs;
     nbits = 16;
