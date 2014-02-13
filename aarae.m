@@ -372,18 +372,14 @@ hMain = getappdata(0,'hMain');
 %set(handles.datatypetext,'String','No signal loaded');
 
 % Call the audio recorder window
-audio_recorder('main_stage1', handles.aarae);
+audiodata = audio_recorder('main_stage1', handles.aarae);
 
 % Generate new leaf and update tree with the recording
 handles.mytree.setSelectedNode(handles.root);
 newleaf = getappdata(hMain,'signalname');
-if ~isempty(getappdata(hMain,'testsignal'))
-    signaldata = struct;
-    signaldata.audio = getappdata(hMain,'testsignal');
-    if ~isempty(getappdata(hMain,'invtestsignal')), signaldata.audio2 = getappdata(hMain,'invtestsignal'); end
-    signaldata.fs = getappdata(hMain,'fs');
-    signaldata.nbits = getappdata(hMain,'nbits');
-    signaldata.datatype = 'measurements';
+handles.syscalstats = getappdata(hMain,'syscalstats');
+if ~isempty(audiodata)
+    audiodata.datatype = 'measurements';
     iconPath = fullfile(matlabroot,'/toolbox/fixedpoint/fixedpointtool/resources/plot.png');
     leafname = isfield(handles,genvarname(newleaf));
     if leafname == 1
@@ -396,13 +392,13 @@ if ~isempty(getappdata(hMain,'testsignal'))
         newleaf = [newleaf,'_',num2str(index)];
     end
     handles.(genvarname(newleaf)) = uitreenode('v0', newleaf,  newleaf,  iconPath, true);
-    handles.(genvarname(newleaf)).UserData = signaldata;
+    handles.(genvarname(newleaf)).UserData = audiodata;
     handles.measurements.add(handles.(genvarname(newleaf)));
     handles.mytree.reloadNode(handles.measurements);
     handles.mytree.expand(handles.measurements);
     handles.mytree.setSelectedNode(handles.(genvarname(newleaf)));
     set([handles.clrall_btn,handles.export_btn],'Enable','on')
-    fprintf(handles.fid, [' ' datestr(now,16) ' - Recorded "' newleaf '": duration = ' num2str(length(signaldata.audio)/signaldata.fs) 's\n']);
+    fprintf(handles.fid, [' ' datestr(now,16) ' - Recorded "' newleaf '": duration = ' num2str(length(audiodata.audio)/audiodata.fs) 's\n']);
 end
 guidata(hObject, handles);
 

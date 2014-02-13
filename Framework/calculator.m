@@ -124,7 +124,7 @@ if nargout(handles.funname) == 1
             while isfield(handles,genvarname([handles.funname,'_',num2str(index)])) == 1
                 index = index + 1;
             end
-            handles.funname = [handles.funname,' ',num2str(index)];
+            handles.funname = [handles.funname,'_',num2str(index)];
         end
         mainHandles.(genvarname(handles.funname)) = uitreenode('v0', handles.funname,  handles.funname,  iconPath, true);
         mainHandles.(genvarname(handles.funname)).UserData = signaldata;
