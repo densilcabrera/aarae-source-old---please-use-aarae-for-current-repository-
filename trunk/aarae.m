@@ -23,7 +23,7 @@ function varargout = aarae(varargin)
 
 % Edit the above text to modify the response to help aarae
 
-% Last Modified by GUIDE v2.5 04-Feb-2014 10:49:56
+% Last Modified by GUIDE v2.5 13-Feb-2014 09:37:06
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -188,7 +188,7 @@ if ~isempty(getappdata(hMain,'testsignal'))
         while isfield(handles,genvarname([newleaf,'_',num2str(index)])) == 1
             index = index + 1;
         end
-        newleaf = [newleaf,' ',num2str(index)];
+        newleaf = [newleaf,'_',num2str(index)];
     end
     handles.(genvarname(newleaf)) = uitreenode('v0', newleaf,  newleaf,  iconPath, true);
     handles.(genvarname(newleaf)).UserData = signaldata;
@@ -284,7 +284,8 @@ function load_btn_Callback(hObject, eventdata, handles)
     {'*.wav;*.mat','Test Signals (*.wav,*.mat)';...
     '*.wav;*.mat','Measurement files (*.wav,*.mat)';...
     '*.wav;*.mat','Processed files (*.wav,*.mat)';...
-    '*.wav;*.mat','Result files (*.wav,*.mat)'});
+    '*.wav;*.mat','Result files (*.wav,*.mat)'},...
+    'Select audio file','~/Audio');
 
 if filename ~= 0
     % Check type of file. First 'if' is for .mat, second is for .wav
@@ -392,7 +393,7 @@ if ~isempty(getappdata(hMain,'testsignal'))
         while isfield(handles,genvarname([newleaf,'_',num2str(index)])) == 1
             index = index + 1;
         end
-        newleaf = [newleaf,' ',num2str(index)];
+        newleaf = [newleaf,'_',num2str(index)];
     end
     handles.(genvarname(newleaf)) = uitreenode('v0', newleaf,  newleaf,  iconPath, true);
     handles.(genvarname(newleaf)).UserData = signaldata;
@@ -566,7 +567,7 @@ else
     % Retrieve information from the selected leaf
     testsignal = audiodata.audio./max(max(max(abs(audiodata.audio))));
     fs = audiodata.fs;
-    nbits = audiodata.nbits;
+    nbits = 16;
     doesSupport = audiodevinfo(0, handles.odeviceid, fs, nbits, size(testsignal,2));
     if doesSupport && ndims(testsignal) < 3
         % Play signal
@@ -730,7 +731,7 @@ if ~isempty(handles.funname) && ~isempty(audiodata)
             while isfield(handles,genvarname([newleaf,'_',num2str(index)])) == 1
                 index = index + 1;
             end
-            newleaf = [newleaf,' ',num2str(index)];
+            newleaf = [newleaf,'_',num2str(index)];
         end
         handles.(genvarname(newleaf)) = uitreenode('v0', newleaf,  newleaf,  iconPath, true);
         handles.(genvarname(newleaf)).UserData = signaldata;
@@ -963,7 +964,7 @@ for multi = 1:size(file,1)
                 while isfield(handles,genvarname([newleaf,'_',num2str(index)])) == 1
                     index = index + 1;
                 end
-                newleaf = [newleaf,' ',num2str(index)];
+                newleaf = [newleaf,'_',num2str(index)];
             end
             handles.(genvarname(newleaf)) = uitreenode('v0', newleaf,  newleaf,  iconPath, true);
             handles.(genvarname(newleaf)).UserData = newdata;
@@ -1476,7 +1477,7 @@ else
     % Retrieve information from the selected leaf
     testsignal = flipud(audiodata.audio)./max(max(max(abs(audiodata.audio))));
     fs = audiodata.fs;
-    nbits = audiodata.nbits;
+    nbits = 16;
     doesSupport = audiodevinfo(0, handles.odeviceid, fs, nbits, size(testsignal,2));
     if doesSupport && ndims(testsignal) < 3
         % Play signal
@@ -1515,7 +1516,7 @@ else
     changed_spectrum = magnitude .* exp(1i * randphase);
     testsignal = ifft(changed_spectrum);
     fs = audiodata.fs;
-    nbits = audiodata.nbits;
+    nbits = 16;
     doesSupport = audiodevinfo(0, handles.odeviceid, fs, nbits, size(testsignal,2));
     if doesSupport && ndims(testsignal) < 3
         % Play signal
@@ -1557,7 +1558,7 @@ else
     changed_spectrum(len/2+1) = 0; % make Nyquist zero
     testsignal = ifft(changed_spectrum);
     fs = audiodata.fs;
-    nbits = audiodata.nbits;
+    nbits = 16;
     doesSupport = audiodevinfo(0, handles.odeviceid, fs, nbits, size(testsignal,2));
     if doesSupport && ndims(testsignal) < 3
         % Play signal
@@ -1595,7 +1596,7 @@ else
     outputlength = len1 + len2 - 1;
     testsignal = ifft(fft(testsignal, outputlength) .* fft(reference_audio, outputlength));
     testsignal = testsignal./max(max(max(abs(testsignal))));
-    nbits = audiodata.nbits;
+    nbits = 16;
     doesSupport = audiodevinfo(0, handles.odeviceid, fs, nbits, size(testsignal,2));
     if doesSupport && ndims(testsignal) < 3
         % Play signal
