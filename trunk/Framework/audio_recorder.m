@@ -23,7 +23,7 @@ function varargout = audio_recorder(varargin)
 
 % Edit the above text to modify the response to help audio_recorder
 
-% Last Modified by GUIDE v2.5 15-Oct-2013 11:22:03
+% Last Modified by GUIDE v2.5 13-Feb-2014 14:14:32
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -69,9 +69,31 @@ else
     % Call the 'desktop'
     hMain = getappdata(0,'hMain');
     handles.signaldata = getappdata(hMain,'testsignal');
-    handles.recordedsignal = [];
+    handles.recording = [];
     handles.position = get(handles.audio_recorder,'Position');
     handles.OUT_axes_position = get(handles.OUT_axes,'Position');
+    UserData.state = false;
+    set(handles.stop_btn,'UserData',UserData);
+    mainHandles = guidata(handles.main_stage1);
+    if isfield(mainHandles,'syscalstats') && ~isempty(mainHandles.syscalstats)
+        remember = questdlg('A previous system calibration was found, would you like to reload these settings?','AARAE info','Yes','No','Yes');
+        switch remember
+            case 'Yes'
+                syscalstats = mainHandles.syscalstats;
+                if isfield(syscalstats,'latency')
+                    handles.syscalstats.latency = syscalstats.latency;
+                    set(handles.delay_chk,'Enable','on','Value',1)
+                    set(handles.delaytext,'String',[num2str(handles.syscalstats.latency) ' samples'])
+                end
+                if isfield(syscalstats,'cal')
+                    handles.syscalstats.cal = syscalstats.cal;
+                    set(handles.cal_chk,'Enable','on','Value',1)
+                    set(handles.caltext,'String',[num2str(handles.syscalstats.cal) ' dB'])
+                end
+        end
+    else
+        handles.syscalstats = struct([]);
+    end
     if ~isempty(handles.signaldata) && ndims(handles.signaldata.audio) < 3% If there's a signal loaded in the 'desktop'...
         % Allow visibility of playback option along with the specs of
         % the playback signal
@@ -149,7 +171,7 @@ function varargout = audio_recorder_OutputFcn(hObject, eventdata, handles)
 % handles    structure with handles and user data (see GUIDATA)
 
 % Get default command line output from handles structure
-varargout{1} = [];
+varargout{1} = handles.recording;
 delete(hObject);
 
 
@@ -197,57 +219,120 @@ mainHandles = guidata(handles.main_stage1);
 set([handles.cancel_btn handles.load_btn],'Enable','off')
 if get(handles.pb_enable,'Value') == 1
     % Simultaneous playback and record routine
-    doesSupportIN = audiodevinfo(1, handles.inputid, handles.fs, handles.nbits, handles.numchs);
-    doesSupportOUT = audiodevinfo(0, handles.outputid, handles.fs, handles.nbits, size(handles.outputdata.audio,2));
-    if (doesSupportIN == 1 && doesSupportOUT == 1 && ndims(handles.outputdata.audio) < 3)
-        handles.player = audioplayer(handles.outputdata.audio,handles.fs,handles.nbits,handles.outputid);
-        handles.rec = audiorecorder(handles.fs,handles.nbits,handles.numchs,handles.inputid);
-        trectime = ceil(handles.dur + handles.addtime);
-        record(handles.rec, trectime);
-        play(handles.player);
-        set(hObject,'BackgroundColor','red');
-        set(hObject,'Enable','off');
-        set(handles.stop_btn,'Visible','on');
-        handles.rec.stopFcn = {@getData,handles};
-    else
-        warndlg('Audio settings not supported by the selected devices!');
+    set(hObject,'BackgroundColor','red');
+    set(hObject,'Enable','off');
+    set(handles.stop_btn,'Visible','on');
+    pause on
+    pause(0.000001)
+    pause off
+    % Set playback object
+    handles.hap = dsp.AudioPlayer('SampleRate',handles.outputdata.fs,'QueueDuration',.1,'BufferSizeSource','Property','BufferSize',128);
+    % Set record object
+    handles.har = dsp.AudioRecorder('SampleRate',handles.outputdata.fs,'OutputDataType','double','NumChannels',handles.numchs,'BufferSizeSource','Property','BufferSize',128);
+    % Set playback audio
+    handles.hsr1 = dsp.SignalSource;
+    handles.hsr1.Signal = [handles.outputdata.audio;zeros(floor((handles.addtime+handles.hap.QueueDuration)*handles.fs),size(handles.outputdata.audio,2))];
+    handles.hsr1.SamplesPerFrame = 1024;
+    guidata(hObject,handles)
+    handles.rec = [];
+    % Initialize playback/record routine
+    try
+        UserData = get(handles.stop_btn,'UserData');
+        while (~isDone(handles.hsr1))
+           UserData = get(handles.stop_btn,'UserData');
+           if UserData.state == false
+               audio = step(handles.har);
+               step(handles.hap,step(handles.hsr1));
+               handles.rec = [handles.rec;audio];
+           else
+               break
+           end
+           pause on
+           pause(0.000001)
+           pause off
+        end
+    catch sthgwrong
+        UserData.state = true;
+        handles.rec = [];
+        syswarning = sthgwrong.message;
+        warndlg(syswarning,'AARAE info')
     end
+    % Check recording and adjust for QueueDuration latency
+    if ~isempty(handles.rec)
+        handles.rec = handles.rec(handles.hap.QueueDuration*handles.fs:end);
+        if UserData.state == false
+            handles.rec = handles.rec(1:(size(handles.outputdata.audio,1)+handles.addtime*handles.fs));
+        else
+            UserData.state = false;
+            set(handles.stop_btn,'UserData',UserData);
+        end
+    % Plot recording
+        time = linspace(0,size(handles.rec,1)/handles.fs,length(handles.rec));
+        plot(handles.IN_axes,time,handles.rec);
+    end
+    set(handles.record_btn,'BackgroundColor',[0.94 0.94 0.94]);
+    set(handles.record_btn,'Enable','on');
+    set(handles.stop_btn,'Visible','off');
+    set([handles.load_btn handles.cancel_btn],'Enable','on')
+    % Release playback, record and audio data objects
+    release(handles.hap)
+    release(handles.har)
+    release(handles.hsr1)
 else
     % Record-only routine
-    doesSupportIN = audiodevinfo(1, handles.inputid, handles.fs, handles.nbits, handles.numchs);
-    if (doesSupportIN == 1)
-        handles.rec = audiorecorder(handles.fs,handles.nbits,handles.numchs,handles.inputid);
-        dur = handles.duration;
-        record(handles.rec, dur);
-        set(hObject,'BackgroundColor','red');
-        set(hObject,'Enable','off');
-        set(handles.stop_btn,'Visible','on');
-        handles.rec.stopFcn = {@getData,handles};
-    else
-        warndlg('Audio settings not supported by the selected device!');
+    dur = handles.duration*handles.fs;
+    set(hObject,'BackgroundColor','red');
+    set(hObject,'Enable','off');
+    set(handles.stop_btn,'Visible','on');
+    pause on
+    pause(0.000001)
+    pause off
+    % Set record object
+    handles.har = dsp.AudioRecorder('SampleRate',handles.fs,'OutputDataType','double','NumChannels',handles.numchs,'BufferSizeSource','Property','BufferSize',128,'QueueDuration',.1);
+    guidata(hObject,handles)
+    handles.rec = [];
+    % Initialize record routine
+    try
+        UserData = get(handles.stop_btn,'UserData');
+        while length(handles.rec) < dur
+           UserData = get(handles.stop_btn,'UserData');
+           if UserData.state == false
+               audio = step(handles.har);
+               handles.rec = [handles.rec;audio];
+           else
+               break
+           end
+           pause on
+           pause(0.000001)
+           pause off
+        end
+    catch sthgwrong
+        UserData.state = true;
+        handles.rec = [];
+        syswarning = sthgwrong.message;
+        warndlg(syswarning,'AARAE info')
     end
+    % Check recording and adjust for Duration
+    if ~isempty(handles.rec)
+        if UserData.state == false
+            handles.rec = handles.rec(1:dur);
+        else
+            UserData.state = false;
+            set(handles.stop_btn,'UserData',UserData);
+        end
+        % Plot recording
+        time = linspace(0,size(handles.rec,1)/handles.fs,length(handles.rec));
+        plot(handles.IN_axes,time,handles.rec);
+    end
+    set(handles.record_btn,'BackgroundColor',[0.94 0.94 0.94]);
+    set(handles.record_btn,'Enable','on');
+    set(handles.stop_btn,'Visible','off');
+    set([handles.load_btn handles.cancel_btn],'Enable','on')
+    % Release record object
+    release(handles.har)
 end
 
 guidata(hObject,handles);
-
-
-function getData(obj, event, handles)
-set(handles.record_btn,'BackgroundColor',[0.94 0.94 0.94]);
-set(handles.record_btn,'Enable','on');
-set(handles.stop_btn,'Visible','off')
-pause on
-pause(0.01)
-pause off
-handles.recordedsignal = getaudiodata(handles.rec);
-duration = length(handles.recordedsignal)/handles.fs;
-time = linspace(0,duration,length(handles.recordedsignal));
-if length(handles.recordedsignal) == length(time)
-    plot(handles.IN_axes,time,handles.recordedsignal);
-    set([handles.load_btn handles.cancel_btn],'Enable','on')
-else
-    warndlg('Dimension mismatch!','Whoops...!');
-end
-guidata(handles.stop_btn,handles);
 
 
 % --- Executes on button press in load_btn.
@@ -259,29 +344,32 @@ function load_btn_Callback(hObject, eventdata, handles)
 hMain = getappdata(0,'hMain');
 % Obtain handles using GUIDATA with the caller's handle
 
-handles.testsignal = handles.recordedsignal;
+handles.testsignal = handles.rec;
 
 % Warnings...
-if isempty(handles.recordedsignal)
+if isempty(handles.rec)
     warndlg('No signal recorded!');
     setappdata(hMain,'testsignal',[]);
 else
     hMain = getappdata(0,'hMain');
-    setappdata(hMain,'testsignal',handles.recordedsignal);
+    if get(handles.delay_chk,'Value') == 1, handles.rec = [handles.rec(handles.syscalstats.latency:end,:);zeros(handles.syscalstats.latency,size(handles.rec,2))]; end
+    handles.recording.audio = handles.rec;%setappdata(hMain,'testsignal',handles.rec);
     if get(handles.pb_enable,'Value') && isfield(handles.outputdata,'audio2')
-        setappdata(hMain,'invtestsignal',handles.outputdata.audio2);
+        handles.recording.audio2 = handles.outputdata.audio2;%setappdata(hMain,'invtestsignal',handles.outputdata.audio2);
     elseif get(handles.pb_enable,'Value') && ~isfield(handles.outputdata,'audio2')
-        setappdata(hMain,'invtestsignal',handles.outputdata.audio);
+        handles.recording.audio2 = handles.outputdata.audio;%setappdata(hMain,'invtestsignal',handles.outputdata.audio);
     else
-        setappdata(hMain,'invtestsignal',[]);
+        handles.recording.audio2 = [];%setappdata(hMain,'invtestsignal',[]);
     end
-    setappdata(hMain,'fs',handles.fs);
-    setappdata(hMain,'nbits',handles.nbits);
+    handles.recording.fs = handles.fs;%setappdata(hMain,'fs',handles.fs);
+    handles.recording.nbits = handles.nbits;%setappdata(hMain,'nbits',handles.nbits);
+    if get(handles.cal_chk,'Value') == 1, handles.recording.cal = handles.syscalstats.cal; end
     name = get(handles.IN_name,'String');
     if isempty(name), name = 'untitled'; end
     setappdata(hMain,'signalname',name);
 end
-guidata(hObject,handles);
+setappdata(hMain,'syscalstats',handles.syscalstats);
+guidata(hObject,handles)
 uiresume(handles.audio_recorder);
 
 % --- Executes on button press in cancel_btn.
@@ -563,15 +651,71 @@ function stop_btn_Callback(hObject, eventdata, handles)
 % hObject    handle to stop_btn (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-if get(handles.pb_enable,'Value') == 0
-    if isrecording(handles.rec)
-        stop(handles.rec);
+UserData.state = true;
+set(hObject,'UserData',UserData);
+pause on
+pause(0.000001)
+pause off
+guidata(hObject,handles)
+
+
+% --- Executes on button press in syscal_btn.
+function syscal_btn_Callback(hObject, eventdata, handles)
+% hObject    handle to syscal_btn (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+syscalstats = syscal('audio_recorder', handles.audio_recorder);
+%disp(syscalstats)
+if isfield(syscalstats,'latency') && ~isnan(syscalstats.latency)
+    if isfield(handles.syscalstats,'latency')
+        if handles.syscalstats.latency ~= syscalstats.latency
+             replace_value = questdlg(['The system latency measurement has changed from ' num2str(handles.syscalstats.latency) ' samples to ' num2str(syscalstats.latency) ' samples. Would you like to replace this value?'],...
+                                       'AARAE info',...
+                                       'Yes', 'No', 'No');
+             switch replace_value
+                 case 'Yes'
+                     handles.syscalstats.latency = syscalstats.latency;
+             end
+        end
+    else
+        handles.syscalstats(1).latency = syscalstats.latency;
     end
-else
-    if isrecording(handles.rec)
-        stop(handles.rec);
-        stop(handles.player);
-    end
+    set(handles.delay_chk,'Enable','on','Value',1)
+    set(handles.delaytext,'String',[num2str(handles.syscalstats.latency) ' samples'])
 end
-set(handles.record_btn,'BackgroundColor',[0.94 0.94 0.94]);
-set(handles.stop_btn,'Visible','off');
+if isfield(syscalstats,'cal') && ~isnan(syscalstats.cal)
+    if isfield(handles.syscalstats,'cal')
+        if handles.syscalstats.cal ~= syscalstats.cal
+             replace_value = questdlg(['The gain calibration measurement has changed from ' num2str(handles.syscalstats.cal) ' dB to ' num2str(syscalstats.cal) ' dB. Would you like to replace this value?'],...
+                                       'AARAE info',...
+                                       'Yes', 'No', 'No');
+             switch replace_value
+                 case 'Yes'
+                     handles.syscalstats.cal = syscalstats.cal;
+             end
+        end
+    else
+        handles.syscalstats(1).cal = syscalstats.cal;
+    end
+    set(handles.cal_chk,'Enable','on','Value',1)
+    set(handles.caltext,'String',[num2str(handles.syscalstats.cal) ' dB'])
+end
+guidata(hObject,handles)
+
+
+% --- Executes on button press in delay_chk.
+function delay_chk_Callback(hObject, eventdata, handles)
+% hObject    handle to delay_chk (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hint: get(hObject,'Value') returns toggle state of delay_chk
+
+
+% --- Executes on button press in cal_chk.
+function cal_chk_Callback(hObject, eventdata, handles)
+% hObject    handle to cal_chk (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hint: get(hObject,'Value') returns toggle state of cal_chk
