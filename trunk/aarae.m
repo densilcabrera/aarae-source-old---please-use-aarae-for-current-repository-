@@ -561,7 +561,10 @@ if isempty(audiodata)
     warndlg('No signal loaded!');
 else
     % Retrieve information from the selected leaf
-    testsignal = audiodata.audio./max(max(max(abs(audiodata.audio))));
+    testsignal = audiodata.audio;
+    if size(testsignal,2) > 2, testsignal = mean(testsignal,2); end
+    if size(testsignal,3) > 1, testsignal = sum(testsignal,3); end
+    testsignal = testsignal./max(abs(testsignal));
     fs = audiodata.fs;
     nbits = 16;
     doesSupport = audiodevinfo(0, handles.odeviceid, fs, nbits, size(testsignal,2));
@@ -1473,7 +1476,10 @@ if isempty(audiodata)
     warndlg('No signal loaded!');
 else
     % Retrieve information from the selected leaf
-    testsignal = flipud(audiodata.audio)./max(max(max(abs(audiodata.audio))));
+    testsignal = audiodata.audio;
+    if size(testsignal,2) > 2, testsignal = mean(testsignal,2); end
+    if size(testsignal,3) > 1, testsignal = sum(testsignal,3); end
+    testsignal = flipud(testsignal)./max(abs(testsignal));
     fs = audiodata.fs;
     nbits = 16;
     doesSupport = audiodevinfo(0, handles.odeviceid, fs, nbits, size(testsignal,2));
@@ -1505,6 +1511,9 @@ if isempty(audiodata)
 else
     % Retrieve information from the selected leaf
     testsignal = audiodata.audio;
+    if size(testsignal,2) > 2, testsignal = mean(testsignal,2); end
+    if size(testsignal,3) > 1, testsignal = sum(testsignal,3); end
+    testsignal = testsignal./max(abs(testsignal));
     len = length(testsignal);
     len = 2 * ceil(len/2);
     spectrum = fft(testsignal,len);
@@ -1544,6 +1553,9 @@ if isempty(audiodata)
 else
     % Retrieve information from the selected leaf
     testsignal = audiodata.audio;
+    if size(testsignal,2) > 2, testsignal = mean(testsignal,2); end
+    if size(testsignal,3) > 1, testsignal = sum(testsignal,3); end
+    testsignal = testsignal./max(abs(testsignal));
     len = length(testsignal);
     %len = 2 .* ceil(len./2);
     spectrum = fft(testsignal,len);
@@ -1586,6 +1598,9 @@ if isempty(audiodata)
 else
     % Retrieve information from the selected leaf
     testsignal = audiodata.audio;
+    if size(testsignal,2) > 2, testsignal = mean(testsignal,2); end
+    if size(testsignal,3) > 1, testsignal = sum(testsignal,3); end
+    testsignal = testsignal./max(abs(testsignal));
     fs = audiodata.fs;
     reference_audio = resample(handles.reference_audio.audio,fs,handles.reference_audio.fs);
     reference_audio = repmat(reference_audio,1,size(testsignal,2));
