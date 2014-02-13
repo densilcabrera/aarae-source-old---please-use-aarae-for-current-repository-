@@ -45,6 +45,7 @@ end
         if N > 25
             N = 25;
         end
+        N0 = N;
         
         % This part of the code is adapted from Edgar Berdahl's function
         a = [1; 1];
@@ -67,7 +68,7 @@ end
             OUT.audio = audio; 
             OUT.fs = fs;
             OUT.audio2 = audio;
-            OUT.tag = ['Golay',num2str(N)];
+            OUT.tag = ['Golay',num2str(N0)];
         end
         
 
