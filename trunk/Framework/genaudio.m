@@ -156,7 +156,7 @@ else
     % Save the generated signal to the desktop
     setappdata(hMain,'testsignal',handles.signaldata);
     if isfield(handles.signaldata,'audio2')
-        h = msgbox('Inverse filter generated and associated with current signal','modal');
+        h = msgbox('Companion signal loaded into audio2','AARAE info','modal');
         uiwait(h);
     end
 end
