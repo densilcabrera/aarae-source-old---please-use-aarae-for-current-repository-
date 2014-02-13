@@ -79,6 +79,24 @@ function out = linRT(data,fs,startthresh,bpo,doplot,filterstrength,phasemode,noi
 % SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 % %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+
+
+
+% %%%%% TO DO
+% 
+% Lin_RT
+% * Rename to something like ReverberationTime
+% * Make it work for multi band input
+% * Write results as text on charts
+% * Validate Lundeby - but how?
+% * disp all outputs (incl BR & TR) when chans >1 (some missing now)
+% * implement noise correction using extrapolation post truncation
+% * implement Morgan truncation
+% 
+% Xiang nonlinear
+% * use new filterbanks
+
+
 if isstruct(data)
     ir = data.audio;
     fs = data.fs;
@@ -128,24 +146,13 @@ end
 % START TRUNCATION
 %--------------------------------------------------------------------------
 
-% Check the input data dimensions
-s = size(ir); % size of the IR
-ndim = length(s); % number of dimensions
-switch ndim
-    case 1
-        len = s(1); % number of samples in IR
-        chans = 1; % number of channels
-        multibandIR = 0; % single band IR
-    case 2
-        len = s(1); % number of samples in IR
-        chans = s(2); % number of channels
-        multibandIR = 0; % single band IR
-    case 3
-        len = s(1); % number of samples in IR
-        chans = s(2); % number of channels
-        multibandIR = 1; % multiband IR (do not filter; do not output ...
-        % energy parameters
+[len,chans,bands] = size(ir);
+if bands>1
+    multibandIR = 1;
+else
+    multibandIR = 0;
 end
+
 
 % Get last 10 % for Chu noise compensation if set
 if noisecomp == 1
@@ -276,12 +283,7 @@ if multibandIR == 0
         repmat(tstimes,[1,chans,bands])))./alloct; % Ts
     %     end
     
-    % mean square of last 10%
-    if noisecomp == 1
-        ir_end10oct = mean(ir_end10oct.^2);
-    else
-        ir_end10oct = zeros(1,chans,bands);
-    end
+    
     
     
 end % if multibandIR == 0
@@ -298,8 +300,16 @@ if multibandIR == 1
    
     iroct = ir;
     
+    
 end % if multibandIR == 1
 
+
+% mean square of last 10%
+    if noisecomp == 1
+        ir_end10oct = mean(ir_end10oct.^2);
+    else
+        ir_end10oct = zeros(1,chans,bands);
+    end
 
 %--------------------------------------------------------------------------
 % REVERBERATION TIME (Reverse Integration, Linear Regression)
@@ -714,9 +724,9 @@ if isstruct(data)
             
 
             
-        end % if chans == 1 / elseif chans == 2
+        end 
         
-    end % if doplot
+    end 
     
 end % eof
 
