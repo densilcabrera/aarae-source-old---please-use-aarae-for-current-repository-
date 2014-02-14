@@ -83,7 +83,7 @@ function out = linRT(data,fs,startthresh,bpo,doplot,filterstrength,phasemode,noi
 
 
 % %%%%% TO DO
-% 
+%
 % Lin_RT
 % * Rename to something like ReverberationTime
 % * Make it work for multi band input
@@ -92,7 +92,7 @@ function out = linRT(data,fs,startthresh,bpo,doplot,filterstrength,phasemode,noi
 % * disp all outputs (incl BR & TR) when chans >1 (some missing now)
 % * implement noise correction using extrapolation post truncation
 % * implement Morgan truncation
-% 
+%
 % Xiang nonlinear
 % * use new filterbanks
 
@@ -164,20 +164,22 @@ m = zeros(1, chans); % maximum value of the IR
 startpoint = zeros(1, chans); % the auto-detected start time of the IR
 
 for dim2 = 1:chans
-    m(1,dim2) = max(ir(:,dim2).^2); % maximum value of the IR
-    startpoint(1,dim2) = find(ir(:,dim2).^2 >= m(1,dim2)./ ...
-        (10^(abs(startthresh)/10)),1,'first'); % Define start point
+    for dim3 = 1:bands
+        m(1,dim2,dim3) = max(ir(:,dim2,dim3).^2); % maximum value of the IR
+        startpoint(1,dim2,dim3) = find(ir(:,dim2,dim3).^2 >= m(1,dim2,dim3)./ ...
+            (10^(abs(startthresh)/10)),1,'first'); % Define start point
     
-    if startpoint(1,dim2) >1
+    %startpoint = min(startpoint,[],3);
+    if startpoint(1,dim2,dim3) >1
         
         % zero the data before the startpoint
-        ir(1:startpoint(1,dim2)-1,dim2) = 0;
+        ir(1:startpoint(1,dim2,dim3)-1,dim2,dim3) = 0;
         
         % rotate the zeros to the end (to keep a constant data length)
-        ir(:,dim2) = circshift(ir(:,dim2),-(startpoint(1,dim2)-1));
+        ir(:,dim2,dim3) = circshift(ir(:,dim2,dim3),-(startpoint(1,dim2,dim3)-1));
         
     end % if startpoint
-    
+    end
 end % for dim2
 
 early50 = ir(1:1+floor(fs*0.05),:); % Truncate Early80
@@ -189,22 +191,33 @@ late80 = ir(ceil(fs*0.08):end,:); % Truncate Late80
 % FILTERING
 %--------------------------------------------------------------------------
 
-noctaves = log2(f_hi/f_low);
-if bpo == 1
-    f_low = 1000*2.^round(log2((f_low/1000))); % make sure it is oct
-    fc = f_low .* 2.^(0:round(noctaves)); % approx freqencies
+if multibandIR == 0
+    noctaves = log2(f_hi/f_low);
+    if bpo == 1
+        f_low = 1000*2.^round(log2((f_low/1000))); % make sure it is oct
+        fc = f_low .* 2.^(0:round(noctaves)); % approx freqencies
+    else
+        fc = f_low .* 2.^(0:1/3:round(3*noctaves)/3);% approx freqencies
+    end
+    bandfc = exact2nom_oct(fc); % nominal frequencies
+    bands = length(bandfc);
 else
-    fc = f_low .* 2.^(0:1/3:round(3*noctaves)/3);% approx freqencies
+    if isfield(data,'bandID');
+        bandfc = data.bandID;
+    else
+        bandfc = 1:bands;
+    end
+    if length(bandfc) ~= bands
+        bandfc = 1:bands;
+    end
 end
-bandfc = exact2nom_oct(fc); % nominal frequencies
-bands = length(bandfc);
 
 
 
 
 % - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 if multibandIR == 0
-        
+    
     % use AARAE's fft-based filters
     
     if bpo == 1
@@ -231,7 +244,7 @@ if multibandIR == 0
     end
     
     % check the number of bands again, in case some were not ok to filter
-    bands = size(iroct,3); 
+    bands = size(iroct,3);
     fc = fc(1:bands);
     bandfc = bandfc(1:bands);
     
@@ -240,8 +253,8 @@ if multibandIR == 0
     %----------------------------------------------------------------------
     
     if autotrunc == 1
-        % Lundeby crosspoint 
-        crosspoint = lundebycrosspoint(iroct(1:(end-min(min(startpoint))),:,:).^2, fs,fc);
+        % Lundeby crosspoint
+        crosspoint = lundebycrosspoint(iroct(1:(end-max(max(max(startpoint)))),:,:).^2, fs,fc);
         
         % autotruncation
         for ch = 1:chans
@@ -270,7 +283,7 @@ if multibandIR == 0
     late80oct = sum(late80oct.^2);
     alloct = sum(iroct.^2);
     
-   
+    
     C50 = 10*log10(early50oct ./ late50oct); % C50
     C80 = 10*log10(early80oct ./ late80oct); % C80
     D50 = (early50oct ./ alloct); % D50
@@ -290,26 +303,52 @@ end % if multibandIR == 0
 % - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 if multibandIR == 1
+    bands = size(ir,3);
     
-  
-    C50 = [];
-    C80 = [];
-    D50 = [];
-    D80 = [];
-    Ts = [];
-   
+    [C50,C80,D50,D80,Ts] = deal(NaN(1,chans,bands));
+    
+    
     iroct = ir;
+    
+    %----------------------------------------------------------------------
+    % END AUTO-TRUNCATION
+    %----------------------------------------------------------------------
+    
+    if autotrunc == 1
+        % Lundeby crosspoint
+        crosspoint = lundebycrosspoint(iroct(1:(end-max(max(max(startpoint)))),:,:).^2, fs,bandfc);
+        
+        % autotruncation
+        for ch = 1:chans
+            for b = 1:bands
+                if crosspoint(1,ch,b) < len
+                    iroct(crosspoint(1,ch,b):end,ch,b) = 0;
+                    %                     if crosspoint(1,ch,b) > fs*0.05
+                    %                         late50oct(crosspoint(1,ch,b)-fs*0.05+1:end,ch,b)=0;
+                    %                     end
+                    %                     if crosspoint(1,ch,b) > fs*0.08
+                    %                         late80oct(crosspoint(1,ch,b)-fs*0.08+1:end,ch,b)=0;
+                    %                     end
+                end
+            end
+        end
+        
+    end
     
     
 end % if multibandIR == 1
 
 
 % mean square of last 10%
-    if noisecomp == 1
+if noisecomp == 1
+    if multibandIR == 0
         ir_end10oct = mean(ir_end10oct.^2);
     else
-        ir_end10oct = zeros(1,chans,bands);
+        ir_end10oct = mean(ir_end10.^2);
     end
+else
+    ir_end10oct = zeros(1,chans,bands);
+end
 
 %--------------------------------------------------------------------------
 % REVERBERATION TIME (Reverse Integration, Linear Regression)
@@ -420,30 +459,30 @@ end % dim2
 if  bpo == 1
     fc500 = find(bandfc == 500);
     fc1000 = find(bandfc == 1000);
-    if ~isempty(fc500) && ~isempty(fc1000)
-    T30mid = mean([T30(1,:,fc500); T30(1,:,fc1000)]);
-    T20mid = mean([T20(1,:,fc500); T20(1,:,fc1000)]);
-    EDTmid = mean([EDT(1,:,fc500); EDT(1,:,fc1000)]);
+    if ~isempty(fc500) && ~isempty(fc1000) && fc1000-fc500 == 1
+        T30mid = mean([T30(1,:,fc500); T30(1,:,fc1000)]);
+        T20mid = mean([T20(1,:,fc500); T20(1,:,fc1000)]);
+        EDTmid = mean([EDT(1,:,fc500); EDT(1,:,fc1000)]);
     else
         [EDTmid,T20mid,T30mid] = deal(nan(1,chans));
     end
     
     fc125 = find(bandfc == 125);
     fc250 = find(bandfc == 250);
-    if ~isempty(fc125) && ~isempty(fc250)
-    T30low = mean([T30(1,:,fc125); T30(1,:,fc250)]);
-    T20low = mean([T20(1,:,fc125); T20(1,:,fc250)]);
-    EDTlow = mean([EDT(1,:,fc125); EDT(1,:,fc250)]);
+    if ~isempty(fc125) && ~isempty(fc250) && fc250-fc125 == 1
+        T30low = mean([T30(1,:,fc125); T30(1,:,fc250)]);
+        T20low = mean([T20(1,:,fc125); T20(1,:,fc250)]);
+        EDTlow = mean([EDT(1,:,fc125); EDT(1,:,fc250)]);
     else
         [EDTlow,T20low,T30low] = deal(nan(1,chans));
     end
     
     fc2000 = find(bandfc == 2000);
     fc4000 = find(bandfc == 4000);
-    if ~isempty(fc2000) && ~isempty(fc4000)
-    T30high = mean([T30(1,:,fc2000); T30(1,:,fc4000)]);
-    T20high = mean([T20(1,:,fc2000); T20(1,:,fc4000)]);
-    EDThigh = mean([EDT(1,:,fc2000); EDT(1,:,fc4000)]);
+    if ~isempty(fc2000) && ~isempty(fc4000) && fc4000-fc2000 == 1
+        T30high = mean([T30(1,:,fc2000); T30(1,:,fc4000)]);
+        T20high = mean([T20(1,:,fc2000); T20(1,:,fc4000)]);
+        EDThigh = mean([EDT(1,:,fc2000); EDT(1,:,fc4000)]);
     else
         [EDThigh,T20high,T30high] = deal(nan(1,chans));
     end
@@ -469,24 +508,24 @@ end
 
 if  bpo == 3
     T30mid = [];
-        T20mid = [];
-        EDTmid = [];
-        T30low = [];
-        T20low = [];
-        EDTlow = [];
-        T30high = [];
-        T20high = [];
-        EDThigh = [];
-        BR_T30 = [];
-        BR_T20 = [];
-        BR_EDT = [];
-        TR_T30 = [];
-        TR_T20 = [];
-        TR_EDT = [];
+    T20mid = [];
+    EDTmid = [];
+    T30low = [];
+    T20low = [];
+    EDTlow = [];
+    T30high = [];
+    T20high = [];
+    EDThigh = [];
+    BR_T30 = [];
+    BR_T20 = [];
+    BR_EDT = [];
+    TR_T30 = [];
+    TR_T20 = [];
+    TR_EDT = [];
 end
 
 % percentage difference T20 to T30
-    T20T30r = (T20./T30)*100;
+T20T30r = (T20./T30)*100;
 
 %--------------------------------------------------------------------------
 % OUTPUT
@@ -567,11 +606,29 @@ else
     disp(out.T30r2)
     disp('Ratio of T20 to T30 (%):')
     disp(out.T20T30ratio)
+    if ~isempty(T20low)
+        disp('Low-frequency EDT (s):')
+        disp(out.EDTlow)
+        disp('Low-frequency T20 (s):')
+        disp(out.T20low)
+        disp('Low-frequency T30 (s):')
+        disp(out.T30low)
+    end
     if ~isempty(T20mid)
+        disp('Mid-frequency EDT (s):')
+        disp(out.EDTmid)
         disp('Mid-frequency T20 (s):')
         disp(out.T20mid)
         disp('Mid-frequency T30 (s):')
         disp(out.T30mid)
+    end
+    if ~isempty(T20high)
+        disp('High-frequency EDT (s):')
+        disp(out.EDThigh)
+        disp('High-frequency T20 (s):')
+        disp(out.T20high)
+        disp('High-frequency T30 (s):')
+        disp(out.T30high)
     end
 end
 
@@ -582,7 +639,7 @@ end
 if isstruct(data)
     for ch = 1:chans
         f = figure('Name','Reverberation Parameters', ...
-        'Position',[200 200 620 360]);
+            'Position',[200 200 620 360]);
         dat1 = [out.EDT(ch,:);out.T20(ch,:);out.T30(ch,:);out.C50(ch,:);...
             out.C80(ch,:);out.D50(ch,:); ...
             out.D80(ch,:);out.Ts(ch,:); ...
@@ -600,13 +657,13 @@ if isstruct(data)
             'Correlation coefficient EDT r^2',...
             'Correlation coefficient T20 r^2',...
             'Correlation coefficient T30 r^2',...
-            'Ratio of T20 to T30'};
+            'Ratio of T20 to T30 %'};
         t1 =uitable('Data',dat1,'ColumnName',cnames1,'RowName',rnames1);
         set(t1,'ColumnWidth',{60});
         
         if bpo == 1
-
-                
+            
+            
             dat2 = [out.EDTlow(ch),out.EDTmid(ch),out.EDThigh(ch),out.BR_EDT(ch),out.TR_EDT(ch);...
                 out.T20low(ch),out.T20mid(ch),out.T20high(ch),out.BR_T20(ch),out.TR_T20(ch);...
                 out.T30low(ch),out.T30mid(ch),out.T30high(ch),out.BR_T30(ch),out.TR_T30(ch)];
@@ -627,7 +684,7 @@ if isstruct(data)
     
     if doplot
         % Define number of rows and columns (for y axis labelling)
-[r,c] = subplotpositions(bands+1,0.4);
+        [r,c] = subplotpositions(bands+1,0.4);
         
         
         % preallocate
@@ -646,7 +703,7 @@ if isstruct(data)
         end
         
         
-       for ch = 1:chans
+        for ch = 1:chans
             
             figure('Name',['Channel ', num2str(ch), ', Level Decay and Regression Lines'])
             
@@ -702,7 +759,7 @@ if isstruct(data)
             
             
             plot([0.1,0.4], [0.8,0.8],'Color',[0.2 0.2 0.2], ...
-                    'LineStyle',':','DisplayName','Level Decay')
+                'LineStyle',':','DisplayName','Level Decay')
             xlim([0,1])
             ylim([0,1])
             hold on
@@ -714,19 +771,19 @@ if isstruct(data)
             plot([0.1,0.4], [0.2,0.2],'Color',[0 0 0.6],'DisplayName', 'T30')
             text(0.5,0.2,'T30');
             set(gca,'YTickLabel','',...
-            'YTick',zeros(1,0),...
-            'XTickLabel','',...
-            'XTick',zeros(1,0))
-            end
-            
-            hold off
-            
-            
-
-            
-        end 
+                'YTick',zeros(1,0),...
+                'XTickLabel','',...
+                'XTick',zeros(1,0))
+        end
         
-    end 
+        hold off
+        
+        
+        
+        
+    end
     
+end
+
 end % eof
 
