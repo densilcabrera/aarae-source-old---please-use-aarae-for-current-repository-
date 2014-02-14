@@ -21,7 +21,7 @@ function [crosspoint, ok] = lundebycrosspoint(IR2, fs, fc)
 % curve fitting.
 %
 % Code by Densil Cabrera
-% version 0.01 (10 February 2014) - Beta
+% version 0.02 (15 February 2014) - Beta
 
 
 %**************************************************************************
@@ -55,12 +55,18 @@ function [crosspoint, ok] = lundebycrosspoint(IR2, fs, fc)
 %**************************************************************************
 
 
-% if there are any negative values, assume that the IR has not been squared
-if min(min(min(IR2))) < 0
-    IR2=IR2.^2;
-end
-
 [len,chans,bands] = size(IR2);
+
+% clear fc if it is just a count of bands
+if exist('fc','var')
+    if length(fc)>1
+        if fc(2)-fc(1)==1
+            clear fc;
+        end
+    elseif fc == 1
+            clear fc;
+    end
+end
 
 % window length for step 1
 if ~exist('fc','var') && bands > 1
@@ -78,16 +84,17 @@ elseif exist('fc','var') && bands > 1
         winlen(fc_mid) = round(0.001*fs*25);
     end
 else
-    winlen = round(0.001*fs*25);
+    winlen(1:bands) = round(0.001*fs*25);
 end
-
+winlen = repmat(permute(winlen,[1,3,2]),[1,chans,1]);
 
 
 % 1. AVERAGE SQUARED IR IN LOCAL TINE INTERVALS
 IR2smooth = IR2; %just for preallocation
 for b = 1:bands
-    IR2smooth(:,:,b) = fftfilt(ones(winlen(b),1)./winlen(b),IR2(:,:,b));
+    IR2smooth(:,:,b) = fftfilt(ones(winlen(1,1,b),1)./winlen(1,1,b),IR2(:,:,b));
 end
+IR2smooth(IR2smooth<=0)=1e-99;
 IR2smoothdB =  10*log10(IR2smooth);
 maxIR2smoothdB = max(IR2smoothdB);
 maxind = ones(1,chans,bands);
@@ -108,16 +115,18 @@ IR2taildB = 10*log10(IR2tail) - maxIR2smoothdB;
 
 % 3. ESTIMATE SLOPE OF DECAY FROM 0 dB TO NOISE LEVEL
 o = zeros(2,chans, bands);
-crosspoint = zeros(1,chans,bands);
+[crosspoint,tend] = deal(zeros(1,chans,bands));
 for ch = 1:chans
     for b = 1:bands
-        tend = find(IR2smoothdB(maxind(1,ch,b):end,ch,b) <= IR2taildB(1,ch,b), 1, 'first')+maxind(1,ch,b)-1; %
+        tend(1,ch,b) = find(IR2smoothdB(maxind(1,ch,b):end,ch,b) ...
+            <= IR2taildB(1,ch,b), 1, 'first')+maxind(1,ch,b)-1;
         
-        o(:,ch,b) = polyfit((maxind(1,ch,b):tend)', ...
-            IR2smoothdB(maxind(1,ch,b):tend,ch,b),1)';
+        o(:,ch,b) = polyfit((maxind(1,ch,b):tend(1,ch,b))', ...
+            IR2smoothdB(maxind(1,ch,b):tend(1,ch,b),ch,b),1)';
         
         % 4. FIND PRELIMINARY CROSSPOINT
-        crosspoint(1,ch,b) = -round((o(2,ch,b)-IR2taildB(1,ch,b))/o(1,ch,b));
+        crosspoint(1,ch,b) = ...
+            -round((o(2,ch,b)-IR2taildB(1,ch,b))/o(1,ch,b));
         
     end
 end
@@ -144,6 +153,15 @@ for ch = 1:chans
     end
 end
 
+ok(1,chans,bands) = true;
+
+% Fix out-of-range winlen
+winlen(isinf(winlen)) = round(0.001*fs*25); %25 ms
+winlen(isnan(winlen)) = round(0.001*fs*25);
+winlen(winlen>0.2*len) = round(0.2*len);
+winlen(winlen<10) = 10;
+
+
 
 % 6. AVERAGE SQUARED IR IN NEW LOCAL TIME INTERVALS
 for ch = 1:chans
@@ -151,6 +169,7 @@ for ch = 1:chans
         IR2smooth(:,ch,b) = fftfilt(ones(winlen(1,ch,b),1)./winlen(1,ch,b),IR2(:,ch,b));
     end
 end
+IR2smooth(IR2smooth<=0)=1e-99;
 IR2smoothdB =  10*log10(IR2smooth);
 maxIR2smoothdB = max(IR2smoothdB);
 maxind = ones(1,chans,bands);
@@ -161,7 +180,7 @@ for ch = 1:chans
     end
 end
 
-ok(1,chans,bands) = true;
+
 
 
 % ITERATE STEPS 7-9
