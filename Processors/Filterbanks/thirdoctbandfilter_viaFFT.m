@@ -19,6 +19,9 @@ function [OUT,varargout] = thirdoctbandfilter_viaFFT(IN,fs,param,order,zeropad,m
 % phasemode = 0 for zero phase (or linear phase if a delay is used)
 % phasemode = 1 for minimum phase
 % phasemode = -1 for maximum phase
+% phasemode = 10 for zero phase quadrature (complex) filter
+% phasemode = 11 for minimum phase quadrature (complex) filter
+% phasemode = -11 for maximum phase quadrature (complex) filter
 %
 % zeropad is the number of samples added both before and after the input
 % audio, to capture the filters' (acausal) build-up and decay. Hence a
@@ -243,21 +246,33 @@ if ok == 1
         % above Nyquist frequency
         mag(fftlen/2+2:end) = flipud(mag(2:fftlen/2));
         
-       if phasemode == 1
+       if (phasemode == 1) || (phasemode == 11)
             % convert mag to min phase complex coefficients
             mag = minphasefreqdomain(mag); 
-        elseif phasemode == -1
+        elseif (phasemode == -1) || (phasemode == -11)
             % convert mag to max phase complex coefficients
             mag = conj(minphasefreqdomain(mag)); 
            
         end
-        if phasemode == 0
-            bandfiltered = ifft(repmat(mag,[1,chans]) .* spectrum);
-        else
-             % real output only for min phase and max phase
-                bandfiltered = real(ifft(repmat(mag,[1,chans]) .* spectrum));
+        
+        if (phasemode == -11) || (phasemode == 10) || (phasemode == 11)
+            % zero the upper half of the spectrum for quadrature (complex) filters
+            mag(fftlen/2:end) = 0;
         end
-
+        
+        if (phasemode == 0) || (phasemode == 10)
+            bandfiltered = ifft(repmat(mag,[1,chans]) .* spectrum);
+        elseif (phasemode == -1) || (phasemode == 1)
+             % real output only for min phase and max phase
+             bandfiltered = real(ifft(repmat(mag,[1,chans]) .* spectrum));
+        elseif (phasemode == -11) || (phasemode == 11)
+            % quadrature min and max phase
+             bandfiltered = ifft(repmat(mag,[1,chans]) .* spectrum);
+        else
+            disp('Phasemode value not recognized');
+            OUT = [];
+            return
+        end
         
         % truncate waveform and send to filtered waveform matrix
         filtered(:,:,b) = bandfiltered(1:len,:);

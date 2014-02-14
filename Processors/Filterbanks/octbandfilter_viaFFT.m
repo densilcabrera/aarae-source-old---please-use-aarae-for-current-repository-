@@ -258,7 +258,7 @@ if ok == 1
         
         if (phasemode == -11) || (phasemode == 10) || (phasemode == 11)
             % zero the upper half of the spectrum for quadrature (complex) filters
-            mag(fftlen/2:end,:) = 0;
+            mag(fftlen/2:end) = 0;
         end
         
         if (phasemode == 0) || (phasemode == 10)
