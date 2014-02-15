@@ -89,7 +89,7 @@ end
 winlen = repmat(permute(winlen,[1,3,2]),[1,chans,1]);
 
 
-% 1. AVERAGE SQUARED IR IN LOCAL TINE INTERVALS
+% 1. AVERAGE SQUARED IR IN LOCAL TIME INTERVALS
 IR2smooth = IR2; %just for preallocation
 for b = 1:bands
     IR2smooth(:,:,b) = fftfilt(ones(winlen(1,1,b),1)./winlen(1,1,b),IR2(:,:,b));
@@ -131,6 +131,14 @@ for ch = 1:chans
     end
 end
 
+for ch=1:chans
+    for b = 1:bands
+        if crosspoint(1,ch,b) < round(maxind(1,ch,b)+0.05*fs)
+            crosspoint(1,ch,b) = round(maxind(1,ch,b)+0.05*fs);
+        end
+    end
+end
+crosspoint(crosspoint>round(0.9*len)) = round(0.9*len);
 
 
 % 5. FIND NEW LOCAL TIME INTERVAL LENGTH

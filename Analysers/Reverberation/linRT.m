@@ -4,7 +4,7 @@ function out = linRT(data,fs,startthresh,bpo,doplot,filterstrength,phasemode,noi
 % a linear least squares sense.
 %
 % Code by Grant Cuthbert & Densil Cabrera
-% Version 1.03 (8 February 2014)
+% Version 1.04 (15 February 2014)
 %
 %--------------------------------------------------------------------------
 % INPUT VARIABLES
@@ -87,7 +87,6 @@ function out = linRT(data,fs,startthresh,bpo,doplot,filterstrength,phasemode,noi
 % Lin_RT
 % * Rename to something like ReverberationTime
 % * Make it work for multi band input
-% * Write results as text on charts
 % * Validate Lundeby - but how?
 % * disp all outputs (incl BR & TR) when chans >1 (some missing now)
 % * implement noise correction using extrapolation post truncation
@@ -168,17 +167,17 @@ for dim2 = 1:chans
         m(1,dim2,dim3) = max(ir(:,dim2,dim3).^2); % maximum value of the IR
         startpoint(1,dim2,dim3) = find(ir(:,dim2,dim3).^2 >= m(1,dim2,dim3)./ ...
             (10^(abs(startthresh)/10)),1,'first'); % Define start point
-    
-    %startpoint = min(startpoint,[],3);
-    if startpoint(1,dim2,dim3) >1
         
-        % zero the data before the startpoint
-        ir(1:startpoint(1,dim2,dim3)-1,dim2,dim3) = 0;
-        
-        % rotate the zeros to the end (to keep a constant data length)
-        ir(:,dim2,dim3) = circshift(ir(:,dim2,dim3),-(startpoint(1,dim2,dim3)-1));
-        
-    end % if startpoint
+        %startpoint = min(startpoint,[],3);
+        if startpoint(1,dim2,dim3) >1
+            
+            % zero the data before the startpoint
+            ir(1:startpoint(1,dim2,dim3)-1,dim2,dim3) = 0;
+            
+            % rotate the zeros to the end (to keep a constant data length)
+            ir(:,dim2,dim3) = circshift(ir(:,dim2,dim3),-(startpoint(1,dim2,dim3)-1));
+            
+        end % if startpoint
     end
 end % for dim2
 
@@ -578,9 +577,9 @@ if ~isempty(TR_EDT)
     out.TR_T30 = permute(TR_T30,[2,3,1]);
 end
 
-if chans == 1
-    disp(out)
-else
+% if chans == 1
+%     disp(out)
+% else
     disp(['bandfc:' ,num2str(out.bandfc), ' Hz'])
     disp('Early Decay Time (s):')
     disp(out.EDT)
@@ -588,16 +587,18 @@ else
     disp(out.T20)
     disp('Reverberation Time T30 (s):')
     disp(out.T30)
-    disp('Clarity Index C50 (dB):')
-    disp(out.C50)
-    disp('Clarity Index C80 (dB):')
-    disp(out.C80)
-    disp('Definition D50:')
-    disp(out.D50)
-    disp('Definition D80:')
-    disp(out.D80)
-    disp('Centre Time (s):')
-    disp(out.Ts)
+    if ~isnan(out.C50(1,1,1))
+        disp('Clarity Index C50 (dB):')
+        disp(out.C50)
+        disp('Clarity Index C80 (dB):')
+        disp(out.C80)
+        disp('Definition D50:')
+        disp(out.D50)
+        disp('Definition D80:')
+        disp(out.D80)
+        disp('Centre Time (s):')
+        disp(out.Ts)
+    end
     disp('EDT squared correlation coefficient:')
     disp(out.EDTr2)
     disp('T20 squared correlation coefficient:')
@@ -630,7 +631,7 @@ else
         disp('High-frequency T30 (s):')
         disp(out.T30high)
     end
-end
+% end
 
 %--------------------------------------------------------------------------
 % AARAE TABLE
@@ -719,11 +720,11 @@ if isstruct(data)
                 plot(((1:len)-1)./fs, levdecay(:,ch,band),'Color',[0.2 0.2 0.2], ...
                     'LineStyle',':','DisplayName','Level Decay')
                 
-                % linear regression for EDT
-                plot(((irstart(1,ch,band):edtend(1,ch,band))./fs), ...
-                    (irstart(1,ch,band):edtend(1,ch,band)).* ...
-                    o(1,ch,band)+o(2,ch,band), ...
-                    'Color',[0.9 0 0],'DisplayName','EDT')
+                % linear regression for T30
+                plot(((tstart(1,ch,band):t30end(1,ch,band))./fs), ...
+                    (tstart(1,ch,band):t30end(1,ch,band)).* ...
+                    q(1,ch,band)+q(2,ch,band), ...
+                    'Color',[0 0 0.6],'DisplayName', 'T30')
                 
                 % linear regression for T20
                 plot(((tstart(1,ch,band):t20end(1,ch,band))./fs), ...
@@ -731,11 +732,11 @@ if isstruct(data)
                     p(1,ch,band)+p(2,ch,band), ...
                     'Color',[0 0.6 0],'DisplayName','T20')
                 
-                % linear regression for T30
-                plot(((tstart(1,ch,band):t30end(1,ch,band))./fs), ...
-                    (tstart(1,ch,band):t30end(1,ch,band)).* ...
-                    q(1,ch,band)+q(2,ch,band), ...
-                    'Color',[0 0 0.6],'DisplayName', 'T30')
+                % linear regression for EDT
+                plot(((irstart(1,ch,band):edtend(1,ch,band))./fs), ...
+                    (irstart(1,ch,band):edtend(1,ch,band)).* ...
+                    o(1,ch,band)+o(2,ch,band), ...
+                    'Color',[0.9 0 0],'DisplayName','EDT')
                 
                 % x axis label (only on the bottom row of subplots)
                 if band > (c*r - c)
@@ -750,6 +751,17 @@ if isstruct(data)
                 xlim([0 levdecayend(1,ch,band)])
                 ylim([-65 0])
                 
+                % text on subplots
+                text(levdecayend(1,ch,band)*0.45,-5,...
+                    ['EDT ',num2str(0.01*round(100*EDT(1,ch,band)))],'Color',[0.9 0 0])
+                
+                text(levdecayend(1,ch,band)*0.45,-10,...
+                    ['T20 ',num2str(0.01*round(100*T20(1,ch,band)))],'Color',[0 0.6 0])
+                
+                text(levdecayend(1,ch,band)*0.45,-15,...
+                    ['T30 ',num2str(0.01*round(100*T30(1,ch,band)))],'Color',[0 0 0.6])
+                
+                % subplot title
                 title([num2str(bandfc(band)),' Hz'])
                 
             end % for band
