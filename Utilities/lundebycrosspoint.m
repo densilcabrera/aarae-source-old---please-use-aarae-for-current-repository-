@@ -1,4 +1,4 @@
-function [crosspoint, ok] = lundebycrosspoint(IR2, fs, fc)
+function [crosspoint, Tlate, ok] = lundebycrosspoint(IR2, fs, fc)
 % This function implements the crosspoint finding algorithm
 % described in:
 % A. Lundeby, T.E. Vigran, H. Bietz and M. Vorlaender, "Uncertainties of
@@ -161,7 +161,7 @@ for ch = 1:chans
     end
 end
 
-ok(1,chans,bands) = true;
+ok = true(1,chans,bands);
 
 % Fix out-of-range winlen
 winlen(isinf(winlen)) = round(0.001*fs*25); %25 ms
@@ -216,7 +216,7 @@ for iter = 1:5
     end
     
     
-    
+    Tlate = zeros(1,chans,bands);
     % 8. ESTIMATE THE LATE DECAY SLOPE
     for ch = 1:chans
         for b = 1:bands
@@ -237,7 +237,7 @@ for iter = 1:5
                     LateSlopeEnddB = IR2taildB(1,ch,b) + 5;
                     LateSlopeStartdB = IR2taildB(1,ch,b) + 15;
                 else
-                    ok(:,ch,b) = false; % give up - insufficient SNR
+                    ok(1,ch,b) = false; % give up - insufficient SNR
                 end
             end
             if ok(1,ch,b)
@@ -246,6 +246,9 @@ for iter = 1:5
                 
                 o(:,ch,b) = polyfit((tstart:tend)', ...
                     IR2smoothdB(tstart:tend,ch,b),1)';
+                Tlate(1,ch,b) = 2*((o(2,ch,b)-60)/o(1,ch,b) ...
+                    -(o(2,ch,b))/ ...
+                    o(1,ch,b))/fs; % Late reverberation time
                 
                 % 9. FIND NEW CROSSPOINT
                 crosspoint(1,ch,b) = -round((o(2,ch,b)-IR2taildB(1,ch,b))/o(1,ch,b));
