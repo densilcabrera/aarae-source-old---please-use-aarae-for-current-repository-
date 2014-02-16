@@ -404,13 +404,14 @@ iroct2(iroct2<0) = 0;
 
 if noisecomp == 2
     % extrapolate decay beyond crosspoint
-    tau = Tlate./log(1e6);
+    tau = 0.8*Tlate./log(1e6); % 0.8 is more conservative than 1
     for ch = 1:chans
         for b = 1:bands
             if okcrosspoint(1,ch,b)
-                iroct2(crosspoint(1,ch,b):end,ch,b) = ...
-                    iroct2(crosspoint(1,ch,b),ch,b) ./ ...
-                    exp((((crosspoint(1,ch,b):len)-crosspoint(1,ch,b))./fs)./tau(1,ch,b));
+                endmean = mean(iroct2(crosspoint(1,ch,b)-50:crosspoint(1,ch,b)-1,ch,b));
+                iroct2((crosspoint(1,ch,b)):end,ch,b) = ...
+                    endmean .* exp(((((crosspoint(1,ch,b)):len)...
+                    -(crosspoint(1,ch,b)+25))./fs)./-tau(1,ch,b));
             end
         end
     end
@@ -800,6 +801,12 @@ if isstruct(data)
                     (irstart(1,ch,band):edtend(1,ch,band)).* ...
                     o(1,ch,band)+o(2,ch,band), ...
                     'Color',[0.9 0 0],'DisplayName','EDT')
+                
+                if exist('crosspoint','var')
+                    plot(crosspoint(1,ch,band)./fs,...
+                        levdecay(crosspoint(1,ch,band),ch,band),...
+                        'mo')
+                end
                 
                 % x axis label (only on the bottom row of subplots)
                 if band > (c*r - c)
