@@ -353,16 +353,17 @@ if isempty(handles.rec)
 else
     hMain = getappdata(0,'hMain');
     if get(handles.delay_chk,'Value') == 1, handles.rec = [handles.rec(handles.syscalstats.latency:end,:);zeros(handles.syscalstats.latency,size(handles.rec,2))]; end
-    handles.recording.audio = handles.rec;%setappdata(hMain,'testsignal',handles.rec);
+    handles.recording.audio = handles.rec;
     if get(handles.pb_enable,'Value') && isfield(handles.outputdata,'audio2')
-        handles.recording.audio2 = handles.outputdata.audio2;%setappdata(hMain,'invtestsignal',handles.outputdata.audio2);
+        handles.recording.audio2 = handles.outputdata.audio2;
     elseif get(handles.pb_enable,'Value') && ~isfield(handles.outputdata,'audio2')
-        handles.recording.audio2 = handles.outputdata.audio;%setappdata(hMain,'invtestsignal',handles.outputdata.audio);
+        handles.recording.audio2 = handles.outputdata.audio;
     else
-        handles.recording.audio2 = [];%setappdata(hMain,'invtestsignal',[]);
+        handles.recording.audio2 = [];
     end
-    handles.recording.fs = handles.fs;%setappdata(hMain,'fs',handles.fs);
-    handles.recording.nbits = handles.nbits;%setappdata(hMain,'nbits',handles.nbits);
+    handles.recording.fs = handles.fs;
+    handles.recording.nbits = handles.nbits;
+    handles.recording.chanID = cellstr([repmat('Chan',size(handles.recording.audio,2),1) num2str((1:size(handles.recording.audio,2))')]);
     if get(handles.cal_chk,'Value') == 1, handles.recording.cal = handles.syscalstats.cal; end
     name = get(handles.IN_name,'String');
     if isempty(name), name = 'untitled'; end
