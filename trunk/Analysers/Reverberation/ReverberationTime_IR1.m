@@ -113,11 +113,11 @@ if isstruct(data)
         'Highest centre frequency (Hz)', ...
         'Filter strength', ...
         'Zero phase (0), Maximum phase (-1) or Minimum phase (1) filters',...
-        'Noise compensation: None (0), Chu (1), Extrapolate Late Decay (2)', ...
+        'Noise compensation: None (0), Subtract final 10% Chu (1), Extrapolate Late Decay (2), Nonlinear curve fit Xiang (3), Nonlinear curve fit in dB (4)', ...
         'Automatic end truncation: None (0), Lundeby (1)',...
         'Plot (0|1)'};
     dlg_title = 'Settings';
-    num_lines = 1;
+    num_lines = [1 60];
     def = {'-20',num2str(bpo),num2str(f_low),num2str(f_hi),...
         '1','0','0','0','1'};
     answer = inputdlg(prompt,dlg_title,num_lines,def);
@@ -430,6 +430,7 @@ for dim2 = 1:chans
     end
 end
 
+if (noisecomp == 0) || (noisecomp == 1) || (noisecomp == 2)
 %***************************************
 % Derive decay times, via linear regressions over the appropriate
 % evaluation ranges
@@ -500,6 +501,245 @@ for dim2 = 1:chans
     end % dim3
 end % dim2
 
+elseif (noisecomp == 3) || (noisecomp == 4)
+    % nonlinear curve fit following Xiang 1995
+    % NOT QUITE WORKING YET...
+    
+    % nonlinear curve fitting seed coefficients
+    b1 = 1*rand;
+    b2 = -20*rand;
+    b3 = 1e-7*rand;
+    b = [b1;b2;b3];
+    maxloopcount = 10; % maximum number of fitting attempts for each parameter
+    jthreshold = 0.9; % value less than 1, the higher the value, the stricter the threshold
+    
+    % preallocate
+    t = zeros(len, chans, bands);
+    o = zeros(3, chans, bands);
+    p = zeros(3, chans, bands);
+    q = zeros(3, chans, bands);
+    levdecaymodelEDT = zeros(len, chans, bands);
+    levdecaymodelT20 = zeros(len, dim2, dim3);
+    levdecaymodelT30 = zeros(len, dim2, dim3);
+    edtmodlen = zeros(1, chans, bands);
+    t20modlen = zeros(1, chans, bands);
+    t30modlen = zeros(1, chans, bands);
+    EDT = zeros(1, chans, bands);
+    T20 = zeros(1, chans, bands);
+    T30 = zeros(1, chans, bands);
+    EDTr2 = zeros(1, chans, bands);
+    T20r2 = zeros(1, chans, bands);
+    T30r2 = zeros(1, chans, bands);
+    
+    
+    for dim2 = 1:chans
+        for dim3 = 1:bands
+            irstart = find(levdecay(:,dim2,dim3) <= 0, 1, 'first'); % 0 dB
+            edtend = find(levdecay(:,dim2,dim3) <= -10, 1, 'first'); % -10 dB
+            t(:,dim2,dim3) = ((1:length(levdecay(:,dim2,dim3)))-1)./fs;
+            
+            irlen = (t(end,dim2,dim3)); % finite length of IR (ULI)
+            
+            x = t((irstart:edtend),dim2,dim3); % discrete time
+            
+            % vector of response (dependent variable) values
+            y = 10.^(levdecay((irstart:edtend),dim2,dim3)./10);
+            
+            % decay curve model
+            if noisecomp == 3
+                modelfun = @(B,x)(abs(B(1)).*exp(-abs(B(2)).*x)...
+                    + abs(B(3)).*(irlen-x));
+            elseif noisecomp == 4
+                modelfun = @(B,x)(10*log10(abs(B(1)).*exp(-abs(B(2)).*x)...
+                    + abs(B(3)).*(irlen-x)));
+            end
+            
+            % derive coefficients
+            fitted = 0;
+            loopcount = 0;
+            while ~fitted
+                loopcount = loopcount+1;
+                [o(:,dim2,dim3),~,j] = nlinfit(x,y,modelfun,b);
+                jflag = min(sum(j.^2));
+                if jflag > jthreshold || loopcount == maxloopcount,
+                    fitted = 1;
+                    b = o(:,dim2,dim3)';
+                else
+                    b = [100*rand;100*rand;rand];
+                    disp('*')
+                end
+                
+            end
+            o(1,dim2,dim3) = abs(o(1,dim2,dim3));
+            o(2,dim2,dim3) = -abs(o(2,dim2,dim3));
+            o(3,dim2,dim3) = abs(o(3,dim2,dim3));
+            disp(['EDT nonlinear parameters: ',num2str(o(1,dim2,dim3)),...
+                ' ',num2str(o(2,dim2,dim3)),' ',num2str(o(3,dim2,dim3))])
+            % create acoustic parameter-specific model using coefficients
+            levdecaymodelEDT(:,dim2,dim3) = ...
+                10*log10(o(1,dim2,dim3).*exp(-abs(o(2,dim2,dim3)).*t(:,dim2,dim3)));
+            levdecaymodelEDT(:,dim2,dim3) = ...
+                levdecaymodelEDT(:,dim2,dim3)-max(levdecaymodelEDT(:,dim2,dim3));
+            
+            startmodelEDT = ...
+                find(levdecaymodelEDT(:,dim2,dim3) <= 0, 1, 'first'); % 0 dB
+            endmodelEDT = ...
+                find(levdecaymodelEDT(:,dim2,dim3) <= -10, 1, 'first'); % -10 dB
+            
+            % length of specific model
+            edtmodlen(:,dim2,dim3) = length(t(startmodelEDT:endmodelEDT,dim2,dim3));
+
+            EDT(1,dim2,dim3) = 6.*(edtmodlen(1,dim2,dim3))./fs; % EDT in seconds
+            
+            EDTr2(1,dim2,dim3) = corr(levdecay(irstart:edtend,dim2,dim3), ...
+                (irstart:edtend)' * o(1,dim2,dim3) + ...
+                o(2,dim2,dim3)).^2; % correlation coefficient, EDT
+            
+            
+        end % dim3
+    end % dim2
+    
+    % T20 nonlinear model
+    for dim2 = 1:chans
+        for dim3 = 1:bands
+            tstart = find(levdecay(:,dim2,dim3) <= -5, 1, 'first'); % -5 dB
+            t20end = find(levdecay(:,dim2,dim3) <= -25, 1, 'first'); % -25 dB
+            
+            irlen = (t(end,dim2,dim3)); % finite length of IR (ULI)
+            % (previously) L = length(Ldecay((Tstart:T20end),dim2,dim3));
+            
+            x = t((tstart:t20end),dim2,dim3); % discrete time
+            
+            % vector of response (dependent variable) values
+            y = 10.^(levdecay((tstart:t20end),dim2,dim3)./10);
+            
+            % decay curve model
+            if noisecomp == 3
+                modelfun = @(B,x)(abs(B(1)).*exp(-abs(B(2)).*x)...
+                    + abs(B(3)).*(irlen-x));
+            elseif noisecomp == 4
+                modelfun = @(B,x)(10*log10(abs(B(1)).*exp(-abs(B(2)).*x)...
+                    + abs(B(3)).*(irlen-x)));
+            end
+            
+            % derive coefficients
+            fitted = 0;
+            loopcount = 0;
+            while ~fitted
+                loopcount = loopcount+1;
+                [p(:,dim2,dim3),~,j] = nlinfit(x,y,modelfun,b);
+                jflag = min(sum(j.^2));
+                if jflag > jthreshold || loopcount == maxloopcount,
+                    fitted = 1;
+                    b = p(:,dim2,dim3)';
+                else
+                    b = [100*rand;100*rand;rand];
+                    disp('*')
+                end
+                
+            end
+            p(1,dim2,dim3) = abs(p(1,dim2,dim3));
+            p(2,dim2,dim3) = -abs(p(2,dim2,dim3));
+            p(3,dim2,dim3) = abs(p(3,dim2,dim3));
+            disp(['T20 nonlinear parameters: ',num2str(p(1,dim2,dim3)),...
+                ' ',num2str(p(2,dim2,dim3)),' ',num2str(p(3,dim2,dim3))])
+            % create acoustic parameter-specific model using coefficients
+            levdecaymodelT20(:,dim2,dim3) = ...
+                10*log10(p(1,dim2,dim3).*exp(-abs(p(2,dim2,dim3)).*t(:,dim2,dim3)));
+            levdecaymodelT20(:,dim2,dim3) = ...
+                levdecaymodelT20(:,dim2,dim3)-max(levdecaymodelT20(:,dim2,dim3));
+            
+            startmodelT20 = ...
+                find(levdecaymodelT20(:,dim2,dim3) <= -5, 1, 'first'); % -5 dB
+            endmodelT20 = ...
+                find(levdecaymodelT20(:,dim2,dim3) <= -25, 1, 'first'); % -25 dB
+            t20modlen(:,dim2,dim3) = length(t(startmodelT20:endmodelT20,dim2,dim3));
+            
+            
+            
+            T20(1,dim2,dim3) = 3.*(t20modlen(1,dim2,dim3))./fs; % T20 in seconds
+            
+            T20r2(1,dim2,dim3) = corr(levdecay(tstart:t20end,dim2,dim3), ...
+                (tstart:t20end)'*p(1,dim2,dim3) ...
+                + p(2,dim2,dim3)).^2; % correlation coefficient, T20
+            
+        end % dim 3
+    end % dim 2
+    
+    
+        % T30 nonlinear model
+    for dim2 = 1:chans
+        for dim3 = 1:bands
+            %tstart = find(levdecay(:,dim2,dim3) <= -5, 1, 'first'); % -5 dB
+            t30end = find(levdecay(:,dim2,dim3) <= -25, 1, 'first'); % -25 dB
+            
+            irlen = (t(end,dim2,dim3)); % finite length of IR (ULI)
+            
+            
+            x = t((tstart:t30end),dim2,dim3); % discrete time
+            
+            % vector of response (dependent variable) values
+            y = 10.^(levdecay((tstart:t30end),dim2,dim3)./10);
+            
+            % decay curve model
+            if noisecomp == 3
+                modelfun = @(B,x)(abs(B(1)).*exp(-abs(B(2)).*x)...
+                    + abs(B(3)).*(irlen-x));
+            elseif noisecomp == 4
+                modelfun = @(B,x)(10*log10(abs(B(1)).*exp(-abs(B(2)).*x)...
+                    + abs(B(3)).*(irlen-x)));
+            end
+            
+            % derive coefficients
+            fitted = 0;
+            loopcount = 0;
+            while ~fitted
+                loopcount = loopcount+1;
+                [q(:,dim2,dim3),~,j] = nlinfit(x,y,modelfun,b);
+                jflag = min(sum(j.^2));
+                if jflag > jthreshold || loopcount == maxloopcount,
+                    fitted = 1;
+                    b = q(:,dim2,dim3)';
+                else
+                    b = [100*rand;100*rand;rand];
+                    disp('*')
+                end
+                
+            end
+            q(1,dim2,dim3) = abs(q(1,dim2,dim3));
+            q(2,dim2,dim3) = -abs(q(2,dim2,dim3));
+            q(3,dim2,dim3) = abs(q(3,dim2,dim3));
+            disp(['T30 nonlinear parameters: ',num2str(q(1,dim2,dim3)),...
+                ' ',num2str(q(2,dim2,dim3)),' ',num2str(q(3,dim2,dim3))])
+            % create acoustic parameter-specific model using coefficients
+           
+            levdecaymodelT30(:,dim2,dim3) = ...
+                10*log10(q(1,dim2,dim3).*exp(-abs(q(2,dim2,dim3)).*t(:,dim2,dim3)));
+            
+            levdecaymodelT30(:,dim2,dim3) = ...
+                levdecaymodelT30(:,dim2,dim3)-max(levdecaymodelT30(:,dim2,dim3));
+            
+            startmodelT30 = ...
+                find(levdecaymodelT30(:,dim2,dim3) <= -5, 1, 'first'); % -5 dB
+            endmodelT30 = ...
+                find(levdecaymodelT30(:,dim2,dim3) <= -35, 1, 'first'); % -35 dB
+            t30modlen(:,dim2,dim3) = length(t(startmodelT30:endmodelT30,dim2,dim3));
+            
+            
+            
+            T30(1,dim2,dim3) = 3.*(t30modlen(1,dim2,dim3))./fs; % T30 in seconds
+            
+            T30r2(1,dim2,dim3) = corr(levdecay(tstart:t30end,dim2,dim3), ...
+                (tstart:t30end)'*q(1,dim2,dim3) ...
+                + q(2,dim2,dim3)).^2; % correlation coefficient, T30
+            
+        end % dim 3
+    end % dim 2
+    
+    
+    
+end
+
 %--------------------------------------------------------------------------
 
 
@@ -553,23 +793,7 @@ if  bpo == 1
     
 end
 
-% if  (bpo == 0) || (bpo == 3)
-%     T30mid = [];
-%     T20mid = [];
-%     EDTmid = [];
-%     T30low = [];
-%     T20low = [];
-%     EDTlow = [];
-%     T30high = [];
-%     T20high = [];
-%     EDThigh = [];
-%     BR_T30 = [];
-%     BR_T20 = [];
-%     BR_EDT = [];
-%     TR_T30 = [];
-%     TR_T20 = [];
-%     TR_EDT = [];
-% end
+
 
 % percentage ratio of T20 to T30
 T20T30r = (T20./T30)*100;
@@ -783,7 +1007,7 @@ if isstruct(data)
                 % plot the level decay(s) on a single subplot
                 plot(((1:len)-1)./fs, levdecay(:,ch,band),'Color',[0.2 0.2 0.2], ...
                     'LineStyle',':','DisplayName','Level Decay')
-                
+                if (noisecomp == 0) || (noisecomp == 1) || (noisecomp == 2)
                 % linear regression for T30
                 plot(((tstart(1,ch,band):t30end(1,ch,band))./fs), ...
                     (tstart(1,ch,band):t30end(1,ch,band)).* ...
@@ -801,6 +1025,50 @@ if isstruct(data)
                     (irstart(1,ch,band):edtend(1,ch,band)).* ...
                     o(1,ch,band)+o(2,ch,band), ...
                     'Color',[0.9 0 0],'DisplayName','EDT')
+                end
+                if noisecomp == 3
+                    plot(t(irstart(1,ch,band):edtend(1,ch,band),ch,band)...
+                        ,10*log10((o(1,ch,band).* ...
+                        exp(-abs(o(2,ch,band))...
+                        .*t(irstart(1,ch,band):edtend(1,ch,band),ch,band)) + ...
+                        (o(3,ch,band).*(t(end,ch,band)...
+                        -t(irstart(1,ch,band):edtend(1,ch,band),ch,band))))), ...
+                        'Color',[0.7 0 0],'DisplayName', 'EDT')
+                    
+                    plot(t(irstart(1,ch,band):edtend(1,ch,band),ch,band),...
+                        10*log10(o(1,ch,band).* ...
+                        exp(-abs(o(2,ch,band))...
+                        .*t(irstart(1,ch,band):edtend(1,ch,band),ch,band))),...
+                        'LineStyle',':','Color',[0.7 0 0],'DisplayName', 'EDT no B3')
+                    
+                    plot(t(tstart(1,ch,band):t20end(1,ch,band),ch,band),...
+                        10*log10((p(1,ch,band).* ...
+                        exp(-abs(p(2,ch,band))...
+                        .*t(tstart(1,ch,band):t20end(1,ch,band),ch,band)) + ...
+                        (p(3,ch,band).*(t(end,ch,band)...
+                        -t(tstart(1,ch,band):t20end(1,ch,band),ch,band))))), ...
+                        'Color',[0 0.7 0],'DisplayName', 'T20')
+                    
+                    plot(t(tstart(1,ch,band):t20end(1,ch,band),ch,band),...
+                        10*log10(p(1,ch,band).* ...
+                        exp(-abs(p(2,ch,band))...
+                        .*t(tstart(1,ch,band):t20end(1,ch,band),ch,band))),...
+                        'LineStyle',':','Color',[0 0.7 0],'DisplayName', 'T20 no B3')
+                    
+                    plot(t(tstart(1,ch,band):t30end(1,ch,band),ch,band)...
+                        ,10*log10((q(1,ch,band).* ...
+                        exp(-abs(q(2,ch,band))...
+                        .*t(tstart(1,ch,band):t30end(1,ch,band),ch,band)) + ...
+                        (q(3,ch,band).*(t(end,ch,band)...
+                        -t(tstart(1,ch,band):t30end(1,ch,band),ch,band))))), ...
+                        'Color',[0 0 0.7],'DisplayName', 'T30')
+                    
+                    plot(t(tstart(1,ch,band):t30end(1,ch,band),ch,band),...
+                        10*log10(q(1,ch,band).* ...
+                        exp(-abs(q(2,ch,band))...
+                        .*t(tstart(1,ch,band):t30end(1,ch,band),ch,band))),...
+                        'LineStyle',':','Color',[0 0 0.7],'DisplayName', 'T30 no B3')
+                end
                 
                 if exist('crosspoint','var')
                     plot(crosspoint(1,ch,band)./fs,...
