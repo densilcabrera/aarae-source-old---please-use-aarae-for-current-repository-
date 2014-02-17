@@ -285,7 +285,7 @@ function load_btn_Callback(hObject, eventdata, handles)
     '*.wav;*.mat','Measurement files (*.wav,*.mat)';...
     '*.wav;*.mat','Processed files (*.wav,*.mat)';...
     '*.wav;*.mat','Result files (*.wav,*.mat)'},...
-    'Select audio file','~/Audio');
+    'Select audio file',[cd '/Audio']);
 
 if filename ~= 0
     % Check type of file. First 'if' is for .mat, second is for .wav
@@ -562,9 +562,9 @@ if isempty(audiodata)
 else
     % Retrieve information from the selected leaf
     testsignal = audiodata.audio;
-    if size(testsignal,2) > 2, testsignal = mean(testsignal,2); end
     if size(testsignal,3) > 1, testsignal = sum(testsignal,3); end
-    testsignal = testsignal./max(abs(testsignal));
+    if size(testsignal,2) > 2, testsignal = mean(testsignal,2); end
+    testsignal = testsignal./max(max(abs(testsignal)));
     fs = audiodata.fs;
     nbits = 16;
     doesSupport = audiodevinfo(0, handles.odeviceid, fs, nbits, size(testsignal,2));
@@ -1477,9 +1477,9 @@ if isempty(audiodata)
 else
     % Retrieve information from the selected leaf
     testsignal = audiodata.audio;
-    if size(testsignal,2) > 2, testsignal = mean(testsignal,2); end
     if size(testsignal,3) > 1, testsignal = sum(testsignal,3); end
-    testsignal = flipud(testsignal)./max(abs(testsignal));
+    if size(testsignal,2) > 2, testsignal = mean(testsignal,2); end
+    testsignal = flipud(testsignal)./max(max(abs(testsignal)));
     fs = audiodata.fs;
     nbits = 16;
     doesSupport = audiodevinfo(0, handles.odeviceid, fs, nbits, size(testsignal,2));
@@ -1511,9 +1511,9 @@ if isempty(audiodata)
 else
     % Retrieve information from the selected leaf
     testsignal = audiodata.audio;
-    if size(testsignal,2) > 2, testsignal = mean(testsignal,2); end
     if size(testsignal,3) > 1, testsignal = sum(testsignal,3); end
-    testsignal = testsignal./max(abs(testsignal));
+    if size(testsignal,2) > 2, testsignal = mean(testsignal,2); end
+    testsignal = testsignal./max(max(abs(testsignal)));
     len = length(testsignal);
     len = 2 * ceil(len/2);
     spectrum = fft(testsignal,len);
@@ -1553,9 +1553,9 @@ if isempty(audiodata)
 else
     % Retrieve information from the selected leaf
     testsignal = audiodata.audio;
-    if size(testsignal,2) > 2, testsignal = mean(testsignal,2); end
     if size(testsignal,3) > 1, testsignal = sum(testsignal,3); end
-    testsignal = testsignal./max(abs(testsignal));
+    if size(testsignal,2) > 2, testsignal = mean(testsignal,2); end
+    testsignal = testsignal./max(max(abs(testsignal)));
     len = length(testsignal);
     %len = 2 .* ceil(len./2);
     spectrum = fft(testsignal,len);
@@ -1598,9 +1598,9 @@ if isempty(audiodata)
 else
     % Retrieve information from the selected leaf
     testsignal = audiodata.audio;
-    if size(testsignal,2) > 2, testsignal = mean(testsignal,2); end
     if size(testsignal,3) > 1, testsignal = sum(testsignal,3); end
-    testsignal = testsignal./max(abs(testsignal));
+    if size(testsignal,2) > 2, testsignal = mean(testsignal,2); end
+    testsignal = testsignal./max(max(abs(testsignal)));
     fs = audiodata.fs;
     reference_audio = resample(handles.reference_audio.audio,fs,handles.reference_audio.fs);
     reference_audio = repmat(reference_audio,1,size(testsignal,2));
