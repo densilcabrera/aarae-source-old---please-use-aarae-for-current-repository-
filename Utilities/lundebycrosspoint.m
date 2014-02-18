@@ -15,6 +15,12 @@ function [crosspoint, Tlate, ok] = lundebycrosspoint(IR2, fs, fc)
 % crosspoint is an index corresponding to the IR crosspoint. Each band &
 % channel has its own crosspoint (chan in dim 2, band in dim 3).
 %
+% Tlate is the late reverberation time.
+%
+% ok indicates whether the algorithm was fully executed (for each
+% band/channel) - in some cases it may not be possible to reasonably
+% execute it (e.g. due to poor signal-to-noise ratio).
+%
 % The main difference in this implementation is that the windows used for
 % smoothing the squared decay are implemented with a fftfilt (and so do not
 % involve any downsampling). Presumably this should slightly improve the

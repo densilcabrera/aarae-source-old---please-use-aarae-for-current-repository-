@@ -169,8 +169,8 @@ if noisecomp == 2;
 end
 
 % Preallocate
-m = zeros(1, chans); % maximum value of the IR
-startpoint = zeros(1, chans); % the auto-detected start time of the IR
+m = zeros(1,chans,bands); % maximum value of the IR
+startpoint = zeros(1,chans,bands); % the auto-detected start time of the IR
 
 for dim2 = 1:chans
     for dim3 = 1:bands
@@ -264,6 +264,9 @@ if (multibandIR == 0) && ((bpo ==1) || (bpo == 3))
     % END AUTO-TRUNCATION
     %----------------------------------------------------------------------
     
+    
+
+    
     if autotrunc == 1
         % Lundeby crosspoint
         [crosspoint, Tlate, okcrosspoint] =...
@@ -283,7 +286,15 @@ if (multibandIR == 0) && ((bpo ==1) || (bpo == 3))
                 end
             end
         end
-        
+    else
+        % zero the data that should be zero from startpoint detection (but
+        % isn't due to filter ringing)
+        % this is especially important for non-linear curve fitting
+        for ch = 1:chans
+
+            iroct(end-startpoint(1,ch,1):end,ch,:) = 0;
+
+        end
     end
     
     %----------------------------------------------------------------------
@@ -530,26 +541,38 @@ elseif (noisecomp == 3) || (noisecomp == 4)
     EDTr2 = zeros(1, chans, bands);
     T20r2 = zeros(1, chans, bands);
     T30r2 = zeros(1, chans, bands);
+    dataend = zeros(1, chans, bands);
+    
+    for dim2 = 1:chans
+        for dim3 = 1:bands
+            % find the end of the sound
+            endthreshold = -100; % in decibels
+            dataend(1,dim2,dim3) = find(levdecay < endthreshold,1,'first');
+        end
+    end
     
     
     for dim2 = 1:chans
         for dim3 = 1:bands
             irstart = find(levdecay(:,dim2,dim3) <= 0, 1, 'first'); % 0 dB
             edtend = find(levdecay(:,dim2,dim3) <= -10, 1, 'first'); % -10 dB
-            t(:,dim2,dim3) = ((1:length(levdecay(:,dim2,dim3)))-1)./fs;
+            t(1:dataend(:,dim2,dim3),dim2,dim3) = ((1:dataend(:,dim2,dim3))-1)./fs;
             
-            irlen = (t(end,dim2,dim3)); % finite length of IR (ULI)
+            irlen = (t(dataend(:,dim2,dim3),dim2,dim3)); % duration of ir
             
             x = t((irstart:edtend),dim2,dim3); % discrete time
             
-            % vector of response (dependent variable) values
-            y = 10.^(levdecay((irstart:edtend),dim2,dim3)./10);
+            
             
             % decay curve model
             if noisecomp == 3
+                % vector of response (dependent variable) values
+            y = 10.^(levdecay((irstart:edtend),dim2,dim3)./10);
                 modelfun = @(B,x)(abs(B(1)).*exp(-abs(B(2)).*x)...
                     + abs(B(3)).*(irlen-x));
             elseif noisecomp == 4
+                % vector of response (dependent variable) values
+            y = levdecay((irstart:edtend),dim2,dim3);
                 modelfun = @(B,x)(10*log10(abs(B(1)).*exp(-abs(B(2)).*x)...
                     + abs(B(3)).*(irlen-x)));
             end
@@ -565,7 +588,7 @@ elseif (noisecomp == 3) || (noisecomp == 4)
                     fitted = 1;
                     b = o(:,dim2,dim3)';
                 else
-                    b = [100*rand;100*rand;rand];
+                    b = [100*rand;-100*rand;0.1*rand];
                     disp('*')
                 end
                 
@@ -605,19 +628,22 @@ elseif (noisecomp == 3) || (noisecomp == 4)
             tstart = find(levdecay(:,dim2,dim3) <= -5, 1, 'first'); % -5 dB
             t20end = find(levdecay(:,dim2,dim3) <= -25, 1, 'first'); % -25 dB
             
-            irlen = (t(end,dim2,dim3)); % finite length of IR (ULI)
+            irlen = (t(dataend(:,dim2,dim3),dim2,dim3)); % finite length of IR (ULI)
             % (previously) L = length(Ldecay((Tstart:T20end),dim2,dim3));
             
             x = t((tstart:t20end),dim2,dim3); % discrete time
             
-            % vector of response (dependent variable) values
-            y = 10.^(levdecay((tstart:t20end),dim2,dim3)./10);
+            
             
             % decay curve model
             if noisecomp == 3
+                % vector of response (dependent variable) values
+            y = 10.^(levdecay((tstart:t20end),dim2,dim3)./10);
                 modelfun = @(B,x)(abs(B(1)).*exp(-abs(B(2)).*x)...
                     + abs(B(3)).*(irlen-x));
             elseif noisecomp == 4
+                % vector of response (dependent variable) values
+            y = levdecay((tstart:t20end),dim2,dim3);
                 modelfun = @(B,x)(10*log10(abs(B(1)).*exp(-abs(B(2)).*x)...
                     + abs(B(3)).*(irlen-x)));
             end
@@ -673,19 +699,22 @@ elseif (noisecomp == 3) || (noisecomp == 4)
             %tstart = find(levdecay(:,dim2,dim3) <= -5, 1, 'first'); % -5 dB
             t30end = find(levdecay(:,dim2,dim3) <= -25, 1, 'first'); % -25 dB
             
-            irlen = (t(end,dim2,dim3)); % finite length of IR (ULI)
+            irlen = (t(dataend(:,dim2,dim3),dim2,dim3)); % finite length of IR (ULI)
             
             
             x = t((tstart:t30end),dim2,dim3); % discrete time
             
-            % vector of response (dependent variable) values
-            y = 10.^(levdecay((tstart:t30end),dim2,dim3)./10);
+            
             
             % decay curve model
             if noisecomp == 3
+                % vector of response (dependent variable) values
+            y = 10.^(levdecay((tstart:t30end),dim2,dim3)./10);
                 modelfun = @(B,x)(abs(B(1)).*exp(-abs(B(2)).*x)...
                     + abs(B(3)).*(irlen-x));
             elseif noisecomp == 4
+                % vector of response (dependent variable) values
+            y = levdecay((tstart:t30end),dim2,dim3);
                 modelfun = @(B,x)(10*log10(abs(B(1)).*exp(-abs(B(2)).*x)...
                     + abs(B(3)).*(irlen-x)));
             end
@@ -1031,7 +1060,7 @@ if isstruct(data)
                         ,10*log10((o(1,ch,band).* ...
                         exp(-abs(o(2,ch,band))...
                         .*t(irstart(1,ch,band):edtend(1,ch,band),ch,band)) + ...
-                        (o(3,ch,band).*(t(end,ch,band)...
+                        (o(3,ch,band).*(t(dataend(1,ch,band),ch,band)...
                         -t(irstart(1,ch,band):edtend(1,ch,band),ch,band))))), ...
                         'Color',[0.7 0 0],'DisplayName', 'EDT')
                     
@@ -1045,7 +1074,7 @@ if isstruct(data)
                         10*log10((p(1,ch,band).* ...
                         exp(-abs(p(2,ch,band))...
                         .*t(tstart(1,ch,band):t20end(1,ch,band),ch,band)) + ...
-                        (p(3,ch,band).*(t(end,ch,band)...
+                        (p(3,ch,band).*(t(dataend(1,ch,band),ch,band)...
                         -t(tstart(1,ch,band):t20end(1,ch,band),ch,band))))), ...
                         'Color',[0 0.7 0],'DisplayName', 'T20')
                     
@@ -1059,7 +1088,7 @@ if isstruct(data)
                         ,10*log10((q(1,ch,band).* ...
                         exp(-abs(q(2,ch,band))...
                         .*t(tstart(1,ch,band):t30end(1,ch,band),ch,band)) + ...
-                        (q(3,ch,band).*(t(end,ch,band)...
+                        (q(3,ch,band).*(t(dataend(1,ch,band),ch,band)...
                         -t(tstart(1,ch,band):t30end(1,ch,band),ch,band))))), ...
                         'Color',[0 0 0.7],'DisplayName', 'T30')
                     
