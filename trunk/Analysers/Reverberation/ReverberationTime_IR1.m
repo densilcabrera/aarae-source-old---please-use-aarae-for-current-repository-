@@ -1,7 +1,10 @@
 function out = ReverberationTime_IR1(data,fs,startthresh,bpo,doplot,filterstrength,phasemode,noisecomp,autotrunc,f_low,f_hi)
-% This function calculates reverberation time and related ISO 3382
-% sound energy parameters (C50, D50, etc.) from an impulse response in
-% a linear least squares sense.
+% This function calculates reverberation time and related ISO 3382-1
+% sound energy parameters (C50, D50, etc.) from a room impulse response.
+%
+% The impulse response can be multichannel, and also multiband (although it
+% is preferable to do bandpass filtering within this function instead of
+% prior to it).
 %
 % Code by Grant Cuthbert & Densil Cabrera
 % Version 1.06 (18 February 2014)
@@ -36,16 +39,20 @@ function out = ReverberationTime_IR1(data,fs,startthresh,bpo,doplot,filterstreng
 % 2: Extrapolate late decay from crosspoint
 % 3: Nonlinear fitting of entire reverse-integrated decay, following Xiang
 % 4: Nonlinear fitting of entire reverse-integrated decay in dB, similar to
-% Xiang (but seems to work better)
+% Xiang (but probably works better)
 % 5: Nonlinear fitting of EDT, T20 and T30 evaluation ranges in dB
 %
-% REFERENCE: N. Xiang  (1995) 'Evaluation of reverberation times using a
+% SEE: N. Xiang  (1995) 'Evaluation of reverberation times using a
 % nonlinear regression approach,' Journal of the Acoustical Society of
 % America, 98(4), 2112-2121
 % Nonlinear fitting assumes that background noise is steady state and the
 % reverberation decay envelope is exponential.
 %
 % autotrunc = automatic truncation (0 = none, 1 = Lundeby)
+%
+% SEE: A. Lundeby, T.E. Vigran, H. Bietz and M. Vorlaender, "Uncertainties
+% of Measurements in Room Acoustics", Acustica 81, 344-355 (1995)
+%
 %
 % f_low, f_hi = approximate lowest and highest band frequencies to be
 % filtered in the octave or 1/3 octave band filterbank.
@@ -1080,7 +1087,7 @@ if isstruct(data)
                         .*t(tstart(1,ch,band):dataend(1,ch,band),ch,band)) + ...
                         (q(3,ch,band).*(t(dataend(1,ch,band),ch,band)...
                         -t(tstart(1,ch,band):dataend(1,ch,band),ch,band))))), ...
-                        'Color',[0 0 0.7],'DisplayName', 'Nonlinear Fit')
+                        'Color',[0.7 0 0],'DisplayName', 'Nonlinear Fit')
                     
                     plot(t(tstart(1,ch,band):dataend(1,ch,band),ch,band),...
                         10*log10(q(1,ch,band).* ...
@@ -1179,7 +1186,6 @@ if isstruct(data)
             % DIY legend
             subplot(r,c,band+1)
             
-            
             plot([0.1,0.4], [0.8,0.8],'Color',[0.2 0.2 0.2], ...
                 'LineStyle',':','DisplayName','Level Decay')
             xlim([0,1])
@@ -1194,10 +1200,10 @@ if isstruct(data)
                 plot([0.1,0.4], [0.2,0.2],'Color',[0 0 0.6],'DisplayName', 'T30')
                 text(0.5,0.2,'T30');
             elseif(noisecomp == 3) ||(noisecomp == 4)
-                plot([0.1,0.4], [0.6,0.6],'Color',[0 0 0.7],'DisplayName','Nlin')
-                text(0.5,0.6,'Nlin');
+                plot([0.1,0.4], [0.6,0.6],'Color',[0.7 0 0],'DisplayName','Nlin')
+                text(0.5,0.6,'Non-lin');
                 plot([0.1,0.4], [0.4,0.4],'LineStyle',':','Color',[0 0 0.7],'DisplayName','Lin')
-                text(0.5,0.4,'Lin');
+                text(0.5,0.4,'Linear');
             end
             set(gca,'YTickLabel','',...
                 'YTick',zeros(1,0),...
