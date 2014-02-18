@@ -216,12 +216,10 @@ function record_btn_Callback(hObject, eventdata, handles)
 
 % Call handles from main window
 mainHandles = guidata(handles.main_stage1);
-set([handles.cancel_btn handles.load_btn],'Enable','off')
+set([handles.cancel_btn handles.load_btn handles.syscal_btn],'Enable','off')
 if get(handles.pb_enable,'Value') == 1
     % Simultaneous playback and record routine
-    set(hObject,'BackgroundColor','red');
     set(hObject,'Enable','off');
-    set(handles.stop_btn,'Visible','on');
     pause on
     pause(0.000001)
     pause off
@@ -235,6 +233,8 @@ if get(handles.pb_enable,'Value') == 1
     handles.hsr1.SamplesPerFrame = 1024;
     guidata(hObject,handles)
     handles.rec = [];
+    set(hObject,'BackgroundColor','red');
+    set(handles.stop_btn,'Visible','on');
     % Initialize playback/record routine
     try
         UserData = get(handles.stop_btn,'UserData');
@@ -270,10 +270,6 @@ if get(handles.pb_enable,'Value') == 1
         time = linspace(0,size(handles.rec,1)/handles.fs,length(handles.rec));
         plot(handles.IN_axes,time,handles.rec);
     end
-    set(handles.record_btn,'BackgroundColor',[0.94 0.94 0.94]);
-    set(handles.record_btn,'Enable','on');
-    set(handles.stop_btn,'Visible','off');
-    set([handles.load_btn handles.cancel_btn],'Enable','on')
     % Release playback, record and audio data objects
     release(handles.hap)
     release(handles.har)
@@ -281,9 +277,7 @@ if get(handles.pb_enable,'Value') == 1
 else
     % Record-only routine
     dur = handles.duration*handles.fs;
-    set(hObject,'BackgroundColor','red');
     set(hObject,'Enable','off');
-    set(handles.stop_btn,'Visible','on');
     pause on
     pause(0.000001)
     pause off
@@ -291,6 +285,8 @@ else
     handles.har = dsp.AudioRecorder('SampleRate',handles.fs,'OutputDataType','double','NumChannels',handles.numchs,'BufferSizeSource','Property','BufferSize',128,'QueueDuration',.1);
     guidata(hObject,handles)
     handles.rec = [];
+    set(hObject,'BackgroundColor','red');
+    set(handles.stop_btn,'Visible','on');
     % Initialize record routine
     try
         UserData = get(handles.stop_btn,'UserData');
@@ -324,13 +320,13 @@ else
         time = linspace(0,size(handles.rec,1)/handles.fs,length(handles.rec));
         plot(handles.IN_axes,time,handles.rec);
     end
-    set(handles.record_btn,'BackgroundColor',[0.94 0.94 0.94]);
-    set(handles.record_btn,'Enable','on');
-    set(handles.stop_btn,'Visible','off');
-    set([handles.load_btn handles.cancel_btn],'Enable','on')
     % Release record object
     release(handles.har)
 end
+set(handles.record_btn,'BackgroundColor',[0.94 0.94 0.94]);
+set(handles.record_btn,'Enable','on');
+set(handles.stop_btn,'Visible','off');
+set([handles.load_btn handles.cancel_btn handles.syscal_btn],'Enable','on')
 
 guidata(hObject,handles);
 
