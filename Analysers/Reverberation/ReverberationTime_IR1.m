@@ -35,8 +35,15 @@ function out = ReverberationTime_IR1(data,fs,startthresh,bpo,doplot,filterstreng
 % 1: Chu
 % 2: Extrapolate late decay from crosspoint
 % 3: Nonlinear fitting of entire reverse-integrated decay, following Xiang
-% 4: Nonlinear fitting of entire reverse-integrated decay in dB, similar to Xiang
-% 5: Nonlinear fitting of respective evaluation ranges in dB
+% 4: Nonlinear fitting of entire reverse-integrated decay in dB, similar to
+% Xiang (but seems to work better)
+% 5: Nonlinear fitting of EDT, T20 and T30 evaluation ranges in dB
+%
+% REFERENCE: N. Xiang  (1995) 'Evaluation of reverberation times using a
+% nonlinear regression approach,' Journal of the Acoustical Society of
+% America, 98(4), 2112-2121
+% Nonlinear fitting assumes that background noise is steady state and the
+% reverberation decay envelope is exponential.
 %
 % autotrunc = automatic truncation (0 = none, 1 = Lundeby)
 %
