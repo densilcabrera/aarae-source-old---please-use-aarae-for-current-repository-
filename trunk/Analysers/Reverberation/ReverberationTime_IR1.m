@@ -186,7 +186,8 @@ else
 end
 
 
-% Get last 10 % for Chu noise compensation if set
+% Get last 10 % for Chu noise compensation if set (before the circular
+% shift is done as part of startpoint detection/allignment)
 if noisecomp == 1
     ir_end10 = ir(round(0.9*len):end,:,:);
 end
