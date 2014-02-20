@@ -22,7 +22,7 @@ function varargout = syscal(varargin)
 
 % Edit the above text to modify the response to help syscal
 
-% Last Modified by GUIDE v2.5 13-Feb-2014 10:32:56
+% Last Modified by GUIDE v2.5 20-Feb-2014 19:48:07
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -109,9 +109,9 @@ varargout{1} = handles.output;
 delete(hObject);
 
 
-% --- Executes on button press in pushbutton5.
-function pushbutton5_Callback(hObject, eventdata, handles)
-% hObject    handle to pushbutton5 (see GCBO)
+% --- Executes on button press in load_btn.
+function load_btn_Callback(hObject, eventdata, handles)
+% hObject    handle to load_btn (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 [handles.audio,handles.fs] = audioread('0deg_002.wav');
@@ -336,13 +336,14 @@ if ~isempty(rec)
     [~,I] = max(abs(ixy));
     I = (I-(handles.mainHandles.fs*handles.hap.QueueDuration));%/handles.mainHandles.fs;
     set(handles.latencytext,'String',['System Latency: ' num2str(I) ' samples']);
+    handles.output.latency = I;
+    handles.sysIR = ixy;
 end
 release(handles.hap)
 release(handles.har)
 release(handles.hsr1)
 set(hObject,'BackgroundColor',[0.94 0.94 0.94]);
-set(hObject,'Enable','on');
-handles.output.latency = I;
+set([hObject handles.invfdesign_btn handles.invf_popup handles.invfsmooth_popup handles.invfLF_IN handles.invfHF_IN handles.invfIB_IN handles.invfOB_IN handles.invfnfft_IN handles.invflength_IN],'Enable','on');
 guidata(hObject,handles)
 
 
@@ -380,7 +381,6 @@ else
     plot(handles.dispaxes,handles.audio)
     xlabel(handles.dispaxes,'Time [s]');
 end
-set(handles.statstext,'String',[])
 set(hObject,'BackgroundColor',[0.94 0.94 0.94]);
 set(hObject,'Enable','on');
 guidata(hObject,handles)
@@ -477,7 +477,14 @@ function duration_IN_Callback(hObject, eventdata, handles)
 
 % Hints: get(hObject,'String') returns contents of duration_IN as text
 %        str2double(get(hObject,'String')) returns contents of duration_IN as a double
-
+num = str2num(get(hObject,'String'));
+if isempty(num) || num <= 0
+    warndlg('Invalid entry','AARAE info')
+    set(hObject,'String',num2str(handles.dur))
+else
+    handles.dur = num;
+end
+guidata(hObject,handles)
 
 % --- Executes during object creation, after setting all properties.
 function duration_IN_CreateFcn(hObject, eventdata, handles)
@@ -490,3 +497,356 @@ function duration_IN_CreateFcn(hObject, eventdata, handles)
 if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
     set(hObject,'BackgroundColor','white');
 end
+handles.dur = str2num(get(hObject,'String'));
+guidata(hObject,handles)
+
+
+% --- Executes on selection change in invf_popup.
+function invf_popup_Callback(hObject, eventdata, handles)
+% hObject    handle to invf_popup (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: contents = cellstr(get(hObject,'String')) returns invf_popup contents as cell array
+%        contents{get(hObject,'Value')} returns selected item from invf_popup
+set(handles.invftext,'Visible','off')
+guidata(hObject,handles)
+
+% --- Executes during object creation, after setting all properties.
+function invf_popup_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to invf_popup (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: popupmenu controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+
+% --- Executes on selection change in invfsmooth_popup.
+function invfsmooth_popup_Callback(hObject, eventdata, handles)
+% hObject    handle to invfsmooth_popup (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: contents = cellstr(get(hObject,'String')) returns invfsmooth_popup contents as cell array
+%        contents{get(hObject,'Value')} returns selected item from invfsmooth_popup
+set(handles.invftext,'Visible','off')
+guidata(hObject,handles)
+
+
+% --- Executes during object creation, after setting all properties.
+function invfsmooth_popup_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to invfsmooth_popup (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: popupmenu controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+
+
+function invfLF_IN_Callback(hObject, eventdata, handles)
+% hObject    handle to invfLF_IN (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: get(hObject,'String') returns contents of invfLF_IN as text
+%        str2double(get(hObject,'String')) returns contents of invfLF_IN as a double
+num = str2num(get(hObject,'String'));
+if isempty(num) || num <= 0 || num >= handles.invfHF
+    warndlg('Invalid entry','AARAE info')
+    set(hObject,'String',num2str(handles.invfLF))
+else
+    handles.invfLF = num;
+    set(handles.invftext,'Visible','off')
+end
+guidata(hObject,handles)
+
+% --- Executes during object creation, after setting all properties.
+function invfLF_IN_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to invfLF_IN (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: edit controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+handles.invfLF = str2num(get(hObject,'String'));
+guidata(hObject,handles)
+
+
+function invfHF_IN_Callback(hObject, eventdata, handles)
+% hObject    handle to invfHF_IN (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: get(hObject,'String') returns contents of invfHF_IN as text
+%        str2double(get(hObject,'String')) returns contents of invfHF_IN as a double
+num = str2num(get(hObject,'String'));
+if isempty(num) || num <= 0 || num <= handles.invfLF
+    warndlg('Invalid entry','AARAE info')
+    set(hObject,'String',num2str(handles.invfHF))
+else
+    handles.invfHF = num;
+    set(handles.invftext,'Visible','off')
+end
+guidata(hObject,handles)
+
+% --- Executes during object creation, after setting all properties.
+function invfHF_IN_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to invfHF_IN (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: edit controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+handles.invfHF = str2num(get(hObject,'String'));
+guidata(hObject,handles)
+
+
+function invfIB_IN_Callback(hObject, eventdata, handles)
+% hObject    handle to invfIB_IN (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: get(hObject,'String') returns contents of invfIB_IN as text
+%        str2double(get(hObject,'String')) returns contents of invfIB_IN as a double
+num = str2num(get(hObject,'String'));
+if isempty(num)
+    warndlg('Invalid entry','AARAE info')
+    set(hObject,'String',num2str(handles.invfIB))
+else
+    handles.invfIB = num;
+    set(handles.invftext,'Visible','off')
+end
+guidata(hObject,handles)
+
+% --- Executes during object creation, after setting all properties.
+function invfIB_IN_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to invfIB_IN (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: edit controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+handles.invfIB = str2num(get(hObject,'String'));
+guidata(hObject,handles)
+
+
+function invfOB_IN_Callback(hObject, eventdata, handles)
+% hObject    handle to invfOB_IN (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: get(hObject,'String') returns contents of invfOB_IN as text
+%        str2double(get(hObject,'String')) returns contents of invfOB_IN as a double
+num = str2num(get(hObject,'String'));
+if isempty(num)
+    warndlg('Invalid entry','AARAE info')
+    set(hObject,'String',num2str(handles.invfOB))
+else
+    handles.invfOB = num;
+    set(handles.invftext,'Visible','off')
+end
+guidata(hObject,handles)
+
+% --- Executes during object creation, after setting all properties.
+function invfOB_IN_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to invfOB_IN (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: edit controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+handles.invfOB = str2num(get(hObject,'String'));
+guidata(hObject,handles)
+
+
+% --- Executes on button press in invfdesign_btn.
+function invfdesign_btn_Callback(hObject, eventdata, handles)
+% hObject    handle to invfdesign_btn (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+set(hObject,'BackgroundColor','red');
+set(hObject,'Enable','off');
+pause on
+pause(0.000001)
+pause off
+fs = handles.mainHandles.fs;
+f = [str2num(get(handles.invfLF_IN,'String')) str2num(get(handles.invfHF_IN,'String'))];
+reg = [str2num(get(handles.invfIB_IN,'String')) str2num(get(handles.invfOB_IN,'String'))];
+nfft = str2num(get(handles.invfnfft_IN,'String'));
+flength = str2num(get(handles.invflength_IN,'String'));
+
+% Thresholding
+if f(1) > 0 && f(2) < fs/2
+    freq=(0:fs/(nfft-1):fs/2)'; 
+    f1e=f(1)-f(1)/3;
+    f2e=f(2)+f(2)/3;
+    if f1e < freq(1)
+        f1e=f(1);
+        f(1)=f(1)+1;
+    end
+    if f2e > freq(end)
+        f2e=f(2)+1;
+    end
+    % thersholding B with 1/3 octave interpolated transient edges 
+    B=interp1([0 f1e f(1) f(2) f2e freq(end)],[reg(2) reg(2) reg(1) reg(1) reg(2) reg(2)],freq,'cubic');
+    B=10.^(-B./20); % from dB to linear
+    B=vertcat(B,B(end:-1:1)); 
+    b=ifft(B,'symmetric');
+    b=circshift(b,nfft/2);
+    b=0.5*(1-cos(2*pi*(1:nfft)'/(nfft+1))).*b;
+    b=minph(b); % make minimum phase thresholding
+    B=fft(b,nfft);
+else
+    B=0;
+end
+% Inverse filter design
+H=abs(fft(handles.sysIR,nfft));
+smoothfactor = get(handles.invfsmooth_popup,'Value');
+if smoothfactor == 2, octsmooth = 1; end
+if smoothfactor == 3, octsmooth = 3; end
+if smoothfactor == 4, octsmooth = 6; end
+if smoothfactor == 5, octsmooth = 12; end
+if smoothfactor == 6, octsmooth = 24; end
+if smoothfactor ~= 1, H = octavesmoothing(H, octsmooth, fs); end
+iH=conj(H)./((conj(H).*H)+(conj(B).*B)); % calculating regulated spectral inverse
+handles.invfilter=circshift(ifft(iH,'symmetric'),nfft/2);
+if get(handles.invf_popup,'Value') == 1, handles.invfilter=minph(handles.invfilter); end
+handles.output.invfilter = handles.invfilter;
+set(handles.invftext,'Visible','on')
+set(hObject,'BackgroundColor',[0.94 0.94 0.94]);
+set([hObject handles.invfpreview_btn handles.record_btn handles.load_btn handles.duration_IN],'Enable','on');
+guidata(hObject,handles)
+
+
+function [h_min] = minph(h)
+n = length(h);
+h_cep = real(ifft(log(abs(fft(h(:,1))))));
+odd = fix(rem(n,2));
+wn = [1; 2*ones((n+odd)/2-1,1) ; ones(1-rem(n,2),1); zeros((n+odd)/2-1,1)];
+h_min = zeros(size(h(:,1)));
+h_min(:) = real(ifft(exp(fft(wn.*h_cep(:)))));
+if size(h,2)==2
+    h_cep = real(ifft(log(abs(fft(h(:,2))))));
+    odd = fix(rem(n,2));
+    wn = [1; 2*ones((n+odd)/2-1,1) ; ones(1-rem(n,2),1); zeros((n+odd)/2-1,1)];
+    h_minr = zeros(size(h(:,2)));
+    h_minr(:) = real(ifft(exp(fft(wn.*h_cep(:)))));
+    h_min=[h_min h_minr];
+end
+
+
+% --- Executes on button press in invfpreview_btn.
+function invfpreview_btn_Callback(hObject, eventdata, handles)
+% hObject    handle to invfpreview_btn (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+set(hObject,'BackgroundColor','red');
+set(hObject,'Enable','off');
+pause on
+pause(0.000001)
+pause off
+sysIRfreq = 20*log10(abs(fft(handles.sysIR,length(handles.invfilter))));
+phasesysIRfreq = angle(fft(handles.sysIR,length(handles.invfilter)));
+invfilterfreq = 20*log10(abs(fft(handles.invfilter)));
+phaseinvfilterfreq = angle(fft(handles.invfilter));
+freq=0:44100/(length(handles.invfilter)-1):22050;
+figure;
+subplot(2,1,1);semilogx(freq,invfilterfreq(1:end/2,1),freq,-sysIRfreq(1:end/2,1));
+xlim([str2num(get(handles.invfLF_IN,'String')) str2num(get(handles.invfHF_IN,'String'))])
+set(gca,'XTickLabel',num2str(get(gca,'XTick').'))
+legend('designed filter','true inverse','Location','SouthWest')
+subplot(2,1,2);semilogx(freq,phaseinvfilterfreq(1:end/2,1),freq,phasesysIRfreq(1:end/2,1));
+xlim([str2num(get(handles.invfLF_IN,'String')) str2num(get(handles.invfHF_IN,'String'))])
+set(gca,'XTickLabel',num2str(get(gca,'XTick').'))
+set(hObject,'BackgroundColor',[0.94 0.94 0.94]);
+set(hObject,'Enable','on');
+
+
+function invfnfft_IN_Callback(hObject, eventdata, handles)
+% hObject    handle to invfnfft_IN (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: get(hObject,'String') returns contents of invfnfft_IN as text
+%        str2double(get(hObject,'String')) returns contents of invfnfft_IN as a double
+num = str2num(get(hObject,'String'));
+if isempty(num) || num <= 0
+    warndlg('Invalid entry','AARAE info')
+    set(hObject,'String',num2str(handles.invfnfft))
+else
+    if mod(num,2) ~= 0, num = num + 1; set(hObject,'String',num2str(num)); end
+    handles.invfnfft = num;
+    set(handles.invftext,'Visible','off')
+end
+if num < handles.invflength
+    set(handles.invflength_IN,'String',num2str(num))
+    handles.invflength = num;
+end
+guidata(hObject,handles)
+
+% --- Executes during object creation, after setting all properties.
+function invfnfft_IN_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to invfnfft_IN (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: edit controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+handles.invfnfft = str2num(get(hObject,'String'));
+guidata(hObject,handles)
+
+
+function invflength_IN_Callback(hObject, eventdata, handles)
+% hObject    handle to invflength_IN (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: get(hObject,'String') returns contents of invflength_IN as text
+%        str2double(get(hObject,'String')) returns contents of invflength_IN as a double
+num = str2num(get(hObject,'String'));
+if isempty(num) || num <= 0 || num > handles.invfnfft
+    warndlg('Invalid entry','AARAE info')
+    set(hObject,'String',num2str(handles.invflength))
+else
+    handles.invflength = num;
+    set(handles.invftext,'Visible','off')
+end
+guidata(hObject,handles)
+
+
+% --- Executes during object creation, after setting all properties.
+function invflength_IN_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to invflength_IN (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: edit controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+handles.invflength = str2num(get(hObject,'String'));
+guidata(hObject,handles)

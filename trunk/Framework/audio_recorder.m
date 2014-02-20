@@ -23,7 +23,7 @@ function varargout = audio_recorder(varargin)
 
 % Edit the above text to modify the response to help audio_recorder
 
-% Last Modified by GUIDE v2.5 13-Feb-2014 14:14:32
+% Last Modified by GUIDE v2.5 20-Feb-2014 21:32:42
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -89,6 +89,11 @@ else
                     handles.syscalstats.cal = syscalstats.cal;
                     set(handles.cal_chk,'Enable','on','Value',1)
                     set(handles.caltext,'String',[num2str(handles.syscalstats.cal) ' dB'])
+                end
+                if isfield(syscalstats,'invfilter')
+                    handles.syscalstats.invfilter = syscalstats.invfilter;
+                    set(handles.invfilter_chk,'Enable','on','Value',1)
+                    set(handles.invftext,'String','Available')
                 end
         end
     else
@@ -169,7 +174,8 @@ function varargout = audio_recorder_OutputFcn(hObject, eventdata, handles)
 % hObject    handle to figure
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-
+hMain = getappdata(0,'hMain');
+setappdata(hMain,'syscalstats',handles.syscalstats);
 % Get default command line output from handles structure
 varargout{1} = handles.recording;
 delete(hObject);
@@ -697,6 +703,23 @@ if isfield(syscalstats,'cal') && ~isnan(syscalstats.cal)
     set(handles.cal_chk,'Enable','on','Value',1)
     set(handles.caltext,'String',[num2str(handles.syscalstats.cal) ' dB'])
 end
+if isfield(syscalstats,'invfilter') && ~isempty(syscalstats.invfilter)
+    if isfield(handles.syscalstats,'invfilter')
+        if handles.syscalstats.invfilter ~= syscalstats.invfilter
+             replace_value = questdlg('The inverse filter has been modified. Would you like to replace it?',...
+                                       'AARAE info',...
+                                       'Yes', 'No', 'No');
+             switch replace_value
+                 case 'Yes'
+                     handles.syscalstats.invfilter = syscalstats.invfilter;
+             end
+        end
+    else
+        handles.syscalstats(1).invfilter = syscalstats.invfilter;
+    end
+    set(handles.invfilter_chk,'Enable','on','Value',1)
+    set(handles.invftext,'String','Available')
+end
 guidata(hObject,handles)
 
 
@@ -716,3 +739,12 @@ function cal_chk_Callback(hObject, eventdata, handles)
 % handles    structure with handles and user data (see GUIDATA)
 
 % Hint: get(hObject,'Value') returns toggle state of cal_chk
+
+
+% --- Executes on button press in invfilter_chk.
+function invfilter_chk_Callback(hObject, eventdata, handles)
+% hObject    handle to invfilter_chk (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hint: get(hObject,'Value') returns toggle state of invfilter_chk
