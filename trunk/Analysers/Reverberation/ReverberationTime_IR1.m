@@ -205,6 +205,9 @@ for dim2 = 1:chans
         startpoint(1,dim2,dim3) = find(ir(:,dim2,dim3).^2 >= m(1,dim2,dim3)./ ...
             (10^(abs(startthresh)/10)),1,'first'); % Define start point
         
+        %for cases where startpoint was not found
+        startpoint(isempty(startpoint))=1; 
+        
         %startpoint = min(startpoint,[],3);
         if startpoint(1,dim2,dim3) >1
             
@@ -573,11 +576,11 @@ elseif (noisecomp == 3) || (noisecomp == 4) || (noisecomp == 5)
     for dim2 = 1:chans
         for dim3 = 1:bands
             % find the end of the sound (find first -inf)
-            dataend1(1,dim2,dim3) = find(isinf(levdecay),1,'first');
+            dataend1 = find(isinf(levdecay(:,dim2,dim3)),1,'first');
             if isempty(dataend1)
-                dataend = length(levdecay);
+                dataend(1,dim2,dim3) = length(levdecay);
             else
-                dataend = dataend1-1;
+                dataend(1,dim2,dim3) = dataend1-1;
             end
         end
     end
@@ -602,7 +605,7 @@ elseif (noisecomp == 3) || (noisecomp == 4) || (noisecomp == 5)
                 modelfun = @(B,x)(abs(B(1)).*exp(-abs(B(2)).*x)...
                     + abs(B(3)).*(irlen-x));
             elseif noisecomp == 4
-                % use entire length for method 4, but fit in decibels
+                % use entire length for method 4, but curve-fit in decibels
                 y = levdecay((irstart:dataend(1,dim2,dim3)),dim2,dim3);
                 x = t((irstart:dataend(1,dim2,dim3)),dim2,dim3); % discrete time
                 modelfun = @(B,x)(10*log10(abs(B(1)).*exp(-abs(B(2)).*x)...
@@ -674,7 +677,12 @@ elseif (noisecomp == 3) || (noisecomp == 4) || (noisecomp == 5)
         for dim3 = 1:bands
             tstart = find(levdecay(:,dim2,dim3) <= -5, 1, 'first'); % -5 dB
             t20end = find(levdecay(:,dim2,dim3) <= -25, 1, 'first'); % -25 dB
-            
+            if (isempty(t20end)) || (isempty(tstart))|| (t20end > dataend(:,dim2,dim3))
+                T20(1,dim2,dim3) = NaN;
+                T20r2(1,dim2,dim3) = NaN;
+                p(:,dim2,dim3) = [0;0;0];
+                %disp('insufficient dynamic range for T20')
+            else
             irlen = (t(dataend(:,dim2,dim3),dim2,dim3)); % finite length of IR (ULI)
             
             % decay curve model
@@ -726,7 +734,7 @@ elseif (noisecomp == 3) || (noisecomp == 4) || (noisecomp == 5)
             T20r2(1,dim2,dim3) = corr(levdecay(tstart:t20end,dim2,dim3), ...
                 (tstart:t20end)'*p(1,dim2,dim3) ...
                 + p(2,dim2,dim3)).^2; % correlation coefficient, T20
-            
+            end
         end % dim 3
     end % dim 2
     
@@ -735,7 +743,13 @@ elseif (noisecomp == 3) || (noisecomp == 4) || (noisecomp == 5)
     for dim2 = 1:chans
         for dim3 = 1:bands
             %tstart = find(levdecay(:,dim2,dim3) <= -5, 1, 'first'); % -5 dB
-            t30end = find(levdecay(:,dim2,dim3) <= -25, 1, 'first'); % -25 dB
+            t30end = find(levdecay(:,dim2,dim3) <= -35, 1, 'first'); % -35 dB
+            if (isempty(t30end)) || (isempty(tstart)) || (t30end > dataend(:,dim2,dim3))
+                T30(1,dim2,dim3) = NaN;
+                T30r2(1,dim2,dim3) = NaN;
+                q(:,dim2,dim3) = [0;0;0];
+                %disp('insufficient dynamic range for T30')
+            else
             
             irlen = (t(dataend(:,dim2,dim3),dim2,dim3)); % finite length of IR (ULI)
             
@@ -792,7 +806,7 @@ elseif (noisecomp == 3) || (noisecomp == 4) || (noisecomp == 5)
             T30r2(1,dim2,dim3) = corr(levdecay(tstart:t30end,dim2,dim3), ...
                 (tstart:t30end)'*q(1,dim2,dim3) ...
                 + q(2,dim2,dim3)).^2; % correlation coefficient, T30
-            
+            end
         end % dim 3
     end % dim 2   
 end
