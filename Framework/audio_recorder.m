@@ -23,7 +23,7 @@ function varargout = audio_recorder(varargin)
 
 % Edit the above text to modify the response to help audio_recorder
 
-% Last Modified by GUIDE v2.5 20-Feb-2014 21:32:42
+% Last Modified by GUIDE v2.5 21-Feb-2014 11:37:55
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -95,6 +95,8 @@ else
                     set(handles.invfilter_chk,'Enable','on','Value',1)
                     set(handles.invftext,'String','Available')
                 end
+            case 'No'
+                handles.syscalstats = struct([]);
         end
     else
         handles.syscalstats = struct([]);
@@ -222,7 +224,7 @@ function record_btn_Callback(hObject, eventdata, handles)
 
 % Call handles from main window
 mainHandles = guidata(handles.main_stage1);
-set([handles.cancel_btn handles.load_btn handles.syscal_btn],'Enable','off')
+set([handles.cancel_btn handles.load_btn handles.preview_btn handles.syscal_btn],'Enable','off')
 if get(handles.pb_enable,'Value') == 1
     % Simultaneous playback and record routine
     set(hObject,'Enable','off');
@@ -332,7 +334,7 @@ end
 set(handles.record_btn,'BackgroundColor',[0.94 0.94 0.94]);
 set(handles.record_btn,'Enable','on');
 set(handles.stop_btn,'Visible','off');
-set([handles.load_btn handles.cancel_btn handles.syscal_btn],'Enable','on')
+set([handles.load_btn handles.preview_btn handles.cancel_btn handles.syscal_btn],'Enable','on')
 
 guidata(hObject,handles);
 
@@ -355,6 +357,7 @@ if isempty(handles.rec)
 else
     hMain = getappdata(0,'hMain');
     if get(handles.delay_chk,'Value') == 1, handles.rec = [handles.rec(handles.syscalstats.latency:end,:);zeros(handles.syscalstats.latency,size(handles.rec,2))]; end
+    if get(handles.invfilter_chk,'Value') == 1, handles.rec = filter(handles.syscalstats.invfilter,1,handles.rec); end
     handles.recording.audio = handles.rec;
     if get(handles.pb_enable,'Value') && isfield(handles.outputdata,'audio2')
         handles.recording.audio2 = handles.outputdata.audio2;
@@ -748,3 +751,30 @@ function invfilter_chk_Callback(hObject, eventdata, handles)
 % handles    structure with handles and user data (see GUIDATA)
 
 % Hint: get(hObject,'Value') returns toggle state of invfilter_chk
+
+
+% --- Executes on button press in preview_btn.
+function preview_btn_Callback(hObject, eventdata, handles)
+% hObject    handle to preview_btn (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+%hMain = getappdata(0,'hMain');
+% Obtain handles using GUIDATA with the caller's handle
+
+handles.testsignal = handles.rec;
+
+% Warnings...
+if isempty(handles.rec)
+    warndlg('No signal recorded!');
+    setappdata(hMain,'testsignal',[]);
+else
+%    hMain = getappdata(0,'hMain');
+    if get(handles.delay_chk,'Value') == 1, handles.rec = [handles.rec(handles.syscalstats.latency:end,:);zeros(handles.syscalstats.latency-1,size(handles.rec,2))]; end
+    if get(handles.invfilter_chk,'Value') == 1, handles.rec = filter(handles.syscalstats.invfilter,1,handles.rec); end
+    time1 = linspace(0,size(handles.rec,1)/handles.fs,length(handles.rec));
+    time2 = linspace(0,size(handles.testsignal,1)/handles.fs,length(handles.testsignal));
+    figure
+    subplot(2,1,1); plot(time2,handles.testsignal); title('Recorded signal')
+    subplot(2,1,2); plot(time1,handles.rec); title('System calibrated recording')
+end

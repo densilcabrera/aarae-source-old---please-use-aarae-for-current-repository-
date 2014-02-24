@@ -23,7 +23,7 @@ function varargout = aarae(varargin)
 
 % Edit the above text to modify the response to help aarae
 
-% Last Modified by GUIDE v2.5 17-Feb-2014 15:41:04
+% Last Modified by GUIDE v2.5 24-Feb-2014 19:33:18
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -1116,6 +1116,7 @@ if (click == handles.axestime) || (get(click,'Parent') == handles.axestime)
         if plottype == 14, line = unwrap(angle(fft(line))); end
         if plottype == 15, line = angle(fft(line)) .* 180/pi; end
         if plottype == 16, line = unwrap(angle(fft(line))) ./(2*pi); end
+        if plottype == 17, line = diff(unwrap(angle(fft(line)))).*length(fft(line))/(signaldata.fs*2*pi).*1000; end
         if plottype <= 7
             plot(t,line) % Plot signal in time domain
             xlabel('Time [s]');
@@ -1130,14 +1131,21 @@ if (click == handles.axestime) || (get(click,'Parent') == handles.axestime)
                 if smoothfactor == 6, octsmooth = 24; end
                 if smoothfactor ~= 1, line = octavesmoothing(line, octsmooth, signaldata.fs); end
             end
+            if plottype == 17, stem(f(1:end-1),line,'Marker','None'); end
+            if plottype ~= 17, semilogx(f,line); end % Plot signal in frequency domain
             log_check = get(handles.logtime_chk,'Value');
             if log_check == 1
-                semilogx(f,line) % Plot signal in frequency domain
+                set(gca,'XScale','log')
+                set(gca,'XTickLabel',num2str(get(gca,'XTick').'))
             else
-                plot(f,line)
+                set(gca,'XScale','linear','XTickLabelMode','auto')
+                set(gca,'XTickLabel',num2str(get(gca,'XTick').'))
             end
             xlabel('Frequency [Hz]');
             xlim([f(2) signaldata.fs/2])
+        end
+        if handles.alternate == 0
+            if ndims(data)>2, legend(num2str(signaldata.bandID')); else legend(signaldata.chanID); end
         end
         handles.alternate = 0;
     end
@@ -1183,29 +1191,37 @@ if (click == handles.axesfreq) || (get(click,'Parent') == handles.axesfreq)
         if plottype == 14, line = unwrap(angle(fft(line))); end
         if plottype == 15, line = angle(fft(line)) .* 180/pi; end
         if plottype == 16, line = unwrap(angle(fft(line))) ./(2*pi); end
-    if plottype <= 7
-        plot(t,line) % Plot signal in time domain
-        xlabel('Time [s]');
-    end
-    if plottype >= 8
-        if plottype == 8
-            smoothfactor = get(handles.smoothfreq_popup,'Value');
-            if smoothfactor == 2, octsmooth = 1; end
-            if smoothfactor == 3, octsmooth = 3; end
-            if smoothfactor == 4, octsmooth = 6; end
-            if smoothfactor == 5, octsmooth = 12; end
-            if smoothfactor == 6, octsmooth = 24; end
-            if smoothfactor ~= 1, line = octavesmoothing(line, octsmooth, signaldata.fs); end
+        if plottype == 17, line = diff(unwrap(angle(fft(line)))).*length(fft(line))/(signaldata.fs*2*pi).*1000; end
+        if plottype <= 7
+            plot(t,line) % Plot signal in time domain
+            xlabel('Time [s]');
         end
-        log_check = get(handles.logfreq_chk,'Value');
-        if log_check == 1
-            semilogx(f,line) % Plot signal in frequency domain
-        else
-            plot(f,line)
+        if plottype >= 8
+            if plottype == 8
+                smoothfactor = get(handles.smoothfreq_popup,'Value');
+                if smoothfactor == 2, octsmooth = 1; end
+                if smoothfactor == 3, octsmooth = 3; end
+                if smoothfactor == 4, octsmooth = 6; end
+                if smoothfactor == 5, octsmooth = 12; end
+                if smoothfactor == 6, octsmooth = 24; end
+                if smoothfactor ~= 1, line = octavesmoothing(line, octsmooth, signaldata.fs); end
+            end
+            if plottype == 17, stem(f(1:end-1),line,'Marker','None'); end
+            if plottype ~= 17, semilogx(f,line); end % Plot signal in frequency domain
+            log_check = get(handles.logfreq_chk,'Value');
+            if log_check == 1
+                set(gca,'XScale','log')
+                set(gca,'XTickLabel',num2str(get(gca,'XTick').'))
+            else
+                set(gca,'XScale','linear','XTickLabelMode','auto')
+                set(gca,'XTickLabel',num2str(get(gca,'XTick').'))
+            end
+            xlabel('Frequency [Hz]');
+            xlim([f(2) signaldata.fs/2])
         end
-        xlabel('Frequency [Hz]');
-        xlim([f(2) signaldata.fs/2])
-    end
+        if handles.alternate == 0
+            if ndims(data)>2, legend(num2str(signaldata.bandID')); else legend(signaldata.chanID); end
+        end
         handles.alternate = 0;
     end
 end

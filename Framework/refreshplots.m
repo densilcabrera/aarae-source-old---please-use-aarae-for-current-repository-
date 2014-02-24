@@ -27,6 +27,7 @@ if plottype == 13, line = angle(fft(line)); end
 if plottype == 14, line = unwrap(angle(fft(line))); end
 if plottype == 15, line = angle(fft(line)) .* 180/pi; end
 if plottype == 16, line = unwrap(angle(fft(line))) ./(2*pi); end
+if plottype == 17, line = diff(unwrap(angle(fft(line)))).*length(fft(line))/(signaldata.fs*2*pi).*1000; end
 if strcmp(get(handles.(genvarname(['smooth' axes '_popup'])),'Visible'),'on')
     smoothfactor = get(handles.(genvarname(['smooth' axes '_popup'])),'Value');
     if smoothfactor == 2, octsmooth = 1; end
@@ -43,7 +44,8 @@ if plottype <= 7
     set(handles.(genvarname(['axes' axes])),'XTickLabel',num2str(get(handles.(genvarname(['axes' axes])),'XTick').'))
 end
 if plottype >= 8
-    semilogx(handles.(genvarname(['axes' axes])),f,line) % Plot signal in frequency domain
+    if plottype == 17, stem(handles.(genvarname(['axes' axes])),f(1:end-1),line,'Marker','None'); end
+    if plottype ~= 17, semilogx(handles.(genvarname(['axes' axes])),f,line); end % Plot signal in frequency domain
     xlabel(handles.(genvarname(['axes' axes])),'Frequency [Hz]');
     xlim(handles.(genvarname(['axes' axes])),[f(2) signaldata.fs/2])
     set(handles.(genvarname(['log' axes '_chk'])),'Visible','on');

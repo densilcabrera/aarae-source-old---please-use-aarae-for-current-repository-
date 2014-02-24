@@ -41,7 +41,7 @@ if octsmooth > 0
             end
         end
     end
-assignin('base','a',fe);
+
     for i=1:length(fe)-1
         fftdbin_i=fftdbin(fe(i):fe(i+1),:);
         smoothmagspectrum(i,1:size(fftdbin,2))=mean(fftdbin_i);
