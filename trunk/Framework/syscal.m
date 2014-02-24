@@ -300,11 +300,7 @@ function evaldelay_btn_Callback(hObject, eventdata, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
-set(hObject,'BackgroundColor','red');
 set(hObject,'Enable','off');
-pause on
-pause(0.000001)
-pause off
 stimulus = get(handles.stimulus_popup,'Value');
 switch stimulus
     case 1
@@ -318,6 +314,10 @@ switch stimulus
         handles.hsr1.Signal = S.audio;
 end
 handles.hsr1.Signal = [handles.hsr1.Signal;zeros(length(handles.hsr1.Signal),1)];
+set(hObject,'BackgroundColor','red');
+pause on
+pause(0.000001)
+pause off
 try
     rec = [];
     while (~isDone(handles.hsr1))
@@ -330,11 +330,13 @@ catch sthgwrong
     warndlg(syswarning,'AARAE info')
 end
 if ~isempty(rec)
-    Txy = tfestimate(handles.hsr1.Signal,rec(1:length(handles.hsr1.Signal)),[],[],[],handles.mainHandles.fs);
+    qd = handles.mainHandles.fs*handles.hap.QueueDuration;
+    rec = rec(qd:qd+48000-1);
+    Txy = tfestimate(handles.hsr1.Signal(1:48000),rec,[],[],[],handles.mainHandles.fs);
     ixy = ifft(Txy,length(Txy)*2);
     %plot(real(ixy))
     [~,I] = max(abs(ixy));
-    I = (I-(handles.mainHandles.fs*handles.hap.QueueDuration));%/handles.mainHandles.fs;
+    %I = (I-(handles.mainHandles.fs*handles.hap.QueueDuration));%/handles.mainHandles.fs;
     set(handles.latencytext,'String',['System Latency: ' num2str(I) ' samples']);
     handles.output.latency = I;
     handles.sysIR = ixy;
@@ -732,6 +734,8 @@ iH=conj(H)./((conj(H).*H)+(conj(B).*B)); % calculating regulated spectral invers
 handles.invfilter=circshift(ifft(iH,'symmetric'),nfft/2);
 if get(handles.invf_popup,'Value') == 1, handles.invfilter=minph(handles.invfilter); end
 handles.output.invfilter = handles.invfilter;
+assignin('base','sysIR',handles.sysIR);
+assignin('base','invfilt',handles.invfilter);
 set(handles.invftext,'Visible','on')
 set(hObject,'BackgroundColor',[0.94 0.94 0.94]);
 set([hObject handles.invfpreview_btn handles.record_btn handles.load_btn handles.duration_IN],'Enable','on');
@@ -765,19 +769,39 @@ set(hObject,'Enable','off');
 pause on
 pause(0.000001)
 pause off
-sysIRfreq = 20*log10(abs(fft(handles.sysIR,length(handles.invfilter))));
-phasesysIRfreq = angle(fft(handles.sysIR,length(handles.invfilter)));
-invfilterfreq = 20*log10(abs(fft(handles.invfilter)));
-phaseinvfilterfreq = angle(fft(handles.invfilter));
-freq=0:44100/(length(handles.invfilter)-1):22050;
+%origIR = ifft(fft(abs(handles.sysIR)),length(handles.invfilter));
+origIR = handles.sysIR;
+invfilter = resample(handles.invfilter,length(origIR),length(handles.invfilter));
+t = linspace(0,1,length(origIR));
+timeconv = ifft(fft(origIR).*fft(invfilter));
+sysIRfreq = 10.*log10(abs(fft(origIR)).^2);
+invfilterfreq = 10.*log10(abs(fft(invfilter)).^2);
+convfreq = 10.*log10(abs(fft(timeconv(1:length(origIR)))).^2);
+origIRgd = diff(unwrap(angle(fft(origIR)))).*length(fft(origIR))/(handles.mainHandles.fs*2*pi).*1000;
+invfiltergd = diff(unwrap(angle(fft(invfilter)))).*length(fft(invfilter))/(handles.mainHandles.fs*2*pi).*1000;
+timeconvgd = diff(unwrap(angle(fft(timeconv)))).*length(fft(timeconv))/(handles.mainHandles.fs*2*pi).*1000;
+freq=0:handles.mainHandles.fs/(length(invfilter)-1):handles.mainHandles.fs/2;
 figure;
-subplot(2,1,1);semilogx(freq,invfilterfreq(1:end/2,1),freq,-sysIRfreq(1:end/2,1));
-xlim([str2num(get(handles.invfLF_IN,'String')) str2num(get(handles.invfHF_IN,'String'))])
-set(gca,'XTickLabel',num2str(get(gca,'XTick').'))
-legend('designed filter','true inverse','Location','SouthWest')
-subplot(2,1,2);semilogx(freq,phaseinvfilterfreq(1:end/2,1),freq,phasesysIRfreq(1:end/2,1));
-xlim([str2num(get(handles.invfLF_IN,'String')) str2num(get(handles.invfHF_IN,'String'))])
-set(gca,'XTickLabel',num2str(get(gca,'XTick').'))
+subplot(2,2,1);plot(t,abs(origIR),'k',t,invfilter,'c',t,abs(timeconv(1:length(origIR))),'r')
+               title('Absolute amplitude');xlabel('Time [s]');ylabel('Amplitude')
+               legend('System IR','Filter IR','sysIR*filtIR','Location','NorthEast')
+subplot(2,2,3);plot(t,10.*log10(abs(origIR).^2),'k',t,10.*log10(invfilter.^2),'c',t,10.*log10(abs(timeconv(1:length(origIR))).^2),'r')
+               title('Squared amplitude');xlabel('Time [s]');ylabel('Amplitude [dB]')
+               legend('System IR','Filter IR','sysIR*filtIR','Location','NorthEast')
+subplot(2,2,2);semilogx(freq,sysIRfreq(1:end/2),'k',freq,invfilterfreq(1:end/2),'c',freq,convfreq(1:end/2),'r');
+               title('Magnitude spectrum');xlabel('Frequency [Hz]');ylabel('Amplitude [dB]')
+               legend('System IR','Filter IR','sysIR*filtIR','Location','NorthEast')
+subplot(2,2,4);stem(freq',origIRgd(1:length(freq)),'Color','k','Marker','None');hold on
+               stem(freq',invfiltergd(1:length(freq)),'Color','c','Marker','None');
+               stem(freq',timeconvgd(1:length(freq)),'Color','r','Marker','None');set(gca,'XScale','log');hold off
+               title('Group delay');xlabel('Frequency [Hz]');ylabel('Time [ms]')
+               legend('System IR','Filter IR','sysIR*filtIR','Location','NorthEast')
+%xlim([str2num(get(handles.invfLF_IN,'String')) str2num(get(handles.invfHF_IN,'String'))])
+%set(gca,'XTickLabel',num2str(get(gca,'XTick').'))
+%legend('designed filter','true inverse','Location','SouthWest')
+%subplot(2,1,2);semilogx(freq,phaseinvfilterfreq(1:end/2,1),freq,phasesysIRfreq(1:end/2,1));
+%xlim([str2num(get(handles.invfLF_IN,'String')) str2num(get(handles.invfHF_IN,'String'))])
+%set(gca,'XTickLabel',num2str(get(gca,'XTick').'))
 set(hObject,'BackgroundColor',[0.94 0.94 0.94]);
 set(hObject,'Enable','on');
 
