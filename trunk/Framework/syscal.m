@@ -22,7 +22,7 @@ function varargout = syscal(varargin)
 
 % Edit the above text to modify the response to help syscal
 
-% Last Modified by GUIDE v2.5 20-Feb-2014 22:06:35
+% Last Modified by GUIDE v2.5 25-Feb-2014 18:12:27
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -307,10 +307,10 @@ switch stimulus
         S = impulse1(0,1,1,handles.mainHandles.fs);
         handles.hsr1.Signal = S.audio;
     case 2
-        S = linear_sweep(1,20,20000,handles.mainHandles.fs);
+        S = linear_sweep(1,1,handles.mainHandles.fs/2,handles.mainHandles.fs);
         handles.hsr1.Signal = S.audio;
     case 3
-        S = noise(-1,1,handles.mainHandles.fs,20,20000,1,1,0);
+        S = noise(-1,1,handles.mainHandles.fs,1,handles.mainHandles.fs/2,1,1,0);
         handles.hsr1.Signal = S.audio;
 end
 handles.hsr1.Signal = [handles.hsr1.Signal;zeros(length(handles.hsr1.Signal),1)];
@@ -334,10 +334,17 @@ if ~isempty(rec)
     rec = rec(qd:qd+48000-1);
     Txy = tfestimate(handles.hsr1.Signal(1:48000),rec,[],[],[],handles.mainHandles.fs);
     ixy = ifft(Txy,length(Txy)*2);
-    %plot(real(ixy))
-    [~,I] = max(abs(ixy));
+    t = linspace(0,length(ixy)/handles.mainHandles.fs,length(ixy));
+    IRlevel = (10.*log10((abs(ixy)./max(abs(ixy))).^2));
+    abovethresh = find(IRlevel > -20);
+    [~,I1] = max(IRlevel(abovethresh));
+    I = abovethresh(I1);
+    plot(handles.IRaxes,t,IRlevel,t,ones(size(t)).*str2num(get(handles.latthresh_IN,'String')).*-1,'r',I/handles.mainHandles.fs,IRlevel(I),'or')
+    ylim(handles.IRaxes,[-60 10])
     %I = (I-(handles.mainHandles.fs*handles.hap.QueueDuration));%/handles.mainHandles.fs;
-    set(handles.latencytext,'String',['System Latency: ' num2str(I) ' samples']);
+    set(handles.latency_IN,'String',num2str(I),'Enable','on');
+    set(handles.latthresh_IN,'Enable','on')
+    handles.latthresh = str2num(get(handles.latthresh_IN,'String'));
     handles.output.latency = I;
     handles.sysIR = ixy;
 end
@@ -346,6 +353,8 @@ release(handles.har)
 release(handles.hsr1)
 set(hObject,'BackgroundColor',[0.94 0.94 0.94]);
 set([hObject handles.invfdesign_btn handles.invf_popup handles.invfsmooth_popup handles.invfLF_IN handles.invfHF_IN handles.invfIB_IN handles.invfOB_IN handles.invfnfft_IN handles.invflength_IN],'Enable','on');
+set(handles.invfpreview_btn,'Enable','off')
+set(handles.invftext,'Visible','off')
 guidata(hObject,handles)
 
 
@@ -730,15 +739,16 @@ if smoothfactor == 4, octsmooth = 6; end
 if smoothfactor == 5, octsmooth = 12; end
 if smoothfactor == 6, octsmooth = 24; end
 if smoothfactor ~= 1, H = octavesmoothing(H, octsmooth, fs); end
-iH=conj(H)./((conj(H).*H)+(conj(B).*B)); % calculating regulated spectral inverse
+iH=conj(H)./((conj(H).*H).*(conj(B).*B)); % calculating regulated spectral inverse
 handles.invfilter=circshift(ifft(iH,'symmetric'),nfft/2);
-if get(handles.invf_popup,'Value') == 1, handles.invfilter=minph(handles.invfilter); end
+if get(handles.invf_popup,'Value') == 1 || get(handles.invf_popup,'Value') == 2, handles.invfilter=minph(handles.invfilter); end
+if get(handles.invf_popup,'Value') == 2, handles.invfilter = flipud(handles.invfilter); end
 handles.output.invfilter = handles.invfilter;
 assignin('base','sysIR',handles.sysIR);
 assignin('base','invfilt',handles.invfilter);
 set(handles.invftext,'Visible','on')
 set(hObject,'BackgroundColor',[0.94 0.94 0.94]);
-set([hObject handles.invfpreview_btn handles.record_btn handles.load_btn handles.duration_IN],'Enable','on');
+set([hObject handles.invfpreview_btn],'Enable','on');
 guidata(hObject,handles)
 
 
@@ -749,14 +759,6 @@ odd = fix(rem(n,2));
 wn = [1; 2*ones((n+odd)/2-1,1) ; ones(1-rem(n,2),1); zeros((n+odd)/2-1,1)];
 h_min = zeros(size(h(:,1)));
 h_min(:) = real(ifft(exp(fft(wn.*h_cep(:)))));
-if size(h,2)==2
-    h_cep = real(ifft(log(abs(fft(h(:,2))))));
-    odd = fix(rem(n,2));
-    wn = [1; 2*ones((n+odd)/2-1,1) ; ones(1-rem(n,2),1); zeros((n+odd)/2-1,1)];
-    h_minr = zeros(size(h(:,2)));
-    h_minr(:) = real(ifft(exp(fft(wn.*h_cep(:)))));
-    h_min=[h_min h_minr];
-end
 
 
 % --- Executes on button press in invfpreview_btn.
@@ -771,37 +773,40 @@ pause(0.000001)
 pause off
 %origIR = ifft(fft(abs(handles.sysIR)),length(handles.invfilter));
 origIR = handles.sysIR;
-invfilter = resample(handles.invfilter,length(origIR),length(handles.invfilter));
-t = linspace(0,1,length(origIR));
-timeconv = ifft(fft(origIR).*fft(invfilter));
-sysIRfreq = 10.*log10(abs(fft(origIR)).^2);
-invfilterfreq = 10.*log10(abs(fft(invfilter)).^2);
-convfreq = 10.*log10(abs(fft(timeconv(1:length(origIR)))).^2);
-origIRgd = diff(unwrap(angle(fft(origIR)))).*length(fft(origIR))/(handles.mainHandles.fs*2*pi).*1000;
-invfiltergd = diff(unwrap(angle(fft(invfilter)))).*length(fft(invfilter))/(handles.mainHandles.fs*2*pi).*1000;
-timeconvgd = diff(unwrap(angle(fft(timeconv)))).*length(fft(timeconv))/(handles.mainHandles.fs*2*pi).*1000;
+invfilter = handles.invfilter;
+
+sysIRspec = fft(origIR,length(invfilter));
+invfilterspec = fft(invfilter);
+convspec = sysIRspec.*invfilterspec;
+
+t = linspace(0,length(invfilter)/handles.mainHandles.fs,length(invfilter));
+
+sysIRflevel = 10.*log10(abs(sysIRspec).^2);
+invfilterflevel = 10.*log10(abs(invfilterspec).^2);
+convflevel = 10.*log10(abs(convspec).^2);
+
+origIRgd = -diff(unwrap(angle(sysIRspec))).*length(sysIRspec)/(handles.mainHandles.fs*2*pi).*1000;
+invfiltergd = -diff(unwrap(angle(invfilterspec))).*length(invfilterspec)/(handles.mainHandles.fs*2*pi).*1000;
+timeconvgd = -diff(unwrap(angle(convspec))).*length(convspec)/(handles.mainHandles.fs*2*pi).*1000;
+
+IRtime = abs(ifft(sysIRspec));
+convIRtime = abs(ifft(convspec));
+
 freq=0:handles.mainHandles.fs/(length(invfilter)-1):handles.mainHandles.fs/2;
+
 figure;
-subplot(2,2,1);plot(t,abs(origIR),'k',t,invfilter,'c',t,abs(timeconv(1:length(origIR))),'r')
+subplot(2,2,1);plot(t,IRtime,'k',t,invfilter,'c',t,convIRtime,'r')
                title('Absolute amplitude');xlabel('Time [s]');ylabel('Amplitude')
                legend('System IR','Filter IR','sysIR*filtIR','Location','NorthEast')
-subplot(2,2,3);plot(t,10.*log10(abs(origIR).^2),'k',t,10.*log10(invfilter.^2),'c',t,10.*log10(abs(timeconv(1:length(origIR))).^2),'r')
+subplot(2,2,3);plot(t,10.*log10(IRtime.^2),'k',t,10.*log10(invfilter.^2),'c',t,10.*log10(convIRtime.^2),'r')
                title('Squared amplitude');xlabel('Time [s]');ylabel('Amplitude [dB]')
                legend('System IR','Filter IR','sysIR*filtIR','Location','NorthEast')
-subplot(2,2,2);semilogx(freq,sysIRfreq(1:end/2),'k',freq,invfilterfreq(1:end/2),'c',freq,convfreq(1:end/2),'r');
+subplot(2,2,2);semilogx(freq,sysIRflevel(1:end/2),'k',freq,invfilterflevel(1:end/2),'c',freq,convflevel(1:end/2),'r');
                title('Magnitude spectrum');xlabel('Frequency [Hz]');ylabel('Amplitude [dB]')
                legend('System IR','Filter IR','sysIR*filtIR','Location','NorthEast')
-subplot(2,2,4);stem(freq',origIRgd(1:length(freq)),'Color','k','Marker','None');hold on
-               stem(freq',invfiltergd(1:length(freq)),'Color','c','Marker','None');
-               stem(freq',timeconvgd(1:length(freq)),'Color','r','Marker','None');set(gca,'XScale','log');hold off
+subplot(2,2,4);semilogx(freq,origIRgd(1:length(freq)),'k',freq,invfiltergd(1:length(freq)),'c',freq,timeconvgd(1:length(freq)),'r')
                title('Group delay');xlabel('Frequency [Hz]');ylabel('Time [ms]')
                legend('System IR','Filter IR','sysIR*filtIR','Location','NorthEast')
-%xlim([str2num(get(handles.invfLF_IN,'String')) str2num(get(handles.invfHF_IN,'String'))])
-%set(gca,'XTickLabel',num2str(get(gca,'XTick').'))
-%legend('designed filter','true inverse','Location','SouthWest')
-%subplot(2,1,2);semilogx(freq,phaseinvfilterfreq(1:end/2,1),freq,phasesysIRfreq(1:end/2,1));
-%xlim([str2num(get(handles.invfLF_IN,'String')) str2num(get(handles.invfHF_IN,'String'))])
-%set(gca,'XTickLabel',num2str(get(gca,'XTick').'))
 set(hObject,'BackgroundColor',[0.94 0.94 0.94]);
 set(hObject,'Enable','on');
 
@@ -874,3 +879,91 @@ if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgr
 end
 handles.invflength = str2num(get(hObject,'String'));
 guidata(hObject,handles)
+
+
+% --- Executes on button press in instructions_btn.
+function instructions_btn_Callback(hObject, eventdata, handles)
+% hObject    handle to instructions_btn (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+message{1} = 'Instructions:';
+message{2} = '1. Make sure your audio interface is correctly plugged into your machine.';
+message{3} = '2. Make a feedback loop between INPUT 1 and OUTPUT 1';
+message{4} = '3. Press the -Evaluate- button to test the system latency.';
+
+msgbox(message,'AARAE info')
+
+
+
+function latency_IN_Callback(hObject, eventdata, handles)
+% hObject    handle to latency_IN (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: get(hObject,'String') returns contents of latency_IN as text
+%        str2double(get(hObject,'String')) returns contents of latency_IN as a double
+if str2num(get(hObject,'String')) < handles.output.latency
+    handles.output.latency = round(str2num(get(hObject,'String')));
+    set(hObject,'String',round(str2num(get(hObject,'String'))))
+    ixy = handles.sysIR;
+    t = linspace(0,length(ixy)/handles.mainHandles.fs,length(ixy));
+    IRlevel = (10.*log10((abs(ixy)./max(abs(ixy))).^2));
+    plot(handles.IRaxes,t,IRlevel,t,ones(size(t)).*handles.latthresh.*-1,'r',handles.output.latency/handles.mainHandles.fs,IRlevel(handles.output.latency),'or')
+    ylim(handles.IRaxes,[-60 10])
+else
+    set(hObject,'String',num2str(handles.output.latency))
+    warndlg('Input cannot be greater than the auto-detected latency','AARAE info')
+end
+guidata(hObject,handles)
+
+
+% --- Executes during object creation, after setting all properties.
+function latency_IN_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to latency_IN (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: edit controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+
+
+function latthresh_IN_Callback(hObject, eventdata, handles)
+% hObject    handle to latthresh_IN (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: get(hObject,'String') returns contents of latthresh_IN as text
+%        str2double(get(hObject,'String')) returns contents of latthresh_IN as a double
+if 0 <= str2num(get(hObject,'String')) && str2num(get(hObject,'String')) <= 60
+    ixy = handles.sysIR;
+    handles.latthresh = str2num(get(handles.latthresh_IN,'String'));
+    t = linspace(0,length(ixy)/handles.mainHandles.fs,length(ixy));
+    IRlevel = (10.*log10((abs(ixy)./max(abs(ixy))).^2));
+    abovethresh = find(IRlevel > -20);
+    [~,I1] = max(IRlevel(abovethresh));
+    I = abovethresh(I1);
+    plot(handles.IRaxes,t,IRlevel,t,ones(size(t)).*str2num(get(handles.latthresh_IN,'String')).*-1,'r',I/handles.mainHandles.fs,IRlevel(I),'or')
+    ylim(handles.IRaxes,[-60 10])
+    handles.output.latency = I;
+    set(handles.latency_IN,'string',num2str(I))
+else
+    set(hObject,'String',num2str(handles.latthresh))
+    warndlg('Threshhold out of boundaries','AARAE info')
+end
+guidata(hObject,handles)
+
+% --- Executes during object creation, after setting all properties.
+function latthresh_IN_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to latthresh_IN (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: edit controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end

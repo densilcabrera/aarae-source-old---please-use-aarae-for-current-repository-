@@ -118,7 +118,7 @@ else
         plot(handles.OUT_axes,handles.t,handles.outputdata.audio)
         set(handles.output_settings,'String',output_settings);
         set(handles.text1,'String','Add time');
-        set(handles.IN_duration,'String','5');
+        set(handles.IN_duration,'String','1');
         set(handles.IN_fs,'Enable','off');
         set(handles.IN_fs,'String','-');
         set(handles.IN_nbits,'Enable','off');
@@ -267,9 +267,9 @@ if get(handles.pb_enable,'Value') == 1
     end
     % Check recording and adjust for QueueDuration latency
     if ~isempty(handles.rec)
-        handles.rec = handles.rec(handles.hap.QueueDuration*handles.fs:end);
+        handles.rec = handles.rec(handles.hap.QueueDuration*handles.fs:end,:);
         if UserData.state == false
-            handles.rec = handles.rec(1:(size(handles.outputdata.audio,1)+handles.addtime*handles.fs));
+            handles.rec = handles.rec(1:(size(handles.outputdata.audio,1)+handles.addtime*handles.fs),:);
         else
             UserData.state = false;
             set(handles.stop_btn,'UserData',UserData);
@@ -319,7 +319,7 @@ else
     % Check recording and adjust for Duration
     if ~isempty(handles.rec)
         if UserData.state == false
-            handles.rec = handles.rec(1:dur);
+            handles.rec = handles.rec(1:dur,:);
         else
             UserData.state = false;
             set(handles.stop_btn,'UserData',UserData);
@@ -615,7 +615,7 @@ function pb_enable_Callback(hObject, eventdata, handles)
 if get(hObject,'Value') == 1
     set(handles.output_panel,'Visible','on');
     set(handles.text1,'String','Add time');
-    set(handles.IN_duration,'String','5');
+    set(handles.IN_duration,'String','1');
     set(handles.IN_fs,'Enable','off');
     set(handles.IN_fs,'String','-');
     set(handles.IN_nbits,'Enable','off');

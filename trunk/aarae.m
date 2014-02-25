@@ -291,34 +291,23 @@ if filename ~= 0
     % Check type of file. First 'if' is for .mat, second is for .wav
     if ~isempty(regexp(filename, '.mat', 'once'))
         file = importdata(fullfile(pathname,filename));
-        % First part of this if could be used for calling personalized
-        % extension app files
         if isstruct(file)
             signaldata = file;
-%            testsignal = file.audio;
-%            audio2 = file.audio2;
-%            fs = file.fs;
-%            nbits = file.nbits;
         else
-            % Until here
             specs = inputdlg({'Please specify the sampling frequency','Please specify the bit depth'},'Sampling frequency',2);
             if (isempty(specs))
-                w = warndlg('Input field is blank, cannot load data!');
+                warndlg('Input field is blank, cannot load data!');
                 signaldata = [];
-%                testsignal = [];
             else
                 fs = str2num(specs{1,1});
                 nbits = str2num(specs{2,1});
                 if (isempty(fs) || fs<=0 || isempty(nbits) || nbits<=0)
                     warndlg('Input MUST be a real positive number, cannot load data!');
                     signaldata = [];
-%                    testsignal = [];
                 else
                     signaldata.audio = file;
                     signaldata.fs = fs;
                     signaldata.nbits = nbits;
-%                    testsignal = file;
-%                    audio2 = [];                
                 end
             end
         end
@@ -330,11 +319,9 @@ if filename ~= 0
     % Generate new leaf and update the tree
     newleaf = filename;
     if ~isempty(signaldata)
-%        signaldata = struct;
-%        signaldata.audio = testsignal;
-%        signaldata.audio2 = audio2;
-%        signaldata.fs = fs;
-%        signaldata.nbits = nbits;
+        if ~isfield(signaldata,'chanID')
+            signaldata.chanID = cellstr([repmat('Chan',size(signaldata.audio,2),1) num2str((1:size(signaldata.audio,2))')]);
+        end
         if ~isfield(signaldata,'datatype')
             if filterindex == 1, signaldata.datatype = 'testsignals'; end;
             if filterindex == 2, signaldata.datatype = 'measurements'; end;
@@ -1116,7 +1103,7 @@ if (click == handles.axestime) || (get(click,'Parent') == handles.axestime)
         if plottype == 14, line = unwrap(angle(fft(line))); end
         if plottype == 15, line = angle(fft(line)) .* 180/pi; end
         if plottype == 16, line = unwrap(angle(fft(line))) ./(2*pi); end
-        if plottype == 17, line = diff(unwrap(angle(fft(line)))).*length(fft(line))/(signaldata.fs*2*pi).*1000; end
+        if plottype == 17, line = -diff(unwrap(angle(fft(line)))).*length(fft(line))/(signaldata.fs*2*pi).*1000; end
         if plottype <= 7
             plot(t,line) % Plot signal in time domain
             xlabel('Time [s]');
@@ -1131,7 +1118,7 @@ if (click == handles.axestime) || (get(click,'Parent') == handles.axestime)
                 if smoothfactor == 6, octsmooth = 24; end
                 if smoothfactor ~= 1, line = octavesmoothing(line, octsmooth, signaldata.fs); end
             end
-            if plottype == 17, stem(f(1:end-1),line,'Marker','None'); end
+            if plottype == 17, semilogx(f(1:end-1),line,'Marker','None'); end
             if plottype ~= 17, semilogx(f,line); end % Plot signal in frequency domain
             log_check = get(handles.logtime_chk,'Value');
             if log_check == 1
@@ -1191,7 +1178,7 @@ if (click == handles.axesfreq) || (get(click,'Parent') == handles.axesfreq)
         if plottype == 14, line = unwrap(angle(fft(line))); end
         if plottype == 15, line = angle(fft(line)) .* 180/pi; end
         if plottype == 16, line = unwrap(angle(fft(line))) ./(2*pi); end
-        if plottype == 17, line = diff(unwrap(angle(fft(line)))).*length(fft(line))/(signaldata.fs*2*pi).*1000; end
+        if plottype == 17, line = -diff(unwrap(angle(fft(line)))).*length(fft(line))/(signaldata.fs*2*pi).*1000; end
         if plottype <= 7
             plot(t,line) % Plot signal in time domain
             xlabel('Time [s]');
@@ -1206,7 +1193,7 @@ if (click == handles.axesfreq) || (get(click,'Parent') == handles.axesfreq)
                 if smoothfactor == 6, octsmooth = 24; end
                 if smoothfactor ~= 1, line = octavesmoothing(line, octsmooth, signaldata.fs); end
             end
-            if plottype == 17, stem(f(1:end-1),line,'Marker','None'); end
+            if plottype == 17, semilogx(f(1:end-1),line,'Marker','None'); end
             if plottype ~= 17, semilogx(f,line); end % Plot signal in frequency domain
             log_check = get(handles.logfreq_chk,'Value');
             if log_check == 1
