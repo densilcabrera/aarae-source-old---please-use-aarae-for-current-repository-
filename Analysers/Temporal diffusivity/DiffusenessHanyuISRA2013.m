@@ -170,6 +170,12 @@ for dim2=1:chans
     for dim3 = 1:bands
         % find index for threshold k
         ind = find(z(:,dim2,dim3)>= threshold, 1,'first');
+        if isempty(ind)
+            out.error = 'Threshold index not found';
+            disp('Threshold index not found!')
+            disp('Try a different start time or end time (e.g., to avoid -inf dB).')
+            return
+        end
         
         % exact z(k) value(s) that were found 
         % (it should be approximately equal to threshold)
