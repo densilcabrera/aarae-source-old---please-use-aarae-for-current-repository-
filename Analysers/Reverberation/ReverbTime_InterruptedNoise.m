@@ -76,7 +76,10 @@ if ~isempty(audio) && ~isempty(fs)
         decayend = find(diff([audio3;1]) == 1);
         numberofdecays = length(decaystart);
     else
-        % work out some other way of finding decay period indices!!!
+        OUT.error = 'audio3 not found!';
+        disp('Please use test signals generated from AARAE''s interrupted noise generator')
+        return
+        % or work out some other way of finding decay period indices!!!
     end
     
     

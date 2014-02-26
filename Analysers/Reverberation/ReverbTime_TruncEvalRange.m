@@ -263,10 +263,10 @@ if ~isempty(audio) && ~isempty(fs)
     % Plot
     % -------------------------------------------------------------------------
     T(isnan(T)) = 0;
-    for ch =  1: chans
+    for ch =  1:chans
         for bnd = 1:bands
             if exist('chanID', 'var')
-                figure('Name',['Apparent Reverberation time, channel ', num2str(chanID)])
+                figure('Name',['Apparent Reverberation time, ', num2str(chanID{ch,1})])
             else
                 figure('Name',['Apparent Reverberation time, channel ', num2str(ch)])
             end
@@ -286,7 +286,7 @@ if ~isempty(audio) && ~isempty(fs)
             T30index = find(ERendL == -35, 1, 'first');
             if ~isempty(T20index) && ~isempty(T30index)
                 if exist('chanID', 'var')
-                    figure('Name',['T20 & T30, channel ', num2str(chanID)])
+                    figure('Name',['T20 & T30, channel ', num2str(chanID{ch,1})])
                 else
                     figure('Name',['T20 & T30, channel ', num2str(ch)])
                 end
@@ -340,7 +340,7 @@ if ~isempty(audio) && ~isempty(fs)
         if maketables == 1
             if ~isempty(T20index) && ~isempty(T30index)
                 if exist('chanID', 'var')
-                    fig1 = figure('Name',['Apparent Reverberation Time, channel ', num2str(chanID)]);
+                    fig1 = figure('Name',['Apparent Reverberation Time, channel ', num2str(chanID{ch,1})]);
                 else
                     fig1 = figure('Name',['Apparent Reverberation Time, channel ', num2str(ch)]);
                 end
