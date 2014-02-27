@@ -852,14 +852,20 @@ IRtime = abs(ifft(sysIRspec));
 convIRtime = abs(ifft(convspec));
 
 freq=0:handles.mainHandles.fs/(length(invfilter)-1):handles.mainHandles.fs/2;
-
-figure;
+set(0,'Units','characters')
+screen = get(0,'Screensize');
+set(0,'Units','pixels')
+figure;set(gcf,'Units','characters')
+set(gcf, 'Position', screen);
 subplot(2,2,1);plot(t,IRtime,'k',t,convIRtime,'r')
                hold on
                plot(t,invfilter,'Color',[0 .6 0])
                hold off
                title('Absolute amplitude');xlabel('Time [s]');ylabel('Amplitude')
-               legend('System IR','Filter IR','sysIR*filtIR');
+               leg = legend('System IR','Filter IR','sysIR*filtIR');
+               set(leg,'Units','characters')
+               posleg = get(leg,'Position');
+               set(leg,'Position',[screen(3:4)./2-5 posleg(3:4)])
 subplot(2,2,3);plot(t,10.*log10(IRtime.^2),'k',t,10.*log10(convIRtime.^2),'r')
                hold on
                plot(t,10.*log10(invfilter.^2),'Color',[0 .6 0])
