@@ -79,6 +79,7 @@ if isempty(mainGuiInput) == 0
         plot(t,data.testsignal);
     end
 end
+if ~isdir([cd '/Log']), mkdir([cd '/Log']); end
 mkdir([cd '/Utilities/Temp']);
 % Add folder paths for filter functions and signal analyzers
 addpath(genpath(cd));
@@ -185,6 +186,7 @@ if ~isempty(getappdata(hMain,'testsignal'))
         index = 1;
         % This while cycle is just to make sure no signals are
         % overwriten
+        if length(genvarname([newleaf,'_',num2str(index)])) >= namelengthmax, newleaf = newleaf(1:round(end/2)); end
         while isfield(handles,genvarname([newleaf,'_',num2str(index)])) == 1
             index = index + 1;
         end
@@ -714,6 +716,7 @@ if ~isempty(handles.funname) && ~isempty(audiodata)
             index = 1;
             % This while cycle is just to make sure no signals are
             % overwriten
+            if length(genvarname([newleaf,'_',num2str(index)])) >= namelengthmax, newleaf = newleaf(1:round(end/2)); end
             while isfield(handles,genvarname([newleaf,'_',num2str(index)])) == 1
                 index = index + 1;
             end
@@ -789,14 +792,8 @@ signaldata = getappdata(hMain,'testsignal');
 contents = cellstr(get(hObject,'String'));
 handles.procat = contents{get(hObject,'Value')};
 processes = what([cd '/Processors/' handles.procat]);
-%prebuilt = what([cd '/Processors/' handles.procat '/' num2str(signaldata.fs) 'Hz']); % Check for prebuilt filterbanks for the specified smapling frequency
-%if ~isempty(prebuilt)
-%    prebuilt = prebuilt.mat;
-%else
-%    prebuilt = [];
-%end
-if ~isempty(processes.m)% || ~isempty(prebuilt)
-    %set(handles.proc_box,'Visible','on','String',[' ';cellstr([processes.m;prebuilt])],'Value',1);
+
+if ~isempty(processes.m)
     set(handles.proc_box,'Visible','on','String',[' ';cellstr(processes.m)],'Value',1);
     set(handles.proc_btn,'Visible','off');
 else
@@ -947,6 +944,7 @@ for multi = 1:size(file,1)
                 index = 1;
                 % This while cycle is just to make sure no signals are
                 % overwriten
+                if length(genvarname([newleaf,'_',num2str(index)])) >= namelengthmax, newleaf = newleaf(1:round(end/2)); end
                 while isfield(handles,genvarname([newleaf,'_',num2str(index)])) == 1
                     index = index + 1;
                 end
@@ -1121,6 +1119,8 @@ if (click == handles.axestime) || (get(click,'Parent') == handles.axestime)
             if plottype == 17, semilogx(f(1:end-1),line,'Marker','None'); end
             if plottype ~= 17, semilogx(f,line); end % Plot signal in frequency domain
             log_check = get(handles.logtime_chk,'Value');
+            xlabel('Frequency [Hz]');
+            xlim([f(2) signaldata.fs/2])
             if log_check == 1
                 set(gca,'XScale','log')
                 set(gca,'XTickLabel',num2str(get(gca,'XTick').'))
@@ -1128,11 +1128,17 @@ if (click == handles.axestime) || (get(click,'Parent') == handles.axestime)
                 set(gca,'XScale','linear','XTickLabelMode','auto')
                 set(gca,'XTickLabel',num2str(get(gca,'XTick').'))
             end
-            xlabel('Frequency [Hz]');
-            xlim([f(2) signaldata.fs/2])
         end
         if handles.alternate == 0
-            if ndims(data)>2, legend(num2str(signaldata.bandID')); else legend(signaldata.chanID); end
+            if ndims(data)>2
+                if isfield(signaldata,'bandID')
+                    legend(num2str(signaldata.bandID'));
+                end
+            else
+                if isfield(signaldata,'chanID')
+                    legend(signaldata.chanID);
+                end
+            end
         end
         handles.alternate = 0;
     end
@@ -1195,6 +1201,8 @@ if (click == handles.axesfreq) || (get(click,'Parent') == handles.axesfreq)
             end
             if plottype == 17, semilogx(f(1:end-1),line,'Marker','None'); end
             if plottype ~= 17, semilogx(f,line); end % Plot signal in frequency domain
+            xlabel('Frequency [Hz]');
+            xlim([f(2) signaldata.fs/2])
             log_check = get(handles.logfreq_chk,'Value');
             if log_check == 1
                 set(gca,'XScale','log')
@@ -1203,11 +1211,17 @@ if (click == handles.axesfreq) || (get(click,'Parent') == handles.axesfreq)
                 set(gca,'XScale','linear','XTickLabelMode','auto')
                 set(gca,'XTickLabel',num2str(get(gca,'XTick').'))
             end
-            xlabel('Frequency [Hz]');
-            xlim([f(2) signaldata.fs/2])
         end
         if handles.alternate == 0
-            if ndims(data)>2, legend(num2str(signaldata.bandID')); else legend(signaldata.chanID); end
+            if ndims(data)>2
+                if isfield(signaldata,'bandID')
+                    legend(num2str(signaldata.bandID'));
+                end
+            else
+                if isfield(signaldata,'chanID')
+                    legend(signaldata.chanID);
+                end
+            end
         end
         handles.alternate = 0;
     end
@@ -1778,8 +1792,16 @@ selectedNodes = handles.mytree.getSelectedNodes;
 signaldata = selectedNodes(1).handle.UserData;
 if ~isempty(signaldata)
     if strcmp(eventdata.Key,'l') && ~isfield(handles,'legend')
-        if ndims(signaldata.audio) == 2, handles.legend = legend(handles.axestime,signaldata.chanID); end
-        if ndims(signaldata.audio) == 3, handles.legend = legend(handles.axestime,cellstr(num2str(signaldata.bandID'))); end
+        if ndims(signaldata.audio) == 2
+            if isfield(signaldata,'chanID')
+                handles.legend = legend(handles.axestime,signaldata.chanID);
+            end
+        end
+        if ndims(signaldata.audio) == 3
+            if isfield(signaldata,'bandID')
+                handles.legend = legend(handles.axestime,cellstr(num2str(signaldata.bandID')));
+            end
+        end
     elseif strcmp(eventdata.Key,'l') && isfield(handles,'legend')
         legend(handles.axestime,'off');
         handles = rmfield(handles,'legend');

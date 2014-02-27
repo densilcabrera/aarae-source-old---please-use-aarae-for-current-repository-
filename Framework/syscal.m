@@ -22,7 +22,7 @@ function varargout = syscal(varargin)
 
 % Edit the above text to modify the response to help syscal
 
-% Last Modified by GUIDE v2.5 25-Feb-2014 18:12:27
+% Last Modified by GUIDE v2.5 27-Feb-2014 15:42:06
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -89,6 +89,8 @@ else
     UserData.state = false;
     set(handles.stop_btn,'UserData',UserData);
     handles.output = struct;
+    xlabel(handles.IRaxes,'Time [s]')
+    ylim(handles.IRaxes,[-60 10])
     guidata(hObject, handles);
     uiwait(hObject);
 end
@@ -114,10 +116,43 @@ function load_btn_Callback(hObject, eventdata, handles)
 % hObject    handle to load_btn (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-[handles.audio,handles.fs] = audioread('0deg_002.wav');
-plot(handles.dispaxes,handles.audio)
-xlabel(handles.dispaxes,'Time [s]');
-set(handles.filter_panel,'Visible','on')
+[filename,pathname,filterindex] = uigetfile(...
+    {'*.wav;*.mat','Calibration tone (*.wav,*.mat)'},...
+    'Select audio file',[cd '/Audio']);
+
+if filename ~= 0
+    % Check type of file. First 'if' is for .mat, second is for .wav
+    if ~isempty(regexp(filename, '.mat', 'once'))
+        file = importdata(fullfile(pathname,filename));
+        if isstruct(file)
+            handles.audio = file.audio;
+            handles.fs = file.fs;
+        else
+            fs = inputdlg('Please specify the sampling frequency','Sampling frequency',1);
+            if (isempty(specs))
+                warndlg('Input field is blank, cannot load data!');
+                handles.audio = [];
+            else
+                fs = str2num(specs{1,1});
+                if (isempty(fs) || fs<=0)
+                    warndlg('Input MUST be a real positive number, cannot load data!');
+                    handles.audio = [];
+                else
+                    handles.audio = file;
+                    handles.fs = fs;
+                end
+            end
+        end
+    end
+    if ~isempty(regexp(filename, '.wav', 'once'))
+        [handles.audio,handles.fs] = wavread(fullfile(pathname,filename));
+    end;
+    plot(handles.dispaxes,handles.audio)
+    xlabel(handles.dispaxes,'Time [s]');
+    set([handles.sperframe_IN,handles.percentage_IN,handles.threshold_IN,handles.tonelevel_IN,handles.evalcal_btn,handles.filter_btn],'Enable','on')
+else
+    warndlg('Unable to load file','AARAE info')
+end
 guidata(hObject,handles)
 
 
@@ -242,6 +277,7 @@ trimlevel = tonelevel - 10 .* log10(mean(trimdata(trim).^2,1));
 stats{1} = ['Sampling frequency: ' num2str(handles.mainHandles.fs) ' samples/s'];
 stats{2} = ['Trimmed recording length: ' num2str(dur) ' s'];
 stats{3} = ['Trimmed audio level: ' num2str(trimlevel) ' dB'];
+if ~isnan(trimlevel), set(handles.caltonetext,'Visible','on'); end
 set(handles.statstext,'String',stats);
 set(hObject,'BackgroundColor',[0.94 0.94 0.94]);
 set(hObject,'Enable','on');
@@ -338,8 +374,10 @@ if ~isempty(rec)
     IRlevel = (10.*log10((abs(ixy)./max(abs(ixy))).^2));
     abovethresh = find(IRlevel > -20);
     [~,I1] = max(IRlevel(abovethresh));
-    I = abovethresh(I1);
-    plot(handles.IRaxes,t,IRlevel,t,ones(size(t)).*str2num(get(handles.latthresh_IN,'String')).*-1,'r',I/handles.mainHandles.fs,IRlevel(I),'or')
+    handles.maxIR = abovethresh(I1);
+    I = abovethresh(1);
+    plot(handles.IRaxes,t,IRlevel,t,ones(size(t)).*str2num(get(handles.latthresh_IN,'String')).*-1,'r',handles.maxIR/handles.mainHandles.fs,IRlevel(handles.maxIR),'or',I/handles.mainHandles.fs,IRlevel(I),'og')
+    xlabel(handles.IRaxes,'Time [s]')
     ylim(handles.IRaxes,[-60 10])
     %I = (I-(handles.mainHandles.fs*handles.hap.QueueDuration));%/handles.mainHandles.fs;
     set(handles.latency_IN,'String',num2str(I),'Enable','on');
@@ -352,6 +390,7 @@ release(handles.hap)
 release(handles.har)
 release(handles.hsr1)
 set(hObject,'BackgroundColor',[0.94 0.94 0.94]);
+set(handles.latencytext,'String',[num2str(I) ' samples = ~' num2str(I/handles.mainHandles.fs) ' s'])
 set([hObject handles.invfdesign_btn handles.invf_popup handles.invfsmooth_popup handles.invfLF_IN handles.invfHF_IN handles.invfIB_IN handles.invfOB_IN handles.invfnfft_IN handles.invflength_IN],'Enable','on');
 set(handles.invfpreview_btn,'Enable','off')
 set(handles.invftext,'Visible','off')
@@ -521,6 +560,11 @@ function invf_popup_Callback(hObject, eventdata, handles)
 % Hints: contents = cellstr(get(hObject,'String')) returns invf_popup contents as cell array
 %        contents{get(hObject,'Value')} returns selected item from invf_popup
 set(handles.invftext,'Visible','off')
+if get(hObject,'Value') == 4
+    set(handles.invfsmooth_popup,'Value',1,'Enable','off')
+else
+    set(handles.invfsmooth_popup,'Value',3,'Enable','on')
+end
 guidata(hObject,handles)
 
 % --- Executes during object creation, after setting all properties.
@@ -731,7 +775,11 @@ else
     B=0;
 end
 % Inverse filter design
-H=abs(fft(handles.sysIR,nfft));
+if get(handles.invf_popup,'Value') ~= 4
+    H = abs(fft(handles.sysIR,nfft));
+else
+    H = fft(handles.sysIR,nfft);
+end
 smoothfactor = get(handles.invfsmooth_popup,'Value');
 if smoothfactor == 2, octsmooth = 1; end
 if smoothfactor == 3, octsmooth = 3; end
@@ -740,12 +788,20 @@ if smoothfactor == 5, octsmooth = 12; end
 if smoothfactor == 6, octsmooth = 24; end
 if smoothfactor ~= 1, H = octavesmoothing(H, octsmooth, fs); end
 iH=conj(H)./((conj(H).*H).*(conj(B).*B)); % calculating regulated spectral inverse
-handles.invfilter=circshift(ifft(iH,'symmetric'),nfft/2);
-if get(handles.invf_popup,'Value') == 1 || get(handles.invf_popup,'Value') == 2, handles.invfilter=minph(handles.invfilter); end
-if get(handles.invf_popup,'Value') == 2, handles.invfilter = flipud(handles.invfilter); end
+iH=circshift(ifft(iH,'symmetric'),nfft/2);
+if get(handles.invf_popup,'Value') == 1 || get(handles.invf_popup,'Value') == 3, handles.invfilter=minph(iH); end
+if get(handles.invf_popup,'Value') == 3, handles.invfilter = flipud(iH); end
+if get(handles.invf_popup,'Value') == 4, handles.invfilter = iH; end
+if get(handles.invf_popup,'Value') == 5
+    iHspec = fft(iH);
+    phase = angle(iHspec);
+    rmsmag = mean(abs(iHspec).^2)^0.5;
+    changed_spectrum = ones(length(iHspec),1)*rmsmag .* exp(1i * phase);
+    changed_spectrum(1) = 0; % make DC zero
+    changed_spectrum(round(length(iHspec)/2)+1) = 0; % make Nyquist zero
+    handles.invfilter = ifft(changed_spectrum);
+end
 handles.output.invfilter = handles.invfilter;
-assignin('base','sysIR',handles.sysIR);
-assignin('base','invfilt',handles.invfilter);
 set(handles.invftext,'Visible','on')
 set(hObject,'BackgroundColor',[0.94 0.94 0.94]);
 set([hObject handles.invfpreview_btn],'Enable','on');
@@ -881,9 +937,9 @@ handles.invflength = str2num(get(hObject,'String'));
 guidata(hObject,handles)
 
 
-% --- Executes on button press in instructions_btn.
-function instructions_btn_Callback(hObject, eventdata, handles)
-% hObject    handle to instructions_btn (see GCBO)
+% --- Executes on button press in latinstructions_btn.
+function latinstructions_btn_Callback(hObject, eventdata, handles)
+% hObject    handle to latinstructions_btn (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 message{1} = 'Instructions:';
@@ -902,14 +958,15 @@ function latency_IN_Callback(hObject, eventdata, handles)
 
 % Hints: get(hObject,'String') returns contents of latency_IN as text
 %        str2double(get(hObject,'String')) returns contents of latency_IN as a double
-if str2num(get(hObject,'String')) < handles.output.latency
+if str2num(get(hObject,'String')) <= handles.maxIR
     handles.output.latency = round(str2num(get(hObject,'String')));
     set(hObject,'String',round(str2num(get(hObject,'String'))))
     ixy = handles.sysIR;
     t = linspace(0,length(ixy)/handles.mainHandles.fs,length(ixy));
     IRlevel = (10.*log10((abs(ixy)./max(abs(ixy))).^2));
-    plot(handles.IRaxes,t,IRlevel,t,ones(size(t)).*handles.latthresh.*-1,'r',handles.output.latency/handles.mainHandles.fs,IRlevel(handles.output.latency),'or')
+    plot(handles.IRaxes,t,IRlevel,t,ones(size(t)).*handles.latthresh.*-1,'r',handles.maxIR/handles.mainHandles.fs,IRlevel(handles.maxIR),'or',handles.output.latency/handles.mainHandles.fs,IRlevel(handles.output.latency),'og')
     ylim(handles.IRaxes,[-60 10])
+    set(handles.latencytext,'String',[num2str(handles.output.latency) ' samples = ~' num2str(str2num(get(hObject,'String'))/handles.mainHandles.fs) ' s'])
 else
     set(hObject,'String',num2str(handles.output.latency))
     warndlg('Input cannot be greater than the auto-detected latency','AARAE info')
@@ -943,13 +1000,15 @@ if 0 <= str2num(get(hObject,'String')) && str2num(get(hObject,'String')) <= 60
     handles.latthresh = str2num(get(handles.latthresh_IN,'String'));
     t = linspace(0,length(ixy)/handles.mainHandles.fs,length(ixy));
     IRlevel = (10.*log10((abs(ixy)./max(abs(ixy))).^2));
-    abovethresh = find(IRlevel > -20);
+    abovethresh = find(IRlevel > str2num(get(hObject,'String'))*-1);
     [~,I1] = max(IRlevel(abovethresh));
-    I = abovethresh(I1);
-    plot(handles.IRaxes,t,IRlevel,t,ones(size(t)).*str2num(get(handles.latthresh_IN,'String')).*-1,'r',I/handles.mainHandles.fs,IRlevel(I),'or')
+    handles.maxIR = abovethresh(I1);
+    I = abovethresh(1);
+    plot(handles.IRaxes,t,IRlevel,t,ones(size(t)).*str2num(get(handles.latthresh_IN,'String')).*-1,'r',handles.maxIR/handles.mainHandles.fs,IRlevel(handles.maxIR),'or',I/handles.mainHandles.fs,IRlevel(I),'og')
     ylim(handles.IRaxes,[-60 10])
     handles.output.latency = I;
     set(handles.latency_IN,'string',num2str(I))
+    set(handles.latencytext,'String',[num2str(I) ' samples = ~' num2str(I/handles.mainHandles.fs) ' s'])
 else
     set(hObject,'String',num2str(handles.latthresh))
     warndlg('Threshhold out of boundaries','AARAE info')
@@ -967,3 +1026,43 @@ function latthresh_IN_CreateFcn(hObject, eventdata, handles)
 if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
     set(hObject,'BackgroundColor','white');
 end
+
+
+% --- Executes on button press in invfiltinstructions_btn.
+function invfiltinstructions_btn_Callback(hObject, eventdata, handles)
+% hObject    handle to invfiltinstructions_btn (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+message{1} = 'Instructions:';
+message{2} = '1. Once you have captured the system impulse response you may set the parameters relevant to generate the inverse filter.';
+message{3} = '2. Select from the popup menu the type of filter.';
+message{4} = '3. Select the type of smoothing on your filter.';
+message{5} = '4. Set the frequency limits for your filter.';
+message{6} = '5. Set the in-band and out-of-band gain thresholds.';
+message{7} = '6. Set the FFT length and filter length in samples.';
+message{7} = 'NOTE: The filter length may not be longer than the FFT length.';
+message{8} = ' ';
+message{9} = '7. Click on -Design- to design the inverse filter.';
+message{10} = '8. Click on -Preview- to view the designed filter compared to the system impulse response and the convolution of your filter with the impulse response.';
+
+msgbox(message,'AARAE info')
+
+
+% --- Executes on button press in calinstructions_btn.
+function calinstructions_btn_Callback(hObject, eventdata, handles)
+% hObject    handle to calinstructions_btn (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+message{1} = 'Instructions:';
+message{2} = '1. You may record or load the calibration tone before or after evaluating the system latency and generating the corresponding inverse filter.';
+message{3} = '2. Click on the -Record- button to capture the calibration tone or alternatively click on -Load from file- to select a prerecorded calibration tone from your computer.';
+message{4} = '3. When recording you may choose a set recording time in seconds or stop the recording when you consider you have a long enough recording. Make sure you set enough time to capture the calibration tone';
+message{5} = '4. The automated trimming of your calibartion tone requires you to set a frame length in samples to evaluate the calibration tone. This is done by evaluating the recording envelope';
+message{6} = '5. The trim mean ratio acts as a filter referenced by the envelope threshold.';
+message{7} = '6. Set envelope threshold based on the absolute amplitude value of the recorded or loaded audio.';
+message{7} = '7. Please provide the calibrator level in dB established by the manufaturer.';
+message{8} = ' ';
+message{9} = '8. Click on -Filter- to apply an octave band filter around 1 kHz or 250 Hz if required to clean the recording.';
+message{10} = '9. Click on -Evaluate- to capture the calibration tone level and usable recording length.';
+
+msgbox(message,'AARAE info')
