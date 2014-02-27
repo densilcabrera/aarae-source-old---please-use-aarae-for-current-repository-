@@ -363,6 +363,7 @@ try
     end
 catch sthgwrong
     syswarning = sthgwrong.message;
+    set(hObject,'Enable','on');
     warndlg(syswarning,'AARAE info')
 end
 if ~isempty(rec)
@@ -376,10 +377,12 @@ if ~isempty(rec)
     [~,I1] = max(IRlevel(abovethresh));
     handles.maxIR = abovethresh(I1);
     I = abovethresh(1);
-    plot(handles.IRaxes,t,IRlevel,t,ones(size(t)).*str2num(get(handles.latthresh_IN,'String')).*-1,'r',handles.maxIR/handles.mainHandles.fs,IRlevel(handles.maxIR),'or',I/handles.mainHandles.fs,IRlevel(I),'og')
+    plot(handles.IRaxes,t,IRlevel,t,ones(size(t)).*str2num(get(handles.latthresh_IN,'String')).*-1,'r',handles.maxIR/handles.mainHandles.fs,IRlevel(handles.maxIR),'or')
+    hold(handles.IRaxes,'on')
+    plot(handles.IRaxes,I/handles.mainHandles.fs,IRlevel(I),'o','Color',[0 .6 0])
+    hold(handles.IRaxes,'off')
     xlabel(handles.IRaxes,'Time [s]')
     ylim(handles.IRaxes,[-60 10])
-    %I = (I-(handles.mainHandles.fs*handles.hap.QueueDuration));%/handles.mainHandles.fs;
     set(handles.latency_IN,'String',num2str(I),'Enable','on');
     set(handles.latthresh_IN,'Enable','on')
     handles.latthresh = str2num(get(handles.latthresh_IN,'String'));
@@ -964,7 +967,10 @@ if str2num(get(hObject,'String')) <= handles.maxIR
     ixy = handles.sysIR;
     t = linspace(0,length(ixy)/handles.mainHandles.fs,length(ixy));
     IRlevel = (10.*log10((abs(ixy)./max(abs(ixy))).^2));
-    plot(handles.IRaxes,t,IRlevel,t,ones(size(t)).*handles.latthresh.*-1,'r',handles.maxIR/handles.mainHandles.fs,IRlevel(handles.maxIR),'or',handles.output.latency/handles.mainHandles.fs,IRlevel(handles.output.latency),'og')
+    plot(handles.IRaxes,t,IRlevel,t,ones(size(t)).*handles.latthresh.*-1,'r',handles.maxIR/handles.mainHandles.fs,IRlevel(handles.maxIR),'or')
+    hold(handles.IRaxes,'on')
+    plot(handles.IRaxes,handles.output.latency/handles.mainHandles.fs,IRlevel(handles.output.latency),'o','Color',[0 .6 0])
+    hold(handles.IRaxes,'off')
     ylim(handles.IRaxes,[-60 10])
     set(handles.latencytext,'String',[num2str(handles.output.latency) ' samples = ~' num2str(str2num(get(hObject,'String'))/handles.mainHandles.fs) ' s'])
 else
@@ -995,16 +1001,20 @@ function latthresh_IN_Callback(hObject, eventdata, handles)
 
 % Hints: get(hObject,'String') returns contents of latthresh_IN as text
 %        str2double(get(hObject,'String')) returns contents of latthresh_IN as a double
-if 0 <= str2num(get(hObject,'String')) && str2num(get(hObject,'String')) <= 60
+latthresh = abs(str2num(get(hObject,'String')));
+if 0 <= latthresh && latthresh <= 60
     ixy = handles.sysIR;
     handles.latthresh = str2num(get(handles.latthresh_IN,'String'));
     t = linspace(0,length(ixy)/handles.mainHandles.fs,length(ixy));
     IRlevel = (10.*log10((abs(ixy)./max(abs(ixy))).^2));
-    abovethresh = find(IRlevel > str2num(get(hObject,'String'))*-1);
+    abovethresh = find(IRlevel > latthresh*-1);
     [~,I1] = max(IRlevel(abovethresh));
     handles.maxIR = abovethresh(I1);
     I = abovethresh(1);
-    plot(handles.IRaxes,t,IRlevel,t,ones(size(t)).*str2num(get(handles.latthresh_IN,'String')).*-1,'r',handles.maxIR/handles.mainHandles.fs,IRlevel(handles.maxIR),'or',I/handles.mainHandles.fs,IRlevel(I),'og')
+    plot(handles.IRaxes,t,IRlevel,t,ones(size(t)).*latthresh.*-1,'r',handles.maxIR/handles.mainHandles.fs,IRlevel(handles.maxIR),'or')
+    hold(handles.IRaxes,'on')
+    plot(handles.IRaxes,I/handles.mainHandles.fs,IRlevel(I),'o','Color',[0 .6 0])
+    hold(handles.IRaxes,'off')
     ylim(handles.IRaxes,[-60 10])
     handles.output.latency = I;
     set(handles.latency_IN,'string',num2str(I))
