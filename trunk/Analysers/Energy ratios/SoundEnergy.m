@@ -1,6 +1,11 @@
 function out = SoundEnergy(data, fs, startthresh, bpo)
 % This function calculates Clarity Index, Definition and Centre Time from
-% a .wav impulse response.
+% an impulse response.
+%
+% THIS FUNCTION REQUIRES MORE WORK - PLEASE USE ReverberationTime_IR1 to
+% calculate Clarity Index, Definition and Centre Time instead of this
+% function.
+
 %
 %--------------------------------------------------------------------------
 % INPUT VARIABLES
@@ -29,6 +34,31 @@ function out = SoundEnergy(data, fs, startthresh, bpo)
 % Ts = Time of the centre of gravity of the squared IR, in seconds
 %
 %--------------------------------------------------------------------------
+%
+% ************************  TO DO  ****************************************
+% OBVIOUS IMPROVEMENTS
+% Make compatible with multichannel input
+% consider whether to allow multiband input (maybe with disclaimer)
+% replace octave band and 1/3-oct band filters with AARAE's filters
+% display table of results
+% consider whether to display chart(s)
+% include authors (Grant & Densil), BSD license text, & version number
+% reformat output structure
+%
+% *** What could this function do better than ReverberatioTime_IR1? *******
+% POSSIBLE ANSWERS: 
+% * Detailed plots showing the reasons for the resulting values (e.g using
+%       cumulative sums)
+% * Interpret values in terms of published theories/models/criteria
+% * Introduce non-standard options such as a cross-fade between early and
+%       late (could be controlled by a single input parameter)
+% * Include some other values such as C10, C35 and C100 (not too many, as
+%       there is another AARAE function that does as many as you like)
+% * Include end truncation (both automatic and user-controlled?)
+% * Determine the end point where C50 etc is within tolerance limit (e.g.
+%       0.1 dB, 0.5 dB, 1 dB etc, or percentage error for D50 etc)
+% * Allow special filterbanks - e.g. Gammatone (it is better to filter after
+%       truncation, and so to call the filterbank from this function)
 
 if isstruct(data)
     IR = data.audio;
@@ -73,7 +103,9 @@ switch ndim
         len = S(1); % number of samples in IR
         chans = S(2); % number of channels
     case 3
-        error('Input IR cannot be multiband');
+        disp('Sound Energy input IR cannot be multiband');
+        out.error = 'Input IR cannot be multiband';
+        return
 end
 
 % Preallocate
