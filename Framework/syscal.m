@@ -854,18 +854,27 @@ convIRtime = abs(ifft(convspec));
 freq=0:handles.mainHandles.fs/(length(invfilter)-1):handles.mainHandles.fs/2;
 
 figure;
-subplot(2,2,1);plot(t,IRtime,'k',t,invfilter,'c',t,convIRtime,'r')
+subplot(2,2,1);plot(t,IRtime,'k',t,convIRtime,'r')
+               hold on
+               plot(t,invfilter,'Color',[0 .6 0])
+               hold off
                title('Absolute amplitude');xlabel('Time [s]');ylabel('Amplitude')
-               legend('System IR','Filter IR','sysIR*filtIR','Location','NorthEast')
-subplot(2,2,3);plot(t,10.*log10(IRtime.^2),'k',t,10.*log10(invfilter.^2),'c',t,10.*log10(convIRtime.^2),'r')
+               legend('System IR','Filter IR','sysIR*filtIR');
+subplot(2,2,3);plot(t,10.*log10(IRtime.^2),'k',t,10.*log10(convIRtime.^2),'r')
+               hold on
+               plot(t,10.*log10(invfilter.^2),'Color',[0 .6 0])
+               hold off
                title('Squared amplitude');xlabel('Time [s]');ylabel('Amplitude [dB]')
-               legend('System IR','Filter IR','sysIR*filtIR','Location','NorthEast')
-subplot(2,2,2);semilogx(freq,sysIRflevel(1:end/2),'k',freq,invfilterflevel(1:end/2),'c',freq,convflevel(1:end/2),'r');
+subplot(2,2,2);semilogx(freq,sysIRflevel(1:end/2),'k',freq,convflevel(1:end/2),'r');
+               hold on
+               semilogx(freq,invfilterflevel(1:end/2),'Color',[0 .6 0])
+               hold off
                title('Magnitude spectrum');xlabel('Frequency [Hz]');ylabel('Amplitude [dB]')
-               legend('System IR','Filter IR','sysIR*filtIR','Location','NorthEast')
-subplot(2,2,4);semilogx(freq,origIRgd(1:length(freq)),'k',freq,invfiltergd(1:length(freq)),'c',freq,timeconvgd(1:length(freq)),'r')
+subplot(2,2,4);semilogx(freq,origIRgd(1:length(freq)),'k',freq,timeconvgd(1:length(freq)),'r')
+               hold on
+               semilogx(freq,invfiltergd(1:length(freq)),'Color',[0 .6 0])
+               hold off
                title('Group delay');xlabel('Frequency [Hz]');ylabel('Time [ms]')
-               legend('System IR','Filter IR','sysIR*filtIR','Location','NorthEast')
 set(hObject,'BackgroundColor',[0.94 0.94 0.94]);
 set(hObject,'Enable','on');
 
