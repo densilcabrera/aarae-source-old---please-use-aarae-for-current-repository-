@@ -22,7 +22,7 @@ function varargout = syscal(varargin)
 
 % Edit the above text to modify the response to help syscal
 
-% Last Modified by GUIDE v2.5 27-Feb-2014 15:42:06
+% Last Modified by GUIDE v2.5 28-Feb-2014 17:45:01
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -373,7 +373,7 @@ if ~isempty(rec)
     ixy = ifft(Txy,length(Txy)*2);
     t = linspace(0,length(ixy)/handles.mainHandles.fs,length(ixy));
     IRlevel = (10.*log10((abs(ixy)./max(abs(ixy))).^2));
-    abovethresh = find(IRlevel > -20);
+    abovethresh = find(IRlevel > abs(str2num(get(handles.latthresh_IN,'String')))*-1);
     [~,I1] = max(IRlevel(abovethresh));
     handles.maxIR = abovethresh(I1);
     I = abovethresh(1);
@@ -394,7 +394,7 @@ release(handles.har)
 release(handles.hsr1)
 set(hObject,'BackgroundColor',[0.94 0.94 0.94]);
 set(handles.latencytext,'String',[num2str(I) ' samples = ~' num2str(I/handles.mainHandles.fs) ' s'])
-set([hObject handles.invfdesign_btn handles.invf_popup handles.invfsmooth_popup handles.invfLF_IN handles.invfHF_IN handles.invfIB_IN handles.invfOB_IN handles.invfnfft_IN handles.invflength_IN],'Enable','on');
+%set([hObject handles.invfdesign_btn handles.invf_popup handles.invfsmooth_popup handles.invfLF_IN handles.invfHF_IN handles.invfIB_IN handles.invfOB_IN handles.invfnfft_IN handles.invflength_IN handles.preproc_popup handles.IRlength_IN handles.postproc_popup],'Enable','on');
 set(handles.invfpreview_btn,'Enable','off')
 set(handles.invftext,'Visible','off')
 guidata(hObject,handles)
@@ -795,7 +795,7 @@ iH=circshift(ifft(iH,'symmetric'),nfft/2);
 if get(handles.invf_popup,'Value') == 1 || get(handles.invf_popup,'Value') == 3, handles.invfilter=minph(iH); end
 if get(handles.invf_popup,'Value') == 3, handles.invfilter = flipud(iH); end
 if get(handles.invf_popup,'Value') == 4, handles.invfilter = iH; end
-if get(handles.invf_popup,'Value') == 5
+if get(handles.invf_popup,'Value') == 5 % Check these ifs!!!!!!!!!
     iHspec = fft(iH);
     phase = angle(iHspec);
     rmsmag = mean(abs(iHspec).^2)^0.5;
@@ -1091,3 +1091,72 @@ message{9} = '8. Click on -Filter- to apply an octave band filter around 1 kHz o
 message{10} = '9. Click on -Evaluate- to capture the calibration tone level and usable recording length.';
 
 msgbox(message,'AARAE info')
+
+
+
+function IRlength_IN_Callback(hObject, eventdata, handles)
+% hObject    handle to IRlength_IN (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: get(hObject,'String') returns contents of IRlength_IN as text
+%        str2double(get(hObject,'String')) returns contents of IRlength_IN as a double
+
+
+% --- Executes during object creation, after setting all properties.
+function IRlength_IN_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to IRlength_IN (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: edit controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+
+% --- Executes on selection change in preproc_popup.
+function preproc_popup_Callback(hObject, eventdata, handles)
+% hObject    handle to preproc_popup (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: contents = cellstr(get(hObject,'String')) returns preproc_popup contents as cell array
+%        contents{get(hObject,'Value')} returns selected item from preproc_popup
+
+
+% --- Executes during object creation, after setting all properties.
+function preproc_popup_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to preproc_popup (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: popupmenu controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+
+% --- Executes on selection change in postproc_popup.
+function postproc_popup_Callback(hObject, eventdata, handles)
+% hObject    handle to postproc_popup (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: contents = cellstr(get(hObject,'String')) returns postproc_popup contents as cell array
+%        contents{get(hObject,'Value')} returns selected item from postproc_popup
+
+
+% --- Executes during object creation, after setting all properties.
+function postproc_popup_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to postproc_popup (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: popupmenu controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
