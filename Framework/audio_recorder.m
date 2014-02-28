@@ -53,7 +53,7 @@ function audio_recorder_OpeningFcn(hObject, eventdata, handles, varargin)
 % handles    structure with handles and user data (see GUIDATA)
 % varargin   command line arguments to audio_recorder (see VARARGIN)
 
-axis([0 10 -1 1]);
+
 % This next couple of lines checks if the GUI is being called from the main
 % window, otherwise it doesn't run.
 dontOpen = false;
@@ -66,6 +66,9 @@ else
     % Remember the handle, and adjust our position
     handles.main_stage1 = varargin{mainGuiInput+1};
     
+    if ismac
+        fontsize
+    end
     % Call the 'desktop'
     hMain = getappdata(0,'hMain');
     handles.signaldata = getappdata(hMain,'testsignal');
@@ -116,6 +119,7 @@ else
         output_settings{4} = ['Bit depth = ',num2str(handles.outputdata.nbits)];
         output_settings{5} = ['Duration = ',num2str(handles.dur),' s'];
         plot(handles.OUT_axes,handles.t,handles.outputdata.audio)
+        set(handles.OUT_axes,'tag','OUT_axes')
         set(handles.output_settings,'String',output_settings);
         set(handles.text1,'String','Add time');
         set(handles.IN_duration,'String','1');
@@ -148,15 +152,6 @@ else
         handles.nbits = str2num(get(handles.IN_nbits,'String'));
         xlim(handles.IN_axes,[0 round(handles.duration)])
         xlim(handles.OUT_axes,[0 round(handles.duration)])
-    end
-    if ismac
-        aarae = findobj('tag','aarae');
-        aaraechildren = get(aarae,'Children');
-        for i = 1:length(aaraechildren)
-            if ~isempty(get(aaraechildren(i),'tag'))
-                set(aaraechildren(i),'FontSize',10)
-            end
-        end
     end
 end
 

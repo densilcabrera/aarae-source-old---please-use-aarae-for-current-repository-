@@ -53,7 +53,7 @@ function genaudio_OpeningFcn(hObject, eventdata, handles, varargin)
 % handles    structure with handles and user data (see GUIDATA)
 % varargin   command line arguments to genaudio (see VARARGIN)
 
-axis([0 10 -1 1]); xlabel('Time [s]');
+
 % This next couple of lines checks if the GUI is being called from the main
 % window, otherwise it doesn't run.
 dontOpen = false;
@@ -66,13 +66,7 @@ else
     % Remember the handle, and adjust our position
     handles.main_stage1 = varargin{mainGuiInput+1};
     if ismac
-        aarae = findobj('tag','aarae');
-        aaraechildren = get(aarae,'Children');
-        for i = 1:length(aaraechildren)
-            if ~isempty(get(aaraechildren(i),'tag'))
-                set(aaraechildren(i),'FontSize',10)
-            end
-        end
+        fontsize
     end
 end
 
@@ -80,6 +74,7 @@ end
 handles.cycles = 1;
 handles.signaldata = [];
 handles.newleaf = [];
+axis([0 10 -1 1]); xlabel('Time [s]');
 % Update handles structure
 guidata(hObject, handles);
 

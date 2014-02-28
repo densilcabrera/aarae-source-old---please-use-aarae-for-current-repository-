@@ -131,13 +131,7 @@ fprintf(handles.fid, ['Acoustic processing app started ' datestr(now) ' \n\n']);
 guidata(hObject, handles);
 
 if ismac
-    aarae = findobj('tag','aarae');
-    aaraechildren = get(aarae,'Children');
-    for i = 1:length(aaraechildren)
-        if ~isempty(get(aaraechildren(i),'tag'))
-            set(aaraechildren(i),'FontSize',10)
-        end
-    end
+    fontsize
 end
     
 % Set waiting flag in appdata
