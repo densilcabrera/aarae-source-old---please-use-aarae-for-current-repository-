@@ -176,7 +176,7 @@ while choice < 3
                 audiowrite([pathname,filename], out.audio, fs);
             end
         case 3
-            out.audio = [];
+            out = [];
     end
 end
 
