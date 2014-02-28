@@ -106,20 +106,22 @@ if ~isempty(audio) && ~isempty(fs)
 %     set(t,'ColumnWidth',{60});
 %     disptables(f,t);
 
-[r,~] = size(bandID);
-if r > 1
-    bandID = bandID';
-end
-
-[~,c] = size(chanID);
-if c > 1
-    chanID = chanID';
-end
-
-display_data = [[0;chanID],[bandID; round(T*100)/100]];
-
-disp('Estimated reverberation times (in seconds) prior to decay compensation:');
-disp(num2str(display_data));
+% The following needs to be modified to be able to use chanID as a cell (it
+% was written when chanID was a vector).
+% [r,~] = size(bandID);
+% if r > 1
+%     bandID = bandID';
+% end
+% 
+% [~,c] = size(chanID);
+% if c > 1
+%     chanID = chanID';
+% end
+% 
+% display_data = [[0;chanID],[bandID; round(T*100)/100]];
+% 
+% disp('Estimated reverberation times (in seconds) prior to decay compensation:');
+% disp(num2str(display_data));
 
 else
     OUT = [];
