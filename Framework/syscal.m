@@ -63,6 +63,15 @@ if (isempty(mainGuiInput)) ...
 else
     % Remember the handle, and adjust our position
     handles.main_stage1 = varargin{mainGuiInput+1};
+    if ismac
+        aarae = findobj('tag','aarae');
+        aaraechildren = get(aarae,'Children');
+        for i = 1:length(aaraechildren)
+            if ~isempty(get(aaraechildren(i),'tag'))
+                set(aaraechildren(i),'FontSize',10)
+            end
+        end
+    end
 end
 
 if dontOpen

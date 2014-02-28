@@ -149,6 +149,15 @@ else
         xlim(handles.IN_axes,[0 round(handles.duration)])
         xlim(handles.OUT_axes,[0 round(handles.duration)])
     end
+    if ismac
+        aarae = findobj('tag','aarae');
+        aaraechildren = get(aarae,'Children');
+        for i = 1:length(aaraechildren)
+            if ~isempty(get(aaraechildren(i),'tag'))
+                set(aaraechildren(i),'FontSize',10)
+            end
+        end
+    end
 end
 
 % Update handles structure
