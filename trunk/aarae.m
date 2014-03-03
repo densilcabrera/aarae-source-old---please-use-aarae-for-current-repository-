@@ -213,16 +213,45 @@ function aarae_CloseRequestFcn(hObject,eventdata,handles)
 % hObject    handle to aarae (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-
-% Check appdata flag to see if the main GUI is in a wait state
-if getappdata(handles.aarae,'waiting')
-    % The GUI is still in UIWAIT, so call UIRESUME and return
-    uiresume(hObject);
-    setappdata(handles.aarae,'waiting',0);
+if strcmp(get(handles.export_btn,'Enable'),'on')
+    choice = questdlg('Are you sure to want to finish this AARAE session? Unexported data will be lost.',...
+                      'Exit AARAE',...
+                      'Yes','No','Export all & exit','Yes');
+    switch choice
+        case 'Yes'
+            if getappdata(handles.aarae,'waiting')
+                % The GUI is still in UIWAIT, so call UIRESUME and return
+                uiresume(hObject);
+                setappdata(handles.aarae,'waiting',0);
+            else
+                % The GUI is no longer waiting, so destroy it now.
+                delete(hObject);
+            end
+         %   uiresume(handles.aarae);
+        case 'Export all & exit'
+            export_btn_Callback(handles.export_btn,eventdata,handles)
+            if getappdata(handles.aarae,'waiting')
+                % The GUI is still in UIWAIT, so call UIRESUME and return
+                uiresume(hObject);
+                setappdata(handles.aarae,'waiting',0);
+            else
+                % The GUI is no longer waiting, so destroy it now.
+                delete(hObject);
+            end
+            %uiresume(handles.aarae);
+    end
 else
-    % The GUI is no longer waiting, so destroy it now.
-    delete(hObject);
+    uiresume(handles.aarae);
 end
+% Check appdata flag to see if the main GUI is in a wait state
+%if getappdata(handles.aarae,'waiting')
+    % The GUI is still in UIWAIT, so call UIRESUME and return
+%    uiresume(hObject);
+%    setappdata(handles.aarae,'waiting',0);
+%else
+%    % The GUI is no longer waiting, so destroy it now.
+%    delete(hObject);
+%end
 
 
 % --- Executes on button press in save_btn.
