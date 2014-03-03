@@ -133,7 +133,7 @@ if ~isempty(handles.signaldata)
     end
     duration = length(handles.signaldata.audio)/handles.signaldata.fs;
     time = linspace(0,duration,length(handles.signaldata.audio));
-    plot(time,handles.signaldata.audio); % Plot the generated signal
+    plot(time,real(handles.signaldata.audio)); % Plot the generated signal
     xlabel('Time [s]');
     set(handles.axes1,'XTickLabel',num2str(get(handles.axes1,'XTick').'))
     set(handles.play_btn,'Enable','on')
@@ -341,7 +341,7 @@ if isempty(handles.signaldata)
     warndlg('No signal loaded!');
 else
     % Retrieve information from the selected leaf
-    testsignal = handles.signaldata.audio;
+    testsignal = real(handles.signaldata.audio);
     if size(testsignal,2) > 2, testsignal = mean(testsignal,2); end
     if size(testsignal,3) > 1, testsignal = sum(testsignal,3); end
     testsignal = testsignal./max(abs(testsignal));

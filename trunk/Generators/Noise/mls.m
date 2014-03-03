@@ -38,6 +38,8 @@ if nargin == 0
         fs = param(2);
         flag = param(3);
     end
+else
+    param = [];
 end
 if ~isempty(param) || nargin ~= 0
     switch n								%assign taps which will yeild a maximum

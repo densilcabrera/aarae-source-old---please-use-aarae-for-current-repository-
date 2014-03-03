@@ -47,8 +47,15 @@ if octsmooth > 0
         smoothmagspectrum(i,1:size(fftdbin,2))=mean(fftdbin_i);
     end
     fc=fc(2:end);
-    smoothmagspectrum=interp1(fc,smoothmagspectrum,freqeval,'spline');
-    smoothmagspectrum = real(smoothmagspectrum);
+    if ~isreal(fftdbin)
+        absfftdbin=abs(fftdbin);
+        for i=1:length(fe)-1
+            abssmoothspec_i=absfftdbin(fe(i):fe(i+1),:);
+            abssmoothspec(i,1:size(fftdbin,2))=mean(abssmoothspec_i);
+        end
+        smoothmagspectrum = smoothmagspectrum.*abssmoothspec./abs(smoothmagspectrum);
+    end
+    smoothmagspectrum = interp1(fc,smoothmagspectrum,freqeval,'spline');
     smoothmagspectrum = smoothmagspectrum';
 else
     smoothmagspectrum = fftdbin;

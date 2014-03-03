@@ -19,6 +19,8 @@ if nargin == 0
         seed = param(2);
         fs = param(3);
     end
+else
+    param = [];
 end
 if ~isempty(param) || nargin ~= 0
     % Parameters for pseudo-random number generator, as recommended in

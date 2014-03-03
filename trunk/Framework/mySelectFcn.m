@@ -36,6 +36,11 @@ function nodes = mySelectFcn(tree, value)
             set(mainHandles.funcat_box,'Value',1);
             set(mainHandles.fun_box,'Visible','off');
             set(mainHandles.analyze_btn,'Visible','off');
+            if ~isreal(audiodata.audio)
+                set([mainHandles.complextime mainHandles.complexfreq],'Visible','on')
+            else
+                set([mainHandles.complextime mainHandles.complexfreq],'Visible','off')
+            end
             setappdata(hMain,'testsignal', audiodata); % Set leaf contents in the 'desktop'
             if ndims(audiodata.audio) > 2
                 set(mainHandles.channel_panel,'Visible','on');
@@ -75,6 +80,7 @@ function nodes = mySelectFcn(tree, value)
             set(mainHandles.analysis_panel,'Visible','off');
             set(mainHandles.playback_panel,'Visible','off');
             set(mainHandles.channel_panel,'Visible','off');
+            set([mainHandles.complextime mainHandles.complexfreq],'Visible','off')
             setappdata(hMain,'testsignal', []);
         else
             % If selection has no data, hide everything and don't display
@@ -99,6 +105,7 @@ function nodes = mySelectFcn(tree, value)
             set([mainHandles.time_popup mainHandles.freq_popup mainHandles.smoothtime_popup mainHandles.smoothfreq_popup],'Visible','off');
             set(mainHandles.logtime_chk,'Visible','off');
             set(mainHandles.logfreq_chk,'Visible','off');
+            set([mainHandles.complextime mainHandles.complexfreq],'Visible','off')
             setappdata(hMain,'testsignal', []);
         end
     end

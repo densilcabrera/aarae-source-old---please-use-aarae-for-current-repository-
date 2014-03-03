@@ -14,8 +14,8 @@ set(handles.(genvarname(['smooth' axes '_popup'])),'Visible','off');
 if plottype == 1, line = real(line); end
 if plottype == 2, line = line.^2; end
 if plottype == 3, line = 10.*log10(line.^2); end
-if plottype == 4, line = abs(hilbert(line)); end
-if plottype == 5, line = medfilt1(diff([angle(hilbert(line)); zeros(1,size(line,2))])*signaldata.fs/2/pi, 5); end
+if plottype == 4, line = abs(hilbert(real(line))); end
+if plottype == 5, line = medfilt1(diff([angle(hilbert(real(line))); zeros(1,size(line,2))])*signaldata.fs/2/pi, 5); end
 if plottype == 6, line = abs(line); end
 if plottype == 7, line = imag(line); end
 if plottype == 8, line = 10*log10(abs(fft(line)).^2);  set(handles.(genvarname(['smooth' axes '_popup'])),'Visible','on'); end %freq
@@ -39,7 +39,7 @@ if strcmp(get(handles.(genvarname(['smooth' axes '_popup'])),'Visible'),'on')
 end
 if plottype <= 7
     set(handles.(genvarname(['log' axes '_chk'])),'Visible','off');
-    plot(handles.(genvarname(['axes' axes])),t,line) % Plot signal in time domain
+    plot(handles.(genvarname(['axes' axes])),t,real(line)) % Plot signal in time domain
     xlabel(handles.(genvarname(['axes' axes])),'Time [s]');
     set(handles.(genvarname(['axes' axes])),'XTickLabel',num2str(get(handles.(genvarname(['axes' axes])),'XTick').'))
 end

@@ -13,6 +13,8 @@ if nargin == 0
         chans = param(2);
         fs = param(3);
     end
+else
+    param = [];
 end
 if ~isempty(param) || nargin ~= 0
 y = randn(round(duration*fs),chans)/10;

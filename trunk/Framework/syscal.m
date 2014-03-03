@@ -571,11 +571,6 @@ function invf_popup_Callback(hObject, eventdata, handles)
 %        contents{get(hObject,'Value')} returns selected item from invf_popup
 set(handles.invftext,'Visible','off')
 set(handles.invfpreview_btn,'Enable','off')
-if get(hObject,'Value') == 4
-    set(handles.invfsmooth_popup,'Value',1,'Enable','off')
-else
-    set(handles.invfsmooth_popup,'Value',3,'Enable','on')
-end
 guidata(hObject,handles)
 
 % --- Executes during object creation, after setting all properties.
