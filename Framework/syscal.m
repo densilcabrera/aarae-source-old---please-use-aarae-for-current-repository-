@@ -397,10 +397,14 @@ release(handles.har)
 release(handles.hsr1)
 set(hObject,'BackgroundColor',[0.94 0.94 0.94]);
 set(handles.latencytext,'String',[num2str(I) ' samples = ~' num2str(I/handles.mainHandles.fs) ' s'])
-%set([hObject handles.invfdesign_btn handles.invf_popup handles.invfsmooth_popup handles.invfLF_IN handles.invfHF_IN handles.invfIB_IN handles.invfOB_IN handles.invfnfft_IN handles.invflength_IN handles.preproc_popup handles.IRlength_IN handles.postproc_popup],'Enable','on');
+set([hObject handles.invfdesign_btn handles.invf_popup handles.invfsmooth_popup handles.invfLF_IN handles.invfHF_IN handles.invfIB_IN handles.invfOB_IN handles.invfnfft_IN handles.invflength_IN handles.preproc_popup handles.IRlength_IN handles.postproc_popup],'Enable','on');
+set(handles.IRlength_IN,'String',num2str(length(ixy)-I))
 set(handles.invfpreview_btn,'Enable','off')
 set(handles.invftext,'Visible','off')
+set(handles.invfpreview_btn,'Enable','off')
+if isfield(handles,'IRwinline'), handles = rmfield(handles,'IRwinline'); end
 guidata(hObject,handles)
+preproc_popup_Callback(handles.preproc_popup,eventdata,handles)
 
 
 % --- Executes on button press in done_btn.
@@ -566,6 +570,7 @@ function invf_popup_Callback(hObject, eventdata, handles)
 % Hints: contents = cellstr(get(hObject,'String')) returns invf_popup contents as cell array
 %        contents{get(hObject,'Value')} returns selected item from invf_popup
 set(handles.invftext,'Visible','off')
+set(handles.invfpreview_btn,'Enable','off')
 if get(hObject,'Value') == 4
     set(handles.invfsmooth_popup,'Value',1,'Enable','off')
 else
@@ -595,6 +600,7 @@ function invfsmooth_popup_Callback(hObject, eventdata, handles)
 % Hints: contents = cellstr(get(hObject,'String')) returns invfsmooth_popup contents as cell array
 %        contents{get(hObject,'Value')} returns selected item from invfsmooth_popup
 set(handles.invftext,'Visible','off')
+set(handles.invfpreview_btn,'Enable','off')
 guidata(hObject,handles)
 
 
@@ -626,6 +632,7 @@ if isempty(num) || num <= 0 || num >= handles.invfHF
 else
     handles.invfLF = num;
     set(handles.invftext,'Visible','off')
+    set(handles.invfpreview_btn,'Enable','off')
 end
 guidata(hObject,handles)
 
@@ -658,6 +665,7 @@ if isempty(num) || num <= 0 || num <= handles.invfLF
 else
     handles.invfHF = num;
     set(handles.invftext,'Visible','off')
+    set(handles.invfpreview_btn,'Enable','off')
 end
 guidata(hObject,handles)
 
@@ -690,6 +698,7 @@ if isempty(num)
 else
     handles.invfIB = num;
     set(handles.invftext,'Visible','off')
+    set(handles.invfpreview_btn,'Enable','off')
 end
 guidata(hObject,handles)
 
@@ -722,6 +731,7 @@ if isempty(num)
 else
     handles.invfOB = num;
     set(handles.invftext,'Visible','off')
+    set(handles.invfpreview_btn,'Enable','off')
 end
 guidata(hObject,handles)
 
@@ -781,10 +791,15 @@ else
     B=0;
 end
 % Inverse filter design
+sysIR = handles.sysIR(str2num(get(handles.latency_IN,'String')):end);
+if get(handles.preproc_popup,'Value') ~= 1
+    IRwindow = [handles.IRwindow;zeros(length(sysIR)-length(handles.IRwindow),1)];
+    sysIR = sysIR.*IRwindow;
+end
 if get(handles.invf_popup,'Value') ~= 4
-    H = abs(fft(handles.sysIR,nfft));
+    H = abs(fft(sysIR,nfft));
 else
-    H = fft(handles.sysIR,nfft);
+    H = fft(sysIR,nfft);
 end
 smoothfactor = get(handles.invfsmooth_popup,'Value');
 if smoothfactor == 2, octsmooth = 1; end
@@ -793,11 +808,11 @@ if smoothfactor == 4, octsmooth = 6; end
 if smoothfactor == 5, octsmooth = 12; end
 if smoothfactor == 6, octsmooth = 24; end
 if smoothfactor ~= 1, H = octavesmoothing(H, octsmooth, fs); end
-iH=conj(H)./((conj(H).*H).*(conj(B).*B)); % calculating regulated spectral inverse
+iH=conj(H)./((conj(H).*H)+(conj(B).*B)); % calculating regulated spectral inverse
 iH=circshift(ifft(iH,'symmetric'),nfft/2);
-if get(handles.invf_popup,'Value') == 1 || get(handles.invf_popup,'Value') == 3, handles.invfilter=minph(iH); end
-if get(handles.invf_popup,'Value') == 3, handles.invfilter = flipud(iH); end
-if get(handles.invf_popup,'Value') == 4, handles.invfilter = iH; end
+if get(handles.invf_popup,'Value') == 1, handles.invfilter=minph(iH); end
+if get(handles.invf_popup,'Value') == 3, handles.invfilter = flipud(minph(iH)); end
+if get(handles.invf_popup,'Value') == 4 || get(handles.invf_popup,'Value') == 2, handles.invfilter = iH; end
 if get(handles.invf_popup,'Value') == 5 % Check these ifs!!!!!!!!!
     iHspec = fft(iH);
     phase = angle(iHspec);
@@ -806,6 +821,34 @@ if get(handles.invf_popup,'Value') == 5 % Check these ifs!!!!!!!!!
     changed_spectrum(1) = 0; % make DC zero
     changed_spectrum(round(length(iHspec)/2)+1) = 0; % make Nyquist zero
     handles.invfilter = ifft(changed_spectrum);
+end
+if strcmp(get(handles.invflength_IN,'Visible'),'on')
+    invfwintype = get(handles.postproc_popup,'Value');
+    switch invfwintype
+        case 2
+            invfwindow = window(@rectwin,flength);
+            invfwindow = [invfwindow;zeros(nfft-flength,1)];
+            handles.invfilter = handles.invfilter.*invfwindow;
+        case 3
+            invftype = get(handles.invf_popup,'Value');
+            switch invftype
+                case 1
+                    invfwindow = window(@hann,2*flength);
+                    invfwindow = invfwindow(end/2+1:end);
+                    invfwindow = [invfwindow;zeros(nfft-flength,1)];
+                case 2
+                    invfwindow = window(@hann,flength);
+                case 3
+                    invfwindow = window(@hann,2*flength);
+                    invfwindow = invfwindow(end/2+1:end);
+                    invfwindow = flipud([invfwindow;zeros(nfft-flength,1)]);
+                case 4
+                    invfwindow = window(@hann,flength);
+                case 5
+                    invfwindow = window(@hann,flength);
+            end
+            handles.invfilter = handles.invfilter.*invfwindow;
+    end
 end
 handles.output.invfilter = handles.invfilter;
 set(handles.invftext,'Visible','on')
@@ -865,7 +908,7 @@ subplot(2,2,1);plot(t,IRtime,'k',t,convIRtime,'r')
                plot(t,invfilter,'Color',[0 .6 0])
                hold off
                title('Absolute amplitude');xlabel('Time [s]');ylabel('Amplitude')
-               leg = legend('System IR','Filter IR','sysIR*filtIR');
+               leg = legend('System IR','sysIR*filtIR','Filter IR');
                set(leg,'Units','characters')
                posleg = get(leg,'Position');
                set(leg,'Position',[screen(3:4)./2-5 posleg(3:4)])
@@ -903,6 +946,7 @@ else
     if mod(num,2) ~= 0, num = num + 1; set(hObject,'String',num2str(num)); end
     handles.invfnfft = num;
     set(handles.invftext,'Visible','off')
+    set(handles.invfpreview_btn,'Enable','off')
 end
 if num < handles.invflength
     set(handles.invflength_IN,'String',num2str(num))
@@ -939,6 +983,7 @@ if isempty(num) || num <= 0 || num > handles.invfnfft
 else
     handles.invflength = num;
     set(handles.invftext,'Visible','off')
+    set(handles.invfpreview_btn,'Enable','off')
 end
 guidata(hObject,handles)
 
@@ -990,12 +1035,15 @@ if str2num(get(hObject,'String')) <= handles.maxIR
     plot(handles.IRaxes,handles.output.latency/handles.mainHandles.fs,IRlevel(handles.output.latency),'o','Color',[0 .6 0])
     hold(handles.IRaxes,'off')
     ylim(handles.IRaxes,[-60 10])
+    set(handles.IRlength_IN,'String',num2str(length(ixy)-handles.output.latency))
     set(handles.latencytext,'String',[num2str(handles.output.latency) ' samples = ~' num2str(str2num(get(hObject,'String'))/handles.mainHandles.fs) ' s'])
 else
     set(hObject,'String',num2str(handles.output.latency))
     warndlg('Input cannot be greater than the auto-detected latency','AARAE info')
 end
+handles = rmfield(handles,'IRwinline');
 guidata(hObject,handles)
+preproc_popup_Callback(handles.preproc_popup,eventdata,handles)
 
 
 % --- Executes during object creation, after setting all properties.
@@ -1020,7 +1068,7 @@ function latthresh_IN_Callback(hObject, eventdata, handles)
 % Hints: get(hObject,'String') returns contents of latthresh_IN as text
 %        str2double(get(hObject,'String')) returns contents of latthresh_IN as a double
 latthresh = abs(str2num(get(hObject,'String')));
-if 0 <= latthresh && latthresh <= 60
+if 0 < latthresh && latthresh <= 60
     ixy = handles.sysIR;
     handles.latthresh = str2num(get(handles.latthresh_IN,'String'));
     t = linspace(0,length(ixy)/handles.mainHandles.fs,length(ixy));
@@ -1035,13 +1083,16 @@ if 0 <= latthresh && latthresh <= 60
     hold(handles.IRaxes,'off')
     ylim(handles.IRaxes,[-60 10])
     handles.output.latency = I;
-    set(handles.latency_IN,'string',num2str(I))
+    set(handles.latency_IN,'String',num2str(I))
+    set(handles.IRlength_IN,'String',num2str(length(handles.sysIR)-I))
     set(handles.latencytext,'String',[num2str(I) ' samples = ~' num2str(I/handles.mainHandles.fs) ' s'])
 else
     set(hObject,'String',num2str(handles.latthresh))
     warndlg('Threshhold out of boundaries','AARAE info')
 end
+handles = rmfield(handles,'IRwinline');
 guidata(hObject,handles)
+preproc_popup_Callback(handles.preproc_popup,eventdata,handles)
 
 % --- Executes during object creation, after setting all properties.
 function latthresh_IN_CreateFcn(hObject, eventdata, handles)
@@ -1104,6 +1155,16 @@ function IRlength_IN_Callback(hObject, eventdata, handles)
 
 % Hints: get(hObject,'String') returns contents of IRlength_IN as text
 %        str2double(get(hObject,'String')) returns contents of IRlength_IN as a double
+if ~isempty(str2num(get(hObject,'String'))) && str2num(get(hObject,'String')) <= (length(handles.sysIR)-handles.output.latency) && str2num(get(hObject,'String')) > 0
+    preproc_popup_Callback(handles.preproc_popup,eventdata,handles)
+    set(handles.invftext,'Visible','off')
+    set(handles.invfpreview_btn,'Enable','off')
+else
+    set(hObject,'String',num2str(length(handles.sysIR)-handles.output.latency))
+    preproc_popup_Callback(handles.preproc_popup,eventdata,handles)
+    warndlg('Invalid window length','AARAE info')
+end
+%guidata(hObject,handles)
 
 
 % --- Executes during object creation, after setting all properties.
@@ -1127,6 +1188,33 @@ function preproc_popup_Callback(hObject, eventdata, handles)
 
 % Hints: contents = cellstr(get(hObject,'String')) returns preproc_popup contents as cell array
 %        contents{get(hObject,'Value')} returns selected item from preproc_popup
+if get(hObject,'Value') == 1
+    if isfield(handles,'IRwinline'), delete(handles.IRwinline); handles = rmfield(handles,'IRwinline'); end
+    set([handles.prelengthtext handles.IRlength_IN handles.presamplestext],'Visible','off')
+else
+    set([handles.prelengthtext handles.IRlength_IN handles.presamplestext],'Visible','on')
+end
+IRlength = str2num(get(handles.IRlength_IN,'String'));
+if get(hObject,'Value') == 2
+    if isfield(handles,'IRwinline'), delete(handles.IRwinline); handles = rmfield(handles,'IRwinline'); end
+    hold(handles.IRaxes,'on')
+    handles.IRwindow = window(@rectwin,IRlength);
+    t = (linspace(0,IRlength,IRlength)+handles.output.latency)./handles.mainHandles.fs;
+    handles.IRwinline = plot(handles.IRaxes,t,10.*log10(handles.IRwindow),'Color',[1 .6 0]);
+    hold(handles.IRaxes,'off')
+end
+if get(hObject,'Value') == 3
+    if isfield(handles,'IRwinline'), delete(handles.IRwinline); handles = rmfield(handles,'IRwinline'); end
+    hold(handles.IRaxes,'on')
+    handles.IRwindow = window(@hann,2*IRlength);
+    handles.IRwindow = handles.IRwindow(end/2+1:end);
+    t = (linspace(0,IRlength,IRlength)+handles.output.latency)./handles.mainHandles.fs;
+    handles.IRwinline = plot(handles.IRaxes,t,10.*log10(handles.IRwindow),'Color',[1 .6 0]);
+    hold(handles.IRaxes,'off')
+end
+set(handles.invftext,'Visible','off')
+set(handles.invfpreview_btn,'Enable','off')
+guidata(hObject,handles)
 
 
 % --- Executes during object creation, after setting all properties.
@@ -1150,7 +1238,14 @@ function postproc_popup_Callback(hObject, eventdata, handles)
 
 % Hints: contents = cellstr(get(hObject,'String')) returns postproc_popup contents as cell array
 %        contents{get(hObject,'Value')} returns selected item from postproc_popup
-
+if get(hObject,'Value') == 1
+    set([handles.postlengthtext handles.invflength_IN handles.postsamplestext],'Visible','off')
+else
+    set([handles.postlengthtext handles.invflength_IN handles.postsamplestext],'Visible','on')
+end
+set(handles.invftext,'Visible','off')
+set(handles.invfpreview_btn,'Enable','off')
+guidata(hObject,handles)
 
 % --- Executes during object creation, after setting all properties.
 function postproc_popup_CreateFcn(hObject, eventdata, handles)
