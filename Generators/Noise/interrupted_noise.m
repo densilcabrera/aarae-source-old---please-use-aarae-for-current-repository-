@@ -51,6 +51,8 @@ if nargin == 0
         
     end
 elseif nargin < 8, nchan = 1;
+else
+    param = [];
 end
 
 

@@ -583,7 +583,7 @@ if isempty(audiodata)
     warndlg('No signal loaded!');
 else
     % Retrieve information from the selected leaf
-    testsignal = audiodata.audio;
+    testsignal = real(audiodata.audio);
     if size(testsignal,3) > 1, testsignal = sum(testsignal,3); end
     if size(testsignal,2) > 2, testsignal = mean(testsignal,2); end
     testsignal = testsignal./max(max(abs(testsignal)));
@@ -1117,12 +1117,10 @@ if (click == handles.axestime) || (get(click,'Parent') == handles.axestime)
         set(h,'DefaultAxesColorOrder',cmap);
         plottype = get(handles.time_popup,'Value');
         if plottype == 1, line = real(line); end
-        if plottype == 2, line = 10.*log10(line.^2); end
-        if plottype == 3, line = abs(hilbert(line)); end
         if plottype == 2, line = line.^2; end
         if plottype == 3, line = 10.*log10(line.^2); end
-        if plottype == 4, line = abs(hilbert(line)); end
-        if plottype == 5, line = medfilt1(diff([angle(hilbert(line)); zeros(1,size(line,2))])*signaldata.fs/2/pi, 5); end
+        if plottype == 4, line = abs(hilbert(real(line))); end
+        if plottype == 5, line = medfilt1(diff([angle(hilbert(real(line))); zeros(1,size(line,2))])*signaldata.fs/2/pi, 5); end
         if plottype == 6, line = abs(line); end
         if plottype == 7, line = imag(line); end
         if plottype == 8, line = 10*log10(abs(fft(line)).^2); end %freq
@@ -1136,7 +1134,7 @@ if (click == handles.axestime) || (get(click,'Parent') == handles.axestime)
         if plottype == 16, line = unwrap(angle(fft(line))) ./(2*pi); end
         if plottype == 17, line = -diff(unwrap(angle(fft(line)))).*length(fft(line))/(signaldata.fs*2*pi).*1000; end
         if plottype <= 7
-            plot(t,line) % Plot signal in time domain
+            plot(t,real(line)) % Plot signal in time domain
             xlabel('Time [s]');
         end
         if plottype >= 8
@@ -1200,12 +1198,10 @@ if (click == handles.axesfreq) || (get(click,'Parent') == handles.axesfreq)
         set(h,'DefaultAxesColorOrder',cmap);
         plottype = get(handles.freq_popup,'Value');
         if plottype == 1, line = real(line); end
-        if plottype == 2, line = 10.*log10(line.^2); end
-        if plottype == 3, line = abs(hilbert(line)); end
         if plottype == 2, line = line.^2; end
         if plottype == 3, line = 10.*log10(line.^2); end
-        if plottype == 4, line = abs(hilbert(line)); end
-        if plottype == 5, line = medfilt1(diff([angle(hilbert(line)); zeros(1,size(line,2))])*signaldata.fs/2/pi, 5); end
+        if plottype == 4, line = abs(hilbert(real(line))); end
+        if plottype == 5, line = medfilt1(diff([angle(hilbert(real(line))); zeros(1,size(line,2))])*signaldata.fs/2/pi, 5); end
         if plottype == 6, line = abs(line); end
         if plottype == 7, line = imag(line); end
         if plottype == 8, line = 10*log10(abs(fft(line)).^2); end %freq
@@ -1219,7 +1215,7 @@ if (click == handles.axesfreq) || (get(click,'Parent') == handles.axesfreq)
         if plottype == 16, line = unwrap(angle(fft(line))) ./(2*pi); end
         if plottype == 17, line = -diff(unwrap(angle(fft(line)))).*length(fft(line))/(signaldata.fs*2*pi).*1000; end
         if plottype <= 7
-            plot(t,line) % Plot signal in time domain
+            plot(t,real(line)) % Plot signal in time domain
             xlabel('Time [s]');
         end
         if plottype >= 8
@@ -1526,7 +1522,7 @@ if isempty(audiodata)
     warndlg('No signal loaded!');
 else
     % Retrieve information from the selected leaf
-    testsignal = audiodata.audio;
+    testsignal = real(audiodata.audio);
     if size(testsignal,3) > 1, testsignal = sum(testsignal,3); end
     if size(testsignal,2) > 2, testsignal = mean(testsignal,2); end
     testsignal = flipud(testsignal)./max(max(abs(testsignal)));
@@ -1560,7 +1556,7 @@ if isempty(audiodata)
     warndlg('No signal loaded!');
 else
     % Retrieve information from the selected leaf
-    testsignal = audiodata.audio;
+    testsignal = real(audiodata.audio);
     if size(testsignal,3) > 1, testsignal = sum(testsignal,3); end
     if size(testsignal,2) > 2, testsignal = mean(testsignal,2); end
     testsignal = testsignal./max(max(abs(testsignal)));
@@ -1602,7 +1598,7 @@ if isempty(audiodata)
     warndlg('No signal loaded!');
 else
     % Retrieve information from the selected leaf
-    testsignal = audiodata.audio;
+    testsignal = real(audiodata.audio);
     if size(testsignal,3) > 1, testsignal = sum(testsignal,3); end
     if size(testsignal,2) > 2, testsignal = mean(testsignal,2); end
     testsignal = testsignal./max(max(abs(testsignal)));
@@ -1647,7 +1643,7 @@ if isempty(audiodata)
     warndlg('No signal loaded!');
 else
     % Retrieve information from the selected leaf
-    testsignal = audiodata.audio;
+    testsignal = real(audiodata.audio);
     if size(testsignal,3) > 1, testsignal = sum(testsignal,3); end
     if size(testsignal,2) > 2, testsignal = mean(testsignal,2); end
     testsignal = testsignal./max(max(abs(testsignal)));
