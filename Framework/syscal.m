@@ -821,29 +821,31 @@ if strcmp(get(handles.invflength_IN,'Visible'),'on')
     invfwintype = get(handles.postproc_popup,'Value');
     switch invfwintype
         case 2
-            invfwindow = window(@rectwin,flength);
-            invfwindow = [invfwindow;zeros(nfft-flength,1)];
-            handles.invfilter = handles.invfilter.*invfwindow;
+            wintype = @rectwin;
         case 3
-            invftype = get(handles.invf_popup,'Value');
-            switch invftype
-                case 1
-                    invfwindow = window(@hann,2*flength);
-                    invfwindow = invfwindow(end/2+1:end);
-                    invfwindow = [invfwindow;zeros(nfft-flength,1)];
-                case 2
-                    invfwindow = window(@hann,flength);
-                case 3
-                    invfwindow = window(@hann,2*flength);
-                    invfwindow = invfwindow(end/2+1:end);
-                    invfwindow = flipud([invfwindow;zeros(nfft-flength,1)]);
-                case 4
-                    invfwindow = window(@hann,flength);
-                case 5
-                    invfwindow = window(@hann,flength);
-            end
-            handles.invfilter = handles.invfilter.*invfwindow;
+            wintype = @hann;
     end
+    invftype = get(handles.invf_popup,'Value');
+    switch invftype
+        case 1
+            invfwindow = window(wintype,2*flength);
+            invfwindow = invfwindow(end/2+1:end);
+            invfwindow = [invfwindow;zeros(nfft-flength,1)];
+        case 2
+            invfwindow = window(wintype,flength);
+            invfwindow = [zeros((nfft-flength)/2,1);invfwindow;zeros((nfft-flength)/2,1)];
+        case 3
+            invfwindow = window(wintype,2*flength);
+            invfwindow = invfwindow(end/2+1:end);
+            invfwindow = flipud([invfwindow;zeros(nfft-flength,1)]);
+        case 4
+            invfwindow = window(wintype,flength);
+            invfwindow = [zeros((nfft-flength)/2,1);invfwindow;zeros((nfft-flength)/2,1)];
+        case 5
+            invfwindow = window(wintype,flength);
+            invfwindow = [zeros((nfft-flength)/2,1);invfwindow;zeros((nfft-flength)/2,1)];
+    end
+    handles.invfilter = handles.invfilter.*invfwindow;
 end
 handles.output.invfilter = handles.invfilter;
 set(handles.invftext,'Visible','on')
@@ -976,6 +978,7 @@ if isempty(num) || num <= 0 || num > handles.invfnfft
     warndlg('Invalid entry','AARAE info')
     set(hObject,'String',num2str(handles.invflength))
 else
+    if mod(num,2) ~= 0, num = num + 1; set(hObject,'String',num2str(num)); end
     handles.invflength = num;
     set(handles.invftext,'Visible','off')
     set(handles.invfpreview_btn,'Enable','off')

@@ -38,12 +38,18 @@ if strcmp(get(handles.(genvarname(['smooth' axes '_popup'])),'Visible'),'on')
     if smoothfactor ~= 1, line = octavesmoothing(line, octsmooth, signaldata.fs); end
 end
 if plottype <= 7
+    if ~isreal(line)
+        set(handles.(genvarname(['complex' axes])),'Visible','on');
+    else
+        set(handles.(genvarname(['complex' axes])),'Visible','off');
+    end
     set(handles.(genvarname(['log' axes '_chk'])),'Visible','off');
     plot(handles.(genvarname(['axes' axes])),t,real(line)) % Plot signal in time domain
     xlabel(handles.(genvarname(['axes' axes])),'Time [s]');
     set(handles.(genvarname(['axes' axes])),'XTickLabel',num2str(get(handles.(genvarname(['axes' axes])),'XTick').'))
 end
 if plottype >= 8
+    set(handles.(genvarname(['complex' axes])),'Visible','off')
     if plottype == 17, semilogx(handles.(genvarname(['axes' axes])),f(1:end-1),line,'Marker','None'); end
     if plottype ~= 17, semilogx(handles.(genvarname(['axes' axes])),f,line); end % Plot signal in frequency domain
     xlabel(handles.(genvarname(['axes' axes])),'Frequency [Hz]');
