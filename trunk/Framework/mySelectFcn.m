@@ -36,11 +36,6 @@ function nodes = mySelectFcn(tree, value)
             set(mainHandles.funcat_box,'Value',1);
             set(mainHandles.fun_box,'Visible','off');
             set(mainHandles.analyze_btn,'Visible','off');
-            if ~isreal(audiodata.audio)
-                set([mainHandles.complextime mainHandles.complexfreq],'Visible','on')
-            else
-                set([mainHandles.complextime mainHandles.complexfreq],'Visible','off')
-            end
             setappdata(hMain,'testsignal', audiodata); % Set leaf contents in the 'desktop'
             if ndims(audiodata.audio) > 2
                 set(mainHandles.channel_panel,'Visible','on');
