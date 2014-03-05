@@ -398,13 +398,12 @@ audiodata = audio_recorder('main_stage1', handles.aarae);
 % Generate new leaf and update tree with the recording
 handles.mytree.setSelectedNode(handles.root);
 newleaf = getappdata(hMain,'signalname');
-handles.syscalstats = getappdata(hMain,'syscalstats');
-aarae_fig = findobj('type','figure','tag','aarae');
-mainHandles = guidata(aarae_fig);
-if ~isempty(handles.syscalstats)
+savenewsyscalstats = getappdata(hMain,'savenewsyscalstats');
+if savenewsyscalstats == 1
+    handles.syscalstats = getappdata(hMain,'syscalstats');
     handles.mytree.setSelectedNode(handles.root);
     iconPath = fullfile(matlabroot,'/toolbox/matlab/icons/boardicon.gif');
-    handles.syscalstats.datatype = 'measurements';
+    handles.syscalstats.datatype = 'syscal';
     funname = 'System_calibration';
     leafname = isfield(handles,funname);
     if leafname == 1
@@ -422,8 +421,8 @@ if ~isempty(handles.syscalstats)
     handles.mytree.reloadNode(handles.measurements);
     handles.mytree.expand(handles.measurements);
     handles.mytree.setSelectedNode(handles.(genvarname(funname)));
-    set([mainHandles.clrall_btn,mainHandles.export_btn],'Enable','on')
-    fprintf(mainHandles.fid, [' ' datestr(now,16) ' - Saved system calibration data ' handles.funname '\n']);
+    set([handles.clrall_btn,handles.export_btn],'Enable','on')
+    fprintf(handles.fid, [' ' datestr(now,16) ' - Saved system calibration data ' handles.funname '\n']);
 end
 if ~isempty(audiodata)
     audiodata.datatype = 'measurements';

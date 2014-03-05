@@ -11,7 +11,13 @@ function nodes = mySelectFcn(tree, value)
         selectedNodes = selectedNodes(1);
         audiodata = selectedNodes.handle.UserData;
         % Get handles of main window
-        mainHandles = guidata(findobj('Tag','aarae'));
+        aarae_fig = findobj('Tag','aarae');
+        mainHandles = guidata(aarae_fig);
+        if ~isempty(audiodata) && strcmp(audiodata.datatype,'syscal')
+            mainHandles.syscalstats = audiodata;
+            set(mainHandles.signaltypetext,'String',[selectedNodes.getName.char ' selected']);
+            guidata(aarae_fig,mainHandles);
+        end
         if ~isempty(audiodata) && isfield(audiodata,'audio')% If there's data saved in the leaf...
             audiodatatext = evalc('audiodata');
             set(mainHandles.audiodatatext,'String',['Selected: ' selectedNodes.getName.char audiodatatext]); % Output contents in textbox below the tree

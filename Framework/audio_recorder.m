@@ -82,26 +82,29 @@ else
         remember = questdlg('A previous system calibration was found, would you like to reload these settings?','AARAE info','Yes','No','Yes');
         switch remember
             case 'Yes'
-                syscalstats = mainHandles.syscalstats;
-                if isfield(syscalstats,'latency')
-                    handles.syscalstats.latency = syscalstats.latency;
+                handles.savenewsyscal = 0;
+                handles.syscalstats = mainHandles.syscalstats;
+                if isfield(handles.syscalstats,'latency')
+%                    handles.syscalstats.latency = syscalstats.latency;
                     set(handles.delay_chk,'Enable','on','Value',1)
                     set(handles.delaytext,'String',[num2str(handles.syscalstats.latency) ' samples'])
                 end
-                if isfield(syscalstats,'cal')
-                    handles.syscalstats.cal = syscalstats.cal;
+                if isfield(handles.syscalstats,'cal')
+%                    handles.syscalstats.cal = syscalstats.cal;
                     set(handles.cal_chk,'Enable','on','Value',1)
                     set(handles.caltext,'String',[num2str(handles.syscalstats.cal) ' dB'])
                 end
-                if isfield(syscalstats,'invfilter')
-                    handles.syscalstats.invfilter = syscalstats.invfilter;
+                if isfield(handles.syscalstats,'invfilter')
+%                    handles.syscalstats.invfilter = syscalstats.invfilter;
                     set(handles.invfilter_chk,'Enable','on','Value',1)
                     set(handles.invftext,'String','Available')
                 end
             case 'No'
+                handles.savenewsyscal = 1;
                 handles.syscalstats = struct([]);
         end
     else
+        handles.savenewsyscal = 1;
         handles.syscalstats = struct([]);
     end
     if ~isempty(handles.signaldata) && ndims(handles.signaldata.audio) < 3% If there's a signal loaded in the 'desktop'...
@@ -180,8 +183,15 @@ function varargout = audio_recorder_OutputFcn(hObject, eventdata, handles)
 % hObject    handle to figure
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
+
 hMain = getappdata(0,'hMain');
-setappdata(hMain,'syscalstats',handles.syscalstats);
+if handles.savenewsyscal == 1 && ~isempty(handles.syscalstats)
+    setappdata(hMain,'savenewsyscalstats',1);
+    setappdata(hMain,'syscalstats',handles.syscalstats)
+else
+    setappdata(hMain,'savenewsyscalstats',0)
+end
+
 % Get default command line output from handles structure
 varargout{1} = handles.recording;
 delete(hObject);
@@ -675,7 +685,8 @@ function syscal_btn_Callback(hObject, eventdata, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 syscalstats = syscal('audio_recorder', handles.audio_recorder);
-%disp(syscalstats)
+handles.syscalstats(1).sysIR = syscalstats.audio;
+handles.syscalstats(1).fs = syscalstats.fs;
 if isfield(syscalstats,'latency') && ~isnan(syscalstats.latency)
     if isfield(handles.syscalstats,'latency')
         if handles.syscalstats.latency ~= syscalstats.latency
@@ -684,10 +695,12 @@ if isfield(syscalstats,'latency') && ~isnan(syscalstats.latency)
                                        'Yes', 'No', 'No');
              switch replace_value
                  case 'Yes'
+                     handles.savenewsyscal = 1;
                      handles.syscalstats.latency = syscalstats.latency;
              end
         end
     else
+        handles.savenewsyscal = 1;
         handles.syscalstats(1).latency = syscalstats.latency;
     end
     set(handles.delay_chk,'Enable','on','Value',1)
@@ -701,10 +714,12 @@ if isfield(syscalstats,'cal') && ~isnan(syscalstats.cal)
                                        'Yes', 'No', 'No');
              switch replace_value
                  case 'Yes'
+                     handles.savenewsyscal = 1;
                      handles.syscalstats.cal = syscalstats.cal;
              end
         end
     else
+        handles.savenewsyscal = 1;
         handles.syscalstats(1).cal = syscalstats.cal;
     end
     set(handles.cal_chk,'Enable','on','Value',1)
@@ -718,10 +733,12 @@ if isfield(syscalstats,'invfilter') && ~isempty(syscalstats.invfilter)
                                        'Yes', 'No', 'No');
              switch replace_value
                  case 'Yes'
+                     handles.savenewsyscal = 1;
                      handles.syscalstats.invfilter = syscalstats.invfilter;
              end
         end
     else
+        handles.savenewsyscal = 1;
         handles.syscalstats(1).invfilter = syscalstats.invfilter;
     end
     set(handles.invfilter_chk,'Enable','on','Value',1)
