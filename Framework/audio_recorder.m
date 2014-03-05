@@ -685,8 +685,8 @@ function syscal_btn_Callback(hObject, eventdata, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 syscalstats = syscal('audio_recorder', handles.audio_recorder);
-handles.syscalstats(1).sysIR = syscalstats.audio;
-handles.syscalstats(1).fs = syscalstats.fs;
+if isfield(syscalstats,'audio'), handles.syscalstats(1).sysIR = syscalstats.audio; end
+if isfield(syscalstats,'fs'), handles.syscalstats(1).fs = syscalstats.fs; end
 if isfield(syscalstats,'latency') && ~isnan(syscalstats.latency)
     if isfield(handles.syscalstats,'latency')
         if handles.syscalstats.latency ~= syscalstats.latency
