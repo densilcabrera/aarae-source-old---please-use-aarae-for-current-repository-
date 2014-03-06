@@ -85,17 +85,14 @@ else
                 handles.savenewsyscal = 0;
                 handles.syscalstats = mainHandles.syscalstats;
                 if isfield(handles.syscalstats,'latency')
-%                    handles.syscalstats.latency = syscalstats.latency;
                     set(handles.delay_chk,'Enable','on','Value',1)
                     set(handles.delaytext,'String',[num2str(handles.syscalstats.latency) ' samples'])
                 end
                 if isfield(handles.syscalstats,'cal')
-%                    handles.syscalstats.cal = syscalstats.cal;
                     set(handles.cal_chk,'Enable','on','Value',1)
                     set(handles.caltext,'String',[num2str(handles.syscalstats.cal) ' dB'])
                 end
-                if isfield(handles.syscalstats,'invfilter')
-%                    handles.syscalstats.invfilter = syscalstats.invfilter;
+                if isfield(handles.syscalstats,'audio2')
                     set(handles.invfilter_chk,'Enable','on','Value',1)
                     set(handles.invftext,'String','Available')
                 end
@@ -107,7 +104,7 @@ else
         handles.savenewsyscal = 1;
         handles.syscalstats = struct([]);
     end
-    if ~isempty(handles.signaldata) && ndims(handles.signaldata.audio) < 3% If there's a signal loaded in the 'desktop'...
+    if ~isempty(handles.signaldata) && ndims(handles.signaldata.audio) < 3 && ~strcmp(handles.signaldata.datatype,'syscal')% If there's a signal loaded in the 'desktop'...
         % Allow visibility of playback option along with the specs of
         % the playback signal
         mainHandles = guidata(handles.main_stage1);
@@ -685,7 +682,7 @@ function syscal_btn_Callback(hObject, eventdata, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 syscalstats = syscal('audio_recorder', handles.audio_recorder);
-if isfield(syscalstats,'audio'), handles.syscalstats(1).sysIR = syscalstats.audio; end
+if isfield(syscalstats,'audio'), handles.syscalstats(1).audio = syscalstats.audio; end
 if isfield(syscalstats,'fs'), handles.syscalstats(1).fs = syscalstats.fs; end
 if isfield(syscalstats,'latency') && ~isnan(syscalstats.latency)
     if isfield(handles.syscalstats,'latency')
@@ -734,12 +731,12 @@ if isfield(syscalstats,'invfilter') && ~isempty(syscalstats.invfilter)
              switch replace_value
                  case 'Yes'
                      handles.savenewsyscal = 1;
-                     handles.syscalstats.invfilter = syscalstats.invfilter;
+                     handles.syscalstats.audio2 = syscalstats.invfilter;
              end
         end
     else
         handles.savenewsyscal = 1;
-        handles.syscalstats(1).invfilter = syscalstats.invfilter;
+        handles.syscalstats(1).audio2 = syscalstats.invfilter;
     end
     set(handles.invfilter_chk,'Enable','on','Value',1)
     set(handles.invftext,'String','Available')
