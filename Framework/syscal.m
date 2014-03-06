@@ -880,8 +880,8 @@ set(hObject,'Enable','off');
 pause on
 pause(0.000001)
 pause off
-%origIR = ifft(fft(abs(handles.sysIR)),length(handles.invfilter));
-origIR = handles.sysIR;
+
+origIR = handles.sysIR(handles.output.latency:end);
 invfilter = handles.invfilter;
 
 sysIRspec = fft(origIR,length(invfilter));
