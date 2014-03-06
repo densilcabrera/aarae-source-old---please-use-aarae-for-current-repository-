@@ -124,7 +124,7 @@ if nargout(handles.funname) == 1
             index = 1;
             % This while cycle is just to make sure no signals are
             % overwriten
-            if length(genvarname([newleaf,'_',num2str(index)])) >= namelengthmax, newleaf = newleaf(1:round(end/2)); end
+            if length(genvarname(handles.funname)) >= namelengthmax, handles.funname = handles.funname(1:round(end/2)); end
             while isfield(handles,genvarname([handles.funname,'_',num2str(index)])) == 1
                 index = index + 1;
             end

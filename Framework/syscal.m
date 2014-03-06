@@ -807,11 +807,15 @@ if smoothfactor == 5, octsmooth = 12; end
 if smoothfactor == 6, octsmooth = 24; end
 if smoothfactor ~= 1, H = octavesmoothing(H, octsmooth, fs); end
 iH=conj(H)./((conj(H).*H)+(conj(B).*B)); % calculating regulated spectral inverse
-iH=circshift(ifft(iH,'symmetric'),nfft/2);
+% Densil's phylosophy
+aboveone = find(freq > 1000);
+iH = iH + iH(aboveone(1));
+% end
+iH = circshift(ifft(iH,'symmetric'),nfft/2);
 if get(handles.invf_popup,'Value') == 1, handles.invfilter=minph(iH); end
 if get(handles.invf_popup,'Value') == 3, handles.invfilter = flipud(minph(iH)); end
 if get(handles.invf_popup,'Value') == 4 || get(handles.invf_popup,'Value') == 2, handles.invfilter = iH; end
-if get(handles.invf_popup,'Value') == 5 % Check these ifs!!!!!!!!!
+if get(handles.invf_popup,'Value') == 5
     iHspec = fft(iH);
     phase = angle(iHspec);
     rmsmag = mean(abs(iHspec).^2)^0.5;
