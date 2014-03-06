@@ -368,7 +368,7 @@ if isempty(handles.rec)
 else
     hMain = getappdata(0,'hMain');
     if get(handles.delay_chk,'Value') == 1, handles.rec = [handles.rec(handles.syscalstats.latency:end,:);zeros(handles.syscalstats.latency,size(handles.rec,2))]; end
-    if get(handles.invfilter_chk,'Value') == 1, handles.rec = filter(handles.syscalstats.invfilter,1,handles.rec); end
+    if get(handles.invfilter_chk,'Value') == 1, handles.rec = filter(handles.syscalstats.audio2,1,handles.rec); end
     handles.recording.audio = handles.rec;
     if get(handles.pb_enable,'Value') && isfield(handles.outputdata,'audio2')
         handles.recording.audio2 = handles.outputdata.audio2;
@@ -789,7 +789,7 @@ if isempty(handles.rec)
 else
 %    hMain = getappdata(0,'hMain');
     if get(handles.delay_chk,'Value') == 1, handles.rec = [handles.rec(handles.syscalstats.latency:end,:);zeros(handles.syscalstats.latency-1,size(handles.rec,2))]; end
-    if get(handles.invfilter_chk,'Value') == 1, handles.rec = filter(handles.syscalstats.invfilter,1,handles.rec); end
+    if get(handles.invfilter_chk,'Value') == 1, handles.rec = filter(handles.syscalstats.audio2,1,handles.rec); end
     time1 = linspace(0,size(handles.rec,1)/handles.fs,length(handles.rec));
     time2 = linspace(0,size(handles.testsignal,1)/handles.fs,length(handles.testsignal));
     figure
