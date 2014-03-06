@@ -809,7 +809,9 @@ if smoothfactor ~= 1, H = octavesmoothing(H, octsmooth, fs); end
 iH=conj(H)./((conj(H).*H)+(conj(B).*B)); % calculating regulated spectral inverse
 % Densil's phylosophy
 aboveone = find(freq > 1000);
-iH = iH + iH(aboveone(1));
+iH = 20.*log10(iH);
+iH = iH - iH(aboveone(1));
+iH = 10.^(iH/20);
 % end
 iH = circshift(ifft(iH,'symmetric'),nfft/2);
 if get(handles.invf_popup,'Value') == 1, handles.invfilter=minph(iH); end
