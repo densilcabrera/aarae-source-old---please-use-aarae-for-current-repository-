@@ -382,7 +382,7 @@ else
     handles.recording.fs = handles.fs;
     handles.recording.nbits = handles.nbits;
     handles.recording.chanID = cellstr([repmat('Chan',size(handles.recording.audio,2),1) num2str((1:size(handles.recording.audio,2))')]);
-    if get(handles.cal_chk,'Value') == 1, handles.recording.cal = handles.syscalstats.cal; end
+    if get(handles.cal_chk,'Value') == 1, handles.recording.cal = handles.syscalstats.cal(1:size(handles.recording.audio,2)); end
     name = get(handles.IN_name,'String');
     if isempty(name), name = 'untitled'; end
     setappdata(hMain,'signalname',name);
@@ -705,7 +705,7 @@ if isfield(syscalstats,'latency') && ~isnan(syscalstats.latency)
     set(handles.delay_chk,'Enable','on','Value',1)
     set(handles.delaytext,'String',[num2str(handles.syscalstats.latency) ' samples'])
 end
-if isfield(syscalstats,'cal') && ~isnan(syscalstats.cal)
+if isfield(syscalstats,'cal')% && ~isnan(syscalstats.cal)
     if isfield(handles.syscalstats,'cal')
         if handles.syscalstats.cal ~= syscalstats.cal
              replace_value = questdlg(['The gain calibration measurement has changed from ' num2str(handles.syscalstats.cal) ' dB to ' num2str(syscalstats.cal) ' dB. Would you like to replace this value?'],...

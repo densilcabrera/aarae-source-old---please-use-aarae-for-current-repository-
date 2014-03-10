@@ -667,6 +667,7 @@ if ~isempty(getappdata(hMain,'testsignal'))
     signaldata.audio = IR;
     signaldata.fs = fs;
     signaldata.nbits = nbits;
+    signaldata.chanID = cellstr([repmat('Chan',size(signaldata.audio,2),1) num2str((1:size(signaldata.audio,2))')]);
     signaldata.datatype = 'IR';
     iconPath = fullfile(matlabroot,'/toolbox/fixedpoint/fixedpointtool/resources/plot.png');
     handles.(genvarname(newleaf)) = uitreenode('v0', newleaf,  newleaf,  iconPath, true);
