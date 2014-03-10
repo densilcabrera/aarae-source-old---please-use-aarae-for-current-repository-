@@ -22,7 +22,7 @@ function varargout = syscal(varargin)
 
 % Edit the above text to modify the response to help syscal
 
-% Last Modified by GUIDE v2.5 28-Feb-2014 17:45:01
+% Last Modified by GUIDE v2.5 10-Mar-2014 10:38:42
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -279,7 +279,7 @@ dur = length(trim)/handles.mainHandles.fs;
 trimlevel = tonelevel - 10 .* log10(mean(trimdata(trim).^2,1));
 stats{1} = ['Sampling frequency: ' num2str(handles.mainHandles.fs) ' samples/s'];
 stats{2} = ['Trimmed recording length: ' num2str(dur) ' s'];
-stats{3} = ['Trimmed audio level: ' num2str(trimlevel) ' dB'];
+stats{3} = ['Calibration offset: ' num2str(trimlevel) ' dB'];
 if ~isnan(trimlevel), set(handles.caltonetext,'Visible','on'); end
 set(handles.statstext,'String',stats);
 set(hObject,'BackgroundColor',[0.94 0.94 0.94]);
@@ -338,18 +338,18 @@ function evaldelay_btn_Callback(hObject, eventdata, handles)
 % hObject    handle to evaldelay_btn (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-
+duration = str2num(get(handles.slength_IN,'String'));
 set(hObject,'Enable','off');
 stimulus = get(handles.stimulus_popup,'Value');
 switch stimulus
     case 1
-        S = impulse1(0,1,1,handles.mainHandles.fs);
-        handles.hsr1.Signal = S.audio;
+        S = impulse1(0,duration,1,handles.mainHandles.fs);
+        handles.hsr1.Signal = S.audio(1:duration*handles.mainHandles.fs);
     case 2
-        S = linear_sweep(1,1,handles.mainHandles.fs/2,handles.mainHandles.fs);
+        S = exponential_sweep(duration,1,handles.mainHandles.fs/2,handles.mainHandles.fs);
         handles.hsr1.Signal = S.audio;
     case 3
-        S = noise(-1,1,handles.mainHandles.fs,1,handles.mainHandles.fs/2,1,1,0);
+        S = noise(-1,duration,handles.mainHandles.fs,1,handles.mainHandles.fs/2,1,0,0);
         handles.hsr1.Signal = S.audio;
 end
 handles.hsr1.Signal = [handles.hsr1.Signal;zeros(length(handles.hsr1.Signal),1)];
@@ -371,9 +371,19 @@ catch sthgwrong
 end
 if ~isempty(rec)
     qd = handles.mainHandles.fs*handles.hap.QueueDuration;
-    rec = rec(qd:qd+48000-1);
-    Txy = tfestimate(handles.hsr1.Signal(1:48000),rec,[],[],[],handles.mainHandles.fs);
-    ixy = ifft(Txy,length(Txy)*2);
+    rec = rec(qd:end);
+    rec = [rec;zeros(length(handles.hsr1.Signal)-length(rec),1)];
+    if stimulus == 1
+        ixy = rec;
+    else
+        ixy = ifft(fft(rec) .* fft([S.audio2;zeros(length(S.audio2),1)]));
+        ixy = fftshift(ixy);
+    end
+    ixy = ixy(1:end/2);
+    LIxy = (mean((20.*log10(abs(fft(ixy)))).^2)).^0.5;
+    ixy = ixy./10^(LIxy/20);
+%    Txy = tfestimate(handles.hsr1.Signal,rec,[],[],[],handles.mainHandles.fs);
+%    ixy = ifft(Txy,length(Txy)*2);
     t = linspace(0,length(ixy)/handles.mainHandles.fs,length(ixy));
     IRlevel = (10.*log10((abs(ixy)./max(abs(ixy))).^2));
     abovethresh = find(IRlevel > abs(str2num(get(handles.latthresh_IN,'String')))*-1);
@@ -808,10 +818,10 @@ if smoothfactor == 6, octsmooth = 24; end
 if smoothfactor ~= 1, H = octavesmoothing(H, octsmooth, fs); end
 iH=conj(H)./((conj(H).*H)+(conj(B).*B)); % calculating regulated spectral inverse
 % Densil's phylosophy
-aboveone = find(freq > 1000);
-iH = 20.*log10(iH);
-iH = iH - iH(aboveone(1));
-iH = 10.^(iH/20);
+%aboveone = find(freq > 1000);
+%iH = 20.*log10(iH);
+%iH = iH - iH(aboveone(1));
+%iH = 10.^(iH/20);
 % end
 iH = circshift(ifft(iH,'symmetric'),nfft/2);
 if get(handles.invf_popup,'Value') == 1, handles.invfilter=minph(iH); end
@@ -1261,6 +1271,30 @@ function postproc_popup_CreateFcn(hObject, eventdata, handles)
 % handles    empty - handles not created until after all CreateFcns called
 
 % Hint: popupmenu controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+
+
+function slength_IN_Callback(hObject, eventdata, handles)
+% hObject    handle to slength_IN (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: get(hObject,'String') returns contents of slength_IN as text
+%        str2double(get(hObject,'String')) returns contents of slength_IN as a double
+
+
+
+% --- Executes during object creation, after setting all properties.
+function slength_IN_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to slength_IN (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: edit controls usually have a white background on Windows.
 %       See ISPC and COMPUTER.
 if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
     set(hObject,'BackgroundColor','white');
