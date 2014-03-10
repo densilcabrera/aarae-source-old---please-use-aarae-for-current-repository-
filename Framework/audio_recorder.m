@@ -248,7 +248,9 @@ if get(handles.pb_enable,'Value') == 1
     handles.har = dsp.AudioRecorder('SampleRate',handles.outputdata.fs,'OutputDataType','double','NumChannels',handles.numchs,'BufferSizeSource','Property','BufferSize',128);
     % Set playback audio
     handles.hsr1 = dsp.SignalSource;
-    handles.hsr1.Signal = [handles.outputdata.audio;zeros(floor((handles.addtime+handles.hap.QueueDuration)*handles.fs),size(handles.outputdata.audio,2))];
+    playbackaudio = handles.outputdata.audio;
+    if get(handles.invfilter_chk,'Value') == 1, playbackaudio = filter(handles.syscalstats.audio2,1,playbackaudio); end
+    handles.hsr1.Signal = [playbackaudio;zeros(floor((handles.addtime+handles.hap.QueueDuration)*handles.fs),size(playbackaudio,2))];
     handles.hsr1.SamplesPerFrame = 1024;
     guidata(hObject,handles)
     handles.rec = [];
