@@ -1041,7 +1041,7 @@ function latency_IN_Callback(hObject, eventdata, handles)
 
 % Hints: get(hObject,'String') returns contents of latency_IN as text
 %        str2double(get(hObject,'String')) returns contents of latency_IN as a double
-if str2num(get(hObject,'String')) <= handles.maxIR
+if str2num(get(hObject,'String')) <= handles.maxIR && str2num(get(hObject,'String')) > 0
     handles.output.latency = round(str2num(get(hObject,'String')));
     set(hObject,'String',round(str2num(get(hObject,'String'))))
     ixy = handles.sysIR;
@@ -1056,7 +1056,7 @@ if str2num(get(hObject,'String')) <= handles.maxIR
     set(handles.latencytext,'String',[num2str(handles.output.latency) ' samples = ~' num2str(str2num(get(hObject,'String'))/handles.mainHandles.fs) ' s'])
 else
     set(hObject,'String',num2str(handles.output.latency))
-    warndlg('Input cannot be greater than the auto-detected latency','AARAE info')
+    warndlg('Input cannot be greater than the auto-detected latency or zero','AARAE info')
 end
 handles = rmfield(handles,'IRwinline');
 guidata(hObject,handles)
@@ -1285,7 +1285,10 @@ function slength_IN_Callback(hObject, eventdata, handles)
 
 % Hints: get(hObject,'String') returns contents of slength_IN as text
 %        str2double(get(hObject,'String')) returns contents of slength_IN as a double
-
+if isempty(str2num(get(hObject,'String'))) || str2num(get(hObject,'String')) <=0
+    warndlg('Invalid entry','AARAE info')
+    set(hObject,'String','1')
+end
 
 
 % --- Executes during object creation, after setting all properties.
