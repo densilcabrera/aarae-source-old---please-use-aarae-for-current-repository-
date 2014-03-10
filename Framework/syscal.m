@@ -22,7 +22,7 @@ function varargout = syscal(varargin)
 
 % Edit the above text to modify the response to help syscal
 
-% Last Modified by GUIDE v2.5 10-Mar-2014 10:38:42
+% Last Modified by GUIDE v2.5 11-Mar-2014 10:26:01
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -94,6 +94,11 @@ else
     handles.output = struct;
     xlabel(handles.IRaxes,'Time [s]')
     ylim(handles.IRaxes,[-60 10])
+    deviceinfo = dspAudioDeviceInfo;
+    set(handles.devnametext,'String',deviceinfo.name)
+    channels = cellstr([repmat('IN - Channel',deviceinfo.maxInputs,1) num2str((1:deviceinfo.maxInputs).')]);
+    set(handles.channum_popup,'String',channels)
+    handles.output.cal(1,1:deviceinfo.maxInputs) = NaN;
     guidata(hObject, handles);
     uiwait(hObject);
 end
@@ -129,28 +134,29 @@ if filename ~= 0
         file = importdata(fullfile(pathname,filename));
         if isstruct(file)
             handles.audio = file.audio;
-            handles.fs = file.fs;
+%            handles.fs = file.fs;
         else
-            fs = inputdlg('Please specify the sampling frequency','Sampling frequency',1);
-            if (isempty(specs))
-                warndlg('Input field is blank, cannot load data!');
-                handles.audio = [];
-            else
-                fs = str2num(specs{1,1});
-                if (isempty(fs) || fs<=0)
-                    warndlg('Input MUST be a real positive number, cannot load data!');
-                    handles.audio = [];
-                else
+%            fs = inputdlg('Please specify the sampling frequency','Sampling frequency',1);
+%            if (isempty(specs))
+%                warndlg('Input field is blank, cannot load data!');
+%                handles.audio = [];
+%            else
+%                fs = str2num(specs{1,1});
+%                if (isempty(fs) || fs<=0)
+%                    warndlg('Input MUST be a real positive number, cannot load data!');
+%                    handles.audio = [];
+%                else
                     handles.audio = file;
-                    handles.fs = fs;
-                end
-            end
+%                    handles.fs = fs;
+%                end
+%            end
         end
     end
     if ~isempty(regexp(filename, '.wav', 'once'))
-        [handles.audio,handles.fs] = wavread(fullfile(pathname,filename));
+        [handles.audio] = wavread(fullfile(pathname,filename));
     end;
-    plot(handles.dispaxes,handles.audio)
+    t = linspace(0,length(handles.audio)/handles.mainHandles.fs,length(handles.audio));
+    plot(handles.dispaxes,t,handles.audio)
     xlabel(handles.dispaxes,'Time [s]');
     set([handles.sperframe_IN,handles.percentage_IN,handles.threshold_IN,handles.tonelevel_IN,handles.evalcal_btn,handles.filter_btn],'Enable','on')
 else
@@ -265,13 +271,14 @@ while (~isDone(hsr1))
 end
 
 release(hsr1)
+t = linspace(0,length(data)/handles.mainHandles.fs,length(data));
 trimdata = data.*rec(1:length(data));
-plot(handles.dispaxes,data,'c')
+plot(handles.dispaxes,t,data,'c')
 xlabel(handles.dispaxes,'Time [s]');
 YLim = get(handles.dispaxes,'YLim');
 hold on
-plot(handles.dispaxes,trimdata,'b')
-plot(handles.dispaxes,(rec(1:length(data)).*10)-5,'Color','r','LineWidth',1)
+plot(handles.dispaxes,t,trimdata,'b')
+plot(handles.dispaxes,t,(rec(1:length(data)).*10)-5,'Color','r','LineWidth',1)
 set(handles.dispaxes,'YLim',YLim)
 hold off
 trim = find(trimdata);
@@ -284,7 +291,7 @@ if ~isnan(trimlevel), set(handles.caltonetext,'Visible','on'); end
 set(handles.statstext,'String',stats);
 set(hObject,'BackgroundColor',[0.94 0.94 0.94]);
 set(hObject,'Enable','on');
-handles.output.cal = trimlevel;
+handles.output.cal(1,get(handles.channum_popup,'Value')) = trimlevel;
 guidata(hObject,handles)
 
 
@@ -447,11 +454,12 @@ switch filter
     case '250 Hz'
         [handles.filtaudio,~] = thirdoctbandfilter(handles.audio,handles.mainHandles.fs,250);
 end
+t = linspace(0,length(handles.audio)/handles.mainHandles.fs,length(handles.audio));
 if ~isempty(handles.filtaudio)
-    plot(handles.dispaxes,handles.filtaudio)
+    plot(handles.dispaxes,t,handles.filtaudio)
     xlabel(handles.dispaxes,'Time [s]');
 else
-    plot(handles.dispaxes,handles.audio)
+    plot(handles.dispaxes,t,handles.audio)
     xlabel(handles.dispaxes,'Time [s]');
 end
 set(hObject,'BackgroundColor',[0.94 0.94 0.94]);
@@ -477,17 +485,17 @@ function record_btn_Callback(hObject, eventdata, handles)
 % handles    structure with handles and user data (see GUIDATA)
 set([handles.sperframe_IN,handles.percentage_IN,handles.threshold_IN,handles.tonelevel_IN,handles.evalcal_btn,handles.filter_btn],'Enable','off')
 dur = str2double(get(handles.duration_IN,'String'))*handles.mainHandles.fs;
-set(hObject,'BackgroundColor','red');
 set(hObject,'Enable','off');
 set(handles.stop_btn,'Visible','on');
 pause on
 pause(0.000001)
 pause off
 % Set record object
-% handles.har = dsp.AudioRecorder('SampleRate',handles.mainHandles.fs,'OutputDataType','double','NumChannels',handles.numchs,'BufferSizeSource','Property','BufferSize',128,'QueueDuration',.1);
+set(handles.har,'NumChannels',get(handles.channum_popup,'Value'))
 guidata(hObject,handles)
 rec = [];
 % Initialize record routine
+set(hObject,'BackgroundColor','red');
 try
     UserData = get(handles.stop_btn,'UserData');
     while length(rec) < dur
@@ -510,6 +518,7 @@ catch sthgwrong
 end
 % Check recording and adjust for Duration
 if ~isempty(rec)
+    rec = rec(:,get(handles.channum_popup,'Value'));
     if UserData.state == false
         rec = rec(1:dur);
     else
@@ -1302,3 +1311,35 @@ function slength_IN_CreateFcn(hObject, eventdata, handles)
 if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
     set(hObject,'BackgroundColor','white');
 end
+
+
+% --- Executes on selection change in channum_popup.
+function channum_popup_Callback(hObject, eventdata, handles)
+% hObject    handle to channum_popup (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: contents = cellstr(get(hObject,'String')) returns channum_popup contents as cell array
+%        contents{get(hObject,'Value')} returns selected item from channum_popup
+
+
+% --- Executes during object creation, after setting all properties.
+function channum_popup_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to channum_popup (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: popupmenu controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+
+% --- Executes on button press in calfield_btn.
+function calfield_btn_Callback(hObject, eventdata, handles)
+% hObject    handle to calfield_btn (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+deviceinfo = dspAudioDeviceInfo;
+msgbox(num2str([(1:deviceinfo.maxInputs);handles.output.cal]'))
