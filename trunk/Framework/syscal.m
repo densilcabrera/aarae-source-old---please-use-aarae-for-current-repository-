@@ -22,7 +22,7 @@ function varargout = syscal(varargin)
 
 % Edit the above text to modify the response to help syscal
 
-% Last Modified by GUIDE v2.5 11-Mar-2014 10:26:01
+% Last Modified by GUIDE v2.5 11-Mar-2014 13:58:43
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -87,6 +87,7 @@ else
     set(handles.percentage_IN,'String','40')
     set(handles.threshold_IN,'String','0.1')
     set(handles.tonelevel_IN,'String','94')
+    set(handles.tolerance_IN,'String','0.1')
     stats{1} = ['Sampling frequency: ' num2str(handles.mainHandles.fs) ' samples/s'];
     set(handles.statstext,'String',stats);
     UserData.state = false;
@@ -158,7 +159,9 @@ if filename ~= 0
     t = linspace(0,length(handles.audio)/handles.mainHandles.fs,length(handles.audio));
     plot(handles.dispaxes,t,handles.audio)
     xlabel(handles.dispaxes,'Time [s]');
-    set([handles.sperframe_IN,handles.percentage_IN,handles.threshold_IN,handles.tonelevel_IN,handles.evalcal_btn,handles.filter_btn],'Enable','on')
+    recrms = (mean(handles.audio.^2))^0.5;
+    set(handles.threshold_IN,'String',num2str(recrms))
+    set([handles.sperframe_IN,handles.percentage_IN,handles.tolerance_IN,handles.threshold_IN,handles.tonelevel_IN,handles.evalcal_btn,handles.filter_btn],'Enable','on')
 else
     warndlg('Unable to load file','AARAE info')
 end
@@ -260,10 +263,11 @@ hsr1.SamplesPerFrame = str2double(get(handles.sperframe_IN,'String'));
 percentage = str2double(get(handles.percentage_IN,'String'));
 threshold = str2double(get(handles.threshold_IN,'String'));
 tonelevel = str2double(get(handles.tonelevel_IN,'String'));
+tolerance = str2double(get(handles.tolerance_IN,'String'));
 ms = [];
 while (~isDone(hsr1))
     chunk = step(hsr1);
-    ms = [ms;ones(size(chunk)).*mean(abs(chunk))];
+    ms = [ms;ones(size(chunk)).*mean(chunk.^2)];
 %    chunklevel = trimmean(chunk,percentage);
 %    if chunklevel > threshold
 %        rec = [rec;ones(length(chunk),1)];
@@ -274,9 +278,9 @@ end
 release(hsr1)
 ms = ms(1:length(data));
 rec = ones(size(ms));
-rec(find(ms<threshold)) = 0;
-m = trimmean(ms(find(ms>threshold)),percentage);
-rec(find(ms>m*(1+std(ms)))) = 0;
+rec(find(ms<threshold^2)) = 0;
+m = trimmean(ms(find(ms>threshold^2)),percentage);
+rec(find(ms>m*(1+tolerance))) = 0;
 
 t = linspace(0,length(data)/handles.mainHandles.fs,length(data));
 trimdata = data.*rec(1:length(data));
@@ -469,6 +473,8 @@ else
     plot(handles.dispaxes,t,handles.audio)
     xlabel(handles.dispaxes,'Time [s]');
 end
+recrms = (mean(handles.audio.^2))^0.5;
+set(handles.threshold_IN,'String',num2str(recrms))
 set(hObject,'BackgroundColor',[0.94 0.94 0.94]);
 set(hObject,'Enable','on');
 guidata(hObject,handles)
@@ -490,7 +496,7 @@ function record_btn_Callback(hObject, eventdata, handles)
 % hObject    handle to record_btn (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-set([handles.sperframe_IN,handles.percentage_IN,handles.threshold_IN,handles.tonelevel_IN,handles.evalcal_btn,handles.filter_btn],'Enable','off')
+set([handles.sperframe_IN,handles.percentage_IN,handles.tolerance_IN,handles.threshold_IN,handles.tonelevel_IN,handles.evalcal_btn,handles.filter_btn],'Enable','off')
 dur = str2double(get(handles.duration_IN,'String'))*handles.mainHandles.fs;
 set(hObject,'Enable','off');
 set(handles.stop_btn,'Visible','on');
@@ -543,7 +549,9 @@ set(handles.record_btn,'Enable','on');
 set(handles.stop_btn,'Visible','off');
 % Release record object
 release(handles.har)
-set([handles.sperframe_IN,handles.percentage_IN,handles.threshold_IN,handles.tonelevel_IN,handles.evalcal_btn,handles.filter_btn],'Enable','on')
+recrms = (mean(rec.^2))^0.5;
+set(handles.threshold_IN,'String',num2str(recrms))
+set([handles.sperframe_IN,handles.percentage_IN,handles.tolerance_IN,handles.threshold_IN,handles.tonelevel_IN,handles.evalcal_btn,handles.filter_btn],'Enable','on')
 guidata(hObject,handles);
 
 % --- Executes on button press in stop_btn.
@@ -1350,3 +1358,26 @@ function calfield_btn_Callback(hObject, eventdata, handles)
 % handles    structure with handles and user data (see GUIDATA)
 deviceinfo = dspAudioDeviceInfo;
 msgbox(num2str([(1:deviceinfo.maxInputs);handles.output.cal]'))
+
+
+
+function tolerance_IN_Callback(hObject, eventdata, handles)
+% hObject    handle to tolerance_IN (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: get(hObject,'String') returns contents of tolerance_IN as text
+%        str2double(get(hObject,'String')) returns contents of tolerance_IN as a double
+
+
+% --- Executes during object creation, after setting all properties.
+function tolerance_IN_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to tolerance_IN (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: edit controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
