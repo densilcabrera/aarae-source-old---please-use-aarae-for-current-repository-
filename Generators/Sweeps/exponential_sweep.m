@@ -18,7 +18,9 @@ if nargin == 0
         start_freq = param(2);
         end_freq = param(3);
         fs = param(4);
-    end    
+    end
+else
+    param = [];
 end
 if ~isempty(param) || nargin ~=0
     if (exist('fs') ~= 1)
