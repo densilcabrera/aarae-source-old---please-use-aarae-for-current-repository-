@@ -84,8 +84,8 @@ else
     handles.hsr1.SamplesPerFrame = 1024;
     set(handles.duration_IN,'String','10')
     set(handles.sperframe_IN,'String',num2str(handles.mainHandles.fs*0.1))
-    set(handles.percentage_IN,'String','0.4')
-    set(handles.threshold_IN,'String','0.2')
+    set(handles.percentage_IN,'String','40')
+    set(handles.threshold_IN,'String','0.1')
     set(handles.tonelevel_IN,'String','94')
     stats{1} = ['Sampling frequency: ' num2str(handles.mainHandles.fs) ' samples/s'];
     set(handles.statstext,'String',stats);
@@ -252,25 +252,32 @@ if isfield(handles,'filtaudio')
 else
     data = handles.audio;
 end
-envelope = abs(hilbert(data));
+%envelope = abs(hilbert(data));
 hsr1 = dsp.SignalSource;
-hsr1.Signal = envelope;
+%hsr1.Signal = envelope;
+hsr1.Signal = data;
 hsr1.SamplesPerFrame = str2double(get(handles.sperframe_IN,'String'));
-rec = [];
 percentage = str2double(get(handles.percentage_IN,'String'));
 threshold = str2double(get(handles.threshold_IN,'String'));
 tonelevel = str2double(get(handles.tonelevel_IN,'String'));
+ms = [];
 while (~isDone(hsr1))
     chunk = step(hsr1);
-    chunklevel = trimmean(chunk,percentage);
-    if chunklevel > threshold
-        rec = [rec;ones(length(chunk),1)];
-    else
-        rec = [rec;zeros(length(chunk),1)];
-    end
+    ms = [ms;ones(size(chunk)).*mean(abs(chunk))];
+%    chunklevel = trimmean(chunk,percentage);
+%    if chunklevel > threshold
+%        rec = [rec;ones(length(chunk),1)];
+%    else
+%        rec = [rec;zeros(length(chunk),1)];
+%    end
 end
-
 release(hsr1)
+ms = ms(1:length(data));
+rec = ones(size(ms));
+rec(find(ms<threshold)) = 0;
+m = trimmean(ms(find(ms>threshold)),percentage);
+rec(find(ms>m*(1+std(ms)))) = 0;
+
 t = linspace(0,length(data)/handles.mainHandles.fs,length(data));
 trimdata = data.*rec(1:length(data));
 plot(handles.dispaxes,t,data,'c')
