@@ -198,7 +198,10 @@ function percentage_IN_Callback(hObject, eventdata, handles)
 
 % Hints: get(hObject,'String') returns contents of percentage_IN as text
 %        str2double(get(hObject,'String')) returns contents of percentage_IN as a double
-
+if isempty(str2num(get(hObject,'String'))) || str2num(get(hObject,'String')) <=0 || str2num(get(hObject,'String')) >= 100
+    warndlg('Invalid entry. Percentage must be a scalar between 0 and 100.','AARAE info')
+    set(hObject,'String','40')
+end
 
 % --- Executes during object creation, after setting all properties.
 function percentage_IN_CreateFcn(hObject, eventdata, handles)
@@ -1368,7 +1371,10 @@ function tolerance_IN_Callback(hObject, eventdata, handles)
 
 % Hints: get(hObject,'String') returns contents of tolerance_IN as text
 %        str2double(get(hObject,'String')) returns contents of tolerance_IN as a double
-
+if isempty(str2num(get(hObject,'String'))) || str2num(get(hObject,'String')) < 0
+    warndlg('Invalid entry','AARAE info')
+    set(hObject,'String','0.1')
+end
 
 % --- Executes during object creation, after setting all properties.
 function tolerance_IN_CreateFcn(hObject, eventdata, handles)
