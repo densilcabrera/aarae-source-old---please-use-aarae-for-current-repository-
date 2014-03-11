@@ -13,12 +13,20 @@ if nargin < 2
 end
     if ~isempty(audio) && ~isempty(fs)
         if isdir([cd '/Processors/Filters/' num2str(fs) 'Hz'])
+        
             content = load([cd '/Processors/Filters/' num2str(fs) 'Hz/B-WeightingFilter.mat']);
             filterbank = content.filterbank;
             processed = filter(filterbank,1,audio);
-        end
-    else
-        % Insert alternative code for weighting filters
+        
+        else
+        % work out some other way of weighting
+%         WT    = 'B';    % Weighting type (but 'B' does not exist in
+%                         % filterbuilder, so this code won't work)
+%         Class = 1;      % Class
+%         h = fdesign.audioweighting('WT,Class', WT, Class, fs);
+%         Hd = design(h, 'ansis142', ...
+%        'SOSScaleNorm', 'Linf');
+%         processed = filter(Hd,audio);
     end
     if isstruct(IN)
         OUT = IN;
