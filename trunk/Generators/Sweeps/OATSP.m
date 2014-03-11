@@ -52,7 +52,7 @@ if ~isempty(param) || nargin ~=0
     OUT.audio = S;
     OUT.audio2 = Sinv;
     OUT.fs = fs;
-    OUT.tag = ['Sine sweep linear' num2str(dur)];
+    OUT.tag = ['OATS' num2str(dur)];
 else
     OUT = [];
 end
