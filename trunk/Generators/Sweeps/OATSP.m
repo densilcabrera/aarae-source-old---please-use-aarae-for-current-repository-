@@ -34,20 +34,15 @@ if ~isempty(param) || nargin ~=0
     end
     
     
-    N = round(dur * fs);
-    k = (1:N)';
-    Hlow = exp(1i * 4 * m * pi * k(k<=N/2).^2 ./ N.^2);
-    if mod(N,2) == 0
-        % even N
-        H = [Hlow;conj(flipud(Hlow(2:end)))];
-    else
-        % odd N
-        H = [Hlow;conj(flipud(Hlow))];
-    end
-    S = real(ifft(H));
-    S = circshift(S,-round(N/2-m));
+    N = 2*ceil(dur * fs/2);
+    m = (N*m)/2;
+    k = (0:N/2)';
+    Hlow = exp(1i * 4 * m * pi * k.^2 ./ N.^2);
+    H = [Hlow;conj(flipud(Hlow(2:end)))];
+    Sinv = ifft(H);
+    Sinv = circshift(Sinv,-round(N/2-m));
     
-    Sinv = flipud(S);
+    S = flipud(Sinv);
 
     OUT.audio = S;
     OUT.audio2 = Sinv;
