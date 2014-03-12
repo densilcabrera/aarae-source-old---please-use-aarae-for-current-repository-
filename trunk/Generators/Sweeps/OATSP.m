@@ -15,7 +15,7 @@ function OUT = OATSP(dur,m,fs)
 
 if nargin == 0
     param = inputdlg({'Duration [s]';...
-                       'm (positive integer)';...
+                       'Ratio of main sweep to duration [between 0 and 1]';...
                        'Sampling Frequency [samples/s]'},...
                        'Sine sweep input parameters',1,{'1';'0.5';'48000'});
     param = str2num(char(param));
@@ -35,7 +35,7 @@ if ~isempty(param) || nargin ~=0
     
     
     N = 2*ceil(dur * fs/2);
-    m = (N*m)/2;
+    m = round((N*m)/2);
     k = (0:N/2)';
     Hlow = exp(1i * 4 * m * pi * k.^2 ./ N.^2);
     H = [Hlow;conj(flipud(Hlow(2:end)))];
