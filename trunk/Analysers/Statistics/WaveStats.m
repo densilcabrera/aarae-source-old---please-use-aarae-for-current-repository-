@@ -5,7 +5,7 @@ if isstruct(inputwave)
     if isfield(inputwave,'bandID')
         bandID = inputwave.bandID;
     end
-        if isfield(inputwave,'chanID')
+    if isfield(inputwave,'chanID')
         chanID = inputwave.chanID;
     end
 end
