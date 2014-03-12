@@ -372,6 +372,9 @@ switch stimulus
     case 3
         S = noise(-1,duration,handles.mainHandles.fs,1,handles.mainHandles.fs/2,1,0,0);
         handles.hsr1.Signal = S.audio;
+    case 4
+        S = OATSP(duration,0.5,handles.mainHandles.fs);
+        handles.hsr1.Signal = S.audio./max(abs(S.audio));
 end
 handles.hsr1.Signal = [handles.hsr1.Signal;zeros(length(handles.hsr1.Signal),1)];
 set(hObject,'BackgroundColor','red');
@@ -826,7 +829,7 @@ else
     B=0;
 end
 % Inverse filter design
-sysIR = handles.sysIR(str2num(get(handles.latency_IN,'String')):end);
+sysIR = handles.sysIR;%(str2num(get(handles.latency_IN,'String')):end);
 if get(handles.preproc_popup,'Value') ~= 1
     IRwindow = [handles.IRwindow;zeros(length(sysIR)-length(handles.IRwindow),1)];
     sysIR = sysIR.*IRwindow;
@@ -920,7 +923,7 @@ pause on
 pause(0.000001)
 pause off
 
-origIR = handles.sysIR(handles.output.latency:end);
+origIR = handles.sysIR;%(handles.output.latency:end);
 invfilter = handles.invfilter;
 
 sysIRspec = fft(origIR,length(invfilter));
