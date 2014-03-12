@@ -73,6 +73,9 @@ else
     audio = 10.^((10*log10(audio) + cal)./10);
 end
 
+out.Lenergy = 10*log10(sum(audio)./fs);
+out.Lenergy = permute(out.Lenergy,[3,2,1]);
+
 out.Leq = 10*log10(mean(audio));
 out.Leq = permute(out.Leq,[3,2,1]);
 
@@ -95,17 +98,20 @@ ymax = 10*ceil(max(max(out.Lmax+5))/10);
 ymin = 10*floor(min(min(out.L90))/10)-20;
 
 
-% Still need to write output tables and good figures
+% Still need to write output tables and improve the figures
 
 for ch = 1:chans
     for b = 1:bands
         figure('Name','Cumulative Distribution')
-        plot(((1:len)'-1)./fs,10*log10(sort(audio(:,ch,b))))
+        y = sort(audio(:,ch,b));
+        plot(((1:len)'-1)./fs,10*log10(y))
         hold on
         ylabel('Level (dB)')
         xlabel('Duration (s)')
         ylim([ymin ymax])
         text(0.7*(len-1)/fs,ymin+0.5*(ymax-ymin),...
-            ['Leq = ',num2str(out.Leq(ch,b)),' dB'])
+            ['Leq = ',num2str(out.Leq(b,ch)),' dB'])
+        text(0.7*(len-1)/fs,ymin+0.4*(ymax-ymin),...
+            ['Lenergy = ',num2str(out.Lenergy(b,ch)),' dB'])
     end
 end
