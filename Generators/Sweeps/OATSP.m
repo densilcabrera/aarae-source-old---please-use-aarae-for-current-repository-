@@ -10,7 +10,7 @@
 % The sweep bandwidth is always 0 Hz to the Nyquist frequency.
 %
 % code by Densil Cabrera & Daniel Jimenez
-% version 1.00 (13 March 2013)
+% version 1.00 (13 March 2014)
 
 function OUT = OATSP(dur,mratio,fs)
 
