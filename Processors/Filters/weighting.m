@@ -65,9 +65,7 @@ if ~isempty(audio) && ~isempty(fs) && ~isempty(weight)
                 ((f.^2 + 79919.29).*(f.^2+1345600))).^0.5;
             
         otherwise
-           disp('Please input a valid weighting value (e.g. ''a'')')
-           OUT = [];
-           return
+           tf = 1+f*0;
     end
     
     tf = [tf;0;flipud(tf(2:end))];
