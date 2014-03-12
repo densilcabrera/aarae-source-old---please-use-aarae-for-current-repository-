@@ -82,7 +82,8 @@ else
     % Find the IR signal being sent to window
     impulse = find(strcmp(varargin, 'IR'));
     handles.IR = varargin{impulse+1};
-    plot(handles.IN_axes,handles.IR)
+    t = linspace(0,size(handles.IR,1),size(handles.IR,1));
+    plot(handles.IN_axes,t,handles.IR)
     xlabel(handles.IN_axes,'Samples');
     set(handles.IN_axes,'XTickLabel',num2str(get(handles.IN_axes,'XTick').'))
     [~, id] = max(abs(handles.IR));
@@ -90,6 +91,10 @@ else
     set(handles.IN_length, 'string',num2str(max(id))); % Get the IR length from input
     trimsamp_low = max(id)-round(IRlength./2);
     trimsamp_high = trimsamp_low + IRlength -1;
+    B=interp1([0 trimsamp_low trimsamp_low+1 trimsamp_high-1 trimsamp_high t(end)],[0 0 max(handles.IR(:)) max(handles.IR(:)) 0 0],t,'linear');
+    hold(handles.IN_axes,'on')
+    handles.win = plot(handles.IN_axes,B,'r');
+    hold(handles.IN_axes,'off')
     trimIR = handles.IR(trimsamp_low:trimsamp_high,:); % Crop IR
     plot(handles.OUT_axes,trimIR) % Plot cropped IR
     xlabel(handles.OUT_axes,'Samples');
@@ -150,10 +155,16 @@ if (isempty(IRlength)||IRlength<=0||IRlength>max(id))
     warndlg('Invalid length!','Whoops..!');
     set(handles.IN_length,'string',num2str(max(id)));
 else
+    delete(handles.win)
+    handles = rmfield(handles,'win');
     handles.IRlength = IRlength;
-    
     trimsamp_low = max(id)-round(handles.IRlength./2);
     trimsamp_high = trimsamp_low + handles.IRlength -1;
+    t = linspace(0,size(handles.IR,1),size(handles.IR,1));
+    B=interp1([0 trimsamp_low trimsamp_low+1 trimsamp_high-1 trimsamp_high t(end)],[0 0 max(handles.IR(:)) max(handles.IR(:)) 0 0],t,'linear');
+    hold(handles.IN_axes,'on')
+    handles.win = plot(handles.IN_axes,B,'r');
+    hold(handles.IN_axes,'off')
     trimIR = handles.IR(trimsamp_low:trimsamp_high,:);
     plot(handles.OUT_axes,trimIR)
     xlabel(handles.OUT_axes,'Samples');
