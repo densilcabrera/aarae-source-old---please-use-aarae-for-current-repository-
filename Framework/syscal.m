@@ -95,7 +95,7 @@ else
     handles.output = struct;
     xlabel(handles.IRaxes,'Time [s]')
     ylim(handles.IRaxes,[-60 10])
-    deviceinfo = dspAudioDeviceInfo;
+    deviceinfo = dspAudioDeviceInfo('defaultInput');
     set(handles.devnametext,'String',deviceinfo.name)
     channels = cellstr([repmat('IN - Channel',deviceinfo.maxInputs,1) num2str((1:deviceinfo.maxInputs).')]);
     set(handles.channum_popup,'String',channels)
