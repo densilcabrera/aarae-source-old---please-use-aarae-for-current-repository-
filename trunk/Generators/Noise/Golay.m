@@ -69,6 +69,7 @@ end
             OUT.fs = fs;
             OUT.audio2 = audio;
             OUT.tag = ['Golay',num2str(N0)];
+            OUT.param = [fs,N,silence];
         end
         
 
