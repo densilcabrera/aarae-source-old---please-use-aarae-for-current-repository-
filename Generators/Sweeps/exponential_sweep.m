@@ -2,7 +2,7 @@
 %
 function OUT = exponential_sweep(dur,start_freq,end_freq,fs)% generates an exponentially swept
 % signal S, starting at start_freq Hz and ending at end_freq Hz,
-% for duration = dur seconds long, having a default sampling rate of fs = 44100 Hz and an
+% for duration = dur seconds long, and an
 % amplitude of ampl = 0.5, with a raised cosine window applied for rcos_ms = 15 ms.
 % Sinv is the inverse of S.
 if nargin == 0
@@ -23,8 +23,8 @@ else
     param = [];
 end
 if ~isempty(param) || nargin ~=0
-    if (exist('fs') ~= 1)
-       fs = 44100;
+    if ~exist('fs','var')
+       fs = 48000;
     end
     SI = 1/fs;
     ampl = 0.5;
@@ -49,7 +49,7 @@ if ~isempty(param) || nargin ~=0
 
     % correction for allpass delay
     Sinvfft = fft(Sinv);
-    Sinvfft = Sinvfft.*exp(j*2*pi*[0:(sig_len-1)]*(sig_len-1)/sig_len);
+    Sinvfft = Sinvfft.*exp(1i*2*pi*(0:(sig_len-1))*(sig_len-1)/sig_len);
     Sinv = real(ifft(Sinvfft));
 
     if scale_inv == 1
@@ -66,6 +66,9 @@ if ~isempty(param) || nargin ~=0
     OUT.audio2 = Sinv';
     OUT.fs = fs;
     OUT.tag = ['Sine sweep exp' num2str(dur)];
+    OUT.dur = dur;
+    OUT.freq = [start_freq, end_freq];
+    OUT.param = [dur,start_freq,end_freq,fs];
 else
     OUT = [];
 end

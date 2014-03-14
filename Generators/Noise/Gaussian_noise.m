@@ -25,6 +25,7 @@ y = randn(round(duration*fs),chans)/10;
     OUT.audio2 = flipud(y);
     OUT.fs = fs;
     OUT.tag = tag;
+    OUT.param = [duration, chans, fs];
 else
     OUT = [];
 end

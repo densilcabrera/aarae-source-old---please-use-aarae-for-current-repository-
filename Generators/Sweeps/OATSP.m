@@ -10,22 +10,24 @@
 % The sweep bandwidth is always 0 Hz to the Nyquist frequency.
 %
 % code by Densil Cabrera & Daniel Jimenez
-% version 1.00 (13 March 2014)
+% version 1.01 (14 March 2014)
 
-function OUT = OATSP(dur,mratio,fs)
+function OUT = OATSP(dur,mratio,fs,donorm)
 
 
 if nargin == 0
     param = inputdlg({'Duration [s]';...
                        'Ratio of main sweep duration to remaining duration [between 0 and 1]';...
-                       'Sampling rate [Hz]'},...
-                       'OATSP input parameters',1,{'1';'0.5';'48000'});
+                       'Sampling rate [Hz]';...
+                       'Normalize output [0 | 1]'},...
+                       'OATSP input parameters',1,{'1';'0.5';'48000';'1'});
     param = str2num(char(param));
-    if length(param) < 3, param = []; end
+    if length(param) < 4, param = []; end
     if ~isempty(param)
         dur = param(1);
         mratio = param(2);
         fs = param(3);
+        donorm = param(4);
     end   
 else
     param = [];
@@ -37,6 +39,9 @@ if ~isempty(param) || nargin ~=0
     if ~exist('mratio','var')
        mratio = 0.5;
     end
+    if ~exist('donorm','var')
+       donorm = 1;
+    end
     
     N = 2*ceil(dur * fs/2);
     m = round((N*mratio)/2);
@@ -47,11 +52,21 @@ if ~isempty(param) || nargin ~=0
     Sinv = circshift(Sinv,-round(N/2-m));
     
     S = flipud(Sinv);
+    
+    if donorm == 1
+        S = S ./ max(abs(S));
+    end
 
     OUT.audio = S;
     OUT.audio2 = Sinv;
     OUT.fs = fs;
     OUT.tag = ['OATSP_',num2str(mratio),'_', num2str(dur)];
+    OUT.dur = dur;
+    OUT.mratio = mratio;
+    OUT.m = m;
+    OUT.N = N;
+    OUT.freq = [0, fs/2];
+    OUT.param = [dur,mratio,fs,donorm];
 else
     OUT = [];
 end

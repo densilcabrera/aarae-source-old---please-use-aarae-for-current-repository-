@@ -173,6 +173,12 @@ if ~isempty(param) || nargin ~= 0
     OUT.audio2 = y2;
     OUT.fs = fs;
     OUT.tag = tag;
+    OUT.fexponent = fexponent;
+    OUT.dur = duration;
+    OUT.freq = [flow, fhigh];
+    OUT.window = window; 
+    OUT.param = [fexponent, duration, fs, flow, fhigh, nchan, window, display];
+    OUT.functionname = 'noise';
 else
     OUT = [];
 end

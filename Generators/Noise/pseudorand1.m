@@ -42,6 +42,8 @@ y = 2*(y-1) ./(max(y)-1) -1; % normalize to -1 / 1
     OUT.audio2 = flipud(y);
     OUT.fs = fs;
     OUT.tag = tag;
+    OUT.dur = duration;
+    OUT.seed = seed;
 else
     OUT = [];
 end
