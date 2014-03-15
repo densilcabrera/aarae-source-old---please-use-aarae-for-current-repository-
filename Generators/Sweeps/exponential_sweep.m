@@ -68,7 +68,7 @@ if ~isempty(param) || nargin ~=0
     OUT.tag = ['Sine sweep exp' num2str(dur)];
     OUT.dur = dur;
     OUT.freq = [start_freq, end_freq];
-    OUT.param = [dur,start_freq,end_freq,fs];
+    OUT.param = {dur,start_freq,end_freq,fs};
 else
     OUT = [];
 end

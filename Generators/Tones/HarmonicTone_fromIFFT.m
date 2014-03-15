@@ -94,6 +94,7 @@ if ~isempty(param) || nargin ~= 0
         %OUT.audio2 = ?;
         OUT.fs = fs;
         OUT.tag = [num2str(f0),'Hz HarmonicTone'];
+        OUT.param = {fs, duration, f0, phase, slope};
     end
     
     

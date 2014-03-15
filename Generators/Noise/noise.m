@@ -177,8 +177,7 @@ if ~isempty(param) || nargin ~= 0
     OUT.dur = duration;
     OUT.freq = [flow, fhigh];
     OUT.window = window; 
-    OUT.param = [fexponent, duration, fs, flow, fhigh, nchan, window, display];
-    OUT.functionname = 'noise';
+    OUT.param = {fexponent, duration, fs, flow, fhigh, nchan, window, display};
 else
     OUT = [];
 end

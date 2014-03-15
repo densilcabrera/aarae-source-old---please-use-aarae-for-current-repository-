@@ -66,7 +66,7 @@ if ~isempty(param) || nargin ~=0
     OUT.m = m;
     OUT.N = N;
     OUT.freq = [0, fs/2];
-    OUT.param = [dur,mratio,fs,donorm];
+    OUT.param = {dur,mratio,fs,donorm};
 else
     OUT = [];
 end

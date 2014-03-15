@@ -73,6 +73,7 @@ if ~isempty(param) || nargin ~= 0
         OUT.audio2 = audio2;     
         OUT.fs = fs;       
         OUT.tag = 'logspaced tone';  
+        OUT.param = {fs, duration, f0, density, octavetype, phase, slope};
     end
     
    

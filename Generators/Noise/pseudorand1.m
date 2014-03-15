@@ -44,6 +44,7 @@ y = 2*(y-1) ./(max(y)-1) -1; % normalize to -1 / 1
     OUT.tag = tag;
     OUT.dur = duration;
     OUT.seed = seed;
+    OUT.param = {duration,seed,fs};
 else
     OUT = [];
 end
