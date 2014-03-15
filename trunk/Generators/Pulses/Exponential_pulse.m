@@ -1,4 +1,4 @@
-function [OUT, varargout] = Exponential_pulse(fs,T,edge)
+function [OUT, varargout] = Exponential_pulse(fs,T,edge,hifreq,lofreq,dispersion,wind,modF)
 % This function generates an exponential pulse.
 %
 % It calls a the function 'pulsegen' (by Philip, 2011). This function, and
@@ -39,8 +39,8 @@ if nargin == 0 % If the function is called within the AARAE environment it
         fs = param(1);
         T = param(2);
         edge = param(3);
-        hif = param(4)/(0.5*fs);
-        lof = param(5)/(0.5*fs);
+        hifreq = param(4);
+        lofreq = param(5);
         dispersion = param(6);
         wind = param(7);
         modF = param(8);
@@ -50,7 +50,8 @@ if nargin == 0 % If the function is called within the AARAE environment it
 % either entered some parameters as inputs or that the inputs have been
 % acquired through the input dialog window.
 if ~isempty(param) || nargin ~= 0
-
+    hif = hifreq/(0.5*fs);
+    lof = lofreq/(0.5*fs);
     % call pulsegen
     audio=pulsegen(fs,T,edge,'exponential','window',wind,'modulation',modF,'low_pass',hif,'high_pass',lof,'dispersion',dispersion);
     
@@ -58,7 +59,8 @@ if ~isempty(param) || nargin ~= 0
         OUT.audio = audio'; % You NEED to provide the audio you generated.
         %OUT.audio2 = ?;     You may provide additional audio derived from your function.
         OUT.fs = fs;       % You NEED to provide the sampling frequency of your audio.
-        OUT.tag = 'ExponentialPulse';      
+        OUT.tag = 'ExponentialPulse'; 
+        OUT.param = {fs,T,edge,hifreq,lofreq,dispersion,wind,modF};
     end
     
     % You may choose to increase the functionality of your code by allowing

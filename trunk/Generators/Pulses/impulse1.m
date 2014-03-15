@@ -1,5 +1,5 @@
-function OUT = impulse1(duration_pre,duration_post,Amplitude, fs)
-% Generates a single sample impulse with a specified duration of silence
+function OUT = impulse1(duration_pre,duration_post,amplitude, fs)
+% Generates a Kronecker delta function with a specified duration of silence
 % before and/or after.
 if nargin == 0
     param = inputdlg({'Duration of silence before impulse [s]';...
@@ -12,7 +12,7 @@ if nargin == 0
     if ~isempty(param)
         duration_pre = param(1);
         duration_post = param(2);
-        Amplitude = param(3);
+        amplitude = param(3);
         fs = param(4);
     end
 else
@@ -34,12 +34,13 @@ if ~isempty(param) || nargin ~= 0
         wave_post = [];
     end
     
-    y = [wave_pre; Amplitude; wave_post];
-    tag = ['Impulse_' num2str(samples_pre) '_' num2str(samples_post) '_' num2str(Amplitude)];
+    y = [wave_pre; amplitude; wave_post];
+    tag = ['Impulse_' num2str(samples_pre) '_' num2str(samples_post) '_' num2str(amplitude)];
     
     OUT.audio = y;
     OUT.fs = fs;
     OUT.tag = tag;
+    OUT.param = {duration_pre,duration_post,amplitude, fs};
 else
     OUT = [];
 end
