@@ -1,7 +1,5 @@
-function  OUT = mls(n,flag)
+function  OUT = mls(n,flag,fs)
 
-%y = mls(n,{flag});
-%
 %Generates a Maximum Length Sequence of n bits by utilizing a 
 %linear feedback shift register with an XOR gate on the tap bits 
 %
@@ -228,6 +226,7 @@ if ~isempty(param) || nargin ~= 0
     OUT.audio2 = flipud(y');
     OUT.fs = fs;
     OUT.tag = 'MLS';
+    OUT.param = {n,flag,fs};
 else
     OUT = [];
 end

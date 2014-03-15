@@ -40,7 +40,8 @@ if ~isempty(param) || nargin ~= 0
     if nargin == 0
         OUT.audio = audio; 
         OUT.fs = fs;
-        OUT.tag = 'Silence';      
+        OUT.tag = 'Silence'; 
+        OUT.param = {fs, duration, chans, bands};
     end
     
    

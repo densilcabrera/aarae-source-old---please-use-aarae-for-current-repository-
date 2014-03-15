@@ -28,6 +28,7 @@ if ~isempty(param) || nargin ~= 0
     OUT.audio2 = y2;
     OUT.fs = fs;
     OUT.tag = tag;
+    OUT.param = {duration, frequency, fs};
 else
     OUT = [];
 end

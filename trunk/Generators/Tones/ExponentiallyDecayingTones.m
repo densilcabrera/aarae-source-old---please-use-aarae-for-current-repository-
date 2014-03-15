@@ -125,6 +125,7 @@ if (~isempty(param) && ~isempty(T)) || nargin ~= 0
         %OUT.audio2 = ?;     You may provide additional audio derived from your function.
         OUT.fs = fs;       % You NEED to provide the sampling frequency of your audio.
         %OUT.tag = tag;      You may assign it a name to be identified in AARAE.
+        OUT.param = {tpo, flow,fhigh,duration,fs,T};
     end
     
     % You may choose to increase the functionality of your code by allowing
