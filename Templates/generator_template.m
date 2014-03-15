@@ -1,4 +1,4 @@
-function [OUT varargout] = generator_template(input_1, input_2)
+function [OUT, varargout] = generator_template(input_1, input_2)
 % This function can be used as a template for adapting your audio
 % generating functions to work in the AARAE environment.
 %
@@ -88,6 +88,10 @@ end
             %OUT.audio2 = ?;     You may provide additional audio derived from your function.
             OUT.fs = fs;       % You NEED to provide the sampling frequency of your audio.
             %OUT.tag = tag;      You may assign it a name to be identified in AARAE.
+            
+            OUT.param = {input_1,input_2}; % assign all of the input parameters that 
+            % could be used to call the function without dialog box to the 
+            % output field param (as a cell array).
         end
         
         % You may choose to increase the functionality of your code by allowing
