@@ -67,6 +67,7 @@ end
 if ~exist('order','var')
     orderin = 36; % default filter in-band pseudo-order
     orderout = 24; % default filter out-of-band pseudo-order
+    order = [36, 24];
 else
     if length(order) == 1
         orderin = abs(order); 
@@ -393,6 +394,7 @@ if ok == 1
         OUT = IN;
         OUT.audio = filtered;
         OUT.bandID = param;
+        OUT.param = {'audio',fs,param,order,zeropad,minfftlenfactor,test,phasemode};
     else
         OUT = filtered;
     end

@@ -81,6 +81,7 @@ if ~isempty(audio) && ~isempty(fs) && ~isempty(weight)
     if isstruct(IN)
         OUT = IN; % replicate the input structure for the output
         OUT.audio = audio; 
+        OUT.param = {'audio', fs, weight};
     else
         
         OUT = audio;
