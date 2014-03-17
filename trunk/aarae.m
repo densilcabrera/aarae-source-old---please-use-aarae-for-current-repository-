@@ -322,8 +322,9 @@ function load_btn_Callback(hObject, eventdata, handles)
     'Select audio file',[cd '/Audio']);
 
 if filename ~= 0
+    [~,~,ext] = fileparts(filename);
     % Check type of file. First 'if' is for .mat, second is for .wav
-    if ~isempty(regexp(filename, '.mat', 'once'))
+    if strcmp(ext,'.mat')
         file = importdata(fullfile(pathname,filename));
         if isstruct(file)
             signaldata = file;
@@ -346,7 +347,7 @@ if filename ~= 0
             end
         end
     end
-    if ~isempty(regexp(filename, '.wav', 'once'))
+    if strcmp(ext,'.wav')
         [signaldata.audio,signaldata.fs,signaldata.nbits] = wavread(fullfile(pathname,filename));
     end;
     
