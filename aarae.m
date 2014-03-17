@@ -681,7 +681,7 @@ if isfield(audiodata,'startflag')
                     newS_pad = [newS; zeros(size(invS(:,j),1),size(newS,2))];
                     invS_pad = [repmat(invS(:,j),1,size(newS,2)); zeros(size(newS))];
                     convolve = convolvedemo(newS_pad, invS_pad, 2, fs);
-                    IR(:,j,2,1:size(newS,2)) = [convolve;zeros(ladjust-length(convolve),size(newS,2))]; % Calls convolvedemo.m
+                    IR(:,j,1,1:size(newS,2)) = [convolve;zeros(ladjust-length(convolve),size(newS,2))]; % Calls convolvedemo.m
                 end
                 S = newS;
                 invS = repmat(invS,1,size(S,2));
