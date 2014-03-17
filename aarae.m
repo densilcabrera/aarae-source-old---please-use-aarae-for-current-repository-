@@ -696,8 +696,7 @@ if method == 1 || method == 3
 end
 if method == 1% || method == 2
     IRlength = window_signal('main_stage1', handles.aarae,'IR',IR); % Calls the trimming GUI window to trim the IR
-    absolute = abs(IR);
-    [~, id] = max(absolute(:));
+    [~, id] = max(abs(IR));
     trimsamp_low = id-round(IRlength./2);
     trimsamp_high = trimsamp_low + IRlength -1;
     IR = IR(trimsamp_low:trimsamp_high,:);
