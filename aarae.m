@@ -1190,10 +1190,10 @@ if (click == handles.axestime) || (get(click,'Parent') == handles.axestime)
             xlim([f(2) signaldata.fs/2])
             if log_check == 1
                 set(gca,'XScale','log')
-                set(gca,'XTickLabel',num2str(get(gca,'XTick').'))
+                %set(gca,'XTickLabel',num2str(get(gca,'XTick').'))
             else
-                set(gca,'XScale','linear','XTickLabelMode','auto')
-                set(gca,'XTickLabel',num2str(get(gca,'XTick').'))
+                set(gca,'XScale','linear')%,'XTickLabelMode','auto')
+                %set(gca,'XTickLabel',num2str(get(gca,'XTick').'))
             end
         end
         if handles.alternate == 0
@@ -1271,10 +1271,10 @@ if (click == handles.axesfreq) || (get(click,'Parent') == handles.axesfreq)
             log_check = get(handles.logfreq_chk,'Value');
             if log_check == 1
                 set(gca,'XScale','log')
-                set(gca,'XTickLabel',num2str(get(gca,'XTick').'))
+                %set(gca,'XTickLabel',num2str(get(gca,'XTick').'))
             else
-                set(gca,'XScale','linear','XTickLabelMode','auto')
-                set(gca,'XTickLabel',num2str(get(gca,'XTick').'))
+                set(gca,'XScale','linear')%,'XTickLabelMode','auto')
+                %set(gca,'XTickLabel',num2str(get(gca,'XTick').'))
             end
         end
         if handles.alternate == 0
