@@ -647,6 +647,13 @@ invS = audiodata.audio2;
 fs = audiodata.fs;
 nbits = audiodata.nbits;
 selectedNodes = handles.mytree.getSelectedNodes;
+if isfield(audiodata,'startflag')
+    len = audiodata.startflag(2)-audiodata.startflag(1);
+    for i = 1:length(audiodata.startflag)
+        newS(:,i) = S(audiodata.startflag(i):audiodata.startflag(i)+len-1);
+    end
+    S = mean(newS,2);
+end
 
 % Get the lines below in a function
 % Maybe more alternatives to processing IRs should be implemented

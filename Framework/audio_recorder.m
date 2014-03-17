@@ -362,6 +362,7 @@ hMain = getappdata(0,'hMain');
 % Obtain handles using GUIDATA with the caller's handle
 
 handles.testsignal = handles.rec;
+handles.recording = handles.outputdata;
 
 % Warnings...
 if isempty(handles.rec)
