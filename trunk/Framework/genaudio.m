@@ -125,12 +125,15 @@ set(hObject,'Enable','on');
 if ~isempty(handles.signaldata)
     set(handles.OK_Btn,'Enable','on')
     if handles.cycles > 1
-        handles.signaldata.audio = [handles.signaldata.audio;zeros(handles.signaldata.fs,1)];
-        handles.signaldata.startflag = ((0:handles.cycles-1)*length(handles.signaldata.audio))+1;
-        handles.signaldata.audio = repmat(handles.signaldata.audio,1,handles.cycles);
-        levelrange = repmat(linspace(abs(str2num(get(handles.levelrange_IN,'String'))).*-1,0,size(handles.signaldata.audio,2)),length(handles.signaldata.audio),1);
-        handles.signaldata.audio = handles.signaldata.audio.*10.^(levelrange./20);
-        handles.signaldata.audio = reshape(handles.signaldata.audio,size(handles.signaldata.audio,1)*size(handles.signaldata.audio,2),1);
+        numchannels = size(handles.signaldata.audio,2);
+        levelrange = linspace(abs(str2num(get(handles.levelrange_IN,'String'))).*-1,0,handles.cycles);
+        audio = [];
+        for i = 1:handles.cycles
+            chunk = [handles.signaldata.audio;zeros(handles.signaldata.fs,size(handles.signaldata.audio,2))];
+            audio = [audio;chunk.*10.^(levelrange(i)/20)];
+        end
+        handles.signaldata.startflag = ((0:handles.cycles-1)*length(chunk))+1;
+        handles.signaldata.audio = audio;
         handles.signaldata.relgain = levelrange(1,:);
     end
     if ~isfield(handles.signaldata,'chanID')
