@@ -647,12 +647,26 @@ invS = audiodata.audio2;
 fs = audiodata.fs;
 nbits = audiodata.nbits;
 selectedNodes = handles.mytree.getSelectedNodes;
+
 if isfield(audiodata,'startflag')
-    len = audiodata.startflag(2)-audiodata.startflag(1);
-    for i = 1:length(audiodata.startflag)
-        newS(:,i) = S(audiodata.startflag(i):audiodata.startflag(i)+len-1);
+    [method,ok] = listdlg('ListString',{'Synchronous average','Stack IRs in dimension 4','Convolve without separating'},...
+                          'PromptString','Select the convolution method',...
+                          'Name','AARAE options',...
+                          'SelectionMode','single',...
+                          'ListSize',[200 100]);
+    if ok == 1
+        len = audiodata.startflag(2)-audiodata.startflag(1);
+        for i = 1:length(audiodata.startflag)
+            newS(:,i) = S(audiodata.startflag(i):audiodata.startflag(i)+len-1);
+        end
+        switch method
+            case 1
+                S = mean(newS,2);
+            case 2
+                S = newS;
+                invS = repmat(invS,1,size(S,2));
+        end
     end
-    S = mean(newS,2);
 end
 
 % Get the lines below in a function
@@ -660,12 +674,16 @@ end
 S_pad = [S; zeros(size(invS))];
 invS_pad = [invS; zeros(size(S))];
 IR = convolvedemo(S_pad, invS_pad, 2, fs); % Calls convolvedemo.m
-IRlength = window_signal('main_stage1', handles.aarae,'IR',IR); % Calls the trimming GUI window to trim the IR
-[~, id] = max(abs(IR));
-trimsamp_low = id-round(IRlength./2);
-trimsamp_high = trimsamp_low + IRlength -1;
-IR = IR(trimsamp_low:trimsamp_high,:);
-% Add calibration?
+if method == 1 || method == 2
+    IRlength = window_signal('main_stage1', handles.aarae,'IR',IR); % Calls the trimming GUI window to trim the IR
+    absolute = abs(IR);
+    [~, id] = max(absolute(:));
+    trimsamp_low = id-round(IRlength./2);
+    trimsamp_high = trimsamp_low + IRlength -1;
+    IR = IR(trimsamp_low:trimsamp_high,:);
+else
+    IRlength = length(IR);
+end
 
 % Create new leaf and update the tree
 handles.mytree.setSelectedNode(handles.root);
