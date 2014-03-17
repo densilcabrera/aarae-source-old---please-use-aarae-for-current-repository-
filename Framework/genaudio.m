@@ -23,7 +23,7 @@ function varargout = genaudio(varargin)
 
 % Edit the above text to modify the response to help genaudio
 
-% Last Modified by GUIDE v2.5 04-Feb-2014 09:49:56
+% Last Modified by GUIDE v2.5 17-Mar-2014 09:40:50
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -126,7 +126,12 @@ if ~isempty(handles.signaldata)
     set(handles.OK_Btn,'Enable','on')
     if handles.cycles > 1
         handles.signaldata.audio = [handles.signaldata.audio;zeros(handles.signaldata.fs,1)];
-        handles.signaldata.audio = repmat(handles.signaldata.audio,handles.cycles,1);
+        handles.signaldata.startflag = ((0:handles.cycles-1)*length(handles.signaldata.audio))+1;
+        handles.signaldata.audio = repmat(handles.signaldata.audio,1,handles.cycles);
+        levelrange = repmat(linspace(abs(str2num(get(handles.levelrange_IN,'String'))).*-1,0,size(handles.signaldata.audio,2)),length(handles.signaldata.audio),1);
+        handles.signaldata.audio = handles.signaldata.audio.*10.^(levelrange./20);
+        handles.signaldata.audio = reshape(handles.signaldata.audio,size(handles.signaldata.audio,1)*size(handles.signaldata.audio,2),1);
+        handles.signaldata.relgain = levelrange(1,:);
     end
     if ~isfield(handles.signaldata,'chanID')
         handles.signaldata.chanID = cellstr([repmat('Chan',size(handles.signaldata.audio,2),1) num2str((1:size(handles.signaldata.audio,2))')]);
@@ -200,6 +205,11 @@ if (isempty(cycles)||cycles<=0)
     warndlg('All inputs MUST be real positive numbers!');
 else
     handles.cycles = cycles;
+    if cycles > 1
+        set([handles.levelrange_IN,handles.text15,handles.text16],'Visible','on')
+    else
+        set([handles.levelrange_IN,handles.text15,handles.text16],'Visible','off')
+    end
 end
 guidata(hObject, handles);
 % Hints: get(hObject,'String') returns contents of IN_cycles as text
@@ -369,3 +379,26 @@ if isplaying(handles.player)
     stop(handles.player);
 end
 guidata(hObject,handles);
+
+
+
+function levelrange_IN_Callback(hObject, eventdata, handles)
+% hObject    handle to levelrange_IN (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: get(hObject,'String') returns contents of levelrange_IN as text
+%        str2double(get(hObject,'String')) returns contents of levelrange_IN as a double
+
+
+% --- Executes during object creation, after setting all properties.
+function levelrange_IN_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to levelrange_IN (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: edit controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
