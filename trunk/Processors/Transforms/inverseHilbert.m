@@ -1,6 +1,6 @@
 function [OUT, varargout] = inverseHilbert(IN,fs)
-% This function performs an inverse Hilbert transform - it requires a
-% complex waveform as input (or else the output will be zeros)
+% This function performs an inverse Hilbert transform (only useful for
+% complex input data)
 
 
     
