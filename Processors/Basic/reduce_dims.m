@@ -155,6 +155,7 @@ if ~isempty(audio) && ~isempty(fs)
             audio = ifft(audio);
         elseif domain == 2 || domain == 4
             % from quefrency domain
+            [~,chans,bands,d4,d5,d6] = size(audio);
             for ch = 1:chans
                 for b = 1:bands
                     for n4 = 1:d4
