@@ -42,9 +42,10 @@ y = 2*(y-1) ./(max(y)-1) -1; % normalize to -1 / 1
     OUT.audio2 = flipud(y);
     OUT.fs = fs;
     OUT.tag = tag;
-    OUT.dur = duration;
-    OUT.seed = seed;
-    OUT.param = {duration,seed,fs};
+    OUT.properties.dur = duration;
+    OUT.properties.seed = seed;
+    OUT.funcallback.name = 'pseudorand1.m';
+    OUT.funcallback.inarg = {duration,seed,fs};
 else
     OUT = [];
 end

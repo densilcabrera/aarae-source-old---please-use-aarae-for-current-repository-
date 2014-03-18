@@ -38,7 +38,7 @@ if strcmp(get(handles.(genvarname(['smooth' axes '_popup'])),'Visible'),'on')
     if smoothfactor ~= 1, line = octavesmoothing(line, octsmooth, signaldata.fs); end
 end
 if plottype <= 7
-    if ~isreal(line)
+    if ~isreal(signaldata.audio)
         set(handles.(genvarname(['complex' axes])),'Visible','on');
     else
         set(handles.(genvarname(['complex' axes])),'Visible','off');

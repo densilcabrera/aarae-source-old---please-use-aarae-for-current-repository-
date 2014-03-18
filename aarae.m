@@ -23,7 +23,7 @@ function varargout = aarae(varargin)
 
 % Edit the above text to modify the response to help aarae
 
-% Last Modified by GUIDE v2.5 24-Feb-2014 19:33:18
+% Last Modified by GUIDE v2.5 18-Mar-2014 15:45:50
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -648,35 +648,30 @@ fs = audiodata.fs;
 nbits = audiodata.nbits;
 selectedNodes = handles.mytree.getSelectedNodes;
 
-if isfield(audiodata,'startflag')
+if isfield(audiodata,'properties') && isfield(audiodata.properties,'startflag')
     [method,ok] = listdlg('ListString',{'Synchronous average','Stack IRs in dimension 4','Convolve without separating'},...
                           'PromptString','Select the convolution method',...
                           'Name','AARAE options',...
                           'SelectionMode','single',...
                           'ListSize',[200 100]);
     if ok == 1
-        len = audiodata.startflag(2)-audiodata.startflag(1);
-%        for i = 1:length(audiodata.startflag)
-%            newS(:,i) = S(audiodata.startflag(i):audiodata.startflag(i)+len-1);
-%        end
+        startflag = audiodata.properties.startflag;
+        len = startflag(2)-startflag(1);
         switch method
             case 1
                 for j = 1:size(S,2)
-                    for i = 1:length(audiodata.startflag)
-                        newS(:,i) = S(audiodata.startflag(i):audiodata.startflag(i)+len-1,j);
+                    for i = 1:length(startflag)
+                        newS(:,i) = S(startflag(i):startflag(i)+len-1,j);
                     end
                     tempS(:,j) = mean(newS,2);
                 end
                 S = tempS;
             case 2
-%                for i = 1:length(audiodata.startflag)
-%                    newS(:,i) = S(audiodata.startflag(i):audiodata.startflag(i)+len-1);
-%                end
                 IR = audiodata.audio;
                 ladjust = length(IR);
                 for j = 1:size(S,2)
-                    for i = 1:length(audiodata.startflag)
-                        newS(:,i) = S(audiodata.startflag(i):audiodata.startflag(i)+len-1,j);
+                    for i = 1:length(startflag)
+                        newS(:,i) = S(startflag(i):startflag(i)+len-1,j);
                     end
                     newS_pad = [newS; zeros(size(invS(:,j),1),size(newS,2))];
                     invS_pad = [repmat(invS(:,j),1,size(newS,2)); zeros(size(newS))];
@@ -687,16 +682,16 @@ if isfield(audiodata,'startflag')
                 invS = repmat(invS,1,size(S,2));
         end
     end
+else
+    method = 1;
 end
 
-% Get the lines below in a function
-% Maybe more alternatives to processing IRs should be implemented
 if method == 1 || method == 3
     S_pad = [S; zeros(size(invS))];
     invS_pad = [invS; zeros(size(S))];
     IR = convolvedemo(S_pad, invS_pad, 2, fs); % Calls convolvedemo.m
 end
-if method == 1% || method == 2
+if method == 1
     IRlength = window_signal('main_stage1', handles.aarae,'IR',IR); % Calls the trimming GUI window to trim the IR
     [~, id] = max(abs(IR));
     trimsamp_low = id-round(IRlength./2);
@@ -980,6 +975,7 @@ function proc_btn_Callback(hObject, eventdata, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 selectedNodes = handles.mytree.getSelectedNodes;
+funcallback = [];
 for nleafs = 1:length(selectedNodes)
     signaldata = selectedNodes(nleafs).handle.UserData;
     if ~isempty(signaldata)
@@ -1010,7 +1006,15 @@ for nleafs = 1:length(selectedNodes)
                 end
             elseif strcmp(ext,'.m')
                 [~,funname] = fileparts(char(file(multi,:)));
-                processed = feval(funname,signaldata);
+                if ~isempty(funcallback) && strcmp(funname,funcallback.name)
+                    processed = feval(funname,signaldata,funcallback.inarg{:});
+                else
+                    processed = feval(funname,signaldata);
+                end
+                if isfield(processed,'funcallback')
+                    funcallback = processed.funcallback;
+                    [~,funcallback.name] = fileparts(funcallback.name);
+                end
             else
                 processed = [];
             end
@@ -1945,3 +1949,16 @@ if ~isempty(eventdata.Modifier)
     end
 end
 guidata(hObject,handles)
+
+
+% --- Executes on button press in properties_btn.
+function properties_btn_Callback(hObject, eventdata, handles)
+% hObject    handle to properties_btn (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+selectedNodes = handles.mytree.getSelectedNodes;
+signaldata = selectedNodes(1).handle.UserData;
+if isfield(signaldata,'properties')
+    properties = signaldata.properties;
+    msgbox([selectedNodes(1).getName.char evalc('properties')],'AARAE info')
+end

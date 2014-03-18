@@ -25,7 +25,8 @@ y = randn(round(duration*fs),chans)/10;
     OUT.audio2 = flipud(y);
     OUT.fs = fs;
     OUT.tag = tag;
-    OUT.param = {duration, chans, fs};
+    OUT.funcallback.name = 'Gaussian_noise.m';
+    OUT.funcallback.inarg = {duration, chans, fs};
 else
     OUT = [];
 end

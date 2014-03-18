@@ -45,9 +45,10 @@ if ~isempty(param) || nargin ~=0
     OUT.audio2 = Sinv;
     OUT.fs = fs;
     OUT.tag = ['Sine sweep linear' num2str(dur)];
-    OUT.dur = dur;
-    OUT.freq = [start_freq, end_freq];
-    OUT.param = {dur,start_freq,end_freq,fs};
+    OUT.properties.dur = dur;
+    OUT.properties.freq = [start_freq,end_freq];
+    OUT.funcallback.name = 'linear_sweep.m';
+    OUT.funcallback.inarg = {dur,start_freq,end_freq,fs};
 else
     OUT = [];
 end

@@ -51,6 +51,8 @@ function [OUT,varargout] = squarewave(dur, fs, f, duty)
             OUT.audio = audio; % You NEED to provide the audio you generated.
             OUT.fs = fs;       % You NEED to provide the sampling frequency of your audio.
             OUT.tag = ['Square' num2str(dur)];      % You may assign it a name to be identified in AARAE.
+            OUT.funcallback.name = 'squarewave.m';
+            OUT.funcallback.inarg = {dur, fs, f, duty};
         end
         
         % You may choose to increase the functionality of your code by allowing

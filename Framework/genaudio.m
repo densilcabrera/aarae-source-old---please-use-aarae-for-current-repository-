@@ -132,9 +132,9 @@ if ~isempty(handles.signaldata)
             chunk = [handles.signaldata.audio;zeros(handles.signaldata.fs,size(handles.signaldata.audio,2))];
             audio = [audio;chunk.*10.^(levelrange(i)/20)];
         end
-        handles.signaldata.startflag = ((0:handles.cycles-1)*length(chunk))+1;
+        handles.signaldata.properties.startflag = ((0:handles.cycles-1)*length(chunk))+1;
         handles.signaldata.audio = audio;
-        handles.signaldata.relgain = levelrange(1,:);
+        handles.signaldata.properties.relgain = levelrange(1,:);
     end
     if ~isfield(handles.signaldata,'chanID')
         handles.signaldata.chanID = cellstr([repmat('Chan',size(handles.signaldata.audio,2),1) num2str((1:size(handles.signaldata.audio,2))')]);

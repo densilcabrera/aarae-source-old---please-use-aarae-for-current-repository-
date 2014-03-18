@@ -124,7 +124,8 @@ noisebands(:,k) = noisebands(:,k) .* envelope;
     OUT.audio = y;
     OUT.fs = fs;
     OUT.tag = tag;
-    OUT.param = {duration, fs, octavebandlevel};
+    OUT.funcallback.name = 'STIPA_signal.m';
+    OUT.funcallback.inarg = {duration, fs, octavebandlevel};
 else
     OUT = [];
 end

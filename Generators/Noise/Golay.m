@@ -69,7 +69,8 @@ end
             OUT.fs = fs;
             OUT.audio2 = audio;
             OUT.tag = ['Golay',num2str(N0)];
-            OUT.param = {fs,N,silence};
+            OUT.funcallback.name = 'Golay.m';
+            OUT.funcallback.inarg = {fs,N,silence};
         end
         
 

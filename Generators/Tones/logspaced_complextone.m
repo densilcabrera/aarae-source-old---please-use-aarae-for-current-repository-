@@ -72,8 +72,9 @@ if ~isempty(param) || nargin ~= 0
         OUT.audio = audio; 
         OUT.audio2 = audio2;     
         OUT.fs = fs;       
-        OUT.tag = 'logspaced tone';  
-        OUT.param = {fs, duration, f0, density, octavetype, phase, slope};
+        OUT.tag = 'logspaced tone';
+        OUT.funcallback.name = 'logspaced_complextone.m';
+        OUT.funcallback.inarg = {fs, duration, f0, density, octavetype, phase, slope};
     end
     
    

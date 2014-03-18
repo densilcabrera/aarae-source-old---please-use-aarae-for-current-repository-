@@ -1,4 +1,4 @@
-function [OUT, varargout] = infrasound_octbandfilter(IN, fs)
+function [OUT, varargout] = infrasound_octbandfilter(IN, fs, param)
 % This function does octave band filtering in the infrasound range.
 % It calls AARAE's octbandfilter to do the filtering, after resampling the
 % audio to 192 Hz. By sending a fake sampling rate of 192 kHz to
@@ -16,19 +16,19 @@ function [OUT, varargout] = infrasound_octbandfilter(IN, fs)
 if isstruct(IN) 
     audio = IN.audio; 
     fs = IN.fs;       
-    
-% list dialog
-
-nominalfreq = [31.5,63,125,250,500,1000,2000,4000,8000,16000] ./ 1000;
-param = nominalfreq;
-[S,ok] = listdlg('Name','Octave band filter input parameters',...
-                 'PromptString','Center frequencies [Hz]',...
-                 'ListString',[num2str(param') repmat(' Hz',length(param),1)]);
-param = param(S);
-
+    ok = 1;
+    % list dialog
+    if nargin < 3
+        nominalfreq = [31.5,63,125,250,500,1000,2000,4000,8000,16000] ./ 1000;
+        param = nominalfreq;
+        [S,ok] = listdlg('Name','Octave band filter input parameters',...
+                         'PromptString','Center frequencies [Hz]',...
+                         'ListString',[num2str(param') repmat(' Hz',length(param),1)]);
+        param = param(S);
+    end
     
 % ---------------------------------------------------------------------    
-elseif  nargin > 1
+elseif nargin > 1
     
     audio = IN;
     param = [31.5,63,125,250,500,1000,2000,4000,8000,16000] ./ 1000;
@@ -66,9 +66,9 @@ if ~isempty(audio) && ~isempty(fs) && ok==1
         OUT = IN; % replicate the input structure for output
         OUT.audio = audio; 
         OUT.fs = 192; % 192 Hz sampling rate
-            OUT.bandID = param;
-
-        
+        OUT.bandID = param;
+        OUT.funcallback.name = 'infrasound_octbandfilter.m';
+        OUT.funcallback.inarg = {fs, param};
     else
         
         OUT = audio;

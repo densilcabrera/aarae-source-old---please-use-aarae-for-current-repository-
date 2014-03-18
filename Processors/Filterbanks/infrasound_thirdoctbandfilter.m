@@ -1,4 +1,4 @@
-function [OUT, varargout] = infrasound_thirdoctbandfilter(IN, fs)
+function [OUT, varargout] = infrasound_thirdoctbandfilter(IN, fs, param)
 % This function does 1/3-octave band filtering in the infrasound range.
 % It calls AARAE's thirdoctbandfilter to do the filtering, after resampling
 % the audio to 192 Hz. By sending a fake sampling rate of 192 kHz to
@@ -16,18 +16,18 @@ function [OUT, varargout] = infrasound_thirdoctbandfilter(IN, fs)
 if isstruct(IN) 
     audio = IN.audio; 
     fs = IN.fs;       
-    
-% list dialog
-
-nominalfreq = [25,31.5,40,50,63,80,100,125,160,200,250,315,400,500,630,800,1000,...
-        1250,1600,2000,2500,3150,4000,5000,6300,8000,10000,12500,16000,20000] ./ 1000;
-param = nominalfreq;
-[S,ok] = listdlg('Name','1/3-Octave band filter input parameters',...
-                 'PromptString','Center frequencies [Hz]',...
-                 'ListString',[num2str(param') repmat(' Hz',length(param),1)],...
-                 'ListSize', [160 320]);
-param = param(S);
-    
+    ok = 1;
+    % list dialog
+    if nargin < 3
+        nominalfreq = [25,31.5,40,50,63,80,100,125,160,200,250,315,400,500,630,800,1000,...
+                1250,1600,2000,2500,3150,4000,5000,6300,8000,10000,12500,16000,20000] ./ 1000;
+        param = nominalfreq;
+        [S,ok] = listdlg('Name','1/3-Octave band filter input parameters',...
+                         'PromptString','Center frequencies [Hz]',...
+                         'ListString',[num2str(param') repmat(' Hz',length(param),1)],...
+                         'ListSize', [160 320]);
+        param = param(S);
+    end
 % ---------------------------------------------------------------------    
 elseif  nargin > 1
     
@@ -66,7 +66,8 @@ if ~isempty(audio) && ~isempty(fs) && ok==1
         OUT.audio = audio; 
         OUT.fs = 192; % 192 Hz sampling rate
         OUT.bandID = param;
-        
+        OUT.funcallback.name = 'infrasound_thirdoctbandfilter.m';
+        OUT.funcallback.inarg = {fs,param};
     else
         
         OUT = audio;
