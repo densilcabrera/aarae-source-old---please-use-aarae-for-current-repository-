@@ -40,7 +40,8 @@ if ~isempty(param) || nargin ~= 0
     OUT.audio = y;
     OUT.fs = fs;
     OUT.tag = tag;
-    OUT.param = {duration_pre,duration_post,amplitude, fs};
+    OUT.funcallback.name = 'impulse1.m';
+    OUT.funcallback.inarg = {duration_pre,duration_post,amplitude, fs};
 else
     OUT = [];
 end

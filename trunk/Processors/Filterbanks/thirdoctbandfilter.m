@@ -59,6 +59,8 @@ function [OUT,varargout] = thirdoctbandfilter(IN,fs,param)
         OUT = IN;
         OUT.audio = filtered;
         OUT.bandID = centerf;
+        OUT.funcallback.name = 'thirdoctbandfilter.m';
+        OUT.funcallback.inarg = {fs,param};
     else
         OUT = filtered;
     end

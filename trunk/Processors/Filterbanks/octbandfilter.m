@@ -89,6 +89,8 @@ function [OUT,varargout] = octbandfilter(IN,fs,param,method)
         OUT = IN;
         OUT.audio = filtered;
         OUT.bandID = centerf;
+        OUT.funcallback.name = 'octbandfilter.m';
+        OUT.funcallback.inarg = {fs,param,method};
     else
         OUT = filtered;
     end

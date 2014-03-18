@@ -61,8 +61,15 @@ if ~isempty(param) || nargin ~= 0
         OUT.audio = audio'; % You NEED to provide the audio you generated.
         %OUT.audio2 = ?;     You may provide additional audio derived from your function.
         OUT.fs = fs;       % You NEED to provide the sampling frequency of your audio.
-        OUT.tag = 'BiexponentialPulse';  
-        OUT.param = {fs,T,edge,hifreq,lofreq,dispersion,wind,modF};
+        OUT.tag = 'BiexponentialPulse';
+        OUT.properties.T = T;
+        OUT.properties.edge = edge;
+        OUT.properties.hifreq = hifreq;
+        OUT.properties.lofreq = lofreq;
+        OUT.properties.dispersion = dispersion;
+        OUT.properties.wind = wind;
+        OUT.funcallback.name = 'Biexponential_pulse.m';
+        OUT.funcallback.inarg = {fs,T,edge,hifreq,lofreq,dispersion,wind,modF};
     end
     
     % You may choose to increase the functionality of your code by allowing

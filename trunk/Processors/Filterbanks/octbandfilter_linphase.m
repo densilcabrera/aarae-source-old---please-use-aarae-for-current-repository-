@@ -1,4 +1,4 @@
-function [OUT,varargout] = octbandfilter_linphase(IN,fs,param,order,zeropad,minfftlenfactor,test,phasemode)
+function [OUT,varargout] = octbandfilter_linphase(IN,fs,param,order,zeropad,minfftlenfactor,test)
 % This function does zero and linear phase octave band filtering using a
 % single large fft. Rather than brick-wall filters, this implementation
 % has somewhat Butterworth-like magnitude responses. Hence the 'order' input
@@ -48,9 +48,6 @@ else
     minfftlenfactor = round(abs(minfftlenfactor));
 end
 
-if ~exist('phasemode','var')
-    phasemode = 0;
-end
 
 
 if ~exist('zeropad','var')
@@ -123,23 +120,20 @@ if ok == 1 && isstruct(IN) && nargin < 4
     param1 = inputdlg({'Pseudo-Butterworth filter in-band order';... 
         'Filter out-of-band order';... 
         'Number of samples to zero-pad before and after the wave data';...
-        'Zero phase [0], Minimum phase [1] or Maximum phase [-1]';...
         'Test filter response [0|1]'},...
         'Filter settings',... 
         [1 60],... 
-        {num2str(orderin);num2str(orderout);num2str(zeropad);...
-        num2str(phasemode);'0'}); 
+        {num2str(orderin);num2str(orderout);num2str(zeropad);'0'}); 
     
     param1 = str2num(char(param1)); 
     
-    if length(param1) < 5, param1 = []; end 
+    if length(param1) < 4, param1 = []; end 
     
     if ~isempty(param1) 
         orderin = param1(1);
         orderout = param1(2);
         zeropad = param1(3);
-        phasemode = param1(4);
-        test = param1(5);
+        test = param1(4);
     end
 end
     
@@ -229,27 +223,11 @@ if ok == 1
         % above Nyquist frequency
         mag(fftlen/2+2:end) = flipud(mag(2:fftlen/2));
         
-        if phasemode == 1
-            % convert mag to min phase complex coefficients
-            mag = minphasefreqdomain(mag); 
-        elseif phasemode == -1
-            % convert mag to max phase complex coefficients
-            mag = conj(minphasefreqdomain(mag)); 
-           
-        end
-        if phasemode == 0
-            bandfiltered = ifft(repmat(mag,[1,chans]) .* spectrum);
-        else
-             % real output only for min phase and max phase
-                bandfiltered = real(ifft(repmat(mag,[1,chans]) .* spectrum));
-        end
-
+        % apply magnitude coefficients
+        bandfiltered = ifft(repmat(mag,[1,chans]) .* spectrum);
         
         % truncate waveform and send to filtered waveform matrix
-
-            filtered(:,:,b) = bandfiltered(1:len,:);
-
-        
+        filtered(:,:,b) = bandfiltered(1:len,:);
         
         if test
             testaudiofiltered = ifft(testspectrum .* mag);
@@ -367,6 +345,8 @@ if ok == 1
         OUT = IN;
         OUT.audio = filtered;
         OUT.bandID = param;
+        OUT.funcallback.name = 'octbandfilter_linphase.m';
+        OUT.funcallback.inarg = {fs,param,[orderin orderout],zeropad,minfftlenfactor,test};
     else
         OUT = filtered;
     end

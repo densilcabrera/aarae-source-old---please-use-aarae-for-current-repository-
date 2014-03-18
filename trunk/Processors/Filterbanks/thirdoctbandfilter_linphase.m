@@ -345,6 +345,8 @@ if ok == 1
         OUT = IN;
         OUT.audio = filtered;
         OUT.bandID = param;
+        OUT.funcallback.name = 'thirdoctbandfilter_linphase.m';
+        OUT.funcallback.inarg = {fs,param,[orderin orderout],zeropad,minfftlenfactor,test};
     else
         OUT = filtered;
     end

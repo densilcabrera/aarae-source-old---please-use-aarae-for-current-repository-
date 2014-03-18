@@ -226,7 +226,8 @@ if ~isempty(param) || nargin ~= 0
     OUT.audio2 = flipud(y');
     OUT.fs = fs;
     OUT.tag = 'MLS';
-    OUT.param = {n,flag,fs};
+    OUT.funcallback.name = 'mls.m';
+    OUT.funcallback.inarg = {n,flag,fs};
 else
     OUT = [];
 end

@@ -377,6 +377,8 @@ if ok == 1
         OUT = IN;
         OUT.audio = filtered;
         OUT.bandID = param;
+        OUT.funcallback.name = 'octbandfilter_zerominmax_phase.m';
+        OUT.funcallback.inarg = {fs,param,[orderin orderout],zeropad,minfftlenfactor,test,phasemode};
     else
         OUT = filtered;
     end

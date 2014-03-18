@@ -28,7 +28,8 @@ if ~isempty(param) || nargin ~= 0
     OUT.audio2 = y2;
     OUT.fs = fs;
     OUT.tag = tag;
-    OUT.param = {duration, frequency, fs};
+    OUT.funcallback.name = 'pure_tone.m';
+    OUT.funcallback.inarg = {duration, frequency, fs};
 else
     OUT = [];
 end

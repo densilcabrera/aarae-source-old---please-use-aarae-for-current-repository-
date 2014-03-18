@@ -394,7 +394,8 @@ if ok == 1
         OUT = IN;
         OUT.audio = filtered;
         OUT.bandID = param;
-        OUT.param = {'audio',fs,param,order,zeropad,minfftlenfactor,test,phasemode};
+        OUT.funcallback.name = 'thirdoctbandfilter_viaFFT.m';
+        OUT.funcallback.inarg = {fs,param,order,zeropad,minfftlenfactor,test,phasemode};
     else
         OUT = filtered;
     end

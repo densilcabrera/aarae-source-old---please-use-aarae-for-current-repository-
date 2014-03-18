@@ -41,14 +41,14 @@ if ~isempty(param) || nargin ~= 0
         OUT.audio = audio; 
         OUT.fs = fs;
         OUT.tag = 'Silence'; 
-        OUT.param = {fs, duration, chans, bands};
+        OUT.funcallback.name = 'Silence.m';
+        OUT.funcallback.inarg = {fs, duration, chans, bands};
     end
     
    
     if nargin ~= 0
         OUT = audio;
         varargout{1} = fs;
-        %varargout{2} = ?;
     end
 else
     % AARAE requires that in case that the user doesn't input enough

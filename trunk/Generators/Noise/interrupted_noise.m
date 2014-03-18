@@ -144,7 +144,8 @@ if ~isempty(param) || nargin ~= 0
     OUT.audio3 = audio3;
     OUT.fs = fs;
     OUT.tag = tag;
-    OUT.param = {fexponent, burst_duration, ...
+    OUT.funcallback.name = 'interrupted_noise.m';
+    OUT.funcallback.inarg = {fexponent, burst_duration, ...
     silence_duration, nbursts, fs, fhigh, flow, nchan};
 else
     OUT = [];

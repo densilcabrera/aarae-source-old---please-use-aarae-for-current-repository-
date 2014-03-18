@@ -14,13 +14,12 @@
 
 function OUT = OATSP(dur,mratio,fs,donorm)
 
-
 if nargin == 0
     param = inputdlg({'Duration [s]';...
-                       'Ratio of main sweep duration to remaining duration [between 0 and 1]';...
-                       'Sampling rate [Hz]';...
-                       'Normalize output [0 | 1]'},...
-                       'OATSP input parameters',1,{'1';'0.5';'48000';'1'});
+                      'Ratio of main sweep duration to remaining duration [between 0 and 1]';...
+                      'Sampling rate [Hz]';...
+                      'Normalize output [0 | 1]'},...
+                      'OATSP input parameters',1,{'1';'0.5';'48000';'1'});
     param = str2num(char(param));
     if length(param) < 4, param = []; end
     if ~isempty(param)
@@ -61,12 +60,13 @@ if ~isempty(param) || nargin ~=0
     OUT.audio2 = Sinv;
     OUT.fs = fs;
     OUT.tag = ['OATSP_',num2str(mratio),'_', num2str(dur)];
-    OUT.dur = dur;
-    OUT.mratio = mratio;
-    OUT.m = m;
-    OUT.N = N;
-    OUT.freq = [0, fs/2];
-    OUT.param = {dur,mratio,fs,donorm};
+    OUT.properties.dur = dur;
+    OUT.properties.mratio = mratio;
+    OUT.properties.m = m;
+    OUT.properties.N = N;
+    OUT.properties.freq = [0, fs/2];
+    OUT.funcallback.name = 'OATSP.m';
+    OUT.funcallback.inarg = {dur,mratio,fs,donorm};
 else
     OUT = [];
 end
