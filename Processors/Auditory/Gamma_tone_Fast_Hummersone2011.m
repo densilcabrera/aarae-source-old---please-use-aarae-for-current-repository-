@@ -56,6 +56,8 @@ if ~isempty(audio) && ~isempty(fs)
         OUT = IN; 
         OUT.audio = bm;
         OUT.bandID = cfs;
+        OUT.funcallback.name = 'Gamma_tone_Fast_Hummersone2011.m';
+        OUT.funcallback.inarg = {fs,hif,lof,bands,align};
     else
         OUT = bm;
     end

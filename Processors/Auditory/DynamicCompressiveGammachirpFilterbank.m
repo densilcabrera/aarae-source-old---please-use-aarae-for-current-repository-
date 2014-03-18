@@ -1,4 +1,4 @@
-function out = DynamicCompressiveGammachirpFilterbank(in)
+function out = DynamicCompressiveGammachirpFilterbank(in,fs,compressive,NumCh,Hicutoff,Locutoff,OutMidCrct)
 % This function interfaces AARAE with Toshio Irino's GCFBv208 filters
 %
 % Note that this uses mex files, which may not be compatible with all
@@ -29,29 +29,26 @@ function out = DynamicCompressiveGammachirpFilterbank(in)
 
 % Interface file by Densil Cabrera 
 % Version 0 (5 November 2013)
-
-
-% Dialog box for settings
- 
+if exist('OutMidCrct','var'), GCparam.OutMidCrct = OutMidCrct; end
+if nargin < 7, GCparam.OutMidCrct = 1; end
+if nargin < 6, Locutoff = 100; end
+if nargin < 5, Hicutoff = 6000; end
+if exist('NumCh','var'), GCparam.NumCh = NumCh; end
+if nargin < 4, GCparam.NumCh = 75; end
+if nargin < 3
+% Dialog box for settings 
 % Prompt for 3 named parameters:
-     prompt = {'Passive or Compressive GC filter [0 | 1]', ...
-         'Number of bands', ...
-         'Highest band frequency (Hz)', ...
-         'Lowest band frequency (Hz)', ...
-         'Outer and middle ear correction [0 | 1]'};
- 
-
+    prompt = {'Passive or Compressive GC filter [0 | 1]', ...
+              'Number of bands', ...
+              'Highest band frequency (Hz)', ...
+              'Lowest band frequency (Hz)', ...
+              'Outer and middle ear correction [0 | 1]'};
 % Title of the dialog box
-     dlg_title = 'Settings'; 
- 
-
+    dlg_title = 'Settings'; 
     num_lines = 1;
- 
-
 % Default values
-     def = {'1','75','6000','100','1'}; 
+    def = {'1','75','6000','100','1'}; 
  
-
     answer = inputdlg(prompt,dlg_title,num_lines,def);
      
  % Set function variables from dialog box user-input values
@@ -62,24 +59,46 @@ function out = DynamicCompressiveGammachirpFilterbank(in)
          Locutoff = str2num(answer{4,1});
          GCparam.OutMidCrct = str2num(answer{5,1});
      end
-
-% get audio signal from AARAE field
-SndIn = in.audio;
-SndIn = mean(SndIn,3); % mixdown the third dimension, if it exists
-SndIn = SndIn(:,1); % select the first channel in the case of multichannel
-SndIn = SndIn'; % transpose (1 row of audio signal is required for GCFBv208)
-
-% set gammachirp parameters
-GCparam.fs = in.fs;
-GCparam.FRange = [Locutoff Hicutoff];
-
-GCparam = GCFBv208_SetParam(GCparam);
-
-[cGCout, pGCout, GCparam, GCresp] = GCFBv208(SndIn,GCparam);
-
-if compressive
-    out = permute(cGCout,[2,3,1]);
-else
-    out = permute(pGCout,[2,3,1]);
 end
+if isstruct(in)
+% get audio signal from AARAE field
+    SndIn = in.audio;
+    GCparam.fs = in.fs;
+elseif ~isempty(answer)
+    SndIn = in;
+    if nargin < 2
+        fs = inputdlg({'Sampling frequency [samples/s]'},...
+                           'Fs',1,{'48000'});
+        GCparam.fs = str2num(char(fs));
+    else
+        GCparam.fs = fs;
+    end
+end
+if ~isempty(GCparam.fs) && ~isempty(compressive) && ~isempty(GCparam.NumCh) && ~isempty(Hicutoff) && ~isempty(Locutoff) && ~isempty(GCparam.OutMidCrct)
+    SndIn = mean(SndIn,3); % mixdown the third dimension, if it exists
+    SndIn = SndIn(:,1); % select the first channel in the case of multichannel
+    SndIn = SndIn'; % transpose (1 row of audio signal is required for GCFBv208)
 
+    % set gammachirp parameters
+    GCparam.FRange = [Locutoff Hicutoff];
+
+    GCparam = GCFBv208_SetParam(GCparam);
+
+    [cGCout, pGCout, GCparam, GCresp] = GCFBv208(SndIn,GCparam);
+
+    if ~isstruct(in)
+        if compressive
+            out = permute(cGCout,[2,3,1]);
+        else
+            out = permute(pGCout,[2,3,1]);
+        end
+    else
+        if compressive
+            out.audio = permute(cGCout,[2,3,1]);
+        else
+            out.audio = permute(pGCout,[2,3,1]);
+        end
+        out.funcallback.name = 'DynamicCompressiveGammachirpFilterbank.m';
+        out.funcallback.inarg = {GCparam.fs,compressive,GCparam.NumCh,Hicutoff,Locutoff,GCparam.OutMidCrct};
+    end
+end
