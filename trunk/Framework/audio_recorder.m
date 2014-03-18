@@ -23,7 +23,7 @@ function varargout = audio_recorder(varargin)
 
 % Edit the above text to modify the response to help audio_recorder
 
-% Last Modified by GUIDE v2.5 21-Feb-2014 11:37:55
+% Last Modified by GUIDE v2.5 18-Mar-2014 11:25:22
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -78,6 +78,10 @@ else
     UserData.state = false;
     set(handles.stop_btn,'UserData',UserData);
     mainHandles = guidata(handles.main_stage1);
+    inputdevinfo = dspAudioDeviceInfo('defaultInput');
+    outputdevinfo = dspAudioDeviceInfo('defaultOutput');
+    set(handles.inputdevtext,'String',inputdevinfo.name)
+    set(handles.outputdevtext,'String',outputdevinfo.name)
     if isfield(mainHandles,'syscalstats') && ~isempty(mainHandles.syscalstats)
         remember = questdlg('A previous system calibration was found, would you like to reload these settings?','AARAE info','Yes','No','Yes');
         switch remember
