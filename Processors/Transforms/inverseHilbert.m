@@ -1,4 +1,4 @@
-function [OUT, varargout] = inverseHilbert(IN,fs)
+function [OUT, varargout] = InverseHilbert(IN,fs)
 % This function performs an inverse Hilbert transform (only useful for
 % complex input data)
 
