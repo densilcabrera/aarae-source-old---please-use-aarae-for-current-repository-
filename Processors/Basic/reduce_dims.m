@@ -1,4 +1,4 @@
-function [OUT, varargout] = reduce_dims(IN, domain, operation, percent,dim,fs)
+function [OUT, varargout] = reduce_dims(IN,domain,operation,percent,dim,fs)
 % This function reduces one of the dimensions of multidimensional audio 
 % to a singleton dimension by applying a simple selection,
 % arithmetic or statistical operation. Operations include:
@@ -9,6 +9,8 @@ function [OUT, varargout] = reduce_dims(IN, domain, operation, percent,dim,fs)
 % * maximum of the chosen dimension (probably most useful for complex data)
 % * minimum of the chosen dimension (ditto)
 % * percentile of the chosen dimension
+% * sum of the chosen dimension
+% * mean difference of the chosen dimension
 %
 % These operations can be done in the time domain, frequency domain,
 % quefrency domain, Hilbert (analytic) time domain, or an intermediate 
@@ -102,7 +104,7 @@ if ~isempty(audio) && ~isempty(fs)
             % frequency domain
             audio = fft(audio);
         elseif domain == 2 || domain ==3 || domain == 4
-            % quefrency domain
+            % quefrency/Hilbert/fractional Fourier domains
             for ch = 1:chans
                 for b = 1:bands
                     for n4 = 1:d4
@@ -154,7 +156,7 @@ if ~isempty(audio) && ~isempty(fs)
             % from frequency domain
             audio = ifft(audio);
         elseif domain == 2 || domain == 4
-            % from quefrency domain
+            % from quefrency domain or fractional Fourier
             [~,chans,bands,d4,d5,d6] = size(audio);
             for ch = 1:chans
                 for b = 1:bands
