@@ -98,17 +98,20 @@ out.L90 = 10*log10(prctile(audio,10));
 out.L90 = permute(out.L90,[3,2,1]);
 
 ymax = 10*ceil(max(max(max(10*log10(audio_original.^2))))/10);
-ymin = 10*floor(min(min(min(out.L90(~isnan(out.L90)))))/10)-20;
+ymin = 10*floor(min(min(min(out.L90)))/10)-20;
+if isnan(ymin)
+    ymin = ymax-100;
+end
 
-
-% Still need to write output tables and improve the figures
+% Still need to write output tables
 t = ((1:len)'-1)./fs;
 for ch = 1:chans
     for b = 1:bands
         if bands > 1
             if exist('bandID','var')
                 figure('Name',...
-                    ['Level Statistics, ch ',num2str(ch),', ',num2str(bandID(b))])
+                    ['Level Statistics, ch ',num2str(ch),', ',...
+                    num2str(bandID(b))])
             else
                 figure('Name',...
                     ['Level Statistics, ch ',num2str(ch),', ',num2str(b)])
@@ -135,9 +138,9 @@ for ch = 1:chans
         ylabel('Level (dB)')
         xlabel('Duration (s)')
         ylim([ymin ymax])
-        text(0.7*(len-1)/fs,ymin+0.5*(ymax-ymin),...
+        text(0.05*(len-1)/fs,ymin+0.9*(ymax-ymin),...
             ['Leq = ',num2str(out.Leq(b,ch)),' dB'])
-        text(0.7*(len-1)/fs,ymin+0.4*(ymax-ymin),...
+        text(0.05*(len-1)/fs,ymin+0.8*(ymax-ymin),...
             ['Lenergy = ',num2str(out.Lenergy(b,ch)),' dB'])
         legend('show','Location','EastOutside');
 
