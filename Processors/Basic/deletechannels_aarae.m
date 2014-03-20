@@ -19,7 +19,7 @@ if ~isempty(param)
         if isfield(in,'chanID')
             out.chanID = in.chanID(S);
         else
-            out.chanID = S;
+            out.chanID = num2cell(S);
         end
     else
         out = [];
