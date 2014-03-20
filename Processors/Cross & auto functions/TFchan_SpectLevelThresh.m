@@ -1,4 +1,4 @@
-function out = TFchan_SpectLevelThresh(in)
+function OUT = TFchan_SpectLevelThresh(in,fs,RefChan,Threshold,Duration,doplot)
 % Calculates the transfer function between pairs of audio channels, by
 % frequency domain division of cross spectrum by the reference autospectrum,
 % but removing spectral components for which the
@@ -9,49 +9,80 @@ function out = TFchan_SpectLevelThresh(in)
 % Code by Densil Cabrera
 % version 1.0 (10 October 2013)
 
+if nargin < 6, doplot = 0; end
+if nargin < 5, Duration = 2; end
+if nargin < 4, Threshold = -60; end
+if nargin < 3
+    RefChan = 1;
+    if isstruct(in)
+        S = in.audio; % size of the IR
+        fs = in.fs;
+    else
+        S = in;
+        if nargin < 2
+            fs = inputdlg({'Sampling frequency [samples/s]'},...
+                               'Fs',1,{'48000'});
+            fs = str2num(char(fs));
+        end
+    end
+    ndim = ndims(S); % number of dimensions
+    switch ndim
+        case 2
+            len = length(S); % number of samples in IR
+            chans = size(S,2); % number of channels
+            bands = 1; % number of bands
+        case 3
+            len = length(S); % number of samples in IR
+            chans = size(S,2); % number of channels
+            bands = size(S,3); % number of bands
+    end
+    
+    maxDuration = floor((len) / in.fs);
+    defaultDuration = 2;
+    if defaultDuration > maxDuration, defaultDuration = maxDuration; end
+    
+    %dialog box for settings
+    prompt = {'Reference channel', 'Level threshold', 'Output duration', 'Plot (0 | 1)'};
+    dlg_title = 'Settings';
+    num_lines = 1;
+    def = {'1','-60', num2str(defaultDuration),'0'};
+    answer = inputdlg(prompt,dlg_title,num_lines,def);
 
-S = size(in.audio); % size of the IR
-ndim = length(S); % number of dimensions
+    if ~isempty(answer)
+        RefChan = str2num(answer{1,1});
+        Threshold = str2num(answer{2,1});
+        Duration = str2num(answer{3,1});
+        doplot = str2num(answer{4,1});
+    end
+end
+if isstruct(in)
+    S = in.audio; % size of the IR
+    fs = in.fs;
+else
+    S = in;
+    if nargin < 2
+        fs = inputdlg({'Sampling frequency [samples/s]'},...
+                           'Fs',1,{'48000'});
+        fs = str2num(char(fs));
+    end
+end
+ndim = ndims(S); % number of dimensions
 switch ndim
-    case 1
-        len = S(1); % number of samples in IR
-        chans = 1; % number of channels
-        bands = 1; % number of bands
     case 2
-        len = S(1); % number of samples in IR
-        chans = S(2); % number of channels
+        len = length(S); % number of samples in IR
+        chans = size(S,2); % number of channels
         bands = 1; % number of bands
     case 3
-        len = S(1); % number of samples in IR
-        chans = S(2); % number of channels
-        bands = S(3); % number of bands
+        len = length(S); % number of samples in IR
+        chans = size(S,2); % number of channels
+        bands = size(S,3); % number of bands
 end
 
-
-
-%dialog box for settings
-prompt = {'Reference channel', 'Level threshold', 'Output duration', 'Plot (0 | 1)'};
-dlg_title = 'Settings';
-num_lines = 1;
-
-maxDuration = floor((len-1) / in.fs);
-defaultDuration = 2;
-if defaultDuration > maxDuration, defaultDuration = maxDuration; end
-def = {num2str(1),num2str(-60), num2str(defaultDuration), num2str(1)};
-answer = inputdlg(prompt,dlg_title,num_lines,def);
-
-if ~isempty(answer)
-    RefChan = str2num(answer{1,1});
-    Threshold = str2num(answer{2,1});
-    Duration = str2num(answer{3,1});
-    doplot = str2num(answer{4,1});
-end
 if RefChan > chans, RefChan = 1; end
-outlen = floor(Duration * in.fs)+1;
+outlen = floor(Duration * fs)+1;
 if outlen > len, outlen = len; end
 
-spectrum = fft(in.audio);
-
+spectrum = fft(S);
 
 magThreshold = 10.^(Threshold / 20);
 
@@ -67,11 +98,20 @@ for k = 1:bands
     
     TF(below_threshold,:,k) = 0; % zero all values below input wave threshold
 end
+
 % Return to time domain
 out = ifft(TF);
 
 % Truncate to the desired length
 out = out(1:outlen,:,:);
+
+if isstruct(in)
+    OUT.audio = out;
+    OUT.funcallback.name = 'TFchan_SpectLevelThresh.m';
+    OUT.funcallback.inarg = {fs,RefChan,Threshold,Duration,doplot};
+else
+    OUT = out;
+end
 
 if doplot
     figure('Name', 'Transfer Function')
