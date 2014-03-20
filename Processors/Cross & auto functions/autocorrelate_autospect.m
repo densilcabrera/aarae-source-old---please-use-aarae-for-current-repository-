@@ -1,4 +1,4 @@
-function out = autocorrelate_autospect(in)
+function OUT = autocorrelate_autospect(in)
 % Performs autocorrelation by multiplication in the frequency domain
 % (autospectrum method). The output is normalized.
 %
@@ -18,4 +18,12 @@ out = ifft(spectrum .* conj(spectrum));
 
 % normalize
 out = out ./ repmat(out(1,:,:),[fftlen,1,1]);
+
+if isstruct(in)
+    OUT.audio = out;
+    OUT.funcallback.name = 'autocorrelate_autospect.m';
+    OUT.funcallback.inarg = {};
+else
+    OUT = out;
+end
 
