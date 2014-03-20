@@ -73,7 +73,9 @@ if isfield(IN,'funcallback') && strcmp(IN.funcallback.name,'Golay.m')
 
         if isstruct(IN)
             OUT = IN; 
-            OUT.audio = ir; 
+            OUT.audio = ir;
+            OUT.funcallback.name = 'Golay_process.m';
+            OUT.funcallback.inarg = {};
         else
             OUT = ir;
         end
