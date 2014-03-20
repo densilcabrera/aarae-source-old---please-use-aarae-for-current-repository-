@@ -1,4 +1,4 @@
-function out = autoconvolve_spectexponent(in)
+function OUT = autoconvolve_spectexponent(in,fs,exponent,normalize,hiF,loF,audioplay)
 % Performs n-th power autoconvolution by raising the signal's spectrum to
 % an exponent. 
 %
@@ -13,8 +13,8 @@ function out = autoconvolve_spectexponent(in)
 % The output is normalized by default (but this can be bypassed).
 % An optional lowpass and/or highpass filter can be applied.
 %
-% Code by Densil Cabrera.
-% version 1.0 (11 October 2013)
+% Code by Densil Cabrera & Daniel Jimenez.
+% version 2.0 (20 March 2014)
 %
 % INPUT AND OUTPUT ARGUMENTS
 % The input argument is a structure with the following fields required:
@@ -25,31 +25,68 @@ function out = autoconvolve_spectexponent(in)
 % The output waveform retains the same dim2 and dim3 configuration as the
 % input, and has the same sampling rate, but will probably be a different 
 % length.
-
-Nyquist = in.fs/2;
-% dialog box to get user settings
-prompt = {'Exponent','Normalize (0 | 1)', 'High cutoff frequency (Hz)', ...
-    'Low cutoff frequency', 'Play audio (0 | 1)'};
-dlg_title = 'Settings';
-num_lines = 1;
-def = {num2str(2),num2str(1),num2str(Nyquist),num2str(0),num2str(1)};
-answer = inputdlg(prompt,dlg_title,num_lines,def);
-if ~isempty(answer)
-    exponent = str2num(answer{1,1});
-    normalize = str2num(answer{2,1});
-    hiF = str2num(answer{3,1});
-    loF = str2num(answer{4,1});
-    audioplay = str2num(answer{5,1});
+if nargin < 7, audioplay = 0; end
+if nargin < 6, loF = 0; end
+if nargin < 5, hiF = 48000; end
+if nargin < 4, normalize = 1; end
+if nargin < 3
+    exponent = 2;
+    if isstruct(in)
+        % fft must be long enough to avoid circular autoconvolution
+        audio = in.audio;
+        len = length(audio);
+        fs = in.fs;
+        Nyquist = fs/2;
+    else
+        audio = in;
+        len = length(audio);
+        if nargin < 2
+            fs = inputdlg({'Sampling frequency [samples/s]'},...
+                               'Fs',1,{'48000'});
+            fs = str2num(fs);
+            Nyquist = fs/2;
+        else
+            Nyquist = fs/2;
+        end
+    end
+    % dialog box to get user settings
+    prompt = {'Exponent','Normalize (0 | 1)', 'High cutoff frequency (Hz)', ...
+        'Low cutoff frequency'};
+    dlg_title = 'Settings';
+    num_lines = 1;
+    def = {'2','1',num2str(Nyquist),'0','0'};
+    answer = inputdlg(prompt,dlg_title,num_lines,def);
+    if ~isempty(answer)
+        exponent = str2num(answer{1,1});
+        normalize = str2num(answer{2,1});
+        hiF = str2num(answer{3,1});
+        loF = str2num(answer{4,1});
+    end
 end
-
-% fft must be long enough to avoid circular autoconvolution
-len = length(in.audio);
+if isstruct(in)
+    % fft must be long enough to avoid circular autoconvolution
+    audio = in.audio;
+    len = length(audio);
+    fs = in.fs;
+    Nyquist = fs/2;
+else
+    audio = in;
+    len = length(audio);
+    if nargin < 2
+        fs = inputdlg({'Sampling frequency [samples/s]'},...
+                           'Fs',1,{'48000'});
+        fs = str2num(fs);
+        Nyquist = fs/2;
+    else
+        Nyquist = fs/2;
+    end
+end
 fftlen = len * abs(exponent);
 if fftlen < len, fftlen = len; end
 fftlen = 2*(ceil(fftlen/2)); % even length to simplify filtering
 
 % derive spectrum and apply exponent
-spectrum = fft(in.audio,fftlen).^exponent;
+spectrum = fft(audio,fftlen).^exponent;
 
 % lowpass filter
 if (hiF < Nyquist) && (hiF > loF)  && (hiF > 0)
@@ -59,7 +96,7 @@ end
 
 % hipass filter
 if (loF > 0) && (loF < hiF) && (loF < Nyquist)
-    locomponent = floor(loF / (in.fs / fftlen)) + 1;
+    locomponent = floor(loF / (fs / fftlen)) + 1;
     spectrum(1:locomponent,:,:) = 0;
     spectrum(fftlen-locomponent+2:fftlen,:,:) = 0;
 end
@@ -72,15 +109,16 @@ if normalize
     out = out / max(max(max(abs(abs(out)))));
 end
 
-% only allow playback sampling rates that are unlikely to result in an error
-if (in.fs ~= 44100) || (in.fs ~= 48000)
-    audioplay = false;
+if isstruct(in)
+    OUT.audio = out;
+    OUT.funcallback.name = 'autoconvolve_spectexponent.m';
+    OUT.funcallback.inarg = {fs,exponent,normalize,hiF,loF,audioplay};
+else
+    OUT = out;
 end
 
 if audioplay
-    if ~isreal(out)
-        %wavout = abs(out);
-       
+    if ~isreal(out)    
         disp('Autoconvolution output is complex.')
     else
         wavout = out;
