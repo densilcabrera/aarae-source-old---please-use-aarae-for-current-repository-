@@ -4,19 +4,19 @@ function [OUT, varargout] = weighting(IN, fs, weight)
 %
 % Version 0 (beta) - 11 March 2014
 
-if nargin ==1 
-    
+if nargin < 3 
+    weight = 'a';
     param = inputdlg({'Weighting [a,b,c,d]'},...
         'Weighting',... % This is the dialog window title.
         [1 30],... 
         {'a'}); % preset answer for dialog.
-    
-    
-    
+
     if length(param) < 1, param = []; end 
     if ~isempty(param) 
         weight = char(param(1));
-        
+    else
+        OUT = [];
+        return
     end
 else
     param = [];
@@ -24,22 +24,20 @@ end
 if isstruct(IN) 
     audio = IN.audio; % Extract the audio data
     fs = IN.fs;       % Extract the sampling frequency of the audio data
-    
-    
-    
-    
-elseif ~isempty(param) || nargin > 1
+else
     audio = IN;
-    
+    if nargin < 2
+        fs = inputdlg({'Sampling frequency [samples/s]'},...
+                           'Fs',1,{'48000'});
+        fs = str2num(char(fs));
+    end
 end
 
 if ~isempty(audio) && ~isempty(fs) && ~isempty(weight)
     
     [len,chans,bands,dim4,dim5,dim6] = size(audio);
-    
     fftlen = 2.^nextpow2(len);
     f = fs*(((1:fftlen/2)-1)/fftlen)';
-
     
     switch weight
         case 'a'
@@ -47,7 +45,6 @@ if ~isempty(audio) && ~isempty(fs) && ~isempty(weight)
             ((f.^2 + 20.6.^2) .* ...
             ((f.^2 + 107.7.^2) .* (f.^2 +737.9.^2)).^0.5 .* ...
             (f.^2 + 12200.^2));
-            
         case 'b'
             tf = 10.^(0.17/20) .* 12200.^2 .* f.^3 ./ ...
             ((f.^2 + 20.6.^2) .* ...
@@ -59,37 +56,28 @@ if ~isempty(audio) && ~isempty(fs) && ~isempty(weight)
             (f.^2 + 12200.^2));
         case 'd'
             tf = f / 6.8966888496476e-5 .* ...
-                (...
-                (((1037918.48-f.^2).^2 + 1080768.16.*f.^2) ./ ...
-                ((9837328-f.^2).^2+11723776.*f.^2)) ./...
-                ((f.^2 + 79919.29).*(f.^2+1345600))).^0.5;
-            
+            (...
+            (((1037918.48-f.^2).^2 + 1080768.16.*f.^2) ./ ...
+            ((9837328-f.^2).^2+11723776.*f.^2)) ./...
+            ((f.^2 + 79919.29).*(f.^2+1345600))).^0.5;
         otherwise
            tf = 1+f*0;
     end
     
     tf = [tf;0;flipud(tf(2:end))];
     tf = repmat(tf,[1,chans,bands,dim4,dim5,dim6]);
-    
-    
     audio = ifft(fft(audio,fftlen) .* tf);
-        audio = audio(1:len,:,:,:,:,:);
-    
-    
-    
-    
+    audio = audio(1:len,:,:,:,:,:);
     if isstruct(IN)
         OUT = IN; % replicate the input structure for the output
         OUT.audio = audio; 
-        OUT.param = {'audio', fs, weight};
+        OUT.funcallback.name = 'weighting.m';
+        OUT.funcallback.inarg = {fs,weight};
     else
-        
         OUT = audio;
     end
     varargout{1} = fs;
-    
 else
-    
     OUT = [];
 end
 

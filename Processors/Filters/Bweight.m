@@ -31,6 +31,8 @@ end
     if isstruct(IN)
         OUT = IN;
         OUT.audio = processed;
+        OUT.funcallback.name = 'Bweight.m';
+        OUT.funcallback.inarg = {};
     else
         OUT = processed;
     end
