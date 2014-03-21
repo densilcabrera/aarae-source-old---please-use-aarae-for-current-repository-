@@ -9,3 +9,5 @@ for ch = 1:chans
         out.audio(:,ch,b) = icceps(in.audio(:,ch,b));
     end
 end
+out.funcallback.name = 'InverseComplexCepstrum.m';
+out.funcallback.inarg = {};
