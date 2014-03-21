@@ -18,8 +18,9 @@ function [OUT, varargout] = RemoveExpDecay(IN, fs, start_time, end_time)
 % by Densil Cabrera
 % version 0.00 (10 December 2013)
 
-if nargin ==1 
-
+if nargin < 4, end_time = 0.5; end
+if nargin < 3
+    start_time = 0.05;
     param = inputdlg({'Start time (s)';... 
                       'End time (s)'},...
                       'Settings',... % This is the dialog window title.
@@ -32,38 +33,34 @@ if nargin ==1
     if ~isempty(param) 
         start_time = param(1);
         end_time = param(2);
+    else
+        OUT = [];
+        return
     end
-else
-    param = [];
 end
 if isstruct(IN) 
     audio = IN.audio; % Extract the audio data
     fs = IN.fs;       % Extract the sampling frequency of the audio data
-    
     if isfield(IN,'bandID')
         bandID = IN.bandID;
     end
-    
     if isfield(IN,'chanID')
         chanID = IN.chanID;
     end
-    
-elseif ~isempty(param) || nargin > 1
-                      
+else
     audio = IN;
-    
+    if nargin < 2
+        fs = inputdlg({'Sampling frequency [samples/s]'},...
+                           'Fs',1,{'48000'});
+        fs = str2num(char(fs));
+    end
 end
 
-
-
 if ~isempty(audio) && ~isempty(fs)
-    
     [len, chans, bands] = size(audio);
-    
     if ~exist('bandID','var')
         bandID = 1:bands;
     end
-    
     if ~exist('chanID','var')
         chanID = 1:chans;
     end
@@ -72,57 +69,28 @@ if ~isempty(audio) && ~isempty(fs)
     if Tend > len, Tend = len; end
     
     Tstart = floor(abs(start_time * fs));
-    
     decaycurve = flipdim(10*log10(cumsum(flipdim(audio.^2,1))+1e-300),1);
     decaycurve = decaycurve - repmat(decaycurve(1,:,:),[len,1,1]);
-    
     slope = zeros(chans, bands);
     for ch = 1:chans
         for b = 1:bands
             p = polyfit((Tstart:Tend)'./fs, decaycurve(Tstart:Tend,ch,b),1); %linear regression
             slope(ch,b) = p(1);
-            
         end
     end
-    
     T = -60 ./ slope;
     tau1 = T ./ (log(60));
     tau1 = permute(tau1,[3,1,2]);
      audio_out = audio .* exp((repmat((0:len-1)',[1,chans, bands])./fs)./repmat(tau1,[len,1,1]));
     
     if isstruct(IN)
-        OUT = IN; 
         OUT.audio = audio_out;
+        OUT.funcallback.name = 'RemoveExpDecay.m';
+        OUT.funcallback.inarg = {fs,start_time,end_time};
     else
-        
         OUT = audio_out;
     end
     varargout{1} = fs;
-    
-%     f = figure('Name','Original Reverberation Time Estimates');
-%     t = uitable('Data',T,...
-%                 'ColumnName',num2cell(bandID),...
-%                 'RowName',num2cell(chanID));
-%     set(t,'ColumnWidth',{60});
-%     disptables(f,t);
-
-% The following needs to be modified to be able to use chanID as a cell (it
-% was written when chanID was a vector).
-% [r,~] = size(bandID);
-% if r > 1
-%     bandID = bandID';
-% end
-% 
-% [~,c] = size(chanID);
-% if c > 1
-%     chanID = chanID';
-% end
-% 
-% display_data = [[0;chanID],[bandID; round(T*100)/100]];
-% 
-% disp('Estimated reverberation times (in seconds) prior to decay compensation:');
-% disp(num2str(display_data));
-
 else
     OUT = [];
 end

@@ -1,4 +1,4 @@
-function y = hilbert_envelope_smooth(in, fs, filterlength, invmode, doplot)
+function OUT = hilbert_envelope_smooth(in, fs, filterlength, invmode, doplot)
 % This function applies the Hilbert transform to the input wave, and
 % derives the wave's envelope from that. Then the envelope is smoothed
 % prior to creating the output signal. The output can be created in two
@@ -16,89 +16,109 @@ function y = hilbert_envelope_smooth(in, fs, filterlength, invmode, doplot)
 % Code by Densil Cabrera
 % version 1.02 (22 December 2013)
 
-if isstruct(in)
-    audio = in.audio;
-    fs = in.fs;
-    
+if nargin < 5, doplot = 0; end
+if nargin < 4, invmode = 1; end
+if nargin < 3
+    if isstruct(in)
+        audio = in.audio;
+        fs = in.fs;
+    else
+        audio = in;
+        if nargin < 2
+            fs = inputdlg({'Sampling frequency [samples/s]'},...
+                               'Fs',1,{'48000'});
+            fs = str2num(char(fs));
+        end
+    end
     % Dialog box for settings
     prompt = {'Length of smoothing filter in samples', ...
         'Inverse Hilbert transform (0) or Inverse envelope only (1)',...
         'Plot (0|1)'};
     dlg_title = 'Settings';
     num_lines = 1;
-    def = {num2str(round(fs/10)),'1','1'};
+    def = {num2str(round(fs/10)),'1','0'};
     answer = inputdlg(prompt,dlg_title,num_lines,def);
     
     if ~isempty(answer)
         filterlength = round(str2num(answer{1,1}));
         invmode = str2num(answer{2,1});
         doplot = str2num(answer{3,1});
+    else
+        OUT = [];
+        return
     end
-    
-    
+end
+if isstruct(in)
+    audio = in.audio;
+    fs = in.fs;
 else
     audio = in;
+    if nargin < 2
+        fs = inputdlg({'Sampling frequency [samples/s]'},...
+                           'Fs',1,{'48000'});
+        fs = str2num(char(fs));
+    end
 end
+if ~isempty(in)&& ~isempty(fs) && ~isempty(filterlength) && ~isempty(invmode) && ~isempty(doplot)
+    [len, chans, bands] = size(audio);
 
+    h = zeros(len, chans, bands);
+    for b = 1:bands
+        h(:,:,b) = hilbert(audio(:,:,b));
+    end
 
+    envelope1 = abs(h);
+    phase = angle(h);
 
-[len, chans, bands] = size(audio);
+    if filterlength > 0
+    envelope2 = filtfilt(ones(1,filterlength)/filterlength, 1, envelope1);
+    elseif invmode == 0
+        envelope2 = ones(len, chans, bands);
+    else
+        envelope2 = envelope1;
+    end
 
-h = zeros(len, chans, bands);
-for b = 1:bands
-    h(:,:,b) = hilbert(audio(:,:,b));
-end
-
-envelope1 = abs(h);
-
-phase = angle(h);
-
-if filterlength > 0
-envelope2 = filtfilt(ones(1,filterlength)/filterlength, 1, envelope1);
-elseif invmode == 0
-    envelope2 = ones(len, chans, bands);
-else
-    envelope2 = envelope1;
-end
-
-if invmode == 0
-    y = envelope2 .* cos(phase);
-else
-    y = 0.25 * audio ./ envelope2;
-end
-
-if doplot
-    ymix = mean(y,3); % mixdown of bands if multiband
-    sound(ymix./max(max(abs(ymix))),fs)
-    t = ((1:len)'-1)/fs;
+    if invmode == 0
+        y = envelope2 .* cos(phase);
+    else
+        y = 0.25 * audio ./ envelope2;
+    end
     
-    
-    figure('Name', 'Hilbert envelope smoothing')
+    if isstruct(in)
+        OUT.audio = y;
+        OUT.funcallback.name = 'hilbert_envelope_smooth.m';
+        OUT.funcallback.inarg = {fs,filterlength,invmode,doplot};
+    else
+        OUT = y;
+    end
 
+    if doplot
+        ymix = mean(y,3); % mixdown of bands if multiband
+        sound(ymix./max(max(abs(ymix))),fs)
+        t = ((1:len)'-1)/fs;
+        figure('Name', 'Hilbert envelope smoothing')
+        k = 1; % subplot counter
 
-
-k = 1; % subplot counter
-
-
-    for ch = 1:chans
-        for b = 1:bands
-            subplot(chans,bands,k)
-            hold on
-            plot(t,audio(:,ch,b),'Color',[0.7 0.7 0.7])
-            plot(t,y(:,ch,b),'Color',[0.3 0.3 0.3])
-            plot(t,envelope1(:,ch,b),'r')
-            plot(t,envelope2(:,ch,b),'b')
-            if ch == chans
-                xlabel('Time (s)')
+        for ch = 1:chans
+            for b = 1:bands
+                subplot(chans,bands,k)
+                hold on
+                plot(t,audio(:,ch,b),'Color',[0.7 0.7 0.7])
+                plot(t,y(:,ch,b),'Color',[0.3 0.3 0.3])
+                plot(t,envelope1(:,ch,b),'r')
+                plot(t,envelope2(:,ch,b),'b')
+                if ch == chans
+                    xlabel('Time (s)')
+                end
+                if b == 1
+                    ylabel(['Chan ',num2str(ch)])
+                end
+                if ch == 1
+                    title(['Band ',num2str(b)])
+                end
+                hold off
+                k = k+1;
             end
-            if b == 1
-                ylabel(['Chan ',num2str(ch)])
-            end
-            if ch == 1
-                title(['Band ',num2str(b)])
-            end
-            hold off
-            k = k+1;
         end
     end
 end

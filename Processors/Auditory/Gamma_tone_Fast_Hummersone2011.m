@@ -24,6 +24,9 @@ if nargin ==1
         lof = param(2);
         bands = param(3);
         align = param(4);
+    else
+        OUT = [];
+        return
     end
     if align == 1, align = true; else align = false; end
 else

@@ -53,6 +53,9 @@ if nargin < 3
         Threshold = str2num(answer{2,1});
         Duration = str2num(answer{3,1});
         doplot = str2num(answer{4,1});
+    else
+        OUT = [];
+        return
     end
 end
 if isstruct(in)
