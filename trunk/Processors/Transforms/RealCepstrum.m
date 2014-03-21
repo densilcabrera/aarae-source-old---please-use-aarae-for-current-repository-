@@ -3,3 +3,5 @@ function out = RealCepstrum(in)
 % using Matlab's rceps function.
 
 out.audio = rceps(in.audio);
+out.funcallback.name = 'RealCepstrum';
+out.funcallback.inarg = {};

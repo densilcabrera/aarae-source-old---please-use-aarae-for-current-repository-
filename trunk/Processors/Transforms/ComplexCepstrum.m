@@ -9,3 +9,5 @@ for ch = 1:chans
         out.audio(:,ch,b) = cceps(real(in.audio(:,ch,b)));
     end
 end
+out.funcallback.name = 'ComplexCepstrum.m';
+out.funcallback.inarg = {};
