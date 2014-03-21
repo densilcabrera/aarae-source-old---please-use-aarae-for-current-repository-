@@ -3,7 +3,7 @@ function out = LevelStats(inputwave)
 % calibration offset into account.
 %
 % code by Densil Cabrera
-% version 1.00 (20 March 2014)
+% version 1.01 (21 March 2014)
 
 if isstruct(inputwave)
     audio = inputwave.audio;
@@ -13,7 +13,6 @@ if isstruct(inputwave)
     end
     if isfield(inputwave,'chanID')
         chanID = inputwave.chanID;
-        % not used yet...
     end
     if isfield(inputwave,'cal')
         cal = inputwave.cal;
@@ -26,8 +25,6 @@ end
 
 [len,chans,bands] = size(audio);
 
-
-%dosubplots = 0; % default setting for multichannel plotting
 tau = 0.125; % default temporal integration constant in seconds
 weight = 'z';
 
@@ -37,7 +34,6 @@ param = inputdlg({...
     'Weighting (a,b,c,d,z)'}, ...
     'Analysis parameters',1, ...
     {num2str(tau); num2str(cal);weight});
-%param = str2num(char(param));
 if length(param) < 3, param = []; end
 if ~isempty(param) 
     tau = str2num(char(param(1)));
@@ -45,8 +41,8 @@ if ~isempty(param)
     weight = char(param(3));
 end
 
-% preserve the original data for plotting
-audio_original = audio .* repmat(10.^(cal./20),[len,1,bands]);
+% apply calibration
+[audio, audio_original]= deal(audio .* repmat(10.^(cal./20),[len,1,bands]));
 
 % apply weighting
 audio = weighting(audio,fs,weight);
@@ -57,23 +53,14 @@ if tau > 0
     % FILTER DESIGN
     E = exp(-1/(tau*fs)); % exponential term
     b = 1 - E; % filter numerator (adjusts gain to compensate for denominator)
-    a = [1 -E];% filter denominator
-    % rectify, integrate and convert to decibels
+    a = [1, -E];% filter denominator
     
+    % rectify, integrate and square    
     audio=filter(b,a,abs(audio)).^2;
     
 else
     % no temporal integration
     audio = audio.^2;
-end
-
-% apply calibration
-if length(cal) > 1
-    for k = 1:chans
-        audio(:,k,:,:,:,:) = 10.^((10*log10(audio(:,k,:,:,:,:)) + cal(k))./10);
-    end
-else
-    audio = 10.^((10*log10(audio) + cal)./10);
 end
 
 out.Lenergy = 10*log10(sum(audio)./fs);
@@ -103,22 +90,27 @@ if isnan(ymin)
     ymin = ymax-100;
 end
 
-% Still need to write output tables
-t = ((1:len)'-1)./fs;
+
+t = ((1:len)'-1)./fs; % time vector
 for ch = 1:chans
+    if exist('chanID','var')
+        chanstring = char(chanID(ch));
+    else
+        chanstring = ['ch ',num2str(ch)];
+    end
     for b = 1:bands
         if bands > 1
             if exist('bandID','var')
                 figure('Name',...
-                    ['Level Statistics, ch ',num2str(ch),', ',...
+                    ['Level Statistics, ',chanstring,', ',...
                     num2str(bandID(b))])
             else
                 figure('Name',...
-                    ['Level Statistics, ch ',num2str(ch),', ',num2str(b)])
+                    ['Level Statistics, ',chanstring,', ',num2str(b)])
                 
             end
         else
-            figure('Name',['Level Statistics, ch ',num2str(ch)])
+            figure('Name',['Level Statistics, ',chanstring])
         end
         y = sort(audio(:,ch,b));
         plot(t,10*log10(audio_original(:,ch,b).^2),'Color',[0.7 0.9 0.9],...
@@ -143,7 +135,7 @@ for ch = 1:chans
         text(0.05*(len-1)/fs,ymin+0.8*(ymax-ymin),...
             ['Lenergy = ',num2str(out.Lenergy(b,ch)),' dB'])
         legend('show','Location','EastOutside');
-
+        title(['Integration time constant = ', num2str(tau),' s'])
         
     end
 end
