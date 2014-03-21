@@ -61,6 +61,9 @@ if nargin < 3
         normalize = str2num(answer{2,1});
         hiF = str2num(answer{3,1});
         loF = str2num(answer{4,1});
+    else
+        OUT = [];
+        return
     end
 end
 if isstruct(in)

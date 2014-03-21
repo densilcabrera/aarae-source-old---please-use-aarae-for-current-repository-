@@ -58,6 +58,9 @@ if nargin < 3
          Hicutoff = str2num(answer{3,1});
          Locutoff = str2num(answer{4,1});
          GCparam.OutMidCrct = str2num(answer{5,1});
+     else
+         out = [];
+         return
      end
 end
 if isstruct(in)

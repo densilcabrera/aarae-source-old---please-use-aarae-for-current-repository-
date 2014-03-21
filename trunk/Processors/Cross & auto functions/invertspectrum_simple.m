@@ -88,6 +88,9 @@ if nargin < 3
         doweiner = answer{5,1};
         rotateinv = str2num(answer{6,1});
         doplot = str2num(answer{7,1});
+    else
+        OUT = [];
+        return
     end
     if doweiner == 'n', doweiner = false; else doweiner = true; weiner = str2num(answer{5,1}); end
 end

@@ -11,3 +11,6 @@ for ch = 1:chans
         [~, out.audio(:,ch,bnd)] = rceps(in.audio(:,ch,bnd));
     end
 end
+
+out.funcallback.name = 'MinimumPhaseFromRCEPS.m';
+out.funcallback.inarg = {};

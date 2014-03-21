@@ -1,4 +1,4 @@
-function out = ExponentialEnvelope(in, fs)
+function OUT = ExponentialEnvelope(in, fs, exponent, normalize)
 % This function applies an exponential envelope to the audio.
 %
 % Use a positive exponent for exponential growth.
@@ -15,40 +15,54 @@ function out = ExponentialEnvelope(in, fs)
 % Code by Densil Cabrera
 % version 1.00 (4 November 2013)
 
+if nargin < 4, normalize = 1; end
+if nargin < 3
+    prompt = {'Exponential growth or decay constant', ...
+        'Normalize'};
+    dlg_title = 'Settings';
+    num_lines = 1;
+    def = {'0','1'};
+    answer = inputdlg(prompt,dlg_title,num_lines,def);
+    if isempty(answer)
+        OUT = [];
+        return
+    else
+        exponent = str2num(answer{1,1});
+        normalize = abs(str2num(answer{2,1}));
+    end
+end
 if isstruct(in)
     audio = in.audio;
     fs = in.fs;
 else
     audio = in;
+    if nargin < 2
+        fs = inputdlg({'Sampling frequency [samples/s]'},...
+                           'Fs',1,{'48000'});
+        fs = str2num(char(fs));
+    end
 end
 
-[len, chans, bands] = size(audio);
+if ~isempty(audio) && ~isempty(fs) && ~isempty(exponent) && ~isempty(normalize)
+    [len, chans, bands] = size(audio);
 
-prompt = {'Exponential growth or decay constant', ...
-    'Normalize'};
-dlg_title = 'Settings';
-num_lines = 1;
-def = {'0','1'};
-answer = inputdlg(prompt,dlg_title,num_lines,def);
-if isempty(answer)
-    out = [];
-    return
+    t = (0:(len-1))./fs; % time in s
+    envelope = exp(exponent.*t)';
+    audio = audio .* repmat(envelope, [1,chans,bands]);
+    if normalize
+        audio = audio ./ max(max(max(abs(audio))));
+    end
+    
+    if isstruct(in)
+        OUT.audio = audio;
+        OUT.funcallback.name = 'ExponentialEnvelope.m';
+        OUT.funcallback.inarg = {fs,exponent,normalize};
+    else
+        OUT = audio;
+    end
+
+    RT = -3*log(10)/exponent;
+    disp(['Equivalent reverberation time of exponent is ', num2str(RT), ' s.'])
 else
-    exponent = str2double(answer{1,1});
-    normalize = abs(str2double(answer{2,1}));
+    OUT = [];
 end
-
-t = (0:(len-1))./fs; % time in s
-
-
-envelope = exp(exponent.*t)';
-
-audio = audio .* repmat(envelope, [1,chans,bands]);
-if normalize
-    audio = audio ./ max(max(max(abs(audio))));
-end
-
-out.audio = audio;
-
-RT = -3*log(10)/exponent;
-disp(['Equivalent reverberation time of exponent is ', num2str(RT), ' s.'])

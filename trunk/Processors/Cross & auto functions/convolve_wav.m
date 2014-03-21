@@ -12,6 +12,9 @@ if nargin < 4
     if ~isempty(selection)
         wave2 = selection.audio;
         fs2 = selection.fs;
+    else
+        OUT = [];
+        return
     end
 end
 if isstruct(in)
