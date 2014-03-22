@@ -25,6 +25,11 @@ end
 
 [len,chans,bands] = size(audio);
 
+if ~isreal(audio)
+    % inverse Hilbert transform for complex data
+    audio = abs(audio).* cos(angle(audio));
+end
+
 tau = 0.125; % default temporal integration constant in seconds
 weight = 'z';
 
@@ -33,7 +38,7 @@ param = inputdlg({...
     'Calibration offset (dB)'; ...
     'Weighting (a,b,c,d,z)'}, ...
     'Analysis parameters',1, ...
-    {num2str(tau); num2str(cal);weight});
+    {num2str(tau); num2str(cal); weight});
 if length(param) < 3, param = []; end
 if ~isempty(param) 
     tau = str2num(char(param(1)));
