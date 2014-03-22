@@ -7,26 +7,21 @@ if nargin < 2
     else
         audio = IN;
         fs = inputdlg({'Sampling frequency [samples/s]'},...
-                           'Fs',1,{'48000'});
+            'Fs',1,{'48000'});
         fs = str2num(char(fs));
     end
 end
-    if ~isempty(audio) && ~isempty(fs)
-        if isdir([cd '/Processors/Filters/' num2str(fs) 'Hz'])
+if ~isempty(audio) && ~isempty(fs)
+    %if isdir([cd '/Processors/Filters/' num2str(fs) 'Hz'])
+    if false % bypass ths code
+        content = load([cd '/Processors/Filters/' num2str(fs) 'Hz/B-WeightingFilter.mat']);
+        filterbank = content.filterbank;
+        processed = filter(filterbank,1,audio);
         
-            content = load([cd '/Processors/Filters/' num2str(fs) 'Hz/B-WeightingFilter.mat']);
-            filterbank = content.filterbank;
-            processed = filter(filterbank,1,audio);
-        
-        else
-        % work out some other way of weighting
-%         WT    = 'B';    % Weighting type (but 'B' does not exist in
-%                         % filterbuilder, so this code won't work)
-%         Class = 1;      % Class
-%         h = fdesign.audioweighting('WT,Class', WT, Class, fs);
-%         Hd = design(h, 'ansis142', ...
-%        'SOSScaleNorm', 'Linf');
-%         processed = filter(Hd,audio);
+    else
+        % use stdspectrum.m from voicebox
+        [b,a] = stdspectrum(3,'z',fs);
+        processed = filter(b,a,audio);
     end
     if isstruct(IN)
         OUT = IN;
