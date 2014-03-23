@@ -24,18 +24,46 @@ function [OUT, varargout] = Blind_RT_LoellmannJeub2012(IN, fs)
 
 
 
-if isstruct(IN) 
+if isstruct(IN)
     audio = IN.audio; % Extract the audio data
     fs = IN.fs;       % Extract the sampling frequency of the audio data
+    
+    if isfield(IN,'bandID')
+        bandID = IN.bandID;
+    end
+    if isfield(IN,'chanID')
+        chanID = IN.chanID;
+    end
+%     if isfield(IN,'cal')
+%         cal = IN.cal;
+%     else
+%         cal = zeros(1,size(audio,2));
+%         disp('This audio signal has not been calibrated.')
+%     end
+    
+    
 elseif ~isempty(param) || nargin > 1
-                       
+    
     audio = IN;
     
 end
 
 
 if ~isempty(audio) && ~isempty(fs)
-    dur = size(audio,1) /fs;
+    
+    [len,chans,bands] = size(audio);
+    
+    if bands>1
+        audio = sum(audio,3);
+        disp('Multiband audio has been summed for blind RT estimation')
+    end
+    
+%     if exist('cal','var')
+%         audio = audio .* repmat(10.^(cal./20),[len,1,bands]);
+%     end
+    
+    
+    dur = len /fs;
     if dur < 15
         disp('This analyser is designed for reverberant speech,')
         disp('for example, 60 duration.')
@@ -50,42 +78,59 @@ if ~isempty(audio) && ~isempty(fs)
     simpar.block_size = round(20e-3 * simpar.fs);  % block length
     simpar.overlap = round(simpar.block_size/2);   % overlap
     
-    [rt_est,rt_est_mean,rt_est_dbg] = ML_RT_estimation(audio(:,1,1)',simpar);
-    
-    rt_est_median = median(rt_est);
-    
-    
-    
+    for ch = 1:chans
+        [rt_est(ch,:),rt_est_mean(ch),rt_est_dbg] = ML_RT_estimation(audio(:,ch,1)',simpar);
+        
+        rt_est_median(ch) = median(rt_est(ch,:));
+        
+        
+        
+        
+        
+        
+        %--------------------------------------------------------------------------
+        % Plot estimated RT and 'true' RT obtained by Schroeder method
+        %--------------------------------------------------------------------------
+        if exist('chanID','var')
+            chanstring = char(chanID(ch));
+        else
+            chanstring = ['chan ',num2str(ch)];
+        end
+        
+        fr2sec_idx = linspace(1,len/simpar.fs,size(rt_est,2));
+        figure('Name',['Blind Reverberation Time Estimate ',chanstring])
+        clf
+        hold on
+        plot(fr2sec_idx,rt_est(ch,:),'-r')
+        line([0 fr2sec_idx(end)],[rt_est_mean(ch) rt_est_mean(ch)])
+        line([0 fr2sec_idx(end)],[rt_est_median(ch) rt_est_median(ch)],'Color', [0,0.5,0])
+        grid on,box on
+        xlabel('Time [s]'),ylabel('RT [s]');
+        legend('Estimated T60',['Mean Estimate ',num2str(rt_est_mean(ch)), ' s'], ...
+            ['Median Estimate ',num2str(rt_est_median(ch)), ' s'],'location','southeast');
+        
+        %--------------------------------------------------------------------------
+        
+    end
     
     % output table
     f = figure;
-    t = uitable('Data',[rt_est_mean rt_est_median],...
-                'ColumnName',{'Mean RT estimate (s)' 'Median RT estimate (s)'},...
-                'RowName',{'Results'});
+    
+    if exist('chanID','var')
+        rownamecell = chanID;
+    else
+        rownamecell = num2cell(1:chans);
+    end
+    
+    t = uitable('Data',[rt_est_mean' rt_est_median'],...
+        'ColumnName',{'Mean RT estimate (s)' 'Median RT estimate (s)'},...
+        'RowName',rownamecell);
     disptables(f,t);
     
-%--------------------------------------------------------------------------
-% Plot estimated RT and 'true' RT obtained by Schroeder method
-%--------------------------------------------------------------------------
-fr2sec_idx = linspace(1,length(audio)/simpar.fs,length(rt_est));
-figure('Name','Blind Reverberation Time Estimate')
-clf
-hold on
-plot(fr2sec_idx,rt_est,'-r')
-line([0 fr2sec_idx(end)],[rt_est_mean rt_est_mean])
-line([0 fr2sec_idx(end)],[rt_est_median rt_est_median],'Color', [0,0.5,0])
-grid on,box on
-xlabel('Time [s]'),ylabel('RT [s]');
-legend('Estimated T60',['Mean Estimate ',num2str(rt_est_mean), ' s'], ...
-    ['Median Estimate ',num2str(rt_est_median), ' s'],'location','southeast');
-
-%--------------------------------------------------------------------------
-
     
-
     if isstruct(IN)
-        OUT.rt_est = rt_est; 
-        OUT.rt_est_mean = rt_est_mean; 
+        OUT.rt_est = rt_est;
+        OUT.rt_est_mean = rt_est_mean;
         OUT.rt_est_dbg = rt_est_dbg;
         OUT.funcallback.name = 'Blind_RT_LoellmannJeub2012.m';
         OUT.funcallback.inarg = {fs}; % not actually needed for callback
@@ -95,8 +140,8 @@ legend('Estimated T60',['Mean Estimate ',num2str(rt_est_mean), ' s'], ...
     end
     varargout{1} = rt_est_mean;
     varargout{2} = rt_est_dbg;
-
-
+    
+    
 else
     
     OUT = [];
