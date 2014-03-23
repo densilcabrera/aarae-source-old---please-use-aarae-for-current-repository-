@@ -51,12 +51,20 @@ end
 
 if ~isempty(audio) && ~isempty(fs)
     
-    [len,chans,bands] = size(audio);
-    
-    if bands>1
+    if size(audio,3)>1
         audio = sum(audio,3);
         disp('Multiband audio has been summed for blind RT estimation')
     end
+    
+    if fs ~= 44100
+        audio = resample(audio,44100,fs);
+        fs = 44100;
+        disp('Audio has been resampled to fs=44100 Hz for blind RT estimation')
+    end
+    
+    [len,chans] = size(audio);
+    
+    
     
 %     if exist('cal','var')
 %         audio = audio .* repmat(10.^(cal./20),[len,1,bands]);
@@ -133,7 +141,7 @@ if ~isempty(audio) && ~isempty(fs)
         OUT.rt_est_mean = rt_est_mean;
         OUT.rt_est_dbg = rt_est_dbg;
         OUT.funcallback.name = 'Blind_RT_LoellmannJeub2012.m';
-        OUT.funcallback.inarg = {fs}; % not actually needed for callback
+        OUT.funcallback.inarg = {}; % nothing needed for callback
     else
         
         OUT = rt_est;
