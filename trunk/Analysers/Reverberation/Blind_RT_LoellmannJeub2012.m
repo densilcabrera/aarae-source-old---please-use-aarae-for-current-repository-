@@ -56,10 +56,10 @@ if ~isempty(audio) && ~isempty(fs)
         disp('Multiband audio has been summed for blind RT estimation')
     end
     
-    if fs ~= 44100
-        audio = resample(audio,44100,fs);
-        fs = 44100;
-        disp('Audio has been resampled to fs=44100 Hz for blind RT estimation')
+    if fs<8e3 || fs>24e3
+        audio = resample(audio,24000,fs);
+        fs = 24000;
+        disp('Audio has been resampled to fs=24000 Hz for blind RT estimation')
     end
     
     [len,chans] = size(audio);
