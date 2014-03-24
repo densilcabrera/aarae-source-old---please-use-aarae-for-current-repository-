@@ -1,4 +1,4 @@
-function out = deletechannels_aarae(in)
+function out = deletechannels_aarae(in,S)
 % This function allows you to select the channels that you wish to retain,
 % and delete the remaining channels
 
@@ -9,17 +9,25 @@ else
 end
 
 if ~isempty(param)
-[S,ok] = listdlg('Name','Channel selection',...
-    'PromptString','Delete unselected channels',...
-    'ListString',param,...
-    'ListSize', [160 320]);
+    if nargin < 2
+        [S,ok] = listdlg('Name','Channel selection',...
+            'PromptString','Delete unselected channels',...
+            'ListString',param,...
+            'ListSize', [160 320]);
+    end
 
     if ok == 1 && ~isempty(S)
-        out.audio = in.audio(:,S,:);
-        if isfield(in,'chanID')
-            out.chanID = in.chanID(S);
-        else
-            out.chanID = num2cell(S);
+        try
+            out.audio = in.audio(:,S,:);
+            if isfield(in,'chanID')
+                out.chanID = in.chanID(S);
+            else
+                out.chanID = S;
+            end
+            out.funcallback.name = 'deletechannels_aarae.m';
+            out.funcallback.inarg = {S};
+        catch
+            out = [];
         end
     else
         out = [];

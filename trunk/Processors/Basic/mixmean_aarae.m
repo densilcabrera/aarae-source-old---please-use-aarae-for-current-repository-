@@ -3,4 +3,6 @@ function out = mixmean_aarae(in)
 % mixdown of the channels, by averaging them.
     out.audio = mean(in.audio,2);
     out.chanID = 1;
+    out.funcallback.name = 'mixmean_aarae.m';
+    out.funcallback.inarg = {};
 end

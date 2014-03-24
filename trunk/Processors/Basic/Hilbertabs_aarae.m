@@ -7,4 +7,6 @@ function out = Hilbertabs_aarae(in)
     for b = 1:bands
         out.audio(:,:,b) = abs(hilbert(in.audio(:,:,b)));
     end
+    out.funcallback.name = 'Hilbertabs_aarae.m';
+    out.funcallback.inarg = {};
 end

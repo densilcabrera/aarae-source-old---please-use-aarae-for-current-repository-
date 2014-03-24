@@ -902,6 +902,7 @@ mainHandles = guidata(handles.main_stage1);
 if ~isempty(handles.testsignal(handles.version))
     aarae_fig = findobj('type','figure','tag','aarae');
     iconPath = fullfile(matlabroot,'/toolbox/fixedpoint/fixedpointtool/resources/plot.png');
+    handles.selNodeName = [handles.selNodeName '_edit'];
     mainHandles.(genvarname(handles.selNodeName)) = uitreenode('v0', handles.selNodeName, handles.selNodeName,  iconPath, true);
     switch handles.testsignal(handles.version).datatype
         case 'testsignals', ivalue = 1;

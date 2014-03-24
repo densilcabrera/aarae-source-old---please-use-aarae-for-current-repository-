@@ -667,8 +667,8 @@ if isfield(audiodata,'properties') && isfield(audiodata.properties,'startflag')
                 end
                 S = tempS;
             case 2
-                IR = audiodata.audio;
-                ladjust = length(IR);
+                IR = [];%audiodata.audio;
+                %ladjust = length(IR);
                 for j = 1:size(S,2)
                     for i = 1:length(startflag)
                         newS(:,i) = S(startflag(i):startflag(i)+len-1,j);
@@ -676,7 +676,8 @@ if isfield(audiodata,'properties') && isfield(audiodata.properties,'startflag')
                     newS_pad = [newS; zeros(size(invS(:,j),1),size(newS,2))];
                     invS_pad = [repmat(invS(:,j),1,size(newS,2)); zeros(size(newS))];
                     convolve = convolvedemo(newS_pad, invS_pad, 2, fs);
-                    IR(:,j,1,1:size(newS,2)) = [convolve;zeros(ladjust-length(convolve),size(newS,2))]; % Calls convolvedemo.m
+                    convolve = convolve(1:round(end/2),:);
+                    IR(:,j,1,1:size(newS,2)) = convolve;%zeros(ladjust-length(convolve),size(newS,2))]; % Calls convolvedemo.m
                 end
                 S = newS;
                 invS = repmat(invS,1,size(S,2));
@@ -710,7 +711,7 @@ if ~isempty(getappdata(hMain,'testsignal'))
     signaldata.fs = fs;
     signaldata.nbits = nbits;
     signaldata.chanID = cellstr([repmat('Chan',size(signaldata.audio,2),1) num2str((1:size(signaldata.audio,2))')]);
-    signaldata.datatype = 'IR';
+    signaldata.datatype = 'measurements';
     iconPath = fullfile(matlabroot,'/toolbox/fixedpoint/fixedpointtool/resources/plot.png');
     handles.(genvarname(newleaf)) = uitreenode('v0', newleaf,  newleaf,  iconPath, true);
     handles.(genvarname(newleaf)).UserData = signaldata;
@@ -1194,7 +1195,8 @@ if (click == handles.axestime) || (get(click,'Parent') == handles.axestime)
         if ndims(data) > 2
             channel = str2double(get(handles.IN_nchannel,'String'));
             line(:,:) = data(:,channel,:);
-            cmap = colormap(hsv(size(signaldata.audio,3)));
+            if ndims(data) == 3, cmap = colormap(hsv(size(signaldata.audio,3))); end
+            if ndims(data) >= 4, cmap = colormap(copper(size(signaldata.audio,4))); end
         else
             line = data;
             cmap = colormap(lines(size(signaldata.audio,2)));
@@ -1274,7 +1276,8 @@ if (click == handles.axesfreq) || (get(click,'Parent') == handles.axesfreq)
         if ndims(data) > 2
             channel = str2double(get(handles.IN_nchannel,'String'));
             line(:,:) = data(:,channel,:);
-            cmap = colormap(hsv(size(signaldata.audio,3)));
+            if ndims(data) == 3, cmap = colormap(hsv(size(signaldata.audio,3))); end
+            if ndims(data) >= 4, cmap = colormap(copper(size(signaldata.audio,4))); end
         else
             line = data;
             cmap = colormap(lines(size(signaldata.audio,2)));

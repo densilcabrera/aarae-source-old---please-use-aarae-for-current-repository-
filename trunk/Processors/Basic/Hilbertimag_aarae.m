@@ -6,4 +6,6 @@ function out = Hilbertimag_aarae(in)
     for b = 1:bands
         out.audio(:,:,b) = imag(hilbert(in.audio(:,:,b)));
     end
+    out.funcallback.name = 'Hillbertmag_aarae.m';
+    out.funcallback.inarg = {};
 end
