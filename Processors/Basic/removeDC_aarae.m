@@ -5,4 +5,6 @@ function out = removeDC_aarae(in)
 
 len = size(in.audio,1);
 out.audio = in.audio - repmat(mean(in.audio),[len,1,1]);
+out.funcallback.name = 'removeDC_aarae.m';
+out.funcallback.inarg = {};
 end

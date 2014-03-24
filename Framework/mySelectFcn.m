@@ -48,7 +48,8 @@ function nodes = mySelectFcn(tree, value)
                 set(mainHandles.channel_panel,'Visible','on');
                 set(mainHandles.IN_nchannel,'String','1');
                 set(mainHandles.tchannels,'String',['/ ' num2str(size(audiodata.audio,2))]);
-                cmap = colormap(hsv(size(audiodata.audio,3)));
+                if ndims(audiodata.audio) == 3, cmap = colormap(hsv(size(audiodata.audio,3))); end
+                if ndims(audiodata.audio) >= 4, cmap = colormap(copper(size(audiodata.audio,4))); end
                 set(mainHandles.aarae,'DefaultAxesColorOrder',cmap)
             else
                 cmap = colormap(lines(size(audiodata.audio,2)));

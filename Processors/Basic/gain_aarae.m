@@ -39,14 +39,16 @@ if ~isempty(answer)
     if gain == 'n'
         % normalize column channel individually
         maxval = max(abs(in.audio));
-        out = in.audio ./ repmat(maxval,[length(in.audio),1,1]);
+        out.audio = in.audio ./ repmat(maxval,[length(in.audio),1,1]);
     elseif ~isempty(gain(gain == 'i'))
         gain = str2num(gain);
-        out = in.audio * gain;
+        out.audio = in.audio * gain;
     else
         gain = str2num(gain);
-        out = in.audio * 10.^(gain/20);
+        out.audio = in.audio * 10.^(gain/20);
     end
+    out.funcallback.name = 'gain_aarae.m';
+    out.funcallback.inarg = {gain};
 else
     out = [];
 end
