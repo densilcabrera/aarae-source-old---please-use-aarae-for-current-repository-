@@ -33,7 +33,7 @@ if ~isempty(newfs)
         for tracknum = 2:numtracks
             for i = 1:size(in.(genvarname(['audio' num2str(tracknum)])),2)
                 for j = 1:size(in.(genvarname(['audio' num2str(tracknum)])),3)
-                    out.(genvarname(['audio' num2str(tracknum)]))(:,i,j) = resample(in.(genvarname(['audio' num2str(tracknum)]))(:,i,j), newfs, fs);
+                    out.(genvarname(['audio' num2str(tracknum)]))(:,i,j) = resample(in.(genvarname(['audio' num2str(tracknum)]))(:,i,j), newfs, fs, n);
                 end
             end
         end
