@@ -1,18 +1,20 @@
-function out = resample_aarae(in,newfs)
+function out = resample_aarae(in,newfs,n)
 % This function resamples the audio, using Matlab's resample function.
 % The .fs field is changed to the new audio sampling rate.
 %
 % Code by Densil Cabrera & Daniel Jimenez
-% version 1.0 (5 November 2013)
+% version 1.01 (24 March 2014)
 
 fs = in.fs;
 if nargin < 2
-    prompt = {['New sampling rate (current is ',num2str(fs), ' Hz)']};
+    prompt = {['New sampling rate (current is ',num2str(fs), ' Hz)'];...
+        'Number of samples (n) used on each side of current sample'};
     dlg_title = 'Resample';
     num_lines = 1;
-    def = {num2str(fs)};
+    def = {num2str(fs);'50'};
     answer = inputdlg(prompt,dlg_title,num_lines,def);
     newfs = str2double(answer{1,1});
+    n = str2double(answer{2,1});
 end
 if ~isempty(newfs)
     numtracks = 0;
@@ -24,7 +26,7 @@ if ~isempty(newfs)
     end
     for i = 1:size(in.audio,2)
         for j = 1:size(in.audio,3)
-            out.audio(:,i,j) = resample(in.audio(:,i,j), newfs, fs);
+            out.audio(:,i,j) = resample(in.audio(:,i,j), newfs, fs, n);
         end
     end
     if numtracks > 1
@@ -38,7 +40,7 @@ if ~isempty(newfs)
     end
     out.fs = newfs;
     out.funcallback.name = 'resample_aarae.m';
-    out.funcallback.inarg = {};
+    out.funcallback.inarg = {newfs,n};
 else
     out = [];
 end
