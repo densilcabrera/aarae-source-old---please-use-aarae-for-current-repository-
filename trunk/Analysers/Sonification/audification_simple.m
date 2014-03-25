@@ -1,4 +1,4 @@
-function out = audification_simple(in)
+function out = audification_simple(in,fs,hiF,loF,speedupfactor,reverse,envelopeexp,envelopesmooth,spectrumexp,spectrumsmooth)
 % Provides a simple framework for audification of input audio
 %
 % Audification means 'playing data as if it is sound'. When we audify an
@@ -55,129 +55,135 @@ function out = audification_simple(in)
 % version 1.01 (10 February 2014)
 
 
-
-% required field of input structure
-out = in;
-out.audio = sum(out.audio,3); % audio waveform, 2-d max
-fs = in.fs; % audio sampling rate
-Nyquist  = fs/2;
-
-% dialog box for settings
-prompt = {'High cutoff frequency (Hz):', ...
-    'Low cutoff frequency (Hz):', ...
-    'Speed-up (resampling) factor:', ...
-    'Time reversal (0 | 1):', ...
-    'Envelope dynamic contrast exponent:', ...
-    'Envelope smoothing filter length:', ...
-    'Spectrum magnitude contrast exponent:', ...
-    'Spectrum smoothing filter length:'};
-dlg_title = 'Settings';
-num_lines = 1;
-def = {num2str(Nyquist),'0','1','0','1','1','1','1'};
-answer = inputdlg(prompt,dlg_title,num_lines,def);
-
-if isempty(answer)
-    out.audio = [];
-    return
+if isstruct(in)
+    % required field of input structure
+    out = in;
+    audio = in.audio;
+    audio = sum(audio,3); % audio waveform, 2-d max
+    fs = in.fs; % audio sampling rate
+    Nyquist  = fs/2;
 else
-    hiF = str2num(answer{1,1});
-    loF = str2num(answer{2,1});
-    speedupfactor = str2num(answer{3,1});
-    reverse = str2num(answer{4,1});
-    envelopeexp = str2num(answer{5,1});
-    envelopesmooth = str2num(answer{6,1});
-    spectrumexp = str2num(answer{7,1});
-    spectrumsmooth = str2num(answer{8,1});
-end
-envelopesmooth = abs(round(envelopesmooth-1))+1;
-spectrumsmooth = abs(round(spectrumsmooth-1))+1;
-
-% filtering
-if ~(hiF == Nyquist) || ~(loF == 0);
-    % derive spectrum, even length
-    fftlen = 2*ceil(length(out.audio)/2);
-    spectrum = fft(in.audio,fftlen);
-    
-    % lowpass filter
-    if (hiF < Nyquist) && (hiF > loF)  && (hiF > 0)
-        hicomponent = ceil(hiF / (in.fs / fftlen)) + 1;
-        spectrum(hicomponent:fftlen - hicomponent+2,:) = 0;
+    out = in;
+    if nargin < 2
+        fs = inputdlg({'Sampling frequency [samples/s]'},...
+                           'Fs',1,{'48000'});
+        fs = str2num(char(fs));
+        Nyquist = fs/2;
     end
-    
-    % hipass filter
-    if (loF > 0) && (loF < hiF) && (loF < Nyquist)
-        locomponent = floor(loF / (in.fs / fftlen)) + 1;
-        spectrum(1:locomponent,:,:) = 0;
-        spectrum(fftlen-locomponent+2:fftlen,:) = 0;
+end
+
+if nargin < 10, spectrumsmooth = 1; end
+if nargin < 9, spectrumexp = 1; end
+if nargin < 8, envelopesmooth = 1; end
+if nargin < 7, envelopeexp = 1; end
+if nargin < 6, reverse = 0; end
+if nargin < 5, speedupfactor = 1; end
+if nargin < 4, loF = 0; end
+if nargin < 3
+    hiF = Nyquist;
+    % dialog box for settings
+    prompt = {'High cutoff frequency (Hz):', ...
+        'Low cutoff frequency (Hz):', ...
+        'Speed-up (resampling) factor:', ...
+        'Time reversal (0 | 1):', ...
+        'Envelope dynamic contrast exponent:', ...
+        'Envelope smoothing filter length:', ...
+        'Spectrum magnitude contrast exponent:', ...
+        'Spectrum smoothing filter length:'};
+    dlg_title = 'Settings';
+    num_lines = 1;
+    def = {num2str(Nyquist),'0','1','0','1','1','1','1'};
+    answer = inputdlg(prompt,dlg_title,num_lines,def);
+
+    if isempty(answer)
+        out = [];
+        return
+    else
+        hiF = str2num(answer{1,1});
+        loF = str2num(answer{2,1});
+        speedupfactor = str2num(answer{3,1});
+        reverse = str2num(answer{4,1});
+        envelopeexp = str2num(answer{5,1});
+        envelopesmooth = str2num(answer{6,1});
+        spectrumexp = str2num(answer{7,1});
+        spectrumsmooth = str2num(answer{8,1});
     end
-    
-    % return to time domain
-    out.audio = ifft(spectrum);
+    envelopesmooth = abs(round(envelopesmooth-1))+1;
+    spectrumsmooth = abs(round(spectrumsmooth-1))+1;
 end
 
+if ~isempty(audio) && ~isempty(fs) && ~isempty(hiF) && ~isempty(loF) && ~isempty(speedupfactor) && ~isempty(reverse) && ~isempty(envelopeexp) && ~isempty(envelopesmooth) && ~isempty(spectrumexp) && ~isempty(spectrumsmooth)
+    % filtering
+    if ~(hiF == Nyquist) || ~(loF == 0);
+        % derive spectrum, even length
+        fftlen = 2*ceil(length(audio)/2);
+        spectrum = fft(in.audio,fftlen);
 
-% resampling
-if ~(speedupfactor == 1)
-    out.audio = resample(out.audio,fs,fs*speedupfactor);
-end
+        % lowpass filter
+        if (hiF < Nyquist) && (hiF > loF)  && (hiF > 0)
+            hicomponent = ceil(hiF / (in.fs / fftlen)) + 1;
+            spectrum(hicomponent:fftlen - hicomponent+2,:) = 0;
+        end
 
-% time reversal
-if reverse
-    out.audio = flipud(out.audio);
-end
+        % hipass filter
+        if (loF > 0) && (loF < hiF) && (loF < Nyquist)
+            locomponent = floor(loF / (in.fs / fftlen)) + 1;
+            spectrum(1:locomponent,:,:) = 0;
+            spectrum(fftlen-locomponent+2:fftlen,:) = 0;
+        end
 
-% envelope contrast and smoothing
-if ~(envelopeexp == 1) || ~(envelopesmooth == 1)
-    analytic = hilbert(out.audio);
-    envelope = abs(analytic) .^ envelopeexp;
-    if ~(envelopesmooth == 1)
-        b = ones(1,envelopesmooth)/envelopesmooth;  % averaging filter
-        envelope = fftfilt(b,envelope);% smooth the envelope
+        % return to time domain
+        audio = ifft(spectrum);
     end
-    % adjust out.audioput by envelope
-    out.audio = envelope .* cos(angle(analytic));
-end
 
-% spectrum contrast
-if ~(spectrumexp == 1) || ~(spectrumsmooth == 1)
-    spectrum = fft(out.audio);
-    magnitude = abs(spectrum).^(spectrumexp);
-    phase = angle(spectrum);
-    %phase = angle(spectrum);
-    if ~(spectrumsmooth == 1)
-        b = ones(1,spectrumsmooth)/spectrumsmooth;  % averaging filter
-        magnitude = fftfilt(b,magnitude);% smooth the envelope
+
+    % resampling
+    if ~(speedupfactor == 1)
+        audio = resample(audio,fs,fs*speedupfactor);
     end
-    spectrum = magnitude .* exp(1i * phase);
-    out.audio = real(ifft(spectrum));
-end
 
-% play
-%normalize
-out.audio = out.audio ./max(max(abs(out.audio)));
-
-
-% Loop for replaying, saving and finishing
-choice = 0;
-
-% loop until the user presses the 'Done' button
-while choice < 3
-    choice = menu('What next?', ...
-        'Play', ...
-        'Save wav file', 'Discard', 'Done');
-    switch choice
-        
-        case 1
-            sound(out.audio,fs)
-            
-        case 2
-            [filename, pathname] = uiputfile({'*.wav'},'Save as');
-            if ischar(filename)
-                audiowrite([pathname,filename], out.audio, fs);
-            end
-        case 3
-            out = [];
+    % time reversal
+    if reverse
+        audio = flipud(audio);
     end
+
+    % envelope contrast and smoothing
+    if ~(envelopeexp == 1) || ~(envelopesmooth == 1)
+        analytic = hilbert(audio);
+        envelope = abs(analytic) .^ envelopeexp;
+        if ~(envelopesmooth == 1)
+            b = ones(1,envelopesmooth)/envelopesmooth;  % averaging filter
+            envelope = fftfilt(b,envelope);% smooth the envelope
+        end
+        % adjust audio by envelope
+        audio = envelope .* cos(angle(analytic));
+    end
+
+    % spectrum contrast
+    if ~(spectrumexp == 1) || ~(spectrumsmooth == 1)
+        spectrum = fft(audio);
+        magnitude = abs(spectrum).^(spectrumexp);
+        phase = angle(spectrum);
+        %phase = angle(spectrum);
+        if ~(spectrumsmooth == 1)
+            b = ones(1,spectrumsmooth)/spectrumsmooth;  % averaging filter
+            magnitude = fftfilt(b,magnitude);% smooth the envelope
+        end
+        spectrum = magnitude .* exp(1i * phase);
+        audio = real(ifft(spectrum));
+    end
+
+    %normalize
+    audio = audio ./max(max(abs(audio)));
+    if isstruct(in)
+        out.audio = audio;
+        out.funcallback.name = 'audification_simple.m';
+        out.funcallback.inarg = {fs,hiF,loF,speedupfactor,reverse,envelopeexp,envelopesmooth,spectrumexp,spectrumsmooth};
+    else
+        out = audio;
+    end
+else
+    out = [];
 end
 
 %**************************************************************************
