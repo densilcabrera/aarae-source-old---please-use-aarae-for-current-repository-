@@ -86,7 +86,7 @@ if ~isempty(data) && ~isempty(fs) && ~isempty(t1) && ~isempty(t2) && ~isempty(wl
     end
 
     % cceps only operates on vectors (not matrices) - hence the following loop
-    cepstrum = zeros(len,chans,bands);
+    cepstrum = zeros(nsamples,chans,bands);
     for ch = 1:chans
         for b = 1:bands
             cepstrum(:,ch,b) = cceps(x(:,ch,b));
