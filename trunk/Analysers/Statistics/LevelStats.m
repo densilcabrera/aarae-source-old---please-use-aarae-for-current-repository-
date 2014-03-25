@@ -1,4 +1,4 @@
-function out = LevelStats(inputwave)
+function out = LevelStats(inputwave,tau,cal,weight)
 % This function calculates sound level values from the input audio, taking
 % calibration offset into account.
 %
@@ -30,20 +30,21 @@ if ~isreal(audio)
     audio = abs(audio).* cos(angle(audio));
 end
 
-tau = 0.125; % default temporal integration constant in seconds
-weight = 'z';
-
-param = inputdlg({...
-    'Integration time constant (s)'; ...
-    'Calibration offset (dB)'; ...
-    'Weighting (a,b,c,d,z)'}, ...
-    'Analysis parameters',1, ...
-    {num2str(tau); num2str(cal); weight});
-if length(param) < 3, param = []; end
-if ~isempty(param) 
-    tau = str2num(char(param(1)));
-    cal = str2num(char(param(2)));
-    weight = char(param(3));
+if nargin < 4, weight = 'z'; end
+if nargin < 3, tau = 0.125; end % default temporal integration constant in seconds
+if nargin < 2
+    param = inputdlg({...
+        'Integration time constant (s)'; ...
+        'Calibration offset (dB)'; ...
+        'Weighting (a,b,c,d,z)'}, ...
+        'Analysis parameters',1, ...
+        {num2str(tau); num2str(cal); weight});
+    if length(param) < 3, param = []; end
+    if ~isempty(param) 
+        tau = str2num(char(param(1)));
+        cal = str2num(char(param(2)));
+        weight = char(param(3));
+    end
 end
 
 % apply calibration
@@ -95,6 +96,8 @@ if isnan(ymin)
     ymin = ymax-100;
 end
 
+out.funcallback.name = 'LevelStats.m';
+out.funcallback.inarg = {tau,cal,weight};
 
 t = ((1:len)'-1)./fs; % time vector
 for ch = 1:chans
@@ -141,6 +144,5 @@ for ch = 1:chans
             ['Lenergy = ',num2str(out.Lenergy(b,ch)),' dB'])
         legend('show','Location','EastOutside');
         title(['Integration time constant = ', num2str(tau),' s'])
-        
     end
 end
