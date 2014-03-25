@@ -209,6 +209,8 @@ if ~isempty(audio) && ~isempty(fs)
         OUT.IACC_mean_val = IACC_mean_val;
         OUT.IACC_maxT_val = IACC_maxT_val;
         OUT.IACC_meanT_val = IACC_meanT_val;
+        OUT.funcallback.name = 'IACC_smusic.m';
+        OUT.funcallback.inarg = {};
     end
     
 else
