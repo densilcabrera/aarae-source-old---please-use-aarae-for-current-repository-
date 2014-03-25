@@ -1,4 +1,4 @@
-function OUT = ReverbTime_TruncEvalRange(IN, fs, bpo, highestband, lowestband, truncstep, evalrangestep, startlevel)
+function OUT = ReverbTime_TruncEvalRange(IN, fs, bpo, highestband, lowestband, truncstep, evalrangestep, startlevel, startthresh, maketables)
 % This function calculates apparent reverberation time as a function of
 % end truncation time and evaluation range, using an impulse
 % response as input.
@@ -74,9 +74,15 @@ function OUT = ReverbTime_TruncEvalRange(IN, fs, bpo, highestband, lowestband, t
 % a spreadsheet for further analysis. Tables are in order from lowest to
 % highest frequency band.
 
-
-if nargin ==1
-    
+if nargin < 10, maketables = 0; end
+if nargin < 9, startthresh = -20; end
+if nargin < 8, startlevel = -5; end
+if nargin < 7, evalrangestep = 1; end
+if nargin < 6, truncstep = 50; end
+if nargin < 5, lowestband = 125; end
+if nargin < 4, highestband = 8000; end
+if nargin < 3, 
+    bpo = 1;
     param = inputdlg({'Bands per octave (0 | 1 | 3)';...
         'Highest centre frequency (Hz)';...
         'Lowest centre frequency (Hz)';...
@@ -101,6 +107,9 @@ if nargin ==1
         startlevel = param(6);
         startthresh = param(7);
         maketables = param(8);
+    else
+        OUT = [];
+        return
     end
 else
     param = [];
@@ -108,26 +117,18 @@ end
 if isstruct(IN)
     audio = IN.audio; % Extract the audio data
     fs = IN.fs;       % Extract the sampling frequency of the audio data
-    
     if isfield(IN,'bandID')
         flist = IN.bandID;
     end
-    
     if isfield(IN, 'chanID')
         chanID = IN.chanID;
     end
-    
-    
-    
-    
 elseif ~isempty(param) || nargin > 1
-    
     audio = IN;
     
 end
 
-if ~isempty(audio) && ~isempty(fs)
-    
+if ~isempty(audio) && ~isempty(fs) && ~isempty(bpo) && ~isempty(highestband) && ~isempty(lowestband) && ~isempty(truncstep) && ~isempty(evalrangestep) && ~isempty(startlevel)
     [len,chans,bands] = size(audio);
     
     
@@ -356,16 +357,10 @@ if ~isempty(audio) && ~isempty(fs)
             end
         end
     end
-    
-    
-    
-    
-    
+
     OUT.T = T;
-    
-    
-    
-    
+    OUT.funcallback.name = 'ReverbTime_TruncEvalRange.m';
+    OUT.funcallback.inarg = {fs,bpo,highestband,lowestband,truncstep,evalrangestep,startlevel};
 else
     
     OUT = [];
