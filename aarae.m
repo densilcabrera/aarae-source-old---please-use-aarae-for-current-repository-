@@ -813,7 +813,7 @@ for nleafs = 1:length(selectedNodes)
                 feval(funname,audiodata);
             end
 
-            handles.mytree.setSelectedNode(handles.root);
+            %handles.mytree.setSelectedNode(handles.root);
             newleaf = [char(selectedNodes(nleafs).getName) ' ' funname];
             if ~isempty(out)
                 signaldata = out;
@@ -839,7 +839,7 @@ for nleafs = 1:length(selectedNodes)
                 handles.results.add(handles.(genvarname(newleaf)));
                 handles.mytree.reloadNode(handles.results);
                 handles.mytree.expand(handles.results);
-                handles.mytree.setSelectedNode(handles.(genvarname(newleaf)));
+                %handles.mytree.setSelectedNode(handles.(genvarname(newleaf)));
                 set([handles.clrall_btn,handles.export_btn],'Enable','on')
             end
             fprintf(handles.fid, [' ' datestr(now,16) ' - Analyzed "' char(selectedNodes(1).getName) '" using ' funname ' in ' handles.funcat '\n']);% In what category???
@@ -864,6 +864,7 @@ for nleafs = 1:length(selectedNodes)
         set(hObject,'Enable','on');
     end
 end
+%handles.mytree.setSelectedNode(handles.(genvarname(newleaf)));
 guidata(hObject,handles)
 
 
