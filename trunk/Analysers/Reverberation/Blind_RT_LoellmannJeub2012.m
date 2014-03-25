@@ -73,10 +73,7 @@ if ~isempty(audio) && ~isempty(fs)
     
     dur = len /fs;
     if dur < 15
-        disp('This analyser is designed for reverberant speech,')
-        disp('for example, 60 duration.')
-        disp('(It is not designed to analyse impulse responses.)')
-        disp('The input audio must be at least 15 s long for the analyser to run.')
+        warndlg('This analyser is designed for reverberant speech, for example, 60 duration. (It is not designed to analyse impulse responses.) The input audio must be at least 15 s long for the analyser to run.','AARAE info')
         OUT = [];
         return
     end

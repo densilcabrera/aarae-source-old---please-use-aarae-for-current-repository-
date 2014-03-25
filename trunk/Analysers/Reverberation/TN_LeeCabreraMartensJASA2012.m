@@ -115,23 +115,24 @@ if isstruct(RIR)
         data = mean(data,3);
         disp('Multiband data has been mixed together.')
     end
+    if nargin < 2
         prompt = {'Listening Level (dBA):', ...
-        'TN_User Evaluation Range Start Point (~dB):', ...
-        'TN_User Evaluation Range End Point (~dB):'};
-    dlg_title = 'Settings';
-    num_lines = 1;
-    def = {'70','-5','-15'};
-    answer = inputdlg(prompt,dlg_title,num_lines,def);
-    
-    if isempty(answer)
-        output = [];
-        return
-    else
-        level = str2num(answer{1,1});
-        TN_User_start = str2num(answer{2,1});
-        TN_User_end = str2num(answer{3,1});
-    end
+            'TN_User Evaluation Range Start Point (~dB):', ...
+            'TN_User Evaluation Range End Point (~dB):'};
+        dlg_title = 'Settings';
+        num_lines = 1;
+        def = {'70','-5','-15'};
+        answer = inputdlg(prompt,dlg_title,num_lines,def);
 
+        if isempty(answer)
+            output = [];
+            return
+        else
+            level = str2num(answer{1,1});
+            TN_User_start = str2num(answer{2,1});
+            TN_User_end = str2num(answer{3,1});
+        end
+    end
     
 elseif ischar(RIR)== 1
     [data, fs]=audioread(char(RIR));
@@ -237,18 +238,20 @@ if exist('TN_User_start', 'var') || nargin == 3
     else
         ERdB = ERdB_User;
     end
-ERsone=(10.^(ERdB/20)).^0.6;%Evaluation range in sone
-Point1_TNU= find(LoudnessDecay>=(max(LoudnessDecay)*ERsone(1)),1,'last');
-Point2_TNU= find(LoudnessDecay>=(max(LoudnessDecay)*ERsone(2)),1,'last');
-P_TNU=polyfit(time(Point1_TNU:Point2_TNU),LoudnessDecaylog(Point1_TNU:Point2_TNU),1);
-BestFitLineTNU=polyval(P_TNU,time);
+    ERsone=(10.^(ERdB/20)).^0.6;%Evaluation range in sone
+    Point1_TNU= find(LoudnessDecay>=(max(LoudnessDecay)*ERsone(1)),1,'last');
+    Point2_TNU= find(LoudnessDecay>=(max(LoudnessDecay)*ERsone(2)),1,'last');
+    P_TNU=polyfit(time(Point1_TNU:Point2_TNU),LoudnessDecaylog(Point1_TNU:Point2_TNU),1);
+    BestFitLineTNU=polyval(P_TNU,time);
 
-if Point2_TNU >= length(LoudnessDecay)
-    warning('Evaluation range is beyond the length of the impulse response')
-    output.TN_User = [];
-else
-    output.TN_User=log((10^(-60/20))^0.6)./P_TNU(1);
-end
+    if Point2_TNU >= length(LoudnessDecay)
+        warning('Evaluation range is beyond the length of the impulse response')
+        output.TN_User = [];
+    else
+        output.TN_User=log((10^(-60/20))^0.6)./P_TNU(1);
+    end
+    output.funcallback.name = 'TN_LeeCabreraMartensJASA2012.m';
+    output.funcallback.inarg = {level,ERdB};
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

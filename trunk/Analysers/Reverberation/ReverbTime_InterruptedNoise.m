@@ -1,4 +1,4 @@
-function OUT = ReverbTime_InterruptedNoise(IN)
+function OUT = ReverbTime_InterruptedNoise(IN,fs,filteriterations,avmethod,lowestband,highestband,bpo)
 % This function is designed to be used with signals generated from AARAE's
 % interrupted noise generator, for the measurement of reverberation time
 % and related parameters.
@@ -16,8 +16,12 @@ function OUT = ReverbTime_InterruptedNoise(IN)
 % Code by Densil Cabrera & Grant Cuthbert
 % version 1.00 (17 December 2013)
 
-if nargin ==1
-    
+if nargin < 7, bpo = 1; end
+if nargin < 6, highestband = 8000; end
+if nargin < 5, lowestband = 125; end
+if nargin < 4, avmethod = 1; end
+if nargin < 3, 
+    filteriterations = 2;
     param = inputdlg({'Bands per octave (1 | 3)';...
         'Highest centre frequency (Hz)';...
         'Lowest centre frequency (Hz)';...
@@ -35,14 +39,17 @@ if nargin ==1
         lowestband = param(3);
         avmethod = param(4);
         filteriterations = param(5);
+    else
+        OUT = [];
+        return
     end
 else
     param = [];
 end
+
 if isstruct(IN)
     audio = IN.audio; % Extract the audio data
     fs = IN.fs;       % Extract the sampling frequency of the audio data
-    
     if isfield(IN,'audio3')
         audio3 = IN.audio3;
     end
@@ -52,20 +59,15 @@ if isstruct(IN)
     if isfield(IN,'chanID')
         chanID = IN.chanID;
     end
-    
-    
 elseif ~isempty(param) || nargin > 1
-    
     audio = IN;
     fs = input_1;
 end
 
 
-if ~isempty(audio) && ~isempty(fs)
-    
+if ~isempty(audio) && ~isempty(fs) && ~isempty(filteriterations) && ~isempty(avmethod) && ~isempty(lowestband) && ~isempty(highestband) && ~isempty(bpo)
     [~, chans, bands] = size(audio);
     
-   
     % -------------------------------------------------------------------------
     % Use audio3 to break up audio into decays
     % -------------------------------------------------------------------------
@@ -77,7 +79,7 @@ if ~isempty(audio) && ~isempty(fs)
         numberofdecays = length(decaystart);
     else
         OUT.error = 'audio3 not found!';
-        disp('Please use test signals generated from AARAE''s interrupted noise generator')
+        warndlg('Please use test signals generated from AARAE''s interrupted noise generator','AARAE info')
         return
         % or work out some other way of finding decay period indices!!!
     end
@@ -379,6 +381,8 @@ if ~isempty(audio) && ~isempty(fs)
     if exist('latency', 'var')
         OUT.latency = latency;
     end
+    OUT.funcallback.name = 'ReverbTime_InterruptedNoise.m';
+    OUT.funcallback.inarg = {fs,filteriterations,avmethod,lowestband,highestband,bpo};
     
     % -------------------------------------------------------------------------
     % Create table & plots
