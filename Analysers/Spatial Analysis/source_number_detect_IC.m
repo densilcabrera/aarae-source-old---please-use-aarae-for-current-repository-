@@ -10,7 +10,7 @@ function OUT = source_number_detect_IC(IN,criterioncode)
 % theoretic criteria", IEEE Transactions on Acoustics, Speech and Signal
 % Processing, 1985.
 
-if nargin ==1 
+if nargin < 2 
 
     param = inputdlg({'Criterion: Akaike (0) or MDL (1)'},...
                       'Settings',... 
@@ -31,7 +31,6 @@ if isstruct(IN)
 
 elseif ~isempty(param) || nargin > 1
     audio = IN;
-
 end
 
 if ~isempty(audio) && ~isempty(criterioncode)
@@ -51,9 +50,10 @@ if ~isempty(audio) && ~isempty(criterioncode)
 
     if isstruct(IN)
         %OUT = IN; % You can replicate the input structure for your output
-        OUT.nb_sources = nb_sources; 
+        OUT.nb_sources = nb_sources;
+        OUT.funcallback.name = 'source_number_detect_IC.m';
+        OUT.funcallback.inarg = {criterioncode};
     else
-        
         OUT = nb_sources;
     end
 

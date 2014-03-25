@@ -1,4 +1,4 @@
-function OUT = IACC_IRbands(IN, fs, startthresh, bpo, highestband, lowestband,maxlag,earlyendtime,doplot,filtermethod,absval)
+function OUT = IACC_IRbands(IN, fs, startthresh, bpo, highestband, lowestband,maxlag,earlyendtime,doplot)
 % This function calculates the interaural cross correlation function and
 % IACC value from a binaural impulse response. Values are calculated in
 % octave or 1/3-octave bands (or in the bands supplied by the audio if it
@@ -19,29 +19,22 @@ function OUT = IACC_IRbands(IN, fs, startthresh, bpo, highestband, lowestband,ma
 % kHz and 2 kHz band, then three-band average parameters are calculated,
 % including the binaural quality index (BQI).
 %
-% The filterbank type can be chosen - either Butterworth filters generated
-% by Matlab's filterbuilder, or higher order zero phase filters impemented
-% via fft.
-%
 % When run outside of AARAE, all input arguments are required. Doplot can
 % be use to suppress the output table and figure.
 %
 % Code by Densil Cabrera
-% Version 1.02 (11 February 2014)
+% Version 1.01 (18 December 2013)
 
-if nargin ==1
-    
+if nargin < 2
     param = inputdlg({'Threshold for IR start detection';...
         'Bands per octave (1 | 3)';...
-        'Filter method: Filter via FFT (0) or via Butterworth (1)';...
         'Highest centre frequency (Hz)';...
         'Lowest centre frequency (Hz)';...
         'Maximum lag (ms)';...
-        'Early/late time limit (ms)';...
-        'Use absolute value of IACF (0 | 1)'},...
+        'Early/late time limit (ms)'},...
         'Settings',...
         [1 30],...
-        {'-20';'1';'0';'2000';'125';'1';'80';'1'}); % Default values
+        {'-20';'1';'2000';'125';'1';'80'}); % Default values
     
     param = str2num(char(param));
     
@@ -49,12 +42,10 @@ if nargin ==1
     if ~isempty(param)
         startthresh = param(1);
         bpo = param(2);
-        filtermethod = param(3);
-        highestband = param(4);
-        lowestband = param(5);
-        maxlag = param(6);
-        earlyendtime = param(7);
-        absval  = param(8);
+        highestband = param(3);
+        lowestband = param(4);
+        maxlag = param(5);
+        earlyendtime = param(6);
     end
 else
     param = [];
@@ -66,14 +57,14 @@ if isstruct(IN)
     if isfield(IN, 'bandID')
         flist = IN.bandID;
     end
-    
-    
     doplot = 1;
-    
 elseif ~isempty(param) || nargin > 1
-    
     audio = IN;
-    
+    if nargin < 2
+        fs = inputdlg({'Sampling frequency [samples/s]'},...
+                           'Fs',1,{'48000'});
+        fs = str2num(char(fs));
+    end
 end
 
 % check input dimensions
@@ -145,30 +136,15 @@ if ~isempty(audio) && ~isempty(fs)
         end
     end
     
+    
     % filter
     if bands == 1
         if bpo == 3
-            switch filtermethod
-                case 1
-                    % 1/3-octave band filterbank - 8th order Butterworth
-                    audio = thirdoctbandfilter(audio,fs,flist);
-                otherwise
-                    % 1/3-octave filterbank - high order zero phase
-                    order = [36, 24]; % in-band order, out-of-band order
-                    phasemode = 0; % -1 for maximum phase, 0 for zero phase, 1 for minimum phase
-                    audio = thirdoctbandfilter_viaFFT(audio,fs,flist,order,0,1000,0,phasemode);
-            end
+            % 1/3-octave band filterbank
+            audio = thirdoctbandfilter(audio,fs,flist);
         else
-            switch filtermethod
-                case 1
-                    % octave band filterbank - 6th order Butterworth
-                    audio = octbandfilter(audio,fs,flist);
-                otherwise
-                    % octave filterbank - high order zero phase
-                    order = [12, 12]; % in-band order, out-of-band order
-                    phasemode = 0; % -1 for maximum phase, 0 for zero phase, 1 for minimum phase
-                    audio = octbandfilter_viaFFT(audio,fs,flist,order,0,1000,0,phasemode);
-            end
+            % octave band filterbank
+            audio = octbandfilter(audio,fs,flist);
         end
     end
     
@@ -210,20 +186,14 @@ if ~isempty(audio) && ~isempty(fs)
     ind_L = zeros(length(flist),1);
     ind_A = zeros(length(flist),1);
     for bnd = 1:length(flist)
-        if absval == 1
-            ind_E(bnd) = find(abs(cE(:,bnd)) == max(abs(cE(:,bnd))), '1', 'first');
-            ind_L(bnd) = find(abs(cL(:,bnd)) == max(abs(cL(:,bnd))), '1', 'first');
-            ind_A(bnd) = find(abs(cA(:,bnd)) == max(abs(cA(:,bnd))), '1', 'first');
-        else
-            ind_E(bnd) = find(cE(:,bnd) == max(cE(:,bnd)), '1', 'first');
-            ind_L(bnd) = find(cL(:,bnd) == max(cL(:,bnd)), '1', 'first');
-            ind_A(bnd) = find(cA(:,bnd) == max(cA(:,bnd)), '1', 'first');
-        end
+        ind_E(bnd) = find(abs(cE(:,bnd)) == max(abs(cE(:,bnd))), '1', 'first');
+        ind_L(bnd) = find(abs(cL(:,bnd)) == max(abs(cL(:,bnd))), '1', 'first');
+        ind_A(bnd) = find(abs(cA(:,bnd)) == max(abs(cA(:,bnd))), '1', 'first');
     end
     
-    tau_E = (ind_E'-maxlag) * 1000/fs;
-    tau_L = (ind_L'-maxlag) * 1000/fs;
-    tau_A = (ind_A'-maxlag) * 1000/fs;
+    tau_E = (ind_E-maxlag) * 1000/fs;
+    tau_L = (ind_L-maxlag) * 1000/fs;
+    tau_A = (ind_A-maxlag) * 1000/fs;
     
     
     % ---------------------------------------------------------------------
@@ -249,16 +219,17 @@ if ~isempty(audio) && ~isempty(fs)
         OUT.BQI = 1-OUT.IACC_E3;
     end
     
+    OUT.funcallback.name = 'IACC_IRbands.m';
+    OUT.funcallback.inarg = {fs,startthresh,bpo,highestband,lowestband,maxlag,earlyendtime,doplot};
+    
     % ---------------------------------------------------------------------
     % Display data in a table
     % ---------------------------------------------------------------------
     if doplot == 1
         fig1 = figure('Name','Interaural Cross Correlation of a Room Impulse Response');
-        table1 = uitable('Data',[OUT.IACC_Early; OUT.IACC_Late; OUT.IACC_All;...
-            OUT.tau_Early;OUT.tau_Late;OUT.tau_All],...
+        table1 = uitable('Data',[OUT.IACC_Early; OUT.IACC_Late; OUT.IACC_All],...
             'ColumnName',num2cell(flist),...
-            'RowName',{'IACC Early'; 'IACC Late'; 'IACC All';...
-            'Lag Early (ms)';'Lag Late (ms)';'Lag All (ms)'});
+            'RowName',{'IACC Early'; 'IACC Late'; 'IACC All'});
         set(table1,'ColumnWidth',{60});
         
         if isfield(OUT,'BQI')

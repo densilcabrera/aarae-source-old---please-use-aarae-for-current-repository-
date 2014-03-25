@@ -1,4 +1,4 @@
-function out = binaural_simple(in, fs, f_low, f_high)
+function out = binaural_simple(in, fs, f_low, f_high, t_start, t_end)
 % This function calculates parameters from binaural impulse response
 % measurements.
 %
@@ -55,15 +55,15 @@ function out = binaural_simple(in, fs, f_low, f_high)
 if isstruct(in)
     wave = in.audio;
     fs = in.fs;
-    
 else
     wave = audio;
-    
     % default values of the bandpass filter are 0 Hz and Nyquist frequency
     % (i.e., no filtering)
-    if nargin < 4, f_high = fs/2; end
-    if nargin < 3, f_low = 0; end
-    
+    if nargin < 2
+        fs = inputdlg({'Sampling frequency [samples/s]'},...
+                           'Fs',1,{'48000'});
+        fs = str2num(char(fs));
+    end
 end
 
 S = size(wave); % size of the audio
@@ -88,15 +88,19 @@ end
 if chans == 1
     wave = [wave, wave];
     chans = 2;
-elseif chans >2
+elseif chans > 2
     wave = wave(:,1:2);
-    chans = 2
+    chans = 2;
 end
 
+if nargin < 6, t_end = num2str(floor(1000*(len-1)/fs)); end
+if nargin < 5, t_start = 0; end
+if nargin < 4, f_high = fs/2; end
+if nargin < 3, f_low = 0; end
 
-
-if isstruct(in)
-    %dialog box for settings
+%if isstruct(in)
+%dialog box for settings
+if nargin < 2
     prompt = {'Upper cutoff frequency (Hz)', ...
         'Lower cutoff frequency (Hz)', ...
         'Start time (ms)', ...
@@ -105,14 +109,16 @@ if isstruct(in)
     num_lines = 1;
     def = {num2str(fs/2), '0', '0', num2str(floor(1000*(len-1)/fs))};
     answer = inputdlg(prompt,dlg_title,num_lines,def);
-    
+
     if ~isempty(answer)
         f_high = str2num(answer{1,1});
         f_low = str2num(answer{2,1});
         t_start = str2num(answer{3,1});
         t_end = str2num(answer{4,1});
     end
+end
     
+if ~isempty(wave) && ~isempty(fs) && ~isempty(f_low) && ~isempty(f_high) && ~isempty(t_start) && ~isempty(t_end)
     % check crop points
     startsample = round(t_start * fs/1000) +1;
     if startsample < 1, startsample = 1; end
@@ -125,134 +131,132 @@ if isstruct(in)
     % crop the wave
     wave = wave(startsample:endsample,:);
     len = length(wave);
+
+    % plot of the input data and its envelope
+    figure('Name', 'Binaural Input data')
+    subplot(2,1,1)
+    plot(((1:len)-1)./fs *1000, wave)
+    xlabel('Time (ms)')
+    ylabel('Amplitude')
+    title('Wave')
+    subplot(2,1,2)
+    plot(((1:len)-1)./fs *1000, abs(hilbert(wave)))
+    xlabel('Time (ms)')
+    ylabel('Amplitude')
+    title('Envelope')
+
+    % minimum length of the fft (zero-pads the wave if the wave is shorter)
+    % 10 ms gives 100 Hz resolution
+    if len < ceil(fs *0.01), len = ceil(fs *0.01); end
+    % the wave will be zero-padded in the fft by its length - this allows us to
+    % do linear (rather than circular) cross correlation
+    len = len * 2;
+
+    % find the spectrum (of both channels)
+    % len determines the length of the fft in samples
+    spectrum = fft(wave, len);
+
+    % spectrum in dB below the Nyquist frequency
+    Levelspectrum = 10*log10(abs(spectrum(1:round(len/2),:)).^2);
+    frequencies = fs .* ((1:round(len/2))-1) ./ len;
+
+    % plot the magnitude spectrum
+    figure('Name', 'Binaural Magnitude Spectrum')
+    plot(frequencies, Levelspectrum)
+    xlabel('Frequency (Hz)')
+    ylabel('Magnitude')
+    title('Magnitude spectrum')
+
+    % The bandpass filter is implemented in the frequency domain by zero-ing
+    % components outside of the desired range
+    % lowpass filter: this zeros the spectrum from the cutoff frequency to its
+    % image above the Nyquist frequency.
+    cutoff_high = ceil(f_high * len /fs + 1);
+    spectrum(cutoff_high:(len - cutoff_high +2),:)=0;
+
+    % highpass filter: this zeros the spectrum from the cutoff frequency down
+    % to 0 Hz, and does the same for the image frequencies above the Nyquist
+    % frequency.
+    cutoff_low = floor(f_low * len /fs + 1);
+    spectrum(1:cutoff_low,:)=0;
+    spectrum(end-cutoff_low+2:end,:)=0;
+
+    % IACF is the interaural cross correlation function.
+    % We do cross correlation by multiplication of spectra (i.e. the frequency
+    % domain equivalent to time-domain cross correlation). Complex conjugate is
+    % used for one of the spectra (which is the equivalent of time-reversal).
+    IACF = ifft(spectrum(:,1) .* conj(spectrum(:,2)));
+
+    % ACF is the autocorrelation function (of each channel).
+    % This is used for normalising the IACF.
+    ACF = ifft(spectrum .* conj(spectrum));
+    % The peak of the ACF is at zero time lag (by definition).
+    % We will use this for normalization.
+    ACF_peak = ACF(1,:);
+
+    % Normalise the IACF so that it ranges between -1 and 1.
+    % This is done by dividing by the square root of the product of the two
+    % autocorrelation function peaks.
+    IACF = ifftshift(IACF / (ACF_peak(1)*ACF_peak(2))^0.5);
+
+    % We are only interested in lag times of +/- 1 ms because this is the
+    % natural range of ITD values (rounded up).
+    timerange = round(len/2)+round(-fs/1000):round(len/2)+round(fs/1000);
+
+    % IACC is the peak value of the IACF within the +/- 1 ms range. Usually
+    % the absolute value of the IACF is taken before finding the maximum, but I
+    % think the merits of that are debatable.
+    IACC = max(IACF(timerange));
+
+    % The interaural time difference (ITD) is the time at which the peak of the
+    % IACF occurs. This is likely to be useful for direct sound, but may be
+    % useless if you include room reflections and reverberation in the input
+    % wave.
+    ITD = find(IACF(timerange)==IACC); % find the peak index
+    ITD = (ITD-1)./fs*1000-1; % convert to milliseconds
+
+    % Sound level of each ear in dB
+    Level = 10*log10(sum(abs(spectrum).^2));
+
+    % Interaural level difference
+    ILD = Level(1)-Level(2);
+
+    % plot the IACF
+    figure('Name', 'Binaural Interaural Cross Correlation')
+    plot((timerange-round(len/2))./fs*1000, IACF(timerange),'r')
+    hold on
+    % plot the IACC datapoint
+    scatter(ITD,IACC,'o')
+    xlabel('Lag (ms)')
+    ylabel('Coefficient')
+    title('Interaural cross correlation function')
+    ylim([-1 1])
+    grid on
+    hold off
+
+
+    % Group delay
+    GD = diff(unwrap(angle(((spectrum(1:round(len/2),1)).*conj(spectrum(1:round(len/2),2))) ...
+        ./(conj(spectrum(1:round(len/2),1)).*spectrum(1:round(len/2),1)))))...
+        .*len/(fs*2*pi);
+    GD = GD.*1000; % change to milliseconds
+    % Plot group delay
+    figure('Name', 'Binaural Group Delay')
+    semilogx(frequencies(3:end), GD(2:end),'r')
+    xlabel('Frequency (Hz)')
+    xlim([frequencies(2) frequencies(end)])
+    ylabel('Group Delay (ms)')
+    grid on
+    %median(GD)
+
+    % organise output structure
+    out.IACC = IACC;
+    out.ITD = ITD;
+    out.IACF = IACF;
+    out.ILD = ILD;
+    out.Level = Level;
+    out.Levelspectrum = Levelspectrum;
+    out.frequencies = frequencies;
+    out.funcallback.name = 'binaural_simple.m';
+    out.funcallback.inarg = {fs,f_low,f_high,t_start,t_end};
 end
-
-
-
-
-
-% plot of the input data and its envelope
-figure('Name', 'Binaural Input data')
-subplot(2,1,1)
-plot(((1:len)-1)./fs *1000, wave)
-xlabel('Time (ms)')
-ylabel('Amplitude')
-title('Wave')
-subplot(2,1,2)
-plot(((1:len)-1)./fs *1000, abs(hilbert(wave)))
-xlabel('Time (ms)')
-ylabel('Amplitude')
-title('Envelope')
-
-% minimum length of the fft (zero-pads the wave if the wave is shorter)
-% 10 ms gives 100 Hz resolution
-if len < ceil(fs *0.01), len = ceil(fs *0.01); end
-% the wave will be zero-padded in the fft by its length - this allows us to
-% do linear (rather than circular) cross correlation
-len = len * 2;
-
-% find the spectrum (of both channels)
-% len determines the length of the fft in samples
-spectrum = fft(wave, len);
-
-% spectrum in dB below the Nyquist frequency
-Levelspectrum = 10*log10(abs(spectrum(1:round(len/2),:)).^2);
-frequencies = fs .* ((1:round(len/2))-1) ./ len;
-
-% plot the magnitude spectrum
-figure('Name', 'Binaural Magnitude Spectrum')
-plot(frequencies, Levelspectrum)
-xlabel('Frequency (Hz)')
-ylabel('Magnitude')
-title('Magnitude spectrum')
-
-% The bandpass filter is implemented in the frequency domain by zero-ing
-% components outside of the desired range
-% lowpass filter: this zeros the spectrum from the cutoff frequency to its
-% image above the Nyquist frequency.
-cutoff_high = ceil(f_high * len /fs + 1);
-spectrum(cutoff_high:(len - cutoff_high +2),:)=0;
-
-% highpass filter: this zeros the spectrum from the cutoff frequency down
-% to 0 Hz, and does the same for the image frequencies above the Nyquist
-% frequency.
-cutoff_low = floor(f_low * len /fs + 1);
-spectrum(1:cutoff_low,:)=0;
-spectrum(end-cutoff_low+2:end,:)=0;
-
-% IACF is the interaural cross correlation function.
-% We do cross correlation by multiplication of spectra (i.e. the frequency
-% domain equivalent to time-domain cross correlation). Complex conjugate is
-% used for one of the spectra (which is the equivalent of time-reversal).
-IACF = ifft(spectrum(:,1) .* conj(spectrum(:,2)));
-
-% ACF is the autocorrelation function (of each channel).
-% This is used for normalising the IACF.
-ACF = ifft(spectrum .* conj(spectrum));
-% The peak of the ACF is at zero time lag (by definition).
-% We will use this for normalization.
-ACF_peak = ACF(1,:);
-
-% Normalise the IACF so that it ranges between -1 and 1.
-% This is done by dividing by the square root of the product of the two
-% autocorrelation function peaks.
-IACF = ifftshift(IACF / (ACF_peak(1)*ACF_peak(2))^0.5);
-
-% We are only interested in lag times of +/- 1 ms because this is the
-% natural range of ITD values (rounded up).
-timerange = round(len/2)+round(-fs/1000):round(len/2)+round(fs/1000);
-
-% IACC is the peak value of the IACF within the +/- 1 ms range. Usually
-% the absolute value of the IACF is taken before finding the maximum, but I
-% think the merits of that are debatable.
-IACC = max(IACF(timerange));
-
-% The interaural time difference (ITD) is the time at which the peak of the
-% IACF occurs. This is likely to be useful for direct sound, but may be
-% useless if you include room reflections and reverberation in the input
-% wave.
-ITD = find(IACF(timerange)==IACC); % find the peak index
-ITD = (ITD-1)./fs*1000-1; % convert to milliseconds
-
-% Sound level of each ear in dB
-Level = 10*log10(sum(abs(spectrum).^2));
-
-% Interaural level difference
-ILD = Level(1)-Level(2);
-
-% plot the IACF
-figure('Name', 'Binaural Interaural Cross Correlation')
-plot((timerange-round(len/2))./fs*1000, IACF(timerange),'r')
-hold on
-% plot the IACC datapoint
-scatter(ITD,IACC,'o')
-xlabel('Lag (ms)')
-ylabel('Coefficient')
-title('Interaural cross correlation function')
-ylim([-1 1])
-grid on
-hold off
-
-
-% Group delay
-GD = diff(unwrap(angle(((spectrum(1:round(len/2),1)).*conj(spectrum(1:round(len/2),2))) ...
-    ./(conj(spectrum(1:round(len/2),1)).*spectrum(1:round(len/2),1)))))...
-    .*len/(fs*2*pi);
-GD = GD.*1000; % change to milliseconds
-% Plot group delay
-figure('Name', 'Binaural Group Delay')
-semilogx(frequencies(3:end), GD(2:end),'r')
-xlabel('Frequency (Hz)')
-xlim([frequencies(2) frequencies(end)])
-ylabel('Group Delay (ms)')
-grid on
-%median(GD)
-
-% organise output structure
-out.IACC = IACC;
-out.ITD = ITD;
-out.IACF = IACF;
-out.ILD = ILD;
-out.Level = Level;
-out.Levelspectrum = Levelspectrum;
-out.frequencies = frequencies;
