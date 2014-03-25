@@ -1,4 +1,4 @@
-function out = audio_shuffle(in,fs,windowlength,depthfactor, outduration, reverse)
+function OUT = audio_shuffle(in,fs,windowlength,depthfactor, outduration, reverse, playaudio)
 % Fragments and shuffles an audio waveform to create a new audio texture.
 % The process is a bit like granular or concatenative synthesis.
 % This can be useful as a sonification tool.
@@ -9,7 +9,7 @@ function out = audio_shuffle(in,fs,windowlength,depthfactor, outduration, revers
 % Music Information Retrieval Conference, Kobe, Japan, 567-572.
 %
 % Code by Densil Cabrera
-% version 1.01 (10 February 2014)
+% version 1.0 (12 October 2013)
 %
 % INPUT ARGUMENTS
 % in is the audio data (can be multi-channel or single channel). It can be
@@ -34,10 +34,23 @@ function out = audio_shuffle(in,fs,windowlength,depthfactor, outduration, revers
 
 if isstruct(in)
     % required field of input structure
-    out = in; % replicate fields
     data = in.audio; % audio waveform
     fs = in.fs; % audio sampling rate
-    
+else
+    % if 'in' is not a structure, then it is an audio waveform
+    data = in;
+    if nargin < 2
+        fs = inputdlg({'Sampling frequency [samples/s]'},...
+                           'Fs',1,{'48000'});
+        fs = str2num(char(fs));
+    end    
+end
+if nargin < 7, playaudio = 0; end
+if nargin < 6, reverse = 1; end
+if nargin < 5, outduration = 1; end
+if nargin < 4, depthfactor = 4; end
+if nargin < 3,
+    windowlength = .125;
     % dialog box for settings
      prompt = {'Window duration (s):', ...
         'Depth factor:', ...
@@ -46,11 +59,11 @@ if isstruct(in)
         'Play sound (0 | 1)'};
     dlg_title = 'Settings';
     num_lines = 1;
-    def = {'0.125','4','1','1','1'};
+    def = {'0.125','4','1','1','0'};
     answer = inputdlg(prompt,dlg_title,num_lines,def);
     
     if isempty(answer)
-        y = [];
+        OUT = [];
         return
     else
         windowlength = str2num(answer{1,1})*fs;
@@ -59,115 +72,86 @@ if isstruct(in)
         reverse = str2num(answer{4,1});
         playaudio = str2num(answer{5,1});
     end 
-else
-    % if 'in' is not a structure, then it is an audio waveform
-    data = in;   
 end
 
-data = squeeze(data(:,:,1)); % remove 3rd dimension if it exists
-[len, chan] = size(data);
+if ~isempty(data) && ~isempty(fs) && ~isempty(windowlength) && ~isempty(depthfactor) && ~isempty(outduration) && ~isempty(reverse) && ~isempty(playaudio)
+    data = squeeze(data(:,:,1)); % remove 3rd dimension if it exists
+    [len, chan] = size(data);
 
-% output length in samples
-outlen = outduration * fs;
+    % output length in samples
+    outlen = outduration * fs;
 
-% pre-allocate output
-y = zeros(outlen, chan);
+    % pre-allocate output
+    y = zeros(outlen, chan);
 
-numberofwindows = ceil(depthfactor * outlen ./ windowlength);
-disp(['Number of windows in audio shuffle: ', num2str(numberofwindows)])
+    numberofwindows = ceil(depthfactor * outlen ./ windowlength);
+    disp(['Number of windows in audio shuffle: ', num2str(numberofwindows)])
 
-maxwinlength = ceil(windowlength * 2.^0.5);
-if maxwinlength > 0.2 * len
-    % keep maximim window length to no more than 20% of the audio data
-    % length
-    maxwinlength = 0.2 * len;
-    disp(['Maximum window length has been reduced to ', num2str(maxwinlength/fs)])
-end
-% minwinlength = floor(windowlength ./ 2.^0.5);
+    maxwinlength = ceil(windowlength * 2.^0.5);
+    if maxwinlength > 0.2 * len
+        % keep maximim window length to no more than 20% of the audio data
+        % length
+        maxwinlength = 0.2 * len;
+        disp(['Maximum window length has been reduced to ', num2str(maxwinlength/fs)])
+    end
+    % minwinlength = floor(windowlength ./ 2.^0.5);
 
 
 
-for n = 1:numberofwindows
-    % determine data range and get data for the given window
-    specificwinlen = round(windowlength * 2.^(rand(1,1) - 0.5));
-    numberofavailablewindowcentres = len - specificwinlen - 2;   
-    windowcentre = round(rand(1,1) * numberofavailablewindowcentres + specificwinlen./2 +1);
-    startindex = windowcentre-floor(specificwinlen./2);
-    endindex = startindex + specificwinlen-1;
-    wf = window(@hann, specificwinlen); 
-    datawindow = data(startindex:endindex,:) .* repmat(wf,[1 chan]);
-    
-    if reverse && rand(1)> 0.5
-        datawindow = flipud(datawindow);
+    for n = 1:numberofwindows
+        % determine data range and get data for the given window
+        specificwinlen = round(windowlength * 2.^(rand(1,1) - 0.5));
+        numberofavailablewindowcentres = len - specificwinlen - 2;   
+        windowcentre = round(rand(1,1) * numberofavailablewindowcentres + specificwinlen./2 +1);
+        startindex = windowcentre-floor(specificwinlen./2);
+        endindex = startindex + specificwinlen-1;
+        wf = window(@hann, specificwinlen); 
+        datawindow = data(startindex:endindex,:) .* repmat(wf,[1 chan]);
+
+        if reverse && rand(1)> 0.5
+            datawindow = flipud(datawindow);
+        end
+
+        % write data to output
+        numberofavailablewindowcentres = outlen - specificwinlen - 2; 
+        windowcentre = round(rand(1,1) * numberofavailablewindowcentres + specificwinlen./2 +1);
+        startindex = windowcentre-floor(specificwinlen./2);
+        endindex = startindex + specificwinlen-1;
+        y(startindex:endindex,:) = y(startindex:endindex,:) + datawindow;
+
+    end
+    %normalize
+    y = y ./max(max(abs(y)));
+
+    if isstruct(in)
+        OUT = in;
+        OUT.audio = y;
+        OUT.funcallback.name = 'audio_shuffle.m';
+        OUT.funcallback.inarg = {fs,windowlength,depthfactor,outduration,reverse,playaudio};
+    else
+        OUT = y;
     end
     
-    % write data to output
-    numberofavailablewindowcentres = outlen - specificwinlen - 2; 
-    windowcentre = round(rand(1,1) * numberofavailablewindowcentres + specificwinlen./2 +1);
-    startindex = windowcentre-floor(specificwinlen./2);
-    endindex = startindex + specificwinlen-1;
-    y(startindex:endindex,:) = y(startindex:endindex,:) + datawindow;
-    
-end
-%normalize
-y = y ./max(max(abs(y)));
+    if playaudio
+        sound(y,fs)
 
-if isstruct(in)
-    out.audio = y;
+            % Loop for replaying, saving and finishing
+        choice = 'x'; % create a string
+
+        % loop until the user presses the 'Done' button
+        while ~strcmp(choice,'Done')
+            choice = questdlg('What next?', ...
+                'Audio Play ...', ...
+                'Play again', 'Save audio', 'Done','Done');
+            switch choice
+                case 'Play again'
+                    sound(y, fs)
+                case 'Save audio'
+                    [filename, pathname] = uiputfile({'*.wav'},'Save as');
+                    audiowrite([pathname,filename],y,fs);
+            end % switch
+        end % while
+    end
 else
-    out = y;
+    OUT = [];
 end
-
-if playaudio
-    sound(y,fs)
-    
-        % Loop for replaying, saving and finishing
-    choice = 'x'; % create a string
-    
-    % loop until the user presses the 'Done' button
-    while ~strcmp(choice,'Done')
-        choice = questdlg('What next?', ...
-            'Audio Play ...', ...
-            'Play again', 'Save audio', 'Done','Done');
-        switch choice
-            case 'Play again'
-                sound(y, fs)
-            case 'Save audio'
-                [filename, pathname] = uiputfile({'*.wav'},'Save as');
-                audiowrite([pathname,filename],y,fs);
-        end % switch
-    end % while
-end
-
-
-%**************************************************************************
-% Copyright (c) 2014, Densil Cabrera
-% All rights reserved.
-%
-% Redistribution and use in source and binary forms, with or without
-% modification, are permitted provided that the following conditions are
-% met:
-%
-%  * Redistributions of source code must retain the above copyright notice,
-%    this list of conditions and the following disclaimer.
-%  * Redistributions in binary form must reproduce the above copyright
-%    notice, this list of conditions and the following disclaimer in the
-%    documentation and/or other materials provided with the distribution.
-%  * Neither the name of The University of Sydney nor the names of its contributors
-%    may be used to endorse or promote products derived from this software
-%    without specific prior written permission.
-%
-% THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-% "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED
-% TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A
-% PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER
-% OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-% EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-% PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-% PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-% LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-% NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-% SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-%**************************************************************************
-
-
