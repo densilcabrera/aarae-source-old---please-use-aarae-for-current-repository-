@@ -12,7 +12,7 @@ function out = autocropstart_aarae(in,threshold,method)
 %
 % The threshold can be used in two ways:
 % * a negative value is interpreted as a value in decibels relative to the
-%       peak value (e.g. -20 dB relative to the peak). Truncation is done
+%       peak value (e.g. -20 dB relative to the peak).
 % * a positive value is interpreted directly as a wave absolute amplitude 
 %
 % Code by Densil Cabrera
@@ -72,7 +72,7 @@ if ~isempty(answer)
             end
             out.audio = in.audio;
         case 2
-            % use mixed signa to find truncation point
+            % use mixed signal to find truncation point
             mixed = mean(mean(mean(mean(mean(in.audio,6),5),4),3),2);
             if threshold <= 0
                 threshind = find(abs(mixed) >= max(abs(mixed))...
@@ -87,6 +87,8 @@ if ~isempty(answer)
             end
             
         case 3
+            % find threshold index in each column, but use the smallest one
+            % for all the columns
             threshind = len;
             for ch = 1:chans
                 for b = 1:bands
