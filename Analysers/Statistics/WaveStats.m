@@ -73,6 +73,8 @@ WS.kurtsq = kurtosis(inputwave);
 % sum of square (or energy)
 WS.sumsq = sum(inputwave./fs);
 
+WS.funcallback.name = 'WaveStats.m';
+WS.funcallback.inarg = {};
 
 % output
 [~,chans,bands] = size(inputwave);
@@ -123,8 +125,6 @@ if bands > 1
         set(t1,'ColumnWidth',{60});
         disptables(f,t1);
     end
-    
-
 else
     f = figure('Name','Wave statistics', ...
             'Position',[200 200 620 360]);
@@ -161,5 +161,4 @@ else
         t1 =uitable('Data',dat1,'ColumnName',cnames1,'RowName',rnames1);
         set(t1,'ColumnWidth',{60});
         disptables(f,t1);
-    
 end

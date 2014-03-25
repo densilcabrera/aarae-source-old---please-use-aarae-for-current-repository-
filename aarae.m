@@ -319,67 +319,69 @@ function load_btn_Callback(hObject, eventdata, handles)
     '*.wav;*.mat','Measurement files (*.wav,*.mat)';...
     '*.wav;*.mat','Processed files (*.wav,*.mat)';...
     '*.wav;*.mat','Result files (*.wav,*.mat)'},...
-    'Select audio file',[cd '/Audio']);
-
-if filename ~= 0
-    [~,~,ext] = fileparts(filename);
-    % Check type of file. First 'if' is for .mat, second is for .wav
-    if strcmp(ext,'.mat')
-        file = importdata(fullfile(pathname,filename));
-        if isstruct(file)
-            signaldata = file;
-        else
-            specs = inputdlg({'Please specify the sampling frequency','Please specify the bit depth'},'Sampling frequency',2);
-            if (isempty(specs))
-                warndlg('Input field is blank, cannot load data!');
-                signaldata = [];
+    'Select audio file',[cd '/Audio'],...
+    'MultiSelect','on');
+if ~iscell(filename), filename = cellstr(filename); end
+for i = 1:length(filename)
+    if filename{i} ~= 0
+        [~,~,ext] = fileparts(filename{i});
+        % Check type of file. First 'if' is for .mat, second is for .wav
+        if strcmp(ext,'.mat')
+            file = importdata(fullfile(pathname,filename{i}));
+            if isstruct(file)
+                signaldata = file;
             else
-                fs = str2num(specs{1,1});
-                nbits = str2num(specs{2,1});
-                if (isempty(fs) || fs<=0 || isempty(nbits) || nbits<=0)
-                    warndlg('Input MUST be a real positive number, cannot load data!');
+                specs = inputdlg({'Please specify the sampling frequency','Please specify the bit depth'},'Sampling frequency',2);
+                if (isempty(specs))
+                    warndlg('Input field is blank, cannot load data!');
                     signaldata = [];
                 else
-                    signaldata.audio = file;
-                    signaldata.fs = fs;
-                    signaldata.nbits = nbits;
+                    fs = str2num(specs{1,1});
+                    nbits = str2num(specs{2,1});
+                    if (isempty(fs) || fs<=0 || isempty(nbits) || nbits<=0)
+                        warndlg('Input MUST be a real positive number, cannot load data!');
+                        signaldata = [];
+                    else
+                        signaldata.audio = file;
+                        signaldata.fs = fs;
+                        signaldata.nbits = nbits;
+                    end
                 end
             end
         end
-    end
-    if strcmp(ext,'.wav')
-        [signaldata.audio,signaldata.fs,signaldata.nbits] = wavread(fullfile(pathname,filename));
-    end;
-    
-    % Generate new leaf and update the tree
-    newleaf = filename;
-    if ~isempty(signaldata)
-        if ~isfield(signaldata,'chanID')
-            signaldata.chanID = cellstr([repmat('Chan',size(signaldata.audio,2),1) num2str((1:size(signaldata.audio,2))')]);
-        end
-        if ~isfield(signaldata,'datatype')
-            if filterindex == 1, signaldata.datatype = 'testsignals'; end;
-            if filterindex == 2, signaldata.datatype = 'measurements'; end;
-            if filterindex == 3, signaldata.datatype = 'processed'; end;
-            if filterindex == 4, signaldata.datatype = 'results'; end;
-        end
-        if isfield(signaldata,'audio')
-            iconPath = fullfile(matlabroot,'/toolbox/fixedpoint/fixedpointtool/resources/plot.png');
-        else
-            iconPath = fullfile(matlabroot,'/toolbox/matlab/icons/notesicon.gif');
-        end
-        handles.(genvarname(newleaf)) = uitreenode('v0', newleaf,  newleaf,  iconPath, true);
-        handles.(genvarname(newleaf)).UserData = signaldata;
-        handles.(genvarname(signaldata.datatype)).add(handles.(genvarname(newleaf)));
-        handles.mytree.reloadNode(handles.(genvarname(signaldata.datatype)));
-        handles.mytree.expand(handles.(genvarname(signaldata.datatype)));
-        handles.mytree.setSelectedNode(handles.(genvarname(newleaf)));
-        set([handles.clrall_btn,handles.export_btn],'Enable','on')
-        fprintf(handles.fid, [' ' datestr(now,16) ' - Loaded "' filename '" to branch "' char(handles.(genvarname(signaldata.datatype)).getName) '"\n']);
-    end
-    guidata(hObject, handles);
-end
+        if strcmp(ext,'.wav')
+            [signaldata.audio,signaldata.fs,signaldata.nbits] = wavread(fullfile(pathname,filename{i}));
+        end;
 
+        % Generate new leaf and update the tree
+        newleaf = filename{i};
+        if ~isempty(signaldata)
+            if ~isfield(signaldata,'chanID')
+                signaldata.chanID = cellstr([repmat('Chan',size(signaldata.audio,2),1) num2str((1:size(signaldata.audio,2))')]);
+            end
+            if ~isfield(signaldata,'datatype')
+                if filterindex == 1, signaldata.datatype = 'testsignals'; end;
+                if filterindex == 2, signaldata.datatype = 'measurements'; end;
+                if filterindex == 3, signaldata.datatype = 'processed'; end;
+                if filterindex == 4, signaldata.datatype = 'results'; end;
+            end
+            if isfield(signaldata,'audio')
+                iconPath = fullfile(matlabroot,'/toolbox/fixedpoint/fixedpointtool/resources/plot.png');
+            else
+                iconPath = fullfile(matlabroot,'/toolbox/matlab/icons/notesicon.gif');
+            end
+            handles.(genvarname(newleaf)) = uitreenode('v0', newleaf,  newleaf,  iconPath, true);
+            handles.(genvarname(newleaf)).UserData = signaldata;
+            handles.(genvarname(signaldata.datatype)).add(handles.(genvarname(newleaf)));
+            handles.mytree.reloadNode(handles.(genvarname(signaldata.datatype)));
+            handles.mytree.expand(handles.(genvarname(signaldata.datatype)));
+            handles.mytree.setSelectedNode(handles.(genvarname(newleaf)));
+            set([handles.clrall_btn,handles.export_btn],'Enable','on')
+            fprintf(handles.fid, [' ' datestr(now,16) ' - Loaded "' filename{i} '" to branch "' char(handles.(genvarname(signaldata.datatype)).getName) '"\n']);
+        end
+        guidata(hObject, handles);
+    end
+end
 
 
 % --- Executes on button press in rec_btn.
@@ -780,67 +782,88 @@ function analyze_btn_Callback(hObject, eventdata, handles)
 % hMain = getappdata(0,'hMain');
 % audiodata = getappdata(hMain,'testsignal');
 selectedNodes = handles.mytree.getSelectedNodes;
+funcallback = [];
 for nleafs = 1:length(selectedNodes)
     audiodata = selectedNodes(nleafs).handle.UserData;
     % Evaluate selected function for the leaf selected from the tree
     if ~isempty(handles.funname) && ~isempty(audiodata)
         set(hObject,'BackgroundColor','red');
         set(hObject,'Enable','off');
-        if nargout(handles.funname) == 1
-            out = feval(handles.funname,audiodata);
-        else
-            out = [];
-            feval(handles.funname,audiodata);
+        % Processes the selected leaf using the selected process from proc_box
+        %contents = cellstr(get(handles.funcat_box,'String'));
+        %category = contents{get(handles.funcat_box,'Value')};
+        contents = cellstr(get(handles.fun_box,'String'));
+        file = contents(get(handles.fun_box,'Value'));
+        %name = selectedNodes(nleafs).getName.char;
+        for multi = 1:size(file,1)
+            [~,funname] = fileparts(char(file(multi,:)));
+            if nargout(funname) == 1
+                %out = feval(handles.funname,audiodata);
+                if ~isempty(funcallback) && strcmp(funname,funcallback.name)
+                    out = feval(funname,audiodata,funcallback.inarg{:});
+                else
+                    out = feval(funname,audiodata);
+                end
+                if isfield(out,'funcallback')
+                    funcallback = out.funcallback;
+                    [~,funcallback.name] = fileparts(funcallback.name);
+                end
+            else
+                out = [];
+                feval(funname,audiodata);
+            end
+
+            handles.mytree.setSelectedNode(handles.root);
+            newleaf = [char(selectedNodes(nleafs).getName) ' ' funname];
+            if ~isempty(out)
+                signaldata = out;
+                signaldata.datatype = 'results';
+                if isfield(signaldata,'audio')
+                    iconPath = fullfile(matlabroot,'/toolbox/fixedpoint/fixedpointtool/resources/plot.png');
+                else
+                    iconPath = fullfile(matlabroot,'/toolbox/matlab/icons/notesicon.gif');
+                end
+                leafname = isfield(handles,genvarname(newleaf));
+                if leafname == 1
+                    index = 1;
+                    % This while cycle is just to make sure no signals are
+                    % overwriten
+                    if length(genvarname([newleaf,'_',num2str(index)])) >= namelengthmax, newleaf = newleaf(1:round(end/2)); end
+                    while isfield(handles,genvarname([newleaf,'_',num2str(index)])) == 1
+                        index = index + 1;
+                    end
+                    newleaf = [newleaf,'_',num2str(index)];
+                end
+                handles.(genvarname(newleaf)) = uitreenode('v0', newleaf,  newleaf,  iconPath, true);
+                handles.(genvarname(newleaf)).UserData = signaldata;
+                handles.results.add(handles.(genvarname(newleaf)));
+                handles.mytree.reloadNode(handles.results);
+                handles.mytree.expand(handles.results);
+                handles.mytree.setSelectedNode(handles.(genvarname(newleaf)));
+                set([handles.clrall_btn,handles.export_btn],'Enable','on')
+            end
+            fprintf(handles.fid, [' ' datestr(now,16) ' - Analyzed "' char(selectedNodes(1).getName) '" using ' funname ' in ' handles.funcat '\n']);% In what category???
+            
+            h = findobj('type','figure','-not','tag','aarae');
+            index = 1;
+            filename = dir([cd '/Utilities/Temp/' char(selectedNodes(nleafs).getName) funname num2str(index) '.fig']);
+            if ~isempty(filename)
+                while isempty(dir([cd '/Utilities/Temp/' char(selectedNodes(nleafs).getName) funname num2str(index) '.fig'])) == 0
+                    index = index + 1;
+                end
+            end
+            for i = 1:length(h)
+                saveas(h(i),[cd '/Utilities/Temp/' char(selectedNodes(nleafs).getName) funname num2str(index) '.fig']);
+                index = index + 1;
+            end
+            results = dir([cd '/Utilities/Temp']);
+            set(handles.result_box,'String',[' ';cellstr({results(3:length(results)).name}')]);
+            if length(selectedNodes) > 1 || size(file,1) > 1, delete(h); end
         end
         set(hObject,'BackgroundColor',[0.94 0.94 0.94]);
         set(hObject,'Enable','on');
-
-        handles.mytree.setSelectedNode(handles.root);
-        newleaf = [char(selectedNodes(nleafs).getName) ' ' handles.funname];
-        if ~isempty(out)
-            signaldata = out;
-            signaldata.datatype = 'results';
-            if isfield(signaldata,'audio')
-                iconPath = fullfile(matlabroot,'/toolbox/fixedpoint/fixedpointtool/resources/plot.png');
-            else
-                iconPath = fullfile(matlabroot,'/toolbox/matlab/icons/notesicon.gif');
-            end
-            leafname = isfield(handles,genvarname(newleaf));
-            if leafname == 1
-                index = 1;
-                % This while cycle is just to make sure no signals are
-                % overwriten
-                if length(genvarname([newleaf,'_',num2str(index)])) >= namelengthmax, newleaf = newleaf(1:round(end/2)); end
-                while isfield(handles,genvarname([newleaf,'_',num2str(index)])) == 1
-                    index = index + 1;
-                end
-                newleaf = [newleaf,'_',num2str(index)];
-            end
-            handles.(genvarname(newleaf)) = uitreenode('v0', newleaf,  newleaf,  iconPath, true);
-            handles.(genvarname(newleaf)).UserData = signaldata;
-            handles.results.add(handles.(genvarname(newleaf)));
-            handles.mytree.reloadNode(handles.results);
-            handles.mytree.expand(handles.results);
-            handles.mytree.setSelectedNode(handles.(genvarname(newleaf)));
-            set([handles.clrall_btn,handles.export_btn],'Enable','on')
-        end
-        fprintf(handles.fid, [' ' datestr(now,16) ' - Analyzed "' char(selectedNodes(1).getName) '" using ' handles.funname ' in ' handles.funcat '\n']);% In what category???
     end
 end
-h = findobj('type','figure','-not','tag','aarae');
-index = 1;
-filename = dir([cd '/Utilities/Temp/' handles.funname num2str(index) '.fig']);
-if ~isempty(filename)
-    while isempty(dir([cd '/Utilities/Temp/' handles.funname num2str(index) '.fig'])) == 0
-        index = index + 1;
-    end
-end
-for i = 1:length(h)
-    saveas(h(i),[cd '/Utilities/Temp/' handles.funname num2str(index) '.fig']);
-    index = index + 1;
-end
-results = dir([cd '/Utilities/Temp']);
-set(handles.result_box,'String',[' ';cellstr({results(3:length(results)).name}')]);
 guidata(hObject,handles)
 
 
@@ -1065,27 +1088,28 @@ for nleafs = 1:length(selectedNodes)
             end
         end
     end
-end
-h = findobj('type','figure','-not','tag','aarae');
-if ~isempty(h)
-    index = 1;
-    filename = dir([cd '/Utilities/Temp/' handles.funname num2str(index) '.fig']);
-    if ~isempty(filename)
-        while isempty(dir([cd '/Utilities/Temp/' handles.funname num2str(index) '.fig'])) == 0
+    h = findobj('type','figure','-not','tag','aarae');
+    if ~isempty(h)
+        index = 1;
+        filename = dir([cd '/Utilities/Temp/' handles.funname num2str(index) '.fig']);
+        if ~isempty(filename)
+            while isempty(dir([cd '/Utilities/Temp/' handles.funname num2str(index) '.fig'])) == 0
+                index = index + 1;
+            end
+        end
+        for i = 1:length(h)
+            saveas(h(i),[cd '/Utilities/Temp/' handles.funname num2str(index) '.fig']);
             index = index + 1;
         end
+        results = dir([cd '/Utilities/Temp']);
+        set(handles.result_box,'String',[' ';cellstr({results(3:length(results)).name}')]);
     end
-    for i = 1:length(h)
-        saveas(h(i),[cd '/Utilities/Temp/' handles.funname num2str(index) '.fig']);
-        index = index + 1;
+    if length(selectedNodes) > 1 || size(file,1) > 1, delete(h); end
+    set(hObject,'BackgroundColor',[0.94 0.94 0.94]);
+    set(hObject,'Enable','on');
+    if ~isempty(newleaf)
+        handles.mytree.setSelectedNode(handles.(genvarname(newleaf)));
     end
-    results = dir([cd '/Utilities/Temp']);
-    set(handles.result_box,'String',[' ';cellstr({results(3:length(results)).name}')]);
-end
-set(hObject,'BackgroundColor',[0.94 0.94 0.94]);
-set(hObject,'Enable','on');
-if ~isempty(newleaf)
-    handles.mytree.setSelectedNode(handles.(genvarname(newleaf)));
 end
 guidata(hObject,handles);
 
