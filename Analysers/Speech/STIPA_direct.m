@@ -1,4 +1,4 @@
-function out = STIPA_direct(in, fs, cal, refsignal)
+function out = STIPA_direct(in, fs, cal, refsignal, AuditoryMasking, doplot, dorefsig)
 % This function analyses a previously recorded STIPA signal, and derives
 % the value of STIPA, as described by IEC60268-16 (2011)
 %
@@ -23,21 +23,40 @@ function out = STIPA_direct(in, fs, cal, refsignal)
 % skirts are used (achieved by setting filterorder to 24).
 %
 % Code by Densil Cabrera
-% version 1.05 (7 February 2014)
+% version 1.04 (31 January 2014)
 
 
 % INPUTS AND SETTINGS
-
 if isstruct(in)
     audio = in.audio;
     fs = in.fs;
     if isfield(in,'cal')
-        calgain = 10^(in.cal/20);
+        cal = in.cal;
+        calgain = 10^(cal/20);
     else
+        cal = 0;
         calgain = 1;
     end
-    
-    
+else
+    audio = in;
+    if nargin < 3
+        cal = inputdlg({'Calibration offset [dB]'},...
+                           'Cal',1,{'0'});
+        cal = str2num(char(cal));
+    end
+    calgain = 10^(cal/20);
+    if nargin < 2
+        fs = inputdlg({'Sampling frequency [samples/s]'},...
+                           'Fs',1,{'48000'});
+        fs = str2num(char(fs));
+    end
+end
+
+if nargin < 7, dorefsig = 0; end
+if nargin < 6, doplot = 1; end
+if nargin < 5, AuditoryMasking = 1; end
+if nargin < 4,
+    refsignal = [];
     % dialog box to get auditory masking, noise correction  and
     % auralization settings
     prompt = {'Auditory Masking (0 | 1):', ...
@@ -50,8 +69,7 @@ if isstruct(in)
     answer = inputdlg(prompt,dlg_title,num_lines,def);
     
     if isempty(answer)
-        STIPA = [];
-        
+        out = [];
         return
     else
         AuditoryMasking = str2num(answer{1,1});
@@ -59,308 +77,270 @@ if isstruct(in)
         doplot = str2num(answer{3,1});
         dorefsig = str2num(answer{4,1});
     end
-    
-    
-    
-    
-else
-    audio = in;
-    calgain = 10^(cal/20);
-    AuditoryMasking = 1;
-    doplot = 0;
-    if exist('refsignal', 'var')
-        dorefsig = 1;
-    end
 end
 
+if ~isempty(audio) && ~isempty(fs) && ~isempty(cal) && ~isempty(AuditoryMasking) && ~isempty(doplot) && ~isempty(dorefsig)
 
+    audio = mean(audio,3); % mixdown 3rd dimension if it exists
+    chans = size(audio,2);
+    audio = audio .* calgain; % apply calibration
 
-audio = mean(audio,3); % mixdown 3rd dimension if it exists
-chans = size(audio,2);
-audio = audio .* calgain; % apply calibration
+    % Define the octave band filter parameters
+    %bandnumber=21:3:39; % filter band numbers
+    %fc=10.^(bandnumber./10); % filter centre frequencies in Hz
+    fc = [125, 250, 500, 1000, 2000, 4000, 8000]; % nominal centre freq
 
+    % list of modulation frequencies
+    Fm = [1.6, 8;...
+        1, 5;...
+        0.63, 3.15;...
+        2, 10;...
+        1.25, 6.25;...
+        0.8, 4;...
+        2.5, 12.5];
 
+    % -------------------------------------------------------------------------
+    % MTF CALCULATIONS
+    % -------------------------------------------------------------------------
 
-
-% Define the octave band filter parameters
-%bandnumber=21:3:39; % filter band numbers
-%fc=10.^(bandnumber./10); % filter centre frequencies in Hz
-fc = [125, 250, 500, 1000, 2000, 4000, 8000]; % nominal centre freq
-
-% list of modulation frequencies
-Fm = [1.6, 8;...
-    1, 5;...
-    0.63, 3.15;...
-    2, 10;...
-    1.25, 6.25;...
-    0.8, 4;...
-    2.5, 12.5];
-
-
-
-
-
-
-% -------------------------------------------------------------------------
-% MTF CALCULATIONS
-% -------------------------------------------------------------------------
-
-if dorefsig
-    % Use a menu & dialog box to select a wav file or audio within AARAE
-    if isstruct(in)
-        selection = choose_audio; % call AARAE's choose_audio function
-    end
-    if ~isempty(selection) && isstruct(in)
-        refsignal = selection.audio; % additional audio data
-        fs2 = selection.fs; % sampling rate
-        
-        if ~(fs2 == fs)
-            % match sampling rates if desired
-            refsignal = resample(refsignal,fs,fs2);
+    if dorefsig && isempty(refsignal)
+        % Use a menu & dialog box to select a wav file or audio within AARAE
+        if isstruct(in)
+            selection = choose_audio; % call AARAE's choose_audio function
         end
-        [~, chans2, bands2] = size(refsignal); % new wave dimensions
-        if bands2 > 1, refsignal = sum(refsignal,3); end % if multiband, mixdown
-        if chans2>1, refsignal = refsignal(:,1); end % only 1 channel allowed for ref
-        
-        % CALCULATE MTF OF REFERENCE SIGNAL
-        MTFref = STIPA_direct_MTF(refsignal,fs,fc,Fm);
-    elseif ~isstruct(in)
-        MTFref = STIPA_direct_MTF(refsignal,fs,fc,Fm);
-    else
-        dorefsig = 0;
-    end
-    
-end
+        if ~isempty(selection) && isstruct(in)
+            refsignal = selection.audio; % additional audio data
+            fs2 = selection.fs; % sampling rate
 
-% CALCULATE MTF
-[MTF, I, Level] = STIPA_direct_MTF(audio,fs,fc,Fm);
-
-% adjust MTF by reference signal MTF
-if dorefsig
-    MTF = MTF ./ MTFref;
-end
-
-
-
-
-
-
-% -------------------------------------------------------------------------
-% APPLY AUDITORY MASKING AND THRESHOLD
-% -------------------------------------------------------------------------
-
-if AuditoryMasking
-    % AUDITORY MASKING
-    % preallocate
-    amf=zeros(1,chans,7);     % Auditory Masking Factor
-    amfdB=zeros(1,chans,7); % Auditory Masking Factor in dB
-    Iam=zeros(1,chans,7);   % Masking Intensity
-    
-    % auditory masking from 2011 version of the standard
-    for ch = 1:chans
-        for k=2:7
-            if Level(1,ch,k-1)< 63
-                amfdB(1,ch,k)=0.5*Level(1,ch,k-1)-65;
-            elseif Level(1,ch,k-1) < 67;
-                amfdB(1,ch,k)=1.8*Level(1,ch,k-1)-146.9;
-            elseif Level(1,ch,k-1) < 100;
-                amfdB(1,ch,k)=0.5*Level(1,ch,k-1)-59.8;
-            else
-                amfdB(1,ch,k)=-10;
+            if ~(fs2 == fs)
+                % match sampling rates if desired
+                refsignal = resample(refsignal,fs,fs2);
             end
-            amf(1,ch,k)=10^(amfdB(1,ch,k)/10);
-            Iam(1,ch,k)=I(1,ch,k-1)*amf(1,ch,k);
+            [~, chans2, bands2] = size(refsignal); % new wave dimensions
+            if bands2 > 1, refsignal = sum(refsignal,3); end % if multiband, mixdown
+            if chans2>1, refsignal = refsignal(:,1); end % only 1 channel allowed for ref
+
+            % CALCULATE MTF OF REFERENCE SIGNAL
+            MTFref = STIPA_direct_MTF(refsignal,fs,fc,Fm);
+        elseif ~isstruct(in)
+            MTFref = STIPA_direct_MTF(refsignal,fs,fc,Fm);
+        else
+            dorefsig = 0;
         end
+    elseif ~isempty(refsignal)
+        MTFref = STIPA_direct_MTF(refsignal,fs,fc,Fm);
     end
-    
-    % Absolute Speech Reception Threshold
-    ART=[46 27 12 6.5 7.5 8 12];
-    
-    % Intensity of threshold
-    Irt=10.^(ART./10);
-    
-    
-    
-    for k = 1:7
-        MTF(1,:,k,:) = MTF(1,:,k,:) .* (repmat(I(1,:,k),[1,1,1,2])) ...
-            ./ (repmat(I(1,:,k),[1,1,1,2]) ...
-            + repmat(Iam(1,:,k),[1,1,1,2]) ...
-            + Irt(k));
+
+    % CALCULATE MTF
+    [MTF, I, Level] = STIPA_direct_MTF(audio,fs,fc,Fm);
+
+    % adjust MTF by reference signal MTF
+    if dorefsig
+        MTF = MTF ./ MTFref;
     end
-    
-end
 
+    % -------------------------------------------------------------------------
+    % APPLY AUDITORY MASKING AND THRESHOLD
+    % -------------------------------------------------------------------------
 
+    if AuditoryMasking
+        % AUDITORY MASKING
+        % preallocate
+        amf=zeros(1,chans,7);     % Auditory Masking Factor
+        amfdB=zeros(1,chans,7); % Auditory Masking Factor in dB
+        Iam=zeros(1,chans,7);   % Masking Intensity
 
+        % auditory masking from 2011 version of the standard
+        for ch = 1:chans
+            for k=2:7
+                if Level(1,ch,k-1)< 63
+                    amfdB(1,ch,k)=0.5*Level(1,ch,k-1)-65;
+                elseif Level(1,ch,k-1) < 67;
+                    amfdB(1,ch,k)=1.8*Level(1,ch,k-1)-146.9;
+                elseif Level(1,ch,k-1) < 100;
+                    amfdB(1,ch,k)=0.5*Level(1,ch,k-1)-59.8;
+                else
+                    amfdB(1,ch,k)=-10;
+                end
+                amf(1,ch,k)=10^(amfdB(1,ch,k)/10);
+                Iam(1,ch,k)=I(1,ch,k-1)*amf(1,ch,k);
+            end
+        end
 
+        % Absolute Speech Reception Threshold
+        ART=[46 27 12 6.5 7.5 8 12];
 
-% -------------------------------------------------------------------------
-% FINAL STAGES OF STIPA CALCULATION
-% -------------------------------------------------------------------------
+        % Intensity of threshold
+        Irt=10.^(ART./10);
 
-% limiting the MTF values to 1 at the maximum.
-MTF(MTF>1) = 1;
-MTF = permute(MTF,[2,3,4,1]);
-
-% Effecive signal to noise ratio (SNR)
-SNReff=10*log10(MTF./(1-MTF));
-
-% limit values to -15 <= effSNR <= 15 dB
-SNReff(SNReff>15)=15;
-SNReff(SNReff<-15)=-15;
-
-% Calculate Transmission Index (TI)
-% and averaged Modulation Tranasfer Index (MTI)
-TI=(SNReff+15)./30;
-MTI=mean(TI,3);
-
-% STIPA (2011 version)
-alpha=repmat([0.085 0.127 0.230 0.233 0.309 0.224 0.173],[chans,1]);
-beta=repmat([0.085 0.078 0.065 0.011 0.047 0.095],[chans,1]);
-MTI_alpha=alpha.*MTI;
-MTI_beta=beta.*sqrt(MTI(:,1:6) ...
-    .*MTI(:,2:7));
-STIPA=sum(MTI_alpha,2)-sum(MTI_beta,2);
-
-
-
-% -------------------------------------------------------------------------
-% CREATE OUTPUT STRUCTURE
-% -------------------------------------------------------------------------
-out.STIPA = STIPA;
-out.MTI = MTI;
-out.MTF = MTF;
-
-
-
-
-
-
-
-% -------------------------------------------------------------------------
-% PLOTTING
-% -------------------------------------------------------------------------
-
-if doplot
-    for ch = 1:chans
-        figure('Name', ['Channel: ', num2str(ch),' STIPA: ' num2str(STIPA(ch))])
-        
-        
-        subplot1 = subplot(3,1,1);
-        MTF_all = zeros(8,15);
-        MTF_all(1,5) = MTF(ch,1,1);
-        MTF_all(1,12) = MTF(ch,1,2);
-        MTF_all(2,3) = MTF(ch,2,1);
-        MTF_all(2,10) = MTF(ch,2,2);
-        MTF_all(3,1) = MTF(ch,3,1);
-        MTF_all(3,8) = MTF(ch,3,2);
-        MTF_all(4,6) = MTF(ch,4,1);
-        MTF_all(4,13) = MTF(ch,4,2);
-        MTF_all(5,4) = MTF(ch,5,1);
-        MTF_all(5,11) = MTF(ch,5,2);
-        MTF_all(6,2) = MTF(ch,6,1);
-        MTF_all(6,9) = MTF(ch,6,2);
-        MTF_all(7,7) = MTF(ch,7,1);
-        MTF_all(7,14) = MTF(ch,7,2);
-        
-        pcolor(MTF_all);
-        colormap('hot')
-        
-        % x-axis
-        set(gca,'XTickLabel',{'0.63', '0.8', '1', '1.25', '1.6', '2',...
-            '2.5', '3.15','4','5','6.3','8','10','12.5'}, ...
-            'XTick',1.5:1:14.5)
-        xlim([1 15]);
-        xlabel('Modulation Frequency (Hz)')
-        
-        % y-axis
-        set(gca,'YTickLabel',{'125', '250', '500', '1k', '2k', '4k', '8k'},...
-            'YTick',1.5:1:7.5)
-        ylabel('Band (Hz)')
-        ylim([1 8])
-        
-        colorbar('peer',subplot1);
-        title('Sparse modulation transfer function')
-        
-        
-        
-        
-        subplot(3,1,2)
-        
-        bar(squeeze(MTI(ch,:)),'r');
-        
-        % x-axis
-        set(gca,'XTickLabel',{'125', '250', '500', '1k', '2k', '4k', '8k'})
-        xlabel('Octave Band Centre Frequency (Hz)')
-        
-        % y-axis
-        ylabel('MTI')
-        ylim([0 1])
-        
-        % show the value of each bar
         for k = 1:7
-            if MTI(ch,k) < 0.8
-                % black number above the bar
-                text(k-0.25,MTI(ch,k)+0.05, ...
-                    num2str(round(MTI(ch,k)*1000)/1000),'Color','k')
-            else
-                % or white number below the top of the bar
-                % (for high MTI values)
-                text(k-0.25,MTI(ch,k)-0.05, ...
-                    num2str(round(MTI(ch,k)*1000)/1000),'Color',[1 1 1])
-            end
+            MTF(1,:,k,:) = MTF(1,:,k,:) .* (repmat(I(1,:,k),[1,1,1,2])) ...
+                ./ (repmat(I(1,:,k),[1,1,1,2]) ...
+                + repmat(Iam(1,:,k),[1,1,1,2]) ...
+                + Irt(k));
         end
-        
-        
-        
-        subplot(3,1,3)
-        
-        % Plot of octave band signal and noise levels
-        hold on
-        
-        % x-axis
-        set(gca,'XTickLabel',{'125', '250', '500', '1k', '2k', '4k', '8k'})
-        xlabel('Octave Band Centre Frequency (Hz)')
-        
-        % y-axis
-        ymax = 10*ceil(max(Level(1,ch,:))/10);
-        if ymax > 40
-            ylim([0 ymax])
-        end
-        ylabel('SPL (dB)')
-        
-        % Sound pressure level of the received
-        plot(squeeze(Level(1,ch,:)),'b','Marker','o','DisplayName','Received')
-        
-        
-        if AuditoryMasking
-            
-            % Sound pressure level of masking from the band below
-            plot(10*log10(squeeze(Iam(1,ch,:))),'Color',[0 0.5 0], ...
-                'Marker','x','DisplayName','Masking')
-            
-            % Sound pressure level of the auditory reception threshold
-            plot(10*log10(Irt),'k','LineStyle',':', ...
-                'DisplayName','Threshold')
-            
-            % Sum of all sources of noise
-            Isum = permute(I(1,ch,:),[2,3,1]) + Irt + permute(Iam(1,ch,:),[2,3,1]);
-            plot(10*log10(squeeze(Isum)), 'r', ...
-                'LineWidth',1,'LineStyle','--', ...
-                'Marker','+', 'DisplayName','Total S+N')
-            
-        end
-        legend('show','Location','EastOutside');
-        hold off
-        
     end
+
+    % -------------------------------------------------------------------------
+    % FINAL STAGES OF STIPA CALCULATION
+    % -------------------------------------------------------------------------
+
+    % limiting the MTF values to 1 at the maximum.
+    MTF(MTF>1) = 1;
+    MTF = permute(MTF,[2,3,4,1]);
+
+    % Effecive signal to noise ratio (SNR)
+    SNReff=10*log10(MTF./(1-MTF));
+
+    % limit values to -15 <= effSNR <= 15 dB
+    SNReff(SNReff>15)=15;
+    SNReff(SNReff<-15)=-15;
+
+    % Calculate Transmission Index (TI)
+    % and averaged Modulation Tranasfer Index (MTI)
+    TI=(SNReff+15)./30;
+    MTI=mean(TI,3);
+
+    % STIPA (2011 version)
+    alpha=repmat([0.085 0.127 0.230 0.233 0.309 0.224 0.173],[chans,1]);
+    beta=repmat([0.085 0.078 0.065 0.011 0.047 0.095],[chans,1]);
+    MTI_alpha=alpha.*MTI;
+    MTI_beta=beta.*sqrt(MTI(:,1:6) ...
+        .*MTI(:,2:7));
+    STIPA=sum(MTI_alpha,2)-sum(MTI_beta,2);
+
+    % -------------------------------------------------------------------------
+    % CREATE OUTPUT STRUCTURE
+    % -------------------------------------------------------------------------
+    out.STIPA = STIPA;
+    out.MTI = MTI;
+    out.MTF = MTF;
+    out.funcallback.name = 'STIPA_direct.m';
+    out.funcallback.inarg = {fs,cal,refsignal,AuditoryMasking,doplot,dorefsig};
+
+    % -------------------------------------------------------------------------
+    % PLOTTING
+    % -------------------------------------------------------------------------
+
+    if doplot
+        for ch = 1:chans
+            figure('Name', ['Channel: ', num2str(ch),' STIPA: ' num2str(STIPA(ch))])
+
+
+            subplot1 = subplot(3,1,1);
+            MTF_all = zeros(8,15);
+            MTF_all(1,5) = MTF(ch,1,1);
+            MTF_all(1,12) = MTF(ch,1,2);
+            MTF_all(2,3) = MTF(ch,2,1);
+            MTF_all(2,10) = MTF(ch,2,2);
+            MTF_all(3,1) = MTF(ch,3,1);
+            MTF_all(3,8) = MTF(ch,3,2);
+            MTF_all(4,6) = MTF(ch,4,1);
+            MTF_all(4,13) = MTF(ch,4,2);
+            MTF_all(5,4) = MTF(ch,5,1);
+            MTF_all(5,11) = MTF(ch,5,2);
+            MTF_all(6,2) = MTF(ch,6,1);
+            MTF_all(6,9) = MTF(ch,6,2);
+            MTF_all(7,7) = MTF(ch,7,1);
+            MTF_all(7,14) = MTF(ch,7,2);
+
+            pcolor(MTF_all);
+            colormap('hot')
+
+            % x-axis
+            set(gca,'XTickLabel',{'0.63', '0.8', '1', '1.25', '1.6', '2',...
+                '2.5', '3.15','4','5','6.3','8','10','12.5'}, ...
+                'XTick',1.5:1:14.5)
+            xlim([1 15]);
+            xlabel('Modulation Frequency (Hz)')
+
+            % y-axis
+            set(gca,'YTickLabel',{'125', '250', '500', '1k', '2k', '4k', '8k'},...
+                'YTick',1.5:1:7.5)
+            ylabel('Band (Hz)')
+            ylim([1 8])
+
+            colorbar('peer',subplot1);
+            title('Sparse modulation transfer function')
+
+
+
+
+            subplot(3,1,2)
+
+            bar(squeeze(MTI(ch,:)),'r');
+
+            % x-axis
+            set(gca,'XTickLabel',{'125', '250', '500', '1k', '2k', '4k', '8k'})
+            xlabel('Octave Band Centre Frequency (Hz)')
+
+            % y-axis
+            ylabel('MTI')
+            ylim([0 1])
+
+            % show the value of each bar
+            for k = 1:7
+                if MTI(ch,k) < 0.8
+                    % black number above the bar
+                    text(k-0.25,MTI(ch,k)+0.05, ...
+                        num2str(round(MTI(ch,k)*1000)/1000),'Color','k')
+                else
+                    % or white number below the top of the bar
+                    % (for high MTI values)
+                    text(k-0.25,MTI(ch,k)-0.05, ...
+                        num2str(round(MTI(ch,k)*1000)/1000),'Color',[1 1 1])
+                end
+            end
+
+
+
+            subplot(3,1,3)
+
+            % Plot of octave band signal and noise levels
+            hold on
+
+            % x-axis
+            set(gca,'XTickLabel',{'125', '250', '500', '1k', '2k', '4k', '8k'})
+            xlabel('Octave Band Centre Frequency (Hz)')
+
+            % y-axis
+            ymax = 10*ceil(max(Level(1,ch,:))/10);
+            if ymax > 40
+                ylim([0 ymax])
+            end
+            ylabel('SPL (dB)')
+
+            % Sound pressure level of the received
+            plot(squeeze(Level(1,ch,:)),'b','Marker','o','DisplayName','Received')
+
+
+            if AuditoryMasking
+
+                % Sound pressure level of masking from the band below
+                plot(10*log10(squeeze(Iam(1,ch,:))),'Color',[0 0.5 0], ...
+                    'Marker','x','DisplayName','Masking')
+
+                % Sound pressure level of the auditory reception threshold
+                plot(10*log10(Irt),'k','LineStyle',':', ...
+                    'DisplayName','Threshold')
+
+                % Sum of all sources of noise
+                Isum = permute(I(1,ch,:),[2,3,1]) + Irt + permute(Iam(1,ch,:),[2,3,1]);
+                plot(10*log10(squeeze(Isum)), 'r', ...
+                    'LineWidth',1,'LineStyle','--', ...
+                    'Marker','+', 'DisplayName','Total S+N')
+
+            end
+            legend('show','Location','EastOutside');
+            hold off
+
+        end
+    end
+else
+    out = [];
 end
 end
-
-
-
-
-
+%eof
 
 % -------------------------------------------------------------------------
 % -------------------------------------------------------------------------

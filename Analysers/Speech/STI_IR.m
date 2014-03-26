@@ -1,4 +1,4 @@
-function [M_STI, F_STI, Verbose]=STI_IR(IR, Lsignal, Lnoise, AuditoryMasking, NoiseCorrection, doplot, fs, FilterVersion)
+function Verbose=STI_IR(IR, fs, Lsignal, Lnoise, AuditoryMasking, NoiseCorrection, doplot, FilterVersion)
 % This function calculates the speech transmission index (STI)
 % in accordance with IEC 60268-16 (2011-06).
 % It implements the 'indirect method of measuring STI using the impulse
@@ -16,7 +16,7 @@ function [M_STI, F_STI, Verbose]=STI_IR(IR, Lsignal, Lnoise, AuditoryMasking, No
 % unless it is assumed that noise is negligible.
 %
 % Code by Doheon Lee and Densil Cabrera
-% version 1.10 (7 February 2014)
+% version 1.09 (30 January 2014)
 %
 % * For further information type 'doc STI_IR' in the MATLAB command line and
 %   click on 'View code for STI_IR'.
@@ -235,7 +235,7 @@ if nargin == 0
     dialogmode = 1;
 end
 
-if isstruct(IR) || dialogmode
+if (isstruct(IR) || dialogmode) && nargin < 2
     % DIALOG BOX ENTRY MODE %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     
     % If a structure is input or if dialogmode has been set, then
@@ -393,7 +393,11 @@ else
     
     % the first input argument is used for direct input of IR data
     data = IR;
-    
+    % required data from input structure
+    if isstruct(IR)
+        data = IR.audio;
+        fs = IR.fs;
+    end
     if nargin < 7
         fs = 48000; % default sampling rate
         disp('Audio sampling rate of 48 kHz has been assumed')
@@ -601,10 +605,9 @@ for ch = 1:chans
         P_octave=zeros(length(data(:,ch)), length(length(fc)));
         MTF_ch=zeros(length(mf), length(fc));
         if FilterVersion == 1
-            % Matlab's filterbuilder octave band filters (6th order)
             P_octave = octavebandfilters(data(:,ch), fs);
         elseif FilterVersion == 2
-            % AARAE's linear phase filters  (recommended)
+            % use AARAE's linear phase filters  (recommended)
             % pseudo-Butterworth response
             orderin = 12; % in-band filter pseudo-order
             orderout = 12; % out-of-band filter pseudo-order
@@ -965,7 +968,8 @@ Verbose.txt = [datestr(now), '  ', inputstring, '  fs:', num2str(fs), ...
     '  Noise correction:', num2str(NoiseCorrection), ...
     '  Filterbank:', num2str(FilterVersion)];
 
-
+Verbose.funcallback.name = 'STI_IR.m';
+Verbose.funcallback.inarg = {fs,Lsignal,Lnoise,AuditoryMasking,NoiseCorrection,doplot,FilterVersion};
 
 
 
