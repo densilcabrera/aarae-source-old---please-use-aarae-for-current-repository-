@@ -11,10 +11,11 @@ if isstruct(speech)
     signal = speech.audio;
     fs = speech.fs;
     if isfield(speech,'cal')
-        gain = 10^(speech.cal/20);
+        cal = speech.cal;      
     else
-        gain = 1;
+        cal = zeros(1,size(signal,2));
     end
+    gain = 10.^(cal/20);
 else
     signal = speech;
     if nargin < 3
@@ -53,7 +54,7 @@ if nargin > 5 && ~isempty(caltone)
         ylabel('Squared calibration tone, in dB')
         hold off
     end
-elseif nargin < 3
+elseif  ~exist('cal','var')
     % default calibration factor
     caltone = [];
     cal = 0;
@@ -61,7 +62,7 @@ elseif nargin < 3
 else
     % user-defined arbitrary calibration, using input argument 3
     caltone = [];
-    gain = 10^(cal/20);
+    gain = 10.^(cal./20);
 end
 % default window length, in milliseconds
 if nargin < 5, wintime = 15; end
@@ -80,7 +81,7 @@ if nargin < 3
         return
     else
         cal = str2num(answer{1,1});
-        gain = 10^(cal/20);
+        gain = 10.^(cal./20);
         wintime = str2num(answer{2,1});
         doplot = str2num(answer{3,1});
     end
@@ -92,7 +93,11 @@ if ~isempty(signal) && ~isempty(fs) && ~isempty(cal) && ~isempty(doplot) && ~ise
     [len,chans] = size(signal);
 
     % calibration adjustment of signal
-    signal = signal * gain;
+    if length(gain) == chans
+        signal = signal .* repmat(gain,[len 1]);
+    else
+        signal = singal .* gain;
+    end
 
     % window length in samples
     winlength = round(wintime*fs/1000);
