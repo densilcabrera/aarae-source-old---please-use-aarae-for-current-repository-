@@ -1,4 +1,4 @@
-function out = histogram_of_wave_simple(in)
+function out = histogram_of_wave_simple(in,transposesubplots,yscaling,nbars,normdist)
 % Creates a histogram plot of a waveform, or a matrix of waveforms, as a
 % function of value.
 %
@@ -14,13 +14,29 @@ function out = histogram_of_wave_simple(in)
 %
 % Optionally a normal distribution curve can be plotted.
 
+if nargin < 2
+    %dialog box for settings
+    prompt = {'Transpose subplots (0 | 1)', ...
+        'Amp (0), Amp^2 (1), |Hilb| (2)', ...
+        'Number of histogram bars', ...
+        'Plot normal distribution'};
+    dlg_title = 'Settings';
+    num_lines = 1;
+    def = {'0','0','100','0'};
+    answer = inputdlg(prompt,dlg_title,num_lines,def);
 
+    if ~isempty(answer)
+        transposesubplots = str2num(answer{1,1});
+        yscaling = str2num(answer{2,1});
+        nbars = str2num(answer{3,1});
+        normdist = str2num(answer{4,1});
+    end
+end
 if isstruct(in)
     audio = in.audio;
     if isfield(in, 'cal')
        cal = in.cal; % get the calibration offset from the input structure
     end
-
 else
     audio = in;
 end
@@ -47,27 +63,11 @@ if exist('cal','var')
     audio = audio .* 10.^(repmat(cal,[len,1,bands])/20);
 end
 
-%dialog box for settings
-prompt = {'Transpose subplots (0 | 1)', ...
-    'Amp (0), Amp^2 (1), |Hilb| (2)', ...
-    'Number of histogram bars', ...
-    'Plot normal distribution'};
-dlg_title = 'Settings';
-num_lines = 1;
-def = {'0','0','100','0'};
-answer = inputdlg(prompt,dlg_title,num_lines,def);
-
-if ~isempty(answer)
-    transposesubplots = str2num(answer{1,1});
-    yscaling = str2num(answer{2,1});
-    nbars = str2num(answer{3,1});
-    normdist = str2num(answer{4,1});
+if normdist
+    dist = 'normal'; 
+else
+    dist = [];
 end
- if normdist
-     dist = 'normal'; 
- else
-     dist = [];
- end
 
 if yscaling == 1
     audio = audio .^2;
@@ -151,5 +151,7 @@ end
 out.transposesubplots = transposesubplots;
 out.yscaling = yscaling;
 out.nbars = nbars;
+out.funcallback.name = 'histogram_of_wave_simple.m';
+out.funcallback.inarg = {transposesubplots,yscaling,nbars,normdist};
 
 

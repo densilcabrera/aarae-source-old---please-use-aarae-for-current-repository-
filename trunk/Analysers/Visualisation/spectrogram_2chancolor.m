@@ -1,18 +1,50 @@
-function y = spectrogram_2chancolor(in, fs)
+function OUT = spectrogram_2chancolor(in, fs, transposesubplots, winlen, NOVERLAP, dBrange, maxfreq, downsamp, wfchoice, hue)
 % Generates a 2-channel spectrogram using complementary hues for the two
 % channels
 %
 % Code by Densil Cabrera
 % Version 1.0 (19 October 2013)
-
 if isstruct(in)
     audio = in.audio;
     fs = in.fs;
 else
     audio = in;
+    if nargin < 2
+        fs = inputdlg({'Sampling frequency [samples/s]'},...
+                           'Fs',1,{'48000'});
+        fs = str2num(char(fs));
+    end
 end
 Nyquist = fs/2;
+if nargin < 3
+    %dialog box for settings
+    prompt = {'Transpose subplots (0 | 1)', ...
+        'Window length (samples)', ...
+        'Number of overlapping samples', ...
+        'Decibel range', ...
+        'Highest frequency to display (Hz)', ...
+        'Downsample factor', ...
+        'Rectangular, Hann, Blackman-Harris window (r|h|b)',...
+        'Hues (0|1|2|3|4|5)'};
+    dlg_title = 'Settings';
+    num_lines = 1;
+    def = {'0','2048','1024','90',num2str(Nyquist), '1','h','0'};
+    answer = inputdlg(prompt,dlg_title,num_lines,def);
 
+    if ~isempty(answer)
+        transposesubplots = str2num(answer{1,1});
+        winlen = str2num(answer{2,1});
+        NOVERLAP = str2num(answer{3,1});
+        dBrange = str2num(answer{4,1});
+        maxfreq = str2num(answer{5,1});
+        downsamp = str2num(answer{6,1});
+        wfchoice = answer{7,1};
+        hue = str2num(answer{8,1});
+    else
+        OUT = [];
+        return
+    end
+end
 
 % sum bands, if multiband
 audio = mean(audio,3);
@@ -24,32 +56,6 @@ if chans == 1
 else
     % first two channels only
     audio = audio(:,1:2);
-end
-
-
-%dialog box for settings
-prompt = {'Transpose subplots (0 | 1)', ...
-    'Window length (samples)', ...
-    'Number of overlapping samples', ...
-    'Decibel range', ...
-    'Highest frequency to display (Hz)', ...
-    'Downsample factor', ...
-    'Rectangular, Hann, Blackman-Harris window (r|h|b)',...
-    'Hues (0|1|2|3|4|5)'};
-dlg_title = 'Settings';
-num_lines = 1;
-def = {'0','2048','1024','90',num2str(Nyquist), '1','h','0'};
-answer = inputdlg(prompt,dlg_title,num_lines,def);
-
-if ~isempty(answer)
-    transposesubplots = str2num(answer{1,1});
-    winlen = str2num(answer{2,1});
-    NOVERLAP = str2num(answer{3,1});
-    dBrange = str2num(answer{4,1});
-    maxfreq = str2num(answer{5,1});
-    downsamp = str2num(answer{6,1});
-    wfchoice = answer{7,1};
-    hue = str2num(answer{8,1});
 end
 
 if wfchoice == 'h'
@@ -145,4 +151,5 @@ set(gca,'TickDir', 'out');
 title([w,num2str(winlen),'-pt window (fs=',num2str(fs),' Hz), ',...
     num2str(NOVERLAP/winlen*100),'% overlap, ', rangestring, chanstring]);
 
-y= [];
+OUT.funcallback.name = 'spectrogram_2chancolor.m';
+OUT.funcallback.inarg = {fs,transposesubplots,winlen,NOVERLAP,dBrange,maxfreq,downsamp,wfchoice,hue};

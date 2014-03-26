@@ -1,4 +1,4 @@
-function out = spectrogram_simple(in, fs)
+function out = spectrogram_simple(in, fs, transposesubplots, winlen, NOVERLAP, dBrange, maxfreq, downsamp, wfchoice, waterfall)
 % Creates a spectrogram of a waveform, or a matrix of waveforms, as a
 % function of time. Matlab's spectrogram function is used, with its default
 % Hamming window function.
@@ -45,6 +45,32 @@ else
     audio = in;
 end
 Nyquist = fs/2;
+if nargin < 3
+    %dialog box for settings
+    prompt = {'Transpose subplots (0 | 1)', ...
+        'Window length (samples)', ...
+        'Number of overlapping samples', ...
+        'Decibel range', ...
+        'Highest frequency to display (Hz)', ...
+        'Downsample factor', ...
+        'Rectangular, Hann, Blackman-Harris window (r|h|b)',...
+        'Waterfall (0 | 1)'};
+    dlg_title = 'Settings';
+    num_lines = 1;
+    def = {'0','2048','1024','90',num2str(Nyquist), '1','h','0'};
+    answer = inputdlg(prompt,dlg_title,num_lines,def);
+
+    if ~isempty(answer)
+        transposesubplots = str2num(answer{1,1});
+        winlen = str2num(answer{2,1});
+        NOVERLAP = str2num(answer{3,1});
+        dBrange = str2num(answer{4,1});
+        maxfreq = str2num(answer{5,1});
+        downsamp = str2num(answer{6,1});
+        wfchoice = answer{7,1};
+        waterfall = str2num(answer{8,1});
+    end
+end
 
 S = size(audio); % size of the audio
 ndim = length(S); % number of dimensions
@@ -66,31 +92,6 @@ end
 % apply calibration factor if it has been provided
 if exist('cal','var')
     audio = audio .* 10.^(repmat(cal,[len,1,bands])/20);
-end
-
-%dialog box for settings
-prompt = {'Transpose subplots (0 | 1)', ...
-    'Window length (samples)', ...
-    'Number of overlapping samples', ...
-    'Decibel range', ...
-    'Highest frequency to display (Hz)', ...
-    'Downsample factor', ...
-    'Rectangular, Hann, Blackman-Harris window (r|h|b)',...
-    'Waterfall (0 | 1)'};
-dlg_title = 'Settings';
-num_lines = 1;
-def = {'0','2048','1024','90',num2str(Nyquist), '1','h','0'};
-answer = inputdlg(prompt,dlg_title,num_lines,def);
-
-if ~isempty(answer)
-    transposesubplots = str2num(answer{1,1});
-    winlen = str2num(answer{2,1});
-    NOVERLAP = str2num(answer{3,1});
-    dBrange = str2num(answer{4,1});
-    maxfreq = str2num(answer{5,1});
-    downsamp = str2num(answer{6,1});
-    wfchoice = answer{7,1};
-    waterfall = str2num(answer{8,1});
 end
 
 if wfchoice == 'h'
@@ -189,3 +190,5 @@ out.maxfreq = maxfreq;
 out.downsamp = downsamp;
 out.wfchoice = wfchoice;
 out.waterfall = waterfall;
+out.funcallback.name = 'spectrogram_simple.m';
+out.funcallback.inarg = {fs,transposesubplots,winlen,NOVERLAP,dBrange,maxfreq,downsamp,wfchoice,waterfall};
