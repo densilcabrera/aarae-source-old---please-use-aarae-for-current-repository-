@@ -1,12 +1,11 @@
-function [OUT varargout] = EchoDensity1(IN, fs, WindowTime, OffsetTime)
+function [OUT,varargout] = EchoDensity1(IN, fs, WindowTime, OffsetTime)
 % This function calculates various indicators of echo density for room
 % impulse responses.
 %
 % Code by David Spargo and Densil Cabrera
 % Version 0.00 (13 January 2014) - needs more work!
 
-if nargin ==1 
-
+if nargin < 3
     param = inputdlg({'Duration of window (ms)';... 
                       'Hop between windows (ms)'},...
                       'Settings',... 
@@ -19,63 +18,61 @@ if nargin ==1
     if ~isempty(param) 
         WindowTime = param(1);
         OffsetTime = param(2);
+    else
+        OUT = [];
+        return
     end
-else
-    param = [];
 end
 if isstruct(IN) 
     data = IN.audio; % Extract the audio data
     fs = IN.fs;       % Extract the sampling frequency of the audio data
-    
-    
-    
-    
-    
-elseif ~isempty(param) || nargin > 1                       
+else                     
     data = IN;
+    if nargin < 2
+        fs = inputdlg({'Sampling frequency [samples/s]'},...
+                           'Fs',1,{'48000'});
+        fs = str2num(char(fs));
+    end
 end
 
-if ~isempty(data) && ~isempty(fs)
-    
-    
+if ~isempty(data) && ~isempty(fs) && ~isempty(WindowTime) && ~isempty(OffsetTime)
     WindowLength = round((WindowTime*fs)/1000);    % Size of the window in samples
     Offset = (OffsetTime*fs)/1000;  % Size of the window offset in samples
     w = hann(WindowLength); % Hann window
     w2 = w/sum(w);  % normalized
 
-
     [ED, IndFunc, Kurt, EDt_vec] = ...
         deal(zeros(round((length(data)-WindowLength)/Offset),1));
-%IndFunc = ED;
-%Kurt = ED;
-IRt_vec = zeros(length(data),1);
-%   t_vec = 0.001*(1:length(data)) * OffsetTime;  % in ms in a row vector
-EDt_vec = ED;
+    %IndFunc = ED;
+    %Kurt = ED;
+    IRt_vec = zeros(length(data),1);
+    %t_vec = 0.001*(1:length(data)) * OffsetTime;  % in ms in a row vector
+    EDt_vec = ED;
 
-% 0.001*(1+(WindowTime/2):length(ED)+(WindowTime/2)) * OffsetTime;
-
-
-for n = 1:length(ED);
-    start = round((n-1)*Offset + 1);
-    finish = start + WindowLength - 1;
-    
-    % standard deviation of each window
-    ED(n) = std(data(start:finish).*w);
-    
-    % normalized echo density of each window
-    IndFunc(n)= sum(w2.*(abs(data(start:finish)>ED(n))))/erfc(1/sqrt(2));
-    
-    % kurtosis of each window
-    Kurt(n) = kurtosis(data(start:finish).*w)-3;
-    EDt_vec(n) = ((n-1)*(OffsetTime*0.001))+((WindowTime/2)*0.001);
-end
-
-IRt_vec = OffsetTime*(1:length(ED))/fs;
+    % 0.001*(1+(WindowTime/2):length(ED)+(WindowTime/2)) * OffsetTime;
 
 
-EDn = ED.*(1/max(ED)); % normalise to 1
-IndFuncn = IndFunc.*(1/max(IndFunc)); % normalise to 1
-Kurtn = Kurt.*(1/max(Kurt)); % normalise to 1
+    for n = 1:length(ED);
+        start = round((n-1)*Offset + 1);
+        finish = start + WindowLength - 1;
+
+        % standard deviation of each window
+        ED(n) = std(data(start:finish).*w);
+
+        % normalized echo density of each window
+        IndFunc(n)= sum(w2.*(abs(data(start:finish)>ED(n))))/erfc(1/sqrt(2));
+
+        % kurtosis of each window
+        Kurt(n) = kurtosis(data(start:finish).*w)-3;
+        EDt_vec(n) = ((n-1)*(OffsetTime*0.001))+((WindowTime/2)*0.001);
+    end
+
+    IRt_vec = OffsetTime*(1:length(ED))/fs;
+
+
+    EDn = ED.*(1/max(ED)); % normalise to 1
+    IndFuncn = IndFunc.*(1/max(IndFunc)); % normalise to 1
+    Kurtn = Kurt.*(1/max(Kurt)); % normalise to 1
 
 
     figure('Name', 'Echo Density Indicators')
@@ -85,37 +82,13 @@ Kurtn = Kurt.*(1/max(Kurt)); % normalise to 1
     plot(IRt_vec,IndFuncn,'b')
     plot(IRt_vec,Kurtn,'k')
     
-
-   
-%     % You may include tables to display your results using AARAE's
-%     % disptables.m function, this is just an easy way to display the
-%     % built-in uitable function in MATLAB
-%     fig1 = figure('Name','My results table');
-%     table1 = uitable('Data',[duration maximum minimum],...
-%                 'ColumnName',{'Duration','Maximum','Minimum'},...
-%                 'RowName',{'Results'});
-%     disptables(fig1,table1);
-%     % If you have multiple tables to combine in the figure, you can
-%     % concatenate them:
-%     % disptables(fig1,[table1 table2 table3])
-    
-%     % You may also include figures to display your results as plots.
-%     t = linspace(0,duration,length(audio));
-%     figure;
-%     plot(t,audio);
-    % All figures created by your function are stored in the AARAE
-    % environment under the results box. If your function outputs a
-    % structure in OUT this saved under the 'Results' branch in AARAE and
-    % it's treated as an audio signal if it has both .audio and .fs fields,
-    % otherwise it's displayed as data.
-    
-    % And once you have your result, you should set it up in an output form
-    % that AARAE can understand.
     if isstruct(IN)
         
         OUT.EDn = EDn; 
         OUT.IndFuncn = IndFuncn;
         OUT.Kurtn = Kurtn;
+        OUT.funcallback.name = 'EchoDensity1.m';
+        OUT.funcallback.inarg = {fs,WindowTime,OffsetTime};
     else
         % You may increase the functionality of your code by allowing the
         % output to be used as standalone and returning individual

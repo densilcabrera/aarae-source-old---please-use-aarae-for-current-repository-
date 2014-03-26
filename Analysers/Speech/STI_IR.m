@@ -1,4 +1,4 @@
-function Verbose=STI_IR(IR, fs, Lsignal, Lnoise, AuditoryMasking, NoiseCorrection, doplot, FilterVersion)
+function [Verbose,varargout]=STI_IR(IR, fs, Lsignal, Lnoise, AuditoryMasking, NoiseCorrection, doplot, FilterVersion)
 % This function calculates the speech transmission index (STI)
 % in accordance with IEC 60268-16 (2011-06).
 % It implements the 'indirect method of measuring STI using the impulse
@@ -971,7 +971,8 @@ Verbose.txt = [datestr(now), '  ', inputstring, '  fs:', num2str(fs), ...
 Verbose.funcallback.name = 'STI_IR.m';
 Verbose.funcallback.inarg = {fs,Lsignal,Lnoise,AuditoryMasking,NoiseCorrection,doplot,FilterVersion};
 
-
+varargout{1} = M_STI;
+varargout{2} = F_STI;
 
 
 %***************************************************************

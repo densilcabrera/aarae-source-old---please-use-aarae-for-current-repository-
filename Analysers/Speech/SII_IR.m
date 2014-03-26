@@ -1,4 +1,4 @@
-function OUT = SII_IR(RIR, fs, P, BG, T, Method, presentation, v_effort, BandImportance, doplot)
+function [OUT,varargout] = SII_IR(RIR, fs, P, BG, T, Method, presentation, v_effort, BandImportance, doplot)
 
 % This function calculates the speech intelligibility index (SII)
 % as per ANSI S3.5 (1997).
@@ -530,10 +530,11 @@ if ~isempty(data) && ~isempty(fs) && ~isempty(P) && ~isempty(BG) && ~isempty(T) 
         OUT.funcallback.name = 'SII_IR.m';
         OUT.funcallback.inarg = {fs,P,BG,T,Method,presentation,v_effort,BandImportance,doplot};
     else
-        OUT.S = S;
-        OUT.Sav = Sav;
-        OUT.E = E;
-        OUT.N = N;
+        OUT  = [];
+        varargout{1} = S;
+        varargout{2} = Sav;
+        varargout{3} = E;
+        varargout{4} = N;
     end
 
     % PLOTTING
