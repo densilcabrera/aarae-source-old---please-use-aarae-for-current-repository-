@@ -1,4 +1,4 @@
-function WaveComparisonPlotMatrix(in,fs)
+function OUT = WaveComparisonPlotMatrix(in,fs,lagadjust)
 % This function creates a plot matrix to compare multiple channels of
 % audio. (It has no use for single channel audio.)
 %
@@ -21,16 +21,18 @@ if isstruct(in)
 else
     audio = in;
 end
-
-prompt = {'Inter-channel lag reference channel number (or 0 for none, or a large number for all)'};
-dlg_title = 'Settings';
-num_lines = 1;
-def = {'1'};
-answer = inputdlg(prompt,dlg_title,num_lines,def);
-if isempty(answer)
-    return
-else
-    lagadjust = str2double(answer{1,1});
+if nargin < 3
+    prompt = {'Inter-channel lag reference channel number (or 0 for none, or a large number for all)'};
+    dlg_title = 'Settings';
+    num_lines = 1;
+    def = {'1'};
+    answer = inputdlg(prompt,dlg_title,num_lines,def);
+    if isempty(answer)
+        OUT = [];
+        return
+    else
+        lagadjust = str2double(answer{1,1});
+    end
 end
 
 
@@ -83,3 +85,5 @@ for b = 1:bands
     
     plotmatrix(audio(:,:,b));
 end
+OUT.funcallback.name = 'WaveComparisonPlotMatrix.m';
+OUT.funcallback.inarg = {fs,lagadjust};

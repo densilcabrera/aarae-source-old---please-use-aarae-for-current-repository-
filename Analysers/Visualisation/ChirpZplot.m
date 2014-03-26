@@ -1,5 +1,5 @@
 function OUT = ChirpZplot(IN, f2, f1, r ,fs)
-% This function implements Matlab's chirp z-transform an plots the absolute
+% This function implements Matlab's chirp z-transform and plots the absolute
 % value of the result in decibels.
 %
 % r (radius) can be a single number (e.g., 1) or a row vector(e.g. 1:0.01:2)
@@ -40,14 +40,8 @@ if isstruct(IN)
         cal = zeros(1,size(audio,2));
         disp('This audio signal has not been calibrated.')
     end
-    
-    
-    
-    
 elseif ~isempty(param) || nargin > 1
-    
     audio = IN;
-    
 end
 
 

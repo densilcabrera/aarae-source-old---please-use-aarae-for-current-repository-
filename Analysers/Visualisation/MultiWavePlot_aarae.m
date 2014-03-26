@@ -1,4 +1,4 @@
-function MultiWavePlot_aarae(in, fs)
+function MultiWavePlot_aarae(in, fs, answer)
 % This function plots a multichannel and/or multiband audio wave as lines
 % stacked vertically on a single plot.
 %
@@ -17,7 +17,7 @@ else
     audio = in;
 end
 
-
+if nargin < 3, answer = 'Channels'; end
 
 [len, chans, bands] = size(audio);
 
@@ -34,25 +34,26 @@ end
 
 
 if chans > 1 && bands > 1
-    answer = questdlg('Channels or Bands in each figure?', ...
-        'Settings', ...
-        'Channels', ...
-        'Bands', ...
-        'Channels');
-    
+    if nargin < 3
+        answer = questdlg('Channels or Bands in each figure?', ...
+            'Settings', ...
+            'Channels', ...
+            'Bands', ...
+            'Channels');
+    end
     switch answer
         case 'Channels'
             for b = 1:bands
                 figure('Name', ['Multiwave Plot, Band ', num2str(bandID(b))])
                 multiwaveplot(t,1:bands,squeeze(audio(:,:,b))',1);
             end
-            
+
         otherwise
             for c = 1:chans
                 figure('Name', ['Multiwave Plot, Channel ', num2str(chanID(c))])
                 multiwaveplot(t,1:chans,squeeze(audio(:,c,:))',1);
             end
-            
+
     end
 
     

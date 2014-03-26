@@ -1,4 +1,4 @@
-function Gammatonegram_Ellis(IN)
+function OUT = Gammatonegram_Ellis(IN,TWIN,THOP,N,FMAX,FMIN,USEFFT,WIDTH)
 % This function calls Dan Ellis' gammatonegram, to produce a spectrogram
 % inspired by auditory filters
 
@@ -80,7 +80,8 @@ if ~isempty(audio) && ~isempty(fs)
             title(['Channel ', num2str(ch)])
         end
     end
-    
+    OUT.funcallback.name = 'Gammatonegram_Ellis.m';
+    OUT.funcallback.inarg = {TWIN,THOP,N,FMAX,FMIN,USEFFT,WIDTH};
 
 end
 
