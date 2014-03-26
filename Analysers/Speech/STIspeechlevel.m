@@ -180,23 +180,28 @@ for ch = 1:chans
     end
     
 end
+fc = [125,250,500,1000,2000,4000,8000];
+filterorder = 24; % very steep filter skirts improve the performance
+P_octave = octbandfilter_viaFFT(signal2,fs,...
+    fc,filterorder);
 
-% Define the octave band filter parameters
-Nyquist = fs/2;
-bandnumber=21:3:39; % filter band numbers
-fc=10.^(bandnumber./10); % filter centre frequencies in Hz
-bandwidth = 1; % set to 0.5 instead of 1 if you want to try half-octave bandwidths
-f_low=fc./10^(0.15*bandwidth); % low cut-off frequency in Hz
-f_hi=fc.*10^(0.15*bandwidth); % high cut-off frequency in Hz
-halforder = 3; % half of the filter order: a value of 3 yields a 6th order filter
-
-P_octave = zeros(length(signal2), chans, length(fc));
-for k=1:length(fc);
-    % use filter order of 6 (half-order = 3)
-    [b, a]=butter(halforder, [f_low(k)/Nyquist f_hi(k)/Nyquist]);
-    P_octave(:,:,k)=filtfilt(b,a, signal2); % linear phase filter
-    
-end
+% OLD OCTAVE BAND FILTERS - DO NOT USE
+% % Define the octave band filter parameters
+% Nyquist = fs/2;
+% bandnumber=21:3:39; % filter band numbers
+% fc=10.^(bandnumber./10); % filter centre frequencies in Hz
+% bandwidth = 1; % set to 0.5 instead of 1 if you want to try half-octave bandwidths
+% f_low=fc./10^(0.15*bandwidth); % low cut-off frequency in Hz
+% f_hi=fc.*10^(0.15*bandwidth); % high cut-off frequency in Hz
+% halforder = 3; % half of the filter order: a value of 3 yields a 6th order filter
+% 
+% P_octave = zeros(length(signal2), chans, length(fc));
+% for k=1:length(fc);
+%     % use filter order of 6 (half-order = 3)
+%     [b, a]=butter(halforder, [f_low(k)/Nyquist f_hi(k)/Nyquist]);
+%     P_octave(:,:,k)=filtfilt(b,a, signal2); % linear phase filter
+%     
+% end
 onoffratio = zeros(1,chans);
 for ch = 1:chans
     onoffratio(1,ch) = ind(ch) / length(LL.sort);
