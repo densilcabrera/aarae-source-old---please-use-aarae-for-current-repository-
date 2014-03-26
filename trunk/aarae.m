@@ -321,7 +321,12 @@ function load_btn_Callback(hObject, eventdata, handles)
     '*.wav;*.mat','Result files (*.wav,*.mat)'},...
     'Select audio file',[cd '/Audio'],...
     'MultiSelect','on');
-if ~iscell(filename), filename = cellstr(filename); end
+
+if ~iscell(filename)
+    if ischar(filename), filename = cellstr(filename);
+    else return
+    end
+end
 for i = 1:length(filename)
     if filename{i} ~= 0
         [~,~,ext] = fileparts(filename{i});
@@ -797,7 +802,7 @@ for nleafs = 1:length(selectedNodes)
         %name = selectedNodes(nleafs).getName.char;
         for multi = 1:size(file,1)
             [~,funname] = fileparts(char(file(multi,:)));
-            if nargout(funname) == 1
+            if nargout(funname) == 1 || nargout(funname) == -2
                 %out = feval(handles.funname,audiodata);
                 if ~isempty(funcallback) && strcmp(funname,funcallback.name)
                     out = feval(funname,audiodata,funcallback.inarg{:});
@@ -1220,11 +1225,11 @@ if (click == handles.axestime) || (get(click,'Parent') == handles.axestime)
         if ndims(data) > 2
             channel = str2double(get(handles.IN_nchannel,'String'));
             line(:,:) = data(:,channel,:);
-            if ndims(data) == 3, cmap = colormap(hsv(size(signaldata.audio,3))); end
-            if ndims(data) >= 4, cmap = colormap(copper(size(signaldata.audio,4))); end
+            if ndims(data) == 3, cmap = colormap(hsv(size(data,3))); end
+            if ndims(data) >= 4, cmap = colormap(copper(size(data,4))); end
         else
             line = data;
-            cmap = colormap(lines(size(signaldata.audio,2)));
+            cmap = colormap(lines(size(data,2)));
         end
         h = figure;
         set(h,'DefaultAxesColorOrder',cmap);
@@ -1301,11 +1306,11 @@ if (click == handles.axesfreq) || (get(click,'Parent') == handles.axesfreq)
         if ndims(data) > 2
             channel = str2double(get(handles.IN_nchannel,'String'));
             line(:,:) = data(:,channel,:);
-            if ndims(data) == 3, cmap = colormap(hsv(size(signaldata.audio,3))); end
-            if ndims(data) >= 4, cmap = colormap(copper(size(signaldata.audio,4))); end
+            if ndims(data) == 3, cmap = colormap(hsv(size(data,3))); end
+            if ndims(data) >= 4, cmap = colormap(copper(size(data,4))); end
         else
             line = data;
-            cmap = colormap(lines(size(signaldata.audio,2)));
+            cmap = colormap(lines(size(data,2)));
         end
 
         h = figure;
@@ -1844,7 +1849,7 @@ else
         rmdir([cd '/Utilities/Temp'],'s');
         mkdir([cd '/Utilities/Temp']);
         addpath([cd '/Utilities/Temp']);
-        set(handles.result_box,'String',' ');
+        set(handles.result_box,'String',[' ' ' ']);
         fprintf(handles.fid, [' ' datestr(now,16) ' - Cleared workspace \n']);
         set(hObject,'BackgroundColor',[0.94 0.94 0.94]);
         set(hObject,'Enable','off');
