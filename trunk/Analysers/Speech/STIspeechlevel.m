@@ -1,4 +1,4 @@
-function OUT = STIspeechlevel(speech, fs, cal, doplot, wintime, caltone)
+function [OUT,varargout] = STIspeechlevel(speech, fs, cal, doplot, wintime, caltone)
 % This function calculates the operational speech level of a recording of
 % speech as described by Annex J of IEC 60268-16 (2011), to support the
 % calculation of speech transmission index (STI).
@@ -255,6 +255,8 @@ end
     OUT.LL = LL;
     OUT.funcallback.name = 'STIspeechlevel.m';
     OUT.funcallback.inarg = {fs,cal,doplot,wintime,caltone};
+    varargout{1} = L;
+    varargout{2} = LL;
 
     if doplot
         times = ((1:nwin)-1) * step / fs;

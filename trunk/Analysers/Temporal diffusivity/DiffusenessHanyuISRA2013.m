@@ -55,280 +55,282 @@ function out = DiffusenessHanyuISRA2013(IR, fs, doplot, threshold)
 % Check the input data
 
 if isstruct(IR)
-    
     % if the first input is a structure, then dialog boxes may be used for
     % user controls
-    
     % required fields from input structure
     data = IR.audio;
     fs = IR.fs;
-    
+    starttime = 0;
+    endtime = (length(data)-1)/fs;
+else
+    data = IR;
+    if nargin < 2
+        fs = inputdlg({'Sampling frequency [samples/s]'},...
+                           'Fs',1,{'48000'});
+        fs = str2num(char(fs));
+    end
+    starttime = 0;
+    endtime = (length(data)-1)/fs;
+end;
+if nargin < 4, threshold = 0.01; end % default z(k) threshold is 0.01
+if nargin < 3
+    doplot = 1; % plot by default
     settimelimits = 0;
     % dialog box to get start and finish times
     while settimelimits == 0
-    prompt = {'Start time in s:', 'End time in s', 'z(k) threshold','Plot'};
-    dlg_title = 'Settings';
-    num_lines = 1;
-    starttime = 0;
-    endtime = (length(data)-1)/fs;
-    def = {num2str(starttime),num2str(endtime), num2str(0.01), num2str(1)};
-    answer = inputdlg(prompt,dlg_title,num_lines,def);
-    
-    if ~isempty(answer)
-        starttime = str2num(answer{1,1});
-        endtime = str2num(answer{2,1});
-        threshold = str2num(answer{3,1});
-        doplot = str2num(answer{4,1});
-    end
-    
-    startindex = round(starttime*fs)+1;
-    endindex = floor(endtime*fs);
-    
-    if startindex > 0 ...
-            && startindex < endindex ...
-            && endindex <= length(data)
-        data = data(startindex:endindex,:,:);
-        settimelimits = 1;
-    end
+        prompt = {'Start time in s:', 'End time in s', 'z(k) threshold','Plot'};
+        dlg_title = 'Settings';
+        num_lines = 1;
+        def = {num2str(starttime),num2str(endtime), num2str(0.01), num2str(1)};
+        answer = inputdlg(prompt,dlg_title,num_lines,def);
+
+        if ~isempty(answer)
+            starttime = str2num(answer{1,1});
+            endtime = str2num(answer{2,1});
+            threshold = str2num(answer{3,1});
+            doplot = str2num(answer{4,1});
+        end
+
+        startindex = round(starttime*fs)+1;
+        endindex = floor(endtime*fs);
+
+        if startindex > 0 ...
+                && startindex < endindex ...
+                && endindex <= length(data)
+            data = data(startindex:endindex,:,:);
+            settimelimits = 1;
+        end
     end %while
-    
-    
+end
+
+if ~isempty(data) && ~isempty(fs) && ~isempty(starttime) && ~isempty(endtime) && ~isempty(doplot) && ~isempty(threshold)
+    S = size(data); % size of the IR
+    ndim = length(S); % number of dimensions
+    switch ndim
+        case 1
+            len = S(1); % number of samples in IR
+            chans = 1; % number of channels
+            bands = 1; % number of bands
+        case 2
+            len = S(1); % number of samples in IR
+            chans = S(2); % number of channels
+            bands = 1; % number of bands
+        case 3
+            len = S(1); % number of samples in IR
+            chans = S(2); % number of channels
+            bands = S(3); % number of bands
+    end
+
+    % We will not use the final part of the data because the initial build-up
+    % of the reverse-integrated curve (in reverse time) results in a systematic
+    % error, by raising the tail end of the h^2 curve. Testing with
+    % exponentally decaying white noise  indicates that this error is likely to
+    % be sufficiently small if the final 20% of the data is truncated after
+    % reverse integration.
+    truncation = 0.2; % the proportion of data to truncate
+    len_trunc = round((1-truncation)*len); % truncated length
+
+    % The following renaming is done to match Hanyu's paper
+    p = data;
+    clear data
+
+    %**************************************************************
+    % Apply the equations in Hanyu's paper (as identified below)
+
+    % Reverse integration of the squared IR
+    Es = flipdim(cumsum(flipdim(p.^2,1)),1); % equation 1
+
+    % decay cancelled impulse response
+    g = p ./ (Es).^0.5; % equation 2
+
+    % squared decay-cancelled impulse response
+    g2 = p.^2 ./ Es; % equation 3
+
+    % In calculating the mean of g2, we will truncate it to avoid the high
+    % values that come from the initial reverse-time growth of the reverse
+    % integrated IR.
+    A = mean(g2(1:len_trunc,:,:)); % equation 7
+
+    % equation 11 (reorganised)
+    h = g(1:len_trunc,:,:) ./ repmat(A,[len_trunc,1,1]).^0.5;
+
+    h2 = h.^2;
+
+    Rtotal = sum(h2); % equation 13
+
+    h2_sort = sort(h2,1,'descend');
+
+    Rk = cumsum(h2_sort);
+
+    z = Rk ./ repmat(Rtotal, [len_trunc,1,1]); % equation 14
+
+    % preallocate
+    zval = zeros(1,chans,bands);
+    result = zeros(1,chans,bands);
+
+    % find threshold k
+    for dim2=1:chans
+        for dim3 = 1:bands
+            % find index for threshold k
+            ind = find(z(:,dim2,dim3)>= threshold, 1,'first');
+            if isempty(ind)
+                out.error = 'Threshold index not found';
+                disp('Threshold index not found!')
+                disp('Try a different start time or end time (e.g., to avoid -inf dB).')
+                return
+            end
+
+            % exact z(k) value(s) that were found 
+            % (it should be approximately equal to threshold)
+            zval(1, dim2, dim3) = z(ind,dim2,dim3);
+
+            % k threshold value, which is the degree of time series fluctuation
+            result(1, dim2, dim3) = h2_sort(ind,dim2,dim3);
+        end
+    end
+
+    %**************************************************************
+    % CREATE OUTPUT STRUCTURE
+
+    % the degree of time series fluctuation
+    out.result = result;
+
+    % z(k)
+    out.z = z;
+
+    % h^2
+    out.h2 = h2;
+
+    % h^2 sorted in descending order
+    % (Although this output is redundant, it is provided to facilitate plotting)
+    out.h2_sort = h2_sort;
+
+    % Estimate of reverberation time in s
+    out.T = 13.82 ./A  ./fs; % equation 9
+
+    % Batch analysing parameters
+    out.funcallback.name = 'DiffusenessHanyuISRA2013.m';
+    out.funcallback.inarg = {fs,doplot,threshold};
+
+
+
+    %**************************************************************
+    % CHARTS
+
+    if doplot
+
+        % Generate the RGB values of colours to be used in the plots
+        M = plotcolours(chans, bands);
+
+
+        figure('Name','Hanyu Diffusivity Analysis 1');
+        % This figure shows the h-squared values as a function of time. It has
+        % two subfigures: the upper figure shows the actual values, and the
+        % lower figure shows the values smoothed using a 50 ms running average.
+        % Note that the average value of h^2 should be equal to 1, and so
+        % examining these charts should provide an indication of
+        % problems with the IR analysis (if any).
+
+        subplot(2,1,1)
+        hold on
+        t = (0:(length(h2)-1))./fs;
+        for dim2 = 1:chans
+            for dim3 = 1:bands
+
+                % plot h^2 time series (like Hanyu's Figure 2 right-side)
+                plot(t,h2(:,dim2,dim3),'Color',squeeze(M(dim3,dim2,:))')
+            end
+        end    
+        xlabel('Time (s)')
+        ylabel('h^2')
+
+        hold off
+
+
+        %***********************
+        subplot(2,1,2)
+        % Running average of h^2
+        windowlength = 0.05;% 50 ms running average window
+        n_points = round(fs * windowlength); % number of samples in window
+        b = ones(1,n_points)/n_points; % filter coefficients
+
+        % compensation function for the fade-in of the smoothing filter
+        fadeincomp = ones(len_trunc,1);
+        % un-comment the following line if you wish to use this
+        % fadeincomp(1:n_points-1) = 1 ./ fftfilt(b,ones(n_points-1,1));
+
+        hold on
+        for dim2 = 1:chans
+            for dim3 = 1:bands
+                % plot running average of h^2 (using fftfilt, with the above
+                % coefficients)
+                plot(t,fadeincomp .* fftfilt(b,h2(:,dim2,dim3)), ...
+                    'Color',squeeze(M(dim3,dim2,:))')
+            end
+        end
+
+        % plot a dashed grey line at h^2 = 1 (this is the overall average
+        % value of h^2, by definition)
+        plot([0 t(end)],[1 1], ...
+            'LineStyle','--','Color',[0.5 0.5 0.5])
+
+        % plot a vertical line to mark the point at which the running average
+        % is completely filled with data (rather than zeros)
+        plot([windowlength windowlength], [0 1], ...
+            'LineStyle','--','Color',[0.5 0.5 0.5]);
+
+        xlabel('Time (s)')
+        ylabel('Running average of h(t)^2')
+
+        hold off
+
+
+        %***********************
+        % Create a figure to follow Hanyu's Figure 4
+        figure2 = figure('Name','Hanyu Diffusivity Analysis 2');
+
+        % Create axes
+        axes('Parent',figure2,'YScale','log','YMinorTick','on');
+        xlabel('k threshold')
+        ylabel('z(k)')
+
+        xmax = ceil(max(max(max(h2_sort)))./20) *20;
+        xlim([0 xmax]);
+
+        ymin = 1e-3;
+        %ymin = 10.^floor(log10(min(min(min(z))))); % alternative ymin
+        ylim ([ymin 1]);
+
+        hold on
+        for dim2 = 1:chans
+            for dim3 = 1:bands
+
+                % plot fluctuation decay curve
+                semilogy(h2_sort(:,dim2,dim3), z(:,dim2,dim3), ...
+                    'Color',squeeze(M(dim3,dim2,:))')
+
+                % plot threshold intersection point
+                semilogy(result(1,dim2,dim3), zval(1,dim2,dim3), ...
+                    'Marker','o','LineStyle','none',...
+                    'Color',squeeze(M(dim3,dim2,:))')
+
+                % draw line to x-axis
+                semilogy([result(1,dim2,dim3) result(1,dim2,dim3)], ...
+                    [ymin threshold], ...
+                    'LineStyle','--','Color',squeeze(M(dim3,dim2,:))')
+            end
+        end
+
+        % plot threshold line (dashed grey)
+        semilogy(xlim, [threshold,threshold], ...
+            'LineStyle','--','Color',[0.5 0.5 0.5])
+
+        hold off
+    end
 else
-
-if nargin < 4, threshold = 0.01; end % default z(k) threshold is 0.01
-if nargin < 3, doplot = 1; end % plot by default
-data = IR;
-
-end;
-
-S = size(data); % size of the IR
-ndim = length(S); % number of dimensions
-switch ndim
-    case 1
-        len = S(1); % number of samples in IR
-        chans = 1; % number of channels
-        bands = 1; % number of bands
-    case 2
-        len = S(1); % number of samples in IR
-        chans = S(2); % number of channels
-        bands = 1; % number of bands
-    case 3
-        len = S(1); % number of samples in IR
-        chans = S(2); % number of channels
-        bands = S(3); % number of bands
-end
-
-% We will not use the final part of the data because the initial build-up
-% of the reverse-integrated curve (in reverse time) results in a systematic
-% error, by raising the tail end of the h^2 curve. Testing with
-% exponentally decaying white noise  indicates that this error is likely to
-% be sufficiently small if the final 20% of the data is truncated after
-% reverse integration.
-truncation = 0.2; % the proportion of data to truncate
-len_trunc = round((1-truncation)*len); % truncated length
-
-% The following renaming is done to match Hanyu's paper
-p = data;
-clear data
-
-%**************************************************************
-% Apply the equations in Hanyu's paper (as identified below)
-
-% Reverse integration of the squared IR
-Es = flipdim(cumsum(flipdim(p.^2,1)),1); % equation 1
-
-% decay cancelled impulse response
-g = p ./ (Es).^0.5; % equation 2
-
-% squared decay-cancelled impulse response
-g2 = p.^2 ./ Es; % equation 3
-
-% In calculating the mean of g2, we will truncate it to avoid the high
-% values that come from the initial reverse-time growth of the reverse
-% integrated IR.
-A = mean(g2(1:len_trunc,:,:)); % equation 7
-
-% equation 11 (reorganised)
-h = g(1:len_trunc,:,:) ./ repmat(A,[len_trunc,1,1]).^0.5;
-
-h2 = h.^2;
-
-Rtotal = sum(h2); % equation 13
-
-h2_sort = sort(h2,1,'descend');
-
-Rk = cumsum(h2_sort);
-
-z = Rk ./ repmat(Rtotal, [len_trunc,1,1]); % equation 14
-
-% preallocate
-zval = zeros(1,chans,bands);
-result = zeros(1,chans,bands);
-
-% find threshold k
-for dim2=1:chans
-    for dim3 = 1:bands
-        % find index for threshold k
-        ind = find(z(:,dim2,dim3)>= threshold, 1,'first');
-        if isempty(ind)
-            out.error = 'Threshold index not found';
-            disp('Threshold index not found!')
-            disp('Try a different start time or end time (e.g., to avoid -inf dB).')
-            return
-        end
-        
-        % exact z(k) value(s) that were found 
-        % (it should be approximately equal to threshold)
-        zval(1, dim2, dim3) = z(ind,dim2,dim3);
-        
-        % k threshold value, which is the degree of time series fluctuation
-        result(1, dim2, dim3) = h2_sort(ind,dim2,dim3);
-    end
-end
-
-
-
-
-%**************************************************************
-% CREATE OUTPUT STRUCTURE
-
-% the degree of time series fluctuation
-out.result = result;
-
-% z(k)
-out.z = z;
-
-% h^2
-out.h2 = h2;
-
-% h^2 sorted in descending order
-% (Although this output is redundant, it is provided to facilitate plotting)
-out.h2_sort = h2_sort;
-
-% Estimate of reverberation time in s
-out.T = 13.82 ./A  ./fs; % equation 9
-
-
-
-
-
-%**************************************************************
-% CHARTS
-
-if doplot
-    
-    % Generate the RGB values of colours to be used in the plots
-    M = plotcolours(chans, bands);
-    
-    
-    figure('Name','Hanyu Diffusivity Analysis 1');
-    % This figure shows the h-squared values as a function of time. It has
-    % two subfigures: the upper figure shows the actual values, and the
-    % lower figure shows the values smoothed using a 50 ms running average.
-    % Note that the average value of h^2 should be equal to 1, and so
-    % examining these charts should provide an indication of
-    % problems with the IR analysis (if any).
-    
-    subplot(2,1,1)
-    hold on
-    t = (0:(length(h2)-1))./fs;
-    for dim2 = 1:chans
-        for dim3 = 1:bands
-            
-            % plot h^2 time series (like Hanyu's Figure 2 right-side)
-            plot(t,h2(:,dim2,dim3),'Color',squeeze(M(dim3,dim2,:))')
-        end
-    end    
-    xlabel('Time (s)')
-    ylabel('h^2')
-   
-    hold off
-    
-    
-    %***********************
-    subplot(2,1,2)
-    % Running average of h^2
-    windowlength = 0.05;% 50 ms running average window
-    n_points = round(fs * windowlength); % number of samples in window
-    b = ones(1,n_points)/n_points; % filter coefficients
-    
-    % compensation function for the fade-in of the smoothing filter
-    fadeincomp = ones(len_trunc,1);
-    % un-comment the following line if you wish to use this
-    % fadeincomp(1:n_points-1) = 1 ./ fftfilt(b,ones(n_points-1,1));
-    
-    hold on
-    for dim2 = 1:chans
-        for dim3 = 1:bands
-            % plot running average of h^2 (using fftfilt, with the above
-            % coefficients)
-            plot(t,fadeincomp .* fftfilt(b,h2(:,dim2,dim3)), ...
-                'Color',squeeze(M(dim3,dim2,:))')
-        end
-    end
-    
-    % plot a dashed grey line at h^2 = 1 (this is the overall average
-    % value of h^2, by definition)
-    plot([0 t(end)],[1 1], ...
-        'LineStyle','--','Color',[0.5 0.5 0.5])
-    
-    % plot a vertical line to mark the point at which the running average
-    % is completely filled with data (rather than zeros)
-    plot([windowlength windowlength], [0 1], ...
-        'LineStyle','--','Color',[0.5 0.5 0.5]);
-    
-    xlabel('Time (s)')
-    ylabel('Running average of h(t)^2')
-    
-    hold off
-    
-    
-    %***********************
-    % Create a figure to follow Hanyu's Figure 4
-    figure2 = figure('Name','Hanyu Diffusivity Analysis 2');
-    
-    % Create axes
-    axes('Parent',figure2,'YScale','log','YMinorTick','on');
-    xlabel('k threshold')
-    ylabel('z(k)')
-    
-    xmax = ceil(max(max(max(h2_sort)))./20) *20;
-    xlim([0 xmax]);
-    
-    ymin = 1e-3;
-    %ymin = 10.^floor(log10(min(min(min(z))))); % alternative ymin
-    ylim ([ymin 1]);
-    
-    hold on
-    for dim2 = 1:chans
-        for dim3 = 1:bands
-            
-            % plot fluctuation decay curve
-            semilogy(h2_sort(:,dim2,dim3), z(:,dim2,dim3), ...
-                'Color',squeeze(M(dim3,dim2,:))')
-            
-            % plot threshold intersection point
-            semilogy(result(1,dim2,dim3), zval(1,dim2,dim3), ...
-                'Marker','o','LineStyle','none',...
-                'Color',squeeze(M(dim3,dim2,:))')
-            
-            % draw line to x-axis
-            semilogy([result(1,dim2,dim3) result(1,dim2,dim3)], ...
-                [ymin threshold], ...
-                'LineStyle','--','Color',squeeze(M(dim3,dim2,:))')
-        end
-    end
-    
-    % plot threshold line (dashed grey)
-    semilogy(xlim, [threshold,threshold], ...
-        'LineStyle','--','Color',[0.5 0.5 0.5])
-    
-    hold off
-end
-
-
+    out = [];
 end % eof
-
+end
 
 
 

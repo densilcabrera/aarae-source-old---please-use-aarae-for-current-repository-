@@ -1,4 +1,4 @@
-function Verbose = STI_from_speech(in, fs, cal, ReferenceChannel, AuditoryMasking, doplot)
+function [Verbose,varargout] = STI_from_speech(in, fs, cal, ReferenceChannel, AuditoryMasking, doplot)
 % This function estimates the speech transmission index from a 2-channel
 % speech recording. One of the channels is used as reference (i.e., it is
 % 'dry' speech without noise, which is input to the system being tested),
@@ -266,6 +266,8 @@ if ~isempty(audio) && ~isempty(fs) && ~isempty(calgain) && ~isempty(ReferenceCha
     Verbose.Level = Level;
     Verbose.funcallback.name = 'STI_from_speech.m';
     Verbose.funcallback.inarg = {fs,cal,ReferenceChannel,AuditoryMasking,doplot};
+    varargout{1} = M_STI;
+    varargout{2} = F_STI;
 
     %***************************************************************
     % Plotting
