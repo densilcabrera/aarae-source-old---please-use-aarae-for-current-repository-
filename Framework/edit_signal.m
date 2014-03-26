@@ -119,7 +119,11 @@ else
     % Update handles structure
     guidata(hObject, handles);
     % UIWAIT makes edit_signal wait for user response (see UIRESUME)
-    uiwait(hObject);
+    if ndims(audiodata.audio) <= 4
+        uiwait(hObject)
+    else
+        warndlg('Edition of 4-Dimensional audio or greater not yet enabled, sorry!','AARAE info','modal')
+    end
 end
 
 
