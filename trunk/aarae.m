@@ -1385,13 +1385,14 @@ function cal_btn_Callback(hObject, eventdata, handles)
 hMain = getappdata(0,'hMain');
 signaldata = getappdata(hMain,'testsignal');
 selectedNodes = handles.mytree.getSelectedNodes;
-selectedNodes = selectedNodes(1);
+%selectedNodes = selectedNodes(1);
 
 method = menu('Calibration',...
               'Choose from AARAE',...
               'Locate file on disc',...
               'Input value',...
               'Cancel');
+cal_level = [];
 switch method
     case 1
         root = handles.root; % Get selected leaf
@@ -1442,12 +1443,6 @@ switch method
                                 'Calibration value',[1 50],{'0'});
                     cal_level = str2num(char(cal_offset)) - cal_level;
                     if size(cal_level,2) == 1, cal_level = repmat(cal_level,1,size(signaldata.audio,2)); end
-                    signaldata.cal = cal_level;
-                    selectedNodes.handle.UserData = signaldata;
-                    selectedParent = selectedNodes.getParent;
-                    handles.mytree.reloadNode(selectedParent);
-                    handles.mytree.setSelectedNode(selectedNodes);
-                    fprintf(handles.fid, [' ' datestr(now,16) ' - Calibrated "' char(selectedNodes.getName) '": adjusted to ' num2str(cal_level) 'dB using ' leafnames(s,:) '\n']);
                 else
                     warndlg('Incompatible calibration file','Warning!');
                 end
@@ -1479,12 +1474,6 @@ switch method
                             'Calibration value',[1 50],{'0'});
                 cal_level = str2num(char(cal_offset)) - cal_level;
                 if size(cal_level,2) == 1, cal_level = repmat(cal_level,1,size(signaldata.audio,2)); end
-                signaldata.cal = cal_level;
-                selectedNodes.handle.UserData = signaldata;
-                selectedParent = selectedNodes.getParent;
-                handles.mytree.reloadNode(selectedParent);
-                handles.mytree.setSelectedNode(selectedNodes);
-                fprintf(handles.fid, [' ' datestr(now,16) ' - Calibrated "' char(selectedNodes.getName) '": adjusted to ' num2str(cal_level) 'dB\n']);
             else
                 warndlg('Incompatible calibration file','Warning!');
             end
@@ -1499,18 +1488,26 @@ switch method
         cal_level = inputdlg(cellstr([repmat('channel ',chans,1) num2str((1:chans)')]),...
                     'Calibration value',[1 60],def);
         cal_level = str2num(char(cal_level))';
-        if chans == size(cal_level,2)
-                signaldata.cal = cal_level;
-                selectedNodes.handle.UserData = signaldata;
-                selectedParent = selectedNodes.getParent;
-                handles.mytree.reloadNode(selectedParent);
-                handles.mytree.setSelectedNode(selectedNodes);
-                fprintf(handles.fid, [' ' datestr(now,16) ' - Calibrated "' char(selectedNodes.getName) '": adjusted to ' num2str(cal_level) 'dB\n']);
-        else
+        if chans ~= size(cal_level,2)
+            cal_level = [];
             warndlg('Incompatible calibration','Warning!');
         end
     case 4
         warndlg('Calibration canceled!','AARAE info')
+end
+if ~isempty(cal_level)
+    for i = 1:length(selectedNodes)
+        signaldata = selectedNodes(i).handle.UserData;
+        callevel = cal_level;
+        if size(signaldata.audio,2) < length(cal_level), callevel = cal_level(1:size(signaldata.audio,2)); end
+        if size(signaldata.audio,2) > length(cal_level), callevel = [cal_level NaN(1,size(signaldata.audio,2)-length(cal_level))]; end
+        signaldata.cal = callevel;
+        selectedNodes(i).handle.UserData = signaldata;
+        selectedParent = selectedNodes(i).getParent;
+        handles.mytree.reloadNode(selectedParent);
+        fprintf(handles.fid, [' ' datestr(now,16) ' - Calibrated "' char(selectedNodes(i).getName) '": adjusted to ' num2str(cal_level) 'dB \n']);
+    end
+    %handles.mytree.setSelectedNode(selectedNodes);
 end
 guidata(hObject,handles)
 
