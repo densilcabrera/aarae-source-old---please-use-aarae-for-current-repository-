@@ -1,4 +1,5 @@
 function OUT = ITUR4684weight(IN,fs)
+% ITU-R weighting for audio frequency noise measurement
 processed = [];
 if nargin < 2
     if isstruct(IN)

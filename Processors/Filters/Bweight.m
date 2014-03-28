@@ -1,4 +1,7 @@
 function OUT = Bweight(IN,fs)
+% B-weighting filter (calling code from Mike Brookes' Voicebox)
+
+% Note that stdspectrum (from Voicebox) is in aarae's Utilities folder.
 processed = [];
 if nargin < 2
     if isstruct(IN)

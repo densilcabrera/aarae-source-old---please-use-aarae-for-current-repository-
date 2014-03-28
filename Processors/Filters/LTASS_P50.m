@@ -2,6 +2,8 @@ function OUT = LTASS_P50(IN,fs)
 % Long term average speech spectrum from
 % ITU-T. Artificial voices. Standard P.50, Sept. 1999.
 % using filter from Mike Brookes' Voicebox
+
+% Note that stdspectrum (from Voicebox) is in aarae's Utilities folder.
 processed = [];
 if nargin < 2
     if isstruct(IN)

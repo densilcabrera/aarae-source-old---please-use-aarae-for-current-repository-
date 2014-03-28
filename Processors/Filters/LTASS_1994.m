@@ -7,6 +7,8 @@ function OUT = LTASS_1994(IN,fs)
 %       An international comparison of long-term average speech spectra.
 %       JASA, 96 (4): 2108?2120, Oct. 1994.
 % using filter from Mike Brookes' Voicebox
+
+% Note that stdspectrum (from Voicebox) is in aarae's Utilities folder.
 processed = [];
 if nargin < 2
     if isstruct(IN)

@@ -1,11 +1,12 @@
 function OUT = USASI(IN,fs)
-% Noise simulating long-term programme material spectrum from [7],[8].
-% The level is such that the power is 0dB over an infinite bandwidth
-% [7]   NRSC AM Reemphasis, Deemphasize, and Broadcast Audio Transmission Bandwidth Specifications,
+% A filter based on the long-term programme material spectrum from:
+% [1]   NRSC AM Reemphasis, Deemphasize, and Broadcast Audio Transmission Bandwidth Specifications,
 %       EIA-549 Standard, Electronics Industries Association , July 1988.
-% [8]   NRSC AM Reemphasis, Deemphasize, and Broadcast Audio Transmission Bandwidth Specifications,
+% [2]   NRSC AM Reemphasis, Deemphasize, and Broadcast Audio Transmission Bandwidth Specifications,
 %       NRSC-1-A Standard, Sept 2007, Online: http://www.nrscstandards.org/SG/NRSC-1-A.pdf 
-% using filter from Mike Brookes' Voicebox
+% using a code implementation from Mike Brookes' Voicebox
+
+% Note that stdspectrum (from Voicebox) is in aarae's Utilities folder.
 processed = [];
 if nargin < 2
     if isstruct(IN)
