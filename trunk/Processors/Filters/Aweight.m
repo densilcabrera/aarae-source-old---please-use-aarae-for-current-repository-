@@ -1,4 +1,5 @@
 function OUT = Aweight(IN,fs)
+% A-weighting
 processed = [];
 if nargin < 2
     if isstruct(IN)

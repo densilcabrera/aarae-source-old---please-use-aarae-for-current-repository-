@@ -1,4 +1,5 @@
 function OUT = Cmessageweight(IN,fs)
+% C message weighting
 processed = [];
 if nargin < 2
     if isstruct(IN)

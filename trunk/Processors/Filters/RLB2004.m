@@ -1,8 +1,16 @@
 function OUT = RLB2004(IN,fs)
 % RLB weighting filter, based on:
-% Souldore, "Evaluation of Objective Loudness Meters",
-%     Presented at the 116th Conventio, 2004 May 8-11 Berlin,
-%     Germany. Audio Engineering Society
+% G. Souldore, "Evaluation of Objective Loudness Meters",
+% Presented at the 116th Audio Engineering SocietyConvention,
+% 2004 May 8-11 Berlin, Germany.
+%
+% The RLB filter is a simple high-pass filter, which was 
+% found to be an effective weighting filter for estimating the 
+% loudness of various program materials prepared for broadcast audio.
+%
+% This processor was ported from PsySound3 by Densil Cabrera
+% version 1.00 (28 March 2014).
+
 processed = [];
 if nargin < 2
     if isstruct(IN)
