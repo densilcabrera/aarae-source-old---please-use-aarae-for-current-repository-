@@ -209,7 +209,7 @@ P_EDTN=polyfit(time(Point1_EDTN:Point2_EDTN),LoudnessDecaylog(Point1_EDTN:Point2
 BestFitLineEDTN=polyval(P_EDTN,time);
 
 if Point2_EDTN >= length(LoudnessDecay)
-    error('Evaluation range is beyond the length of the impulse response')
+    disp('Evaluation range is beyond the length of the impulse response')
     output.EDTN = [];
 else
 output.EDTN=log((10^(-60/20))^0.6)./P_EDTN(1);
@@ -225,7 +225,7 @@ P_TN=polyfit(time(Point1_TN:Point2_TN),LoudnessDecaylog(Point1_TN:Point2_TN),1);
 BestFitLineTN=polyval(P_TN,time);
 
 if Point2_TN >= length(LoudnessDecay)
-    error('Evaluation range is beyond the length of the impulse response')
+    disp('Evaluation range is beyond the length of the impulse response')
     output.TN = [];
 else
     output.TN=log((10^(-60/20))^0.6)./P_TN(1);
@@ -245,7 +245,7 @@ if exist('TN_User_start', 'var') || nargin == 3
     BestFitLineTNU=polyval(P_TNU,time);
 
     if Point2_TNU >= length(LoudnessDecay)
-        warning('Evaluation range is beyond the length of the impulse response')
+        disp('Evaluation range is beyond the length of the impulse response')
         output.TN_User = [];
     else
         output.TN_User=log((10^(-60/20))^0.6)./P_TNU(1);
