@@ -129,6 +129,7 @@ else
 end
 handles.alternate = 0;
 fprintf(handles.fid, ['Acoustic processing app started ' datestr(now) ' \n\n']);
+handles.defaultaudiopath = [cd '/Audio'];
 guidata(hObject, handles);
 
 if ismac
@@ -314,12 +315,12 @@ function load_btn_Callback(hObject, eventdata, handles)
 % handles    structure with handles and user data (see GUIDATA)
 
 % Get path of the file to load
-[filename,pathname,filterindex] = uigetfile(...
+[filename,handles.defaultaudiopath,filterindex] = uigetfile(...
     {'*.wav;*.mat','Test Signals (*.wav,*.mat)';...
     '*.wav;*.mat','Measurement files (*.wav,*.mat)';...
     '*.wav;*.mat','Processed files (*.wav,*.mat)';...
     '*.wav;*.mat','Result files (*.wav,*.mat)'},...
-    'Select audio file',[cd '/Audio'],...
+    'Select audio file',handles.defaultaudiopath,...
     'MultiSelect','on');
 
 if ~iscell(filename)
@@ -332,7 +333,7 @@ for i = 1:length(filename)
         [~,~,ext] = fileparts(filename{i});
         % Check type of file. First 'if' is for .mat, second is for .wav
         if strcmp(ext,'.mat')
-            file = importdata(fullfile(pathname,filename{i}));
+            file = importdata(fullfile(handles.defaultaudiopath,filename{i}));
             if isstruct(file)
                 signaldata = file;
             else
@@ -355,7 +356,7 @@ for i = 1:length(filename)
             end
         end
         if strcmp(ext,'.wav')
-            [signaldata.audio,signaldata.fs,signaldata.nbits] = wavread(fullfile(pathname,filename{i}));
+            [signaldata.audio,signaldata.fs,signaldata.nbits] = wavread(fullfile(handles.defaultaudiopath,filename{i}));
         end;
 
         % Generate new leaf and update the tree
@@ -1451,19 +1452,20 @@ switch method
             warndlg('No signal loaded!','Whoops...!');
         end
     case 2
-        [filename,pathname,filterindex] = uigetfile(...
-                    {'*.wav;*.mat','Calibration file (*.wav,*.mat)'});
+        [filename,handles.defaultaudiopath,filterindex] = uigetfile(...
+                    {'*.wav;*.mat','Calibration file (*.wav,*.mat)'},...
+                    'Select audio file',handles.defaultaudiopath);
         if filename ~= 0
             % Check type of file. First 'if' is for .mat, second is for .wav
             if ~isempty(regexp(filename, '.mat', 'once'))
-                file = importdata(fullfile(pathname,filename));
+                file = importdata(fullfile(handles.defaultaudiopath,filename));
                 if isstruct(file)
                     caltone = file.audio;
                 else
                     caltone = file;
                 end
             elseif ~isempty(regexp(filename, '.wav', 'once'))
-                caltone = wavread(fullfile(pathname,filename));
+                caltone = wavread(fullfile(handles.defaultaudiopath,filename));
             else
                 caltone = [];
             end
@@ -1507,7 +1509,7 @@ if ~isempty(cal_level)
         handles.mytree.reloadNode(selectedParent);
         fprintf(handles.fid, [' ' datestr(now,16) ' - Calibrated "' char(selectedNodes(i).getName) '": adjusted to ' num2str(cal_level) 'dB \n']);
     end
-    %handles.mytree.setSelectedNode(selectedNodes);
+    handles.mytree.setSelectedNodes(selectedNodes)
 end
 guidata(hObject,handles)
 
