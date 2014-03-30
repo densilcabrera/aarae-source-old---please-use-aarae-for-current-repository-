@@ -1060,7 +1060,7 @@ message{2} = '1. Make sure your audio interface is correctly plugged into your m
 message{3} = '2. Make a feedback loop between INPUT 1 and OUTPUT 1';
 message{4} = '3. Press the -Evaluate- button to test the system latency.';
 
-msgbox(message,'AARAE info')
+helpdlg(message,'AARAE info')
 
 
 
@@ -1191,7 +1191,7 @@ message{8} = ' ';
 message{9} = '8. Click on -Filter- to apply an octave band filter around 1 kHz or 250 Hz if required to clean the recording.';
 message{10} = '9. Click on -Evaluate- to capture the calibration tone level and usable recording length.';
 
-msgbox(message,'AARAE info')
+helpdlg(message,'AARAE info')
 
 
 
