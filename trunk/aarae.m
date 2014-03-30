@@ -173,7 +173,7 @@ setappdata(hMain,'testsignal',[]);
 
 % Call the window that allows signal generation 
 newleaf = genaudio('main_stage1', handles.aarae);
-
+%set(handles.aarae,'CurrentObject',[])
 % Update the tree with the generated signal
 handles.mytree.setSelectedNode(handles.root);
 if ~isempty(getappdata(hMain,'testsignal'))
@@ -336,15 +336,15 @@ for i = 1:length(filename)
             if isstruct(file)
                 signaldata = file;
             else
-                specs = inputdlg({'Please specify the sampling frequency','Please specify the bit depth'},'Sampling frequency',2);
+                specs = inputdlg({'Please specify the sampling frequency','Please specify the bit depth'},'Sampling frequency',1);
                 if (isempty(specs))
-                    warndlg('Input field is blank, cannot load data!');
+                    warndlg('Input field is blank, cannot load data!','AARAE info');
                     signaldata = [];
                 else
                     fs = str2num(specs{1,1});
                     nbits = str2num(specs{2,1});
                     if (isempty(fs) || fs<=0 || isempty(nbits) || nbits<=0)
-                        warndlg('Input MUST be a real positive number, cannot load data!');
+                        warndlg('Input MUST be a real positive number, cannot load data!','AARAE info');
                         signaldata = [];
                     else
                         signaldata.audio = file;
@@ -582,7 +582,7 @@ function delete_btn_Callback(hObject, eventdata, handles)
 hMain = getappdata(0,'hMain');
 delete = questdlg('Current data will be lost, would you like to proceed?',...
     'Warning',...
-    'Yes','No','No');
+    'Yes','No','Yes');
 switch delete
     case 'Yes'
         % Deletes selected leaf from the tree
