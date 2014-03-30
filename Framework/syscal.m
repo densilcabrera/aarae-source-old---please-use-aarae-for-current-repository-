@@ -1171,7 +1171,7 @@ message{8} = ' ';
 message{9} = '7. Click on -Design- to design the inverse filter.';
 message{10} = '8. Click on -Preview- to view the designed filter compared to the system impulse response and the convolution of your filter with the impulse response.';
 
-msgbox(message,'AARAE info')
+helpdlg(message,'AARAE info')
 
 
 % --- Executes on button press in calinstructions_btn.
