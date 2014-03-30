@@ -690,7 +690,13 @@ function syscal_btn_Callback(hObject, eventdata, handles)
 % hObject    handle to syscal_btn (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
+recavail = 0;
+if strcmp(get(handles.load_btn,'Enable'),'on'), recavail = 1; end
+if recavail == 1, set([handles.load_btn,handles.preview_btn],'Enable','off'); end
+set([handles.record_btn,handles.syscal_btn,handles.cancel_btn],'Enable','off')
 syscalstats = syscal('audio_recorder', handles.audio_recorder);
+if recavail == 1, set([handles.load_btn,handles.preview_btn],'Enable','on'); end
+set([handles.record_btn,handles.syscal_btn,handles.cancel_btn],'Enable','on')
 if isfield(syscalstats,'audio'), handles.syscalstats(1).audio = syscalstats.audio; end
 if isfield(syscalstats,'fs'), handles.syscalstats(1).fs = syscalstats.fs; end
 if isfield(syscalstats,'latency') && ~isnan(syscalstats.latency)
