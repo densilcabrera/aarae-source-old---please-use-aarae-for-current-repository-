@@ -1540,6 +1540,52 @@ if strcmp(eventdata.Modifier,'shift')
 else
     handles.alternate = 0;
 end
+%guidata(hObject,handles)
+selectedNodes = handles.mytree.getSelectedNodes;
+signaldata = selectedNodes(1).handle.UserData;
+if ~isempty(signaldata)
+    if strcmp(eventdata.Key,'l') && ~isfield(handles,'legend')
+        if ndims(signaldata.audio) == 2
+            if isfield(signaldata,'chanID')
+                handles.legend = legend(handles.axestime,signaldata.chanID);
+            end
+        end
+        if ndims(signaldata.audio) == 3
+            if isfield(signaldata,'bandID')
+                handles.legend = legend(handles.axestime,cellstr(num2str(signaldata.bandID')));
+            end
+        end
+    elseif strcmp(eventdata.Key,'l') && isfield(handles,'legend')
+        legend(handles.axestime,'off');
+        handles = rmfield(handles,'legend');
+    end
+end
+if ~isempty(eventdata.Modifier)
+    if strcmp(eventdata.Modifier,'control') == 1
+        switch eventdata.Key
+            case 'r'
+                rec_btn_Callback(hObject, eventdata, handles)
+            case 'g'
+                genaudio_btn_Callback(hObject, eventdata, handles)
+            case 'l'
+                load_btn_Callback(hObject, eventdata, handles)
+            case 'c'
+                calc_btn_Callback(hObject, eventdata, handles)
+            case 'e'
+                if strcmp(get(handles.tools_panel,'Visible'),'on')
+                    edit_btn_Callback(hObject, eventdata, handles)
+                end
+            case 's'
+                if strcmp(get(handles.tools_panel,'Visible'),'on')
+                    save_btn_Callback(hObject, eventdata, handles)
+                end
+            case 'delete'
+                if strcmp(get(handles.tools_panel,'Visible'),'on')
+                    delete_btn_Callback(hObject, eventdata, handles)
+                end
+        end
+    end
+end
 guidata(hObject,handles)
 
 
@@ -1924,62 +1970,6 @@ function logtime_chk_Callback(hObject, eventdata, handles)
 
 % Hint: get(hObject,'Value') returns toggle state of logtime_chk
 refreshplots(handles,'time')
-guidata(hObject,handles)
-
-
-% --- Executes on key press with focus on aarae and none of its controls.
-function aarae_KeyPressFcn(hObject, eventdata, handles)
-% hObject    handle to aarae (see GCBO)
-% eventdata  structure with the following fields (see FIGURE)
-%	Key: name of the key that was pressed, in lower case
-%	Character: character interpretation of the key(s) that was pressed
-%	Modifier: name(s) of the modifier key(s) (i.e., control, shift) pressed
-% handles    structure with handles and user data (see GUIDATA)
-selectedNodes = handles.mytree.getSelectedNodes;
-signaldata = selectedNodes(1).handle.UserData;
-if ~isempty(signaldata)
-    if strcmp(eventdata.Key,'l') && ~isfield(handles,'legend')
-        if ndims(signaldata.audio) == 2
-            if isfield(signaldata,'chanID')
-                handles.legend = legend(handles.axestime,signaldata.chanID);
-            end
-        end
-        if ndims(signaldata.audio) == 3
-            if isfield(signaldata,'bandID')
-                handles.legend = legend(handles.axestime,cellstr(num2str(signaldata.bandID')));
-            end
-        end
-    elseif strcmp(eventdata.Key,'l') && isfield(handles,'legend')
-        legend(handles.axestime,'off');
-        handles = rmfield(handles,'legend');
-    end
-end
-if ~isempty(eventdata.Modifier)
-    if strcmp(eventdata.Modifier,'control') == 1
-        switch eventdata.Key
-            case 'r'
-                rec_btn_Callback(hObject, eventdata, handles)
-            case 'g'
-                genaudio_btn_Callback(hObject, eventdata, handles)
-            case 'l'
-                load_btn_Callback(hObject, eventdata, handles)
-            case 'c'
-                calc_btn_Callback(hObject, eventdata, handles)
-            case 'e'
-                if strcmp(get(handles.tools_panel,'Visible'),'on')
-                    edit_btn_Callback(hObject, eventdata, handles)
-                end
-            case 's'
-                if strcmp(get(handles.tools_panel,'Visible'),'on')
-                    save_btn_Callback(hObject, eventdata, handles)
-                end
-            case 'delete'
-                if strcmp(get(handles.tools_panel,'Visible'),'on')
-                    delete_btn_Callback(hObject, eventdata, handles)
-                end
-        end
-    end
-end
 guidata(hObject,handles)
 
 
