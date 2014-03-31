@@ -365,7 +365,7 @@ for i = 1:length(filename)
             if ~isfield(signaldata,'chanID')
                 signaldata.chanID = cellstr([repmat('Chan',size(signaldata.audio,2),1) num2str((1:size(signaldata.audio,2))')]);
             end
-            if ~isfield(signaldata,'datatype')
+            if ~isfield(signaldata,'datatype') || (isfield(signaldata,'datatype') && strcmp(signaldata.datatype,'IR'))
                 if filterindex == 1, signaldata.datatype = 'testsignals'; end;
                 if filterindex == 2, signaldata.datatype = 'measurements'; end;
                 if filterindex == 3, signaldata.datatype = 'processed'; end;
