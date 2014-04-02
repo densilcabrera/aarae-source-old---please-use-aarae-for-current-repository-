@@ -716,6 +716,7 @@ if method == 1
     %trimsamp_low = id-round(IRlength./2);
     %trimsamp_high = trimsamp_low + IRlength -1;
     IR = IR(trimsamp_low:trimsamp_high,:);
+    IRlength = length(IR);
 else
     IRlength = length(IR);
 end
@@ -738,7 +739,7 @@ if ~isempty(getappdata(hMain,'testsignal'))
     handles.mytree.expand(handles.measurements);
     handles.mytree.setSelectedNode(handles.(genvarname(newleaf)));
     set([handles.clrall_btn,handles.export_btn],'Enable','on')
-    fprintf(handles.fid, [' ' datestr(now,16) ' - Processed "' char(selectedNodes(1).getName) '" to generate an impulse response of ' num2str(trimsamp_high-trimsamp_low) ' points\n']);
+    fprintf(handles.fid, [' ' datestr(now,16) ' - Processed "' char(selectedNodes(1).getName) '" to generate an impulse response of ' num2str(IRlength) ' points\n']);
 end
 set(handles.IR_btn, 'Visible', 'off');
 
