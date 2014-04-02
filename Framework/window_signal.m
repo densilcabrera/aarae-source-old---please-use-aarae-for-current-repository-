@@ -23,7 +23,7 @@ function varargout = window_signal(varargin)
 
 % Edit the above text to modify the response to help window_signal
 
-% Last Modified by GUIDE v2.5 23-Aug-2013 09:02:33
+% Last Modified by GUIDE v2.5 02-Apr-2014 10:45:25
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -88,9 +88,14 @@ else
     set(handles.IN_axes,'XTickLabel',num2str(get(handles.IN_axes,'XTick').'))
     [~, id] = max(abs(handles.IR));
     IRlength = max(id);
-    set(handles.IN_length, 'string',num2str(max(id))); % Get the IR length from input
+    %handles.IRlength = IRlength;
+    %set(handles.IN_length, 'string',num2str(max(id))); % Get the IR length from input
     trimsamp_low = max(id)-round(IRlength./2);
     trimsamp_high = trimsamp_low + IRlength -1;
+    handles.slow = trimsamp_low;
+    handles.shigh = trimsamp_high;
+    set(handles.trimlow,'String',num2str(trimsamp_low))
+    set(handles.trimhigh,'String',num2str(trimsamp_high))
     B=interp1([0 trimsamp_low trimsamp_low+1 trimsamp_high-1 trimsamp_high t(end)],[0 0 max(handles.IR(:)) max(handles.IR(:)) 0 0],t,'linear');
     hold(handles.IN_axes,'on')
     handles.win = plot(handles.IN_axes,B,'r');
@@ -115,7 +120,8 @@ function varargout = window_signal_OutputFcn(hObject, eventdata, handles)
 % handles    structure with handles and user data (see GUIDATA)
 
 % Get default command line output from handles structure
-varargout{1} = str2num(get(handles.IN_length, 'string'));
+varargout{1} = handles.slow;
+varargout{2} = handles.shigh;
 delete(hObject);
 
 
@@ -137,29 +143,24 @@ function window_signal_CloseRequestFcn(hObject, eventdata, handles)
 uiresume(hObject);
 
 
-
-function IN_length_Callback(hObject, eventdata, handles)
-% hObject    handle to IN_length (see GCBO)
+function trimlow_Callback(hObject, eventdata, handles)
+% hObject    handle to trimlow (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
-% Hints: get(hObject,'String') returns contents of IN_length as text
-%        str2double(get(hObject,'String')) returns contents of IN_length as a double
+% Hints: get(hObject,'String') returns contents of trimlow as text
+%        str2double(get(hObject,'String')) returns contents of trimlow as a double
 
-% Get IR length input
-IRlength = str2num(get(handles.IN_length, 'string'));
-[~, id] = max(abs(handles.IR));
+trimsamp_low = round(str2num(get(hObject,'String')));
 % Check user's input
-if (isempty(IRlength)||IRlength<=0||IRlength>max(id))
-    handles.IRlength = length(handles.IR);
-    warndlg('Invalid length!','Whoops..!');
-    set(handles.IN_length,'string',num2str(max(id)));
+if isempty(trimsamp_low) || trimsamp_low <= 0
+    set(hObject,'String',num2str(handles.slow))
+    warndlg('Invalid lower limit!','AARAE info');
 else
     delete(handles.win)
     handles = rmfield(handles,'win');
-    handles.IRlength = IRlength;
-    trimsamp_low = max(id)-round(handles.IRlength./2);
-    trimsamp_high = trimsamp_low + handles.IRlength -1;
+    trimsamp_high = round(str2num(get(handles.trimhigh,'String')));
+    handles.slow = trimsamp_low;
     t = linspace(0,size(handles.IR,1),size(handles.IR,1));
     B=interp1([0 trimsamp_low trimsamp_low+1 trimsamp_high-1 trimsamp_high t(end)],[0 0 max(handles.IR(:)) max(handles.IR(:)) 0 0],t,'linear');
     hold(handles.IN_axes,'on')
@@ -171,3 +172,59 @@ else
     set(handles.OUT_axes,'XTickLabel',num2str(get(handles.OUT_axes,'XTick').'))
 end
 guidata(hObject, handles);
+
+% --- Executes during object creation, after setting all properties.
+function trimlow_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to trimlow (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: edit controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+
+
+function trimhigh_Callback(hObject, eventdata, handles)
+% hObject    handle to trimhigh (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: get(hObject,'String') returns contents of trimhigh as text
+%        str2double(get(hObject,'String')) returns contents of trimhigh as a double
+
+trimsamp_high = round(str2num(get(hObject,'String')));
+% Check user's input
+if isempty(trimsamp_high) || trimsamp_high >= length(handles.IR)
+    set(hObject,'String',num2str(handles.shigh))
+    warndlg('Invalid upper limit!','AARAE info');
+else
+    delete(handles.win)
+    handles = rmfield(handles,'win');
+    trimsamp_low = round(str2num(get(handles.trimlow,'String')));
+    handles.shigh = trimsamp_high;
+    t = linspace(0,size(handles.IR,1),size(handles.IR,1));
+    B=interp1([0 trimsamp_low trimsamp_low+1 trimsamp_high-1 trimsamp_high t(end)],[0 0 max(handles.IR(:)) max(handles.IR(:)) 0 0],t,'linear');
+    hold(handles.IN_axes,'on')
+    handles.win = plot(handles.IN_axes,B,'r');
+    hold(handles.IN_axes,'off')
+    trimIR = handles.IR(trimsamp_low:trimsamp_high,:);
+    plot(handles.OUT_axes,trimIR)
+    xlabel(handles.OUT_axes,'Samples');
+    set(handles.OUT_axes,'XTickLabel',num2str(get(handles.OUT_axes,'XTick').'))
+end
+guidata(hObject, handles);
+
+% --- Executes during object creation, after setting all properties.
+function trimhigh_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to trimhigh (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: edit controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end

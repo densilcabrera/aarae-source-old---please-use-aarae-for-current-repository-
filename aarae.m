@@ -330,7 +330,7 @@ if ~iscell(filename)
 end
 for i = 1:length(filename)
     if filename{i} ~= 0
-        [~,~,ext] = fileparts(filename{i});
+        [~,newleaf,ext] = fileparts(filename{i});
         % Check type of file. First 'if' is for .mat, second is for .wav
         if strcmp(ext,'.mat')
             file = importdata(fullfile(handles.defaultaudiopath,filename{i}));
@@ -360,7 +360,7 @@ for i = 1:length(filename)
         end;
 
         % Generate new leaf and update the tree
-        newleaf = filename{i};
+        %newleaf = filename{i};
         if ~isempty(signaldata)
             if ~isfield(signaldata,'chanID')
                 signaldata.chanID = cellstr([repmat('Chan',size(signaldata.audio,2),1) num2str((1:size(signaldata.audio,2))')]);
@@ -375,6 +375,16 @@ for i = 1:length(filename)
                 iconPath = fullfile(matlabroot,'/toolbox/fixedpoint/fixedpointtool/resources/plot.png');
             else
                 iconPath = fullfile(matlabroot,'/toolbox/matlab/icons/notesicon.gif');
+            end
+            leafname = isfield(handles,genvarname(newleaf));
+            if leafname == 1
+                index = 1;
+                % This while cycle is just to make sure no duplicate names
+                if length(genvarname([newleaf,'_',num2str(index)])) >= namelengthmax, newleaf = newleaf(1:round(end/2)); end
+                while isfield(handles,genvarname([newleaf,'_',num2str(index)])) == 1
+                    index = index + 1;
+                end
+                newleaf = [newleaf,'_',num2str(index)];
             end
             handles.(genvarname(newleaf)) = uitreenode('v0', newleaf,  newleaf,  iconPath, true);
             handles.(genvarname(newleaf)).UserData = signaldata;
@@ -701,10 +711,10 @@ if method == 1 || method == 3
     IR = convolvedemo(S_pad, invS_pad, 2, fs); % Calls convolvedemo.m
 end
 if method == 1
-    IRlength = window_signal('main_stage1', handles.aarae,'IR',IR); % Calls the trimming GUI window to trim the IR
-    [~, id] = max(abs(IR));
-    trimsamp_low = id-round(IRlength./2);
-    trimsamp_high = trimsamp_low + IRlength -1;
+    [trimsamp_low,trimsamp_high] = window_signal('main_stage1', handles.aarae,'IR',IR); % Calls the trimming GUI window to trim the IR
+    %[~, id] = max(abs(IR));
+    %trimsamp_low = id-round(IRlength./2);
+    %trimsamp_high = trimsamp_low + IRlength -1;
     IR = IR(trimsamp_low:trimsamp_high,:);
 else
     IRlength = length(IR);
@@ -728,7 +738,7 @@ if ~isempty(getappdata(hMain,'testsignal'))
     handles.mytree.expand(handles.measurements);
     handles.mytree.setSelectedNode(handles.(genvarname(newleaf)));
     set([handles.clrall_btn,handles.export_btn],'Enable','on')
-    fprintf(handles.fid, [' ' datestr(now,16) ' - Processed "' char(selectedNodes(1).getName) '" to generate an impulse response of ' num2str(IRlength) ' points\n']);
+    fprintf(handles.fid, [' ' datestr(now,16) ' - Processed "' char(selectedNodes(1).getName) '" to generate an impulse response of ' num2str(trimsamp_high-trimsamp_low) ' points\n']);
 end
 set(handles.IR_btn, 'Visible', 'off');
 
