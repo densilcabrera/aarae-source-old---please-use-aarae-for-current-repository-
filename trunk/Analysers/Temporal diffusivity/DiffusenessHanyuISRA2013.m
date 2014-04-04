@@ -6,7 +6,7 @@ function out = DiffusenessHanyuISRA2013(IR, fs, doplot, threshold)
 % Acoustics, Toronto, Canada, 2013.
 %
 % Code by Densil Cabrera
-% version 1.01 (10 October 2013)
+% version 1.02 (4 April 2014)
 %
 % INPUT ARGUMENTS
 %
@@ -62,6 +62,12 @@ if isstruct(IR)
     fs = IR.fs;
     starttime = 0;
     endtime = (length(data)-1)/fs;
+    if isfield(IR,'bandID')
+        bandID = IR.bandID;
+    end
+    if isfield(IR,'chanID')
+        chanID = IR.chanID;
+    end
 else
     data = IR;
     if nargin < 2
@@ -326,6 +332,24 @@ if ~isempty(data) && ~isempty(fs) && ~isempty(starttime) && ~isempty(endtime) &&
             'LineStyle','--','Color',[0.5 0.5 0.5])
 
         hold off
+        
+        % results table
+        fig3 = figure('Name','Degree of time series fluctuation (Hanyu ISRA 2013)');
+        if exist('chanID','var')
+            RowName = chanID;
+        else
+            RowName = {1:chans};
+        end
+        if exist('bandID','var')
+            ColumnName = {bandID};
+        else
+            ColumnName = {1:bands};
+        end
+        table1 = uitable('Data',permute(result,[2,3,1]),...
+                'ColumnName',ColumnName,...
+                'RowName',RowName);
+        set(table1,'ColumnWidth',{52});
+        disptables(fig3,table1);
     end
 else
     out = [];
