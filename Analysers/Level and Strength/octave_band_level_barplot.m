@@ -84,7 +84,7 @@ if ~isempty(audio) && ~isempty(fs) && ~isempty(cal) && ~isempty(showpercentiles)
         end
         % convert exact frequencies to nominal
         flist = exact2nom_oct(flist);
-        [audiooct, frequencies] = octbandfilter(audio,fs,flist);
+        [audiooct, frequencies] = octbandfilter_viaFFT(audio,fs,flist);
         frequencies = exact2nom_oct(frequencies);
     end
 

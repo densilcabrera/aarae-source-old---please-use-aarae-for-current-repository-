@@ -38,7 +38,7 @@ else
 end
 
 
-if ~isempty(answer)
+if ~isempty(threshold) && ~isempty(method)
     [len,chans,bands,dim4,dim5,dim6] = size(in.audio);
     switch method
         case 1
