@@ -1,4 +1,4 @@
-function [OUT] = XFTmixingtime(IN, hoptime, maxtime)
+function [OUT] = XFTmixingtime(IN, hoptime, maxtime, fs)
 % This function visualizes the mixing time of a room impulse response
 % through the eXtensive Fourier Transform, based on:
 %
@@ -71,18 +71,25 @@ if ~isempty(audio) && ~isempty(fs)
     % unwraped phase in units of 2pi
     phase = unwrap(angle(fft(audio)))./(2*pi);
     
-    D = zeros(1,chans,nwin);
+    D = zeros(nwin,chans);
     
     for ch = 1:chans
         for n = 1:nwin
             p = polyfit((1:len)', phase(:,ch,n),1)';
             % rms regression error
-            D(1,ch,n) = (mean((((p(1)*(1:len)')+p(2))-phase(:,ch,n)).^2)).^0.5;
+            D(n,ch) = (mean((((p(1)*(1:len)')+p(2))-phase(:,ch,n)).^2)).^0.5;
         end
     end
     
     
     
+    %smoothed D
+    runningavlen = 19;
+    b = hann(runningavlen);
+    b = b ./ sum(b);
+    Dsmooth = filter(b,1,D);
+    Dsmooth(1:round(runningavlen/2),:) = NaN;
+    Dsmooth = circshift(Dsmooth,-round(runningavlen/2));
     
     
     
@@ -93,11 +100,17 @@ if ~isempty(audio) && ~isempty(fs)
             chanstring = ['ch ',num2str(ch)];
         end
         figure('Name',['XFT results, ', chanstring])
-        plot((0:diplaylen-1)'./fs,audio(1:diplaylen,ch,nwin)./max(abs(audio(1:diplaylen,ch,nwin))),'Color',[0.5,0.5,0.5])
+        plot((0:diplaylen-1)'./fs,...
+            audio(1:diplaylen,ch,nwin)./...
+            max(abs(audio(1:diplaylen,ch,nwin))),'Color',[0.5,0.5,0.5])
         
         hold on
         plot((1:nwin)'*hoptime,...
-            permute(D(1,ch,:),[3,2,1])./max(D(1,ch,:)),'r')
+            D(:,ch)./max(D(:,ch)),'r')
+        
+        plot((1:nwin)'*hoptime,...
+            Dsmooth(:,ch)./max(D(:,ch)),'Color',[0.7,0,0.7])
+        
         xlabel('Time (s)')
         ylabel('Normalized waveform and D')
     end
