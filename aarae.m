@@ -23,7 +23,7 @@ function varargout = aarae(varargin)
 
 % Edit the above text to modify the response to help aarae
 
-% Last Modified by GUIDE v2.5 18-Mar-2014 15:45:50
+% Last Modified by GUIDE v2.5 03-Apr-2014 13:54:59
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -285,10 +285,12 @@ for nleafs = 1:length(selectedNodes)
         else
             if isempty(ext), ext = '.mat'; end
             if strcmp(ext,'.wav') && (~isfield(audiodata,'audio') || ~isfield(audiodata,'fs')), ext = '.mat'; end
-            listing = dir([name ext]);
+            folder_name = uigetdir(handles.defaultaudiopath,'Save AARAE file');
+            handles.defaultaudiopath = folder_name;
+            listing = dir([folder_name '/' name ext]);
             if isempty(listing)
-                if strcmp(ext,'.mat'), save([name ext],'audiodata'); end
-                if strcmp(ext,'.wav'), wavwrite(audiodata.audio,audiodata.fs,name); end
+                if strcmp(ext,'.mat'), save([folder_name '/' name ext],'audiodata'); end
+                if strcmp(ext,'.wav'), wavwrite(audiodata.audio,audiodata.fs,[folder_name '/' name]); end
             else
                 index = 1;
                 % This while cycle is just to make sure no signals are
@@ -297,11 +299,11 @@ for nleafs = 1:length(selectedNodes)
                     index = index + 1;
                 end
                 name = [name,'_',num2str(index),ext];
-                if strcmp(ext,'.mat'), save([name ext],'audiodata'); end
-                if strcmp(ext,'.wav'), wavwrite(audiodata.audio,audiodata.fs,name); end
+                if strcmp(ext,'.mat'), save([folder_name '/' name ext],'audiodata'); end
+                if strcmp(ext,'.wav'), wavwrite(audiodata.audio,audiodata.fs,[folder_name '/' name]); end
             end
-            current = cd;
-            fprintf(handles.fid, [' ' datestr(now,16) ' - Saved "' char(selectedNodes(nleafs).getName) '" to file "' name ext '" in folder "%s"' '\n'],current);
+            %current = cd;
+            fprintf(handles.fid, [' ' datestr(now,16) ' - Saved "' char(selectedNodes(nleafs).getName) '" to file "' name ext '" in folder "%s"' '\n'],folder_name);
         end
     end
 end
@@ -1995,3 +1997,74 @@ if isfield(signaldata,'properties')
     properties = signaldata.properties;
     msgbox([selectedNodes(1).getName.char evalc('properties')],'AARAE info')
 end
+
+
+% --- Executes on button press in compare_btn.
+function compare_btn_Callback(hObject, eventdata, handles)
+% hObject    handle to compare_btn (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+selectedNodes = handles.mytree.getSelectedNodes;
+compplot = figure;
+for i = 1:length(selectedNodes)
+    axes = 'time';
+    signaldata = selectedNodes(i).handle.UserData;
+    plottype = get(handles.(genvarname([axes '_popup'])),'Value');
+    t = linspace(0,length(signaldata.audio),length(signaldata.audio))./signaldata.fs;
+    f = signaldata.fs .* ((1:length(signaldata.audio))-1) ./ length(signaldata.audio);
+    if ndims(signaldata.audio) > 2
+        if ndims(signaldata.audio) == 3, cmap = colormap(hsv(size(signaldata.audio,3))); end
+        if ndims(signaldata.audio) >= 4, cmap = colormap(copper(size(signaldata.audio,4))); end
+        line(:,:) = signaldata.audio(:,str2double(get(handles.IN_nchannel,'String')),:);
+    else
+        cmap = colormap(lines(size(signaldata.audio,2)));
+        line = signaldata.audio;
+    end
+    if plottype == 1, line = real(line); end
+    if plottype == 2, line = line.^2; end
+    if plottype == 3, line = 10.*log10(line.^2); end
+    if plottype == 4, line = abs(hilbert(real(line))); end
+    if plottype == 5, line = medfilt1(diff([angle(hilbert(real(line))); zeros(1,size(line,2))])*signaldata.fs/2/pi, 5); end
+    if plottype == 6, line = abs(line); end
+    if plottype == 7, line = imag(line); end
+    if plottype == 8, line = 10*log10(abs(fft(line)).^2);  set(handles.(genvarname(['smooth' axes '_popup'])),'Visible','on'); end %freq
+    if plottype == 9, line = abs(fft(line)).^2; end
+    if plottype == 10, line = abs(fft(line)); end
+    if plottype == 11, line = real(fft(line)); end
+    if plottype == 12, line = imag(fft(line)); end
+    if plottype == 13, line = angle(fft(line)); end
+    if plottype == 14, line = unwrap(angle(fft(line))); end
+    if plottype == 15, line = angle(fft(line)) .* 180/pi; end
+    if plottype == 16, line = unwrap(angle(fft(line))) ./(2*pi); end
+    if plottype == 17, line = -diff(unwrap(angle(fft(line)))).*length(fft(line))/(signaldata.fs*2*pi).*1000; end
+    if strcmp(get(handles.(genvarname(['smooth' axes '_popup'])),'Visible'),'on')
+        smoothfactor = get(handles.(genvarname(['smooth' axes '_popup'])),'Value');
+        if smoothfactor == 2, octsmooth = 1; end
+        if smoothfactor == 3, octsmooth = 3; end
+        if smoothfactor == 4, octsmooth = 6; end
+        if smoothfactor == 5, octsmooth = 12; end
+        if smoothfactor == 6, octsmooth = 24; end
+        if smoothfactor ~= 1, line = octavesmoothing(line, octsmooth, signaldata.fs); end
+    end
+    if plottype <= 7
+        subplot(length(selectedNodes),1,i);plot(t,real(line)) % Plot signal in time domain
+        xlabel('Time [s]');
+    end
+    if plottype >= 8
+        if plottype == 17, h = subplot(length(selectedNodes),1,i);semilogx(f(1:end-1),line,'Marker','None'); end
+        if plottype ~= 17, h = subplot(length(selectedNodes),1,i);semilogx(f,line); end % Plot signal in frequency domain
+        xlabel('Frequency [Hz]');
+        xlim([f(2) signaldata.fs/2])
+        log_check = get(handles.(genvarname(['log' axes '_chk'])),'Value');
+        if log_check == 1
+            set(h,'XScale','log')
+        else
+            set(h,'XScale','linear','XTickLabelMode','auto')
+        end
+    end
+end
+iplots = get(compplot,'Children');
+xlims = cell2mat(get(iplots,'Xlim'));
+set(iplots,'Xlim',[min(xlims(:,1)) max(xlims(:,2))])
+ylims = cell2mat(get(iplots,'Ylim'));
+set(iplots,'Ylim',[min(ylims(:,1)) max(ylims(:,2))])
