@@ -3,16 +3,21 @@
 % selection commands, it controls also visibility of some functions
 % depending on what type of signal is selected and its contents.
 function nodes = mySelectFcn(tree, value)
+    % Get handles of main window
+    aarae_fig = findobj('Tag','aarae');
+    mainHandles = guidata(aarae_fig);
     selectedNodes = tree.getSelectedNodes; % Get selected leaf
+    if length(selectedNodes) > 1
+        set(mainHandles.compare_btn,'Visible','on')
+    else
+        set(mainHandles.compare_btn,'Visible','off')
+    end
     if ~isempty(selectedNodes)
         
         % Call the 'desktop'
         hMain = getappdata(0,'hMain');
         selectedNodes = selectedNodes(1);
         audiodata = selectedNodes.handle.UserData;
-        % Get handles of main window
-        aarae_fig = findobj('Tag','aarae');
-        mainHandles = guidata(aarae_fig);
         if ~isempty(audiodata) && strcmp(audiodata.datatype,'syscal')
             mainHandles.syscalstats = audiodata;
             set(mainHandles.signaltypetext,'String',[selectedNodes.getName.char ' selected']);
