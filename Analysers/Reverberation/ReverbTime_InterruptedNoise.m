@@ -21,7 +21,7 @@ if nargin < 6, highestband = 8000; end
 if nargin < 5, lowestband = 125; end
 if nargin < 4, avmethod = 1; end
 if nargin < 3, 
-    filteriterations = 2;
+    %filteriterations = 2; 
     param = inputdlg({'Bands per octave (1 | 3)';...
         'Highest centre frequency (Hz)';...
         'Lowest centre frequency (Hz)';...
@@ -50,8 +50,11 @@ end
 if isstruct(IN)
     audio = IN.audio; % Extract the audio data
     fs = IN.fs;       % Extract the sampling frequency of the audio data
-    if isfield(IN,'audio3')
-        audio3 = IN.audio3;
+%     if isfield(IN,'audio3')
+%         audio3 = IN.audio3;
+%     end
+    if isfield(IN.properties,'burstindices')   
+        burstindices = IN.properties.burstindices;
     end
     if isfield(IN,'bandID')
         flist = IN.bandID;
@@ -61,7 +64,7 @@ if isstruct(IN)
     end
 elseif ~isempty(param) || nargin > 1
     audio = IN;
-    fs = input_1;
+    % this probably won't work!
 end
 
 
@@ -72,13 +75,13 @@ if ~isempty(audio) && ~isempty(fs) && ~isempty(filteriterations) && ~isempty(avm
     % Use audio3 to break up audio into decays
     % -------------------------------------------------------------------------
     
-    if exist('audio3','var')
+    if exist('burstindices','var')
         % find indices for starts and ends of decay periods
-        decaystart = find(diff(audio3) == -1);
-        decayend = find(diff([audio3;1]) == 1);
-        numberofdecays = length(decaystart);
+        decaystart = burstindices(:,2)+1;
+        decayend = burstindices(:,3);
+        numberofdecays = length(burstindices);
     else
-        OUT.error = 'audio3 not found!';
+        OUT.error = 'burstindices not found!';
         warndlg('Please use test signals generated from AARAE''s interrupted noise generator','AARAE info')
         return
         % or work out some other way of finding decay period indices!!!
@@ -157,7 +160,7 @@ if ~isempty(audio) && ~isempty(fs) && ~isempty(filteriterations) && ~isempty(avm
             % frequency
             cutoff = flist(bnd)/10; % lo-pass filter cutoff frequency in Hz
             Wn = cutoff/(fs*0.5); % normalized cutoff frequency of lo-pass filter
-            order = 1; % filter order (actually half order when filtfilt is used)
+            order = 1; % filter order 
             [b,a] = butter(order,Wn,'low');
             
             for d = 1:numberofdecays
@@ -174,7 +177,7 @@ if ~isempty(audio) && ~isempty(fs) && ~isempty(filteriterations) && ~isempty(avm
         % filter is a cutoff frequency
         cutoff = 50; % lo-pass filter cutoff frequency in Hz
         Wn = cutoff/(fs*0.5); % normalized cutoff frequency of lo-pass filter
-        order = 1; % filter order (actually half order when filtfilt is used)
+        order = 1; % filter order 
         [b,a] = butter(order,Wn,'low');
         for d = 1:numberofdecays
             for ff = 1:filteriterations
@@ -423,10 +426,13 @@ if ~isempty(audio) && ~isempty(fs) && ~isempty(filteriterations) && ~isempty(avm
     t = ((1:len)-1)./fs;
     for ch = 1:chans
         if exist('chanID','var')
-            figure('Name', ['Decays from Interrupted Noise, channel', num2str(chanID(ch))])
+            chanstring = char(chanID(ch));
         else
-            figure('Name', ['Decays from Interrupted Noise, channel', num2str(ch)])
+            chanstring = ['ch ',num2str(ch)];
         end
+        
+        figure('Name', ['Decays from Interrupted Noise, ', chanstring])
+
         
         [r, c] = subplotpositions(bands, 0.5);
         for bnd = 1:bands
