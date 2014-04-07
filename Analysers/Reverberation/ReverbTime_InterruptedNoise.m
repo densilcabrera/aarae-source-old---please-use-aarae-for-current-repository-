@@ -1,4 +1,4 @@
-function OUT = ReverbTime_InterruptedNoise(IN,fs,filteriterations,avmethod,lowestband,highestband,bpo)
+function OUT = ReverbTime_InterruptedNoise(IN,fs,filteriterations,avmethod,lowestband,highestband,bpo,threshold)
 % This function is designed to be used with signals generated from AARAE's
 % interrupted noise generator, for the measurement of reverberation time
 % and related parameters.
@@ -15,7 +15,7 @@ function OUT = ReverbTime_InterruptedNoise(IN,fs,filteriterations,avmethod,lowes
 %
 % Code by Densil Cabrera & Grant Cuthbert
 % version 1.00 (17 December 2013)
-
+if nargin < 8, threshold = 0.2; end
 if nargin < 7, bpo = 1; end
 if nargin < 6, highestband = 8000; end
 if nargin < 5, lowestband = 125; end
@@ -404,7 +404,7 @@ if ~isempty(audio) && ~isempty(fs) && ~isempty(filteriterations) && ~isempty(avm
         OUT.latency = latency;
     end
     OUT.funcallback.name = 'ReverbTime_InterruptedNoise.m';
-    OUT.funcallback.inarg = {fs,filteriterations,avmethod,lowestband,highestband,bpo};
+    OUT.funcallback.inarg = {fs,filteriterations,avmethod,lowestband,highestband,bpo,threshold};
     
     % -------------------------------------------------------------------------
     % Create table & plots
