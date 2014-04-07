@@ -12,7 +12,7 @@ function [OUT,varargout] = EchoDensity1(IN, WindowTime, OffsetTime, DoWindow, fs
 %  121st Audio Engineering Society Convention, San Francisco USA, 2006.
 %
 % Code by David Spargo and Densil Cabrera
-% Version 0.00 (13 January 2014) - needs more work!
+% Version 1.00 (7 April 2014)
 
 if nargin == 1
     param = inputdlg({'Duration of window (ms)';...
@@ -71,14 +71,16 @@ if ~isempty(data) && ~isempty(fs) %&& ~isempty(WindowTime) && ~isempty(OffsetTim
         w2 =ones(WindowLength,1) ./ WindowLength; % Rectangular window
     end
     
-    [len,chans,bands] = size(data);
+    
+    [~,chans,bands] = size(data);
+    data = cat(1,zeros(round(WindowLength/2),chans,bands),data);
+    len = size(data,1);
     
     nwin = round((len-WindowLength)/Offset); % number of windows
     
     % preallocate
     [SD, Kurt, ED] = ...
         deal(zeros(nwin,chans,bands));
-    
     
     for n = 1:nwin;
         start = round((n-1)*Offset + 1);
@@ -105,9 +107,9 @@ if ~isempty(data) && ~isempty(fs) %&& ~isempty(WindowTime) && ~isempty(OffsetTim
         end
     end
     
-    IRt_vec = 0.001*(OffsetTime*((1:nwin)-1)...
-        +0.5*WindowTime); % window times
-   
+%     IRt_vec = 0.001*(OffsetTime*((1:nwin)-1)...
+%         +0.5*WindowTime); % window times
+    IRt_vec = 0.001*OffsetTime*((1:nwin)-1);
     
     SDn = SD./repmat(max(SD),[nwin,1,1]); % normalise to 1
     EDn = ED./repmat(max(ED),[nwin,1,1]); % normalise to 1
@@ -132,7 +134,7 @@ if ~isempty(data) && ~isempty(fs) %&& ~isempty(WindowTime) && ~isempty(OffsetTim
                 figure('Name', ['Echo Density Indicators', chanstring])
             end
             
-            plot((0:len-1)./fs,abs(data(:,ch,b))./max(abs(data(:,ch,b))),...
+            plot((0:len-1)./fs - 0.001*WindowTime/2,abs(data(:,ch,b))./max(abs(data(:,ch,b))),...
                 'Color',[0.6 0.6 0.6],'DisplayName','Rectified waveform')
             hold on
             
@@ -142,6 +144,7 @@ if ~isempty(data) && ~isempty(fs) %&& ~isempty(WindowTime) && ~isempty(OffsetTim
                 'DisplayName','Kurtosis')
             xlabel('Time (s)')
             ylabel('Normalized values')
+            xlim([-0.001*WindowTime/2, (len-1)./fs - 0.001*WindowTime/2])
             legend('show','Location','EastOutside');
         end
     end
