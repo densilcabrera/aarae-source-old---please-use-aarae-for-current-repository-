@@ -52,7 +52,7 @@ if ~isempty(wave1) && ~isempty(fs) && ~isempty(wave2) && ~isempty(fs2)
             .* fft(repmat(wave2(:,1),[1,chans1]), outputlength));
     end
     if more_options ~= 0
-        % Loop for replaying, saving and finishing
+        % Loop for replaying, saving and finishing - currently bypassed
         choice = 0;
         % loop until the user presses the 'Done' button
         while choice < 4

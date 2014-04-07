@@ -14,16 +14,13 @@ function OUT = interrupted_noise(fexponent, burst_duration, ...
 % The amplitude of each noise burst is normalized to allow maximum playback
 % level.
 %
-% Audio3 can be used to guide analysis: it has ones during the stimuli
-% and zeros between stimuli. Bear in mind that the measurement system and
-% the acoustic system will introduce latency, so the recorded signal is
-% likely to be delayed relative to audio3.
+%
 %
 % The function does not output audio2 (although a previous version did, and
 % the relevant code has been commented out).
 %
 % Code by Densil Cabrera
-% version 1.02 (17 December 2013)
+% version 1.03 (17 December 2013)
 
 if nargin == 0
     param = inputdlg({'Spectral slope [dB/octave]';...
@@ -64,12 +61,17 @@ if ~isempty(param) || nargin ~= 0
     totallen = nbursts * (burstlen + silencelen);
     burstwave = zeros(totallen, nchan);
     %burstwave2 = burstwave;
-    audio3 = zeros(totallen, 1);
+    %audio3 = zeros(totallen, 1);
     
+    % Two columns of indices:
+    % column 1 is noise burst start indices
+    % column 2 is noise burst end indices
+    % column 3 is silence end indices
+    burstindices = ones(nbursts,3);
     for n = 1:nbursts
-        
-        
-        
+        burstindices(n,1) = (n-1) * (burstlen + silencelen) + 1;
+        burstindices(n,2) = burstindices(n,1) + burstlen;
+        burstindices(n,3) = burstindices(n,2) + silencelen;
         
         % magnitude slope function (for half spectrum, not including DC and
         % Nyquist)
@@ -109,7 +111,7 @@ if ~isempty(param) || nargin ~= 0
         
         burstwave((n-1)*(burstlen+silencelen)+1:(n-1)*(burstlen+silencelen)+burstlen,:) = y;
         %burstwave2((n-1)*(burstlen+silencelen)+1:(n-1)*(burstlen+silencelen)+burstlen,:) = yinv;
-        audio3((n-1)*(burstlen+silencelen)+1:(n-1)*(burstlen+silencelen)+burstlen)=1;
+        %audio3((n-1)*(burstlen+silencelen)+1:(n-1)*(burstlen+silencelen)+burstlen)=1;
     end
     
     
@@ -141,9 +143,10 @@ if ~isempty(param) || nargin ~= 0
     
     OUT.audio = burstwave;
     %OUT.audio2 = flipdim(burstwave2,1);
-    OUT.audio3 = audio3;
+    %OUT.audio3 = audio3;
     OUT.fs = fs;
     OUT.tag = tag;
+    OUT.properties.burstindices = burstindices;
     OUT.funcallback.name = 'interrupted_noise.m';
     OUT.funcallback.inarg = {fexponent, burst_duration, ...
     silence_duration, nbursts, fs, fhigh, flow, nchan};
