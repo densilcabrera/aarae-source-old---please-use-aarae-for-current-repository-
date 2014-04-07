@@ -26,19 +26,21 @@ if nargin < 3,
         'Highest centre frequency (Hz)';...
         'Lowest centre frequency (Hz)';...
         'Averaging method: p^2 (1), RT (2)';...
-        'Number of iterations of the smoothing filter'},...
+        'Number of iterations of the smoothing filter';...
+        'Burst start detection threshold (relative to RMS)'},...
         'Settings',...
         [1 30],...
-        {'1';'8000';'125';'1';'2'}); % Defaults
+        {'1';'8000';'125';'1';'2';'0.2'}); % Defaults
     
     param = str2num(char(param));
-    if length(param) < 5, param = []; end
+    if length(param) < 6, param = []; end
     if ~isempty(param)
         bpo = param(1);
         highestband = param(2);
         lowestband = param(3);
         avmethod = param(4);
         filteriterations = param(5);
+        threshold = param(6);
     else
         OUT = [];
         return
@@ -72,7 +74,8 @@ if ~isempty(audio) && ~isempty(fs) && ~isempty(filteriterations) && ~isempty(avm
     [~, chans, bands] = size(audio);
     
     % -------------------------------------------------------------------------
-    % Use audio3 to break up audio into decays
+    % Use burstindices to break up audio into decays & check latence &
+    % length
     % -------------------------------------------------------------------------
     
     if exist('burstindices','var')
@@ -87,7 +90,23 @@ if ~isempty(audio) && ~isempty(fs) && ~isempty(filteriterations) && ~isempty(avm
         % or work out some other way of finding decay period indices!!!
     end
     
+    audiorms = mean(audio.^2).^0.5;
+    % this is the simplest approach to latency checking - other approaches
+    % might be more robust
+    burststartinex = find(abs(audio)>=audiorms*threshold,1,'first');
+    audio = audio(burststartinex:end,:,:); % remove audio before start of first burst
+    if size(audio,1)< decayend(end)
+        disp('Audio seems to be too short for an analysis of the final decay')
+        if numberofdecays == 1
+            OUT = [];
+            return
+        end
+        decaystart = decaystart(1:end-1);
+        decayend = decayend(1:end-1);
+        numberofdecays = numberofdecays(1:end-1);
+    end
     
+    decayend = decayend - round((decayend-decaystart)*0.1); % 10% safety margin
     
     % -------------------------------------------------------------------------
     % Process decays
@@ -248,7 +267,7 @@ if ~isempty(audio) && ~isempty(fs) && ~isempty(filteriterations) && ~isempty(avm
         for dim3 = 1:length(flist)
             for dim4 = 1:numberofdecays
                 % find the indices for the relevant start and end samples
-                irstart = find(levdecay(:,dim2,dim3,dim4) >= -0.99, 1, 'first'); % 0 dB
+                irstart = find(levdecay(:,dim2,dim3,dim4) == 0, 1, 'first'); % 0 dB
                 tstart = find(levdecay(irstart:end,dim2,dim3,dim4) <= -5, 1, 'first'); % -5 dB
                 edtend = find(levdecay(irstart:end,dim2,dim3,dim4) <= -10, 1, 'first'); % -10 dB
                 t20end = find(levdecay(irstart:end,dim2,dim3,dim4) <= -25, 1, 'first'); % -25 dB
@@ -297,7 +316,7 @@ if ~isempty(audio) && ~isempty(fs) && ~isempty(filteriterations) && ~isempty(avm
                 %                     + q(2,dim2,dim3,dim4)).^2; % correlation coefficient, T30
                 
             end
-            irstart1(dim2,dim3) = find(levdecay(:,dim2,dim3) >= -0.99, 1, 'first'); % 0 dB
+            irstart1(dim2,dim3) = find(levdecay(:,dim2,dim3) == 0, 1, 'first'); % 0 dB
             tstart1(dim2,dim3) = find(levdecaymix(irstart1(dim2,dim3):end,dim2,dim3) <= -5, 1, 'first'); % -5 dB
             edtend1(dim2,dim3) = find(levdecaymix(irstart1(dim2,dim3):end,dim2,dim3) <= -10, 1, 'first'); % -10 dB
             t20end1(dim2,dim3) = find(levdecaymix(irstart1(dim2,dim3):end,dim2,dim3) <= -25, 1, 'first'); % -25 dB
