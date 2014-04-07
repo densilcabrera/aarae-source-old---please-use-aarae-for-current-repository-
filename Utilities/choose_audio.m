@@ -65,9 +65,10 @@ switch method
     case 2
         [filename,pathname,filterindex] = uigetfile(...
                     {'*.wav;*.mat','Calibration file (*.wav,*.mat)'});
+        [~,~,ext] = fileparts(filename);
         if filename ~= 0
             % Check type of file. First 'if' is for .mat, second is for .wav
-            if ~isempty(regexp(filename, '.mat', 'once'))
+            if strcmp(ext,'.mat') || strcmp(ext,'.MAT')
                 audio = importdata(fullfile(pathname,filename));
                 if ~isstruct(audio)
                     out.audio = audio;
@@ -85,7 +86,7 @@ switch method
                         warndlg('Invalid AARAE file format!','AARAE info')
                     end
                 end
-            elseif ~isempty(regexp(filename, '.wav', 'once'))
+            elseif strcmp(ext,'.wav') || strcmp(ext,'.WAV')
                 [out.audio out.fs] = wavread(fullfile(pathname,filename));
             else
                 out = [];
