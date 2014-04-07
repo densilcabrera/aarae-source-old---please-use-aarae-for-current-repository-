@@ -318,10 +318,10 @@ function load_btn_Callback(hObject, eventdata, handles)
 
 % Get path of the file to load
 [filename,handles.defaultaudiopath,filterindex] = uigetfile(...
-    {'*.wav;*.mat','Test Signals (*.wav,*.mat)';...
-    '*.wav;*.mat','Measurement files (*.wav,*.mat)';...
-    '*.wav;*.mat','Processed files (*.wav,*.mat)';...
-    '*.wav;*.mat','Result files (*.wav,*.mat)'},...
+    {'*.wav;*.mat;.WAV;.MAT','Test Signals (*.wav,*.mat)';...
+    '*.wav;*.mat;.WAV;.MAT','Measurement files (*.wav,*.mat)';...
+    '*.wav;*.mat;.WAV;.MAT','Processed files (*.wav,*.mat)';...
+    '*.wav;*.mat;.WAV;.MAT','Result files (*.wav,*.mat)'},...
     'Select audio file',handles.defaultaudiopath,...
     'MultiSelect','on');
 
@@ -334,7 +334,7 @@ for i = 1:length(filename)
     if filename{i} ~= 0
         [~,newleaf,ext] = fileparts(filename{i});
         % Check type of file. First 'if' is for .mat, second is for .wav
-        if strcmp(ext,'.mat')
+        if strcmp(ext,'.mat') || strcmp(ext,'.MAT')
             file = importdata(fullfile(handles.defaultaudiopath,filename{i}));
             if isstruct(file)
                 signaldata = file;
@@ -357,7 +357,7 @@ for i = 1:length(filename)
                 end
             end
         end
-        if strcmp(ext,'.wav')
+        if strcmp(ext,'.wav') || strcmp(ext,'.WAV')
             [signaldata.audio,signaldata.fs,signaldata.nbits] = wavread(fullfile(handles.defaultaudiopath,filename{i}));
         end;
 
@@ -1466,18 +1466,19 @@ switch method
         end
     case 2
         [filename,handles.defaultaudiopath,filterindex] = uigetfile(...
-                    {'*.wav;*.mat','Calibration file (*.wav,*.mat)'},...
+                    {'*.wav;*.mat;.WAV;.MAT','Calibration file (*.wav,*.mat)'},...
                     'Select audio file',handles.defaultaudiopath);
+        [~,~,ext] = fileparts(filename);
         if filename ~= 0
             % Check type of file. First 'if' is for .mat, second is for .wav
-            if ~isempty(regexp(filename, '.mat', 'once'))
+            if strcmp(ext,'.mat') || strcmp(ext,'.MAT')
                 file = importdata(fullfile(handles.defaultaudiopath,filename));
                 if isstruct(file)
                     caltone = file.audio;
                 else
                     caltone = file;
                 end
-            elseif ~isempty(regexp(filename, '.wav', 'once'))
+            elseif strcmp(ext,'.wav') || strcmp(ext,'.WAV')
                 caltone = wavread(fullfile(handles.defaultaudiopath,filename));
             else
                 caltone = [];
