@@ -37,7 +37,7 @@ if ~isempty(param) || nargin ~=0
     S = sin(2*pi * ( beta./(1+p).*(t.^(1+p)) + start_freq.*t + phi/360));
     rcos_len = round(length(S)*((rcos_ms*1e-3)/dur));
     sig_len = length(S);
-    rcoswin = hanning(2*rcos_len).';
+    rcoswin = hann(2*rcos_len).';
     S = [S(1:rcos_len).*rcoswin(1:rcos_len),S(rcos_len+1:sig_len-rcos_len),S(sig_len-rcos_len+1:sig_len).*rcoswin((rcos_len+1):(rcos_len*2))]';
     Sinv = flipud(S);
 
