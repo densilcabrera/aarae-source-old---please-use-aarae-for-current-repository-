@@ -840,7 +840,42 @@ if ~isempty(signal) && ~isempty(fs)
             ylabel('Loudness Level (phon)')
             legend('show','Location','EastOutside');
             hold off
+
     end; % switch doplot
+    
+    % Loudness statistics
+    Ncat = [InstantaneousLoudness, ShortTermLoudness, LongTermLoudness];
+    Nmean = mean(Ncat);
+    Nstd = std(Ncat);
+    Nmax = max(Ncat);
+    N1 = prctile(Ncat,99);
+    N2 = prctile(Ncat,98);
+    N3 = prctile(Ncat,97);
+    N4 = prctile(Ncat,96);
+    N5 = prctile(Ncat,95);
+    N10 = prctile(Ncat,90);
+    N20 = prctile(Ncat,80);
+    N30 = prctile(Ncat,70);
+    N40 = prctile(Ncat,60);
+    N50 = median(Ncat);
+    N60 = prctile(Ncat,40);
+    N70 = prctile(Ncat,30);
+    N80 = prctile(Ncat,20);
+    N90 = prctile(Ncat,10);
+    Nmin = min(Ncat);
+    
+    data = [Nmean;Nstd;Nmax;N1;N2;N3;N4;N5;N10;N20;N30;N40;N50;N60;N70;N80;N90;Nmin];
+    
+    % generate table of results
+    fig1 = figure('Name','Time-varying Loudness Statistics');
+    table1 = uitable('Data',data,...
+                'ColumnName',{'Instantaneous','Short-term','Long-term'},...
+                'RowName',{'Mean','Standard deviation','Maximum',...
+                'N1','N2','N3','N4',...
+                'N5','N10','N20','N30','N40','N50 (median)','N60',...
+                'N70','N80','N90','Minimum'});
+    disptables(fig1,table1); % AARAE function
+    
     if isstruct(IN)
         OUT.funcallback.name = 'Loudness_MGB2b.m';
         OUT.funcallback.inarg = {fs,filtermethod,cal,faster,decay,doplot};
