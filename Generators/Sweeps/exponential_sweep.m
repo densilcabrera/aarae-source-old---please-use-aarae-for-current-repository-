@@ -67,6 +67,7 @@ if ~isempty(param) || nargin ~=0
     OUT.fs = fs;
     OUT.tag = ['Sine sweep exp' num2str(dur)];
     OUT.properties.dur = dur;
+    OUT.properties.sig_len = sig_len;
     OUT.properties.freq = [start_freq, end_freq];
     OUT.funcallback.name = 'exponential_sweep.m';
     OUT.funcallback.inarg = {dur,start_freq,end_freq,fs};
