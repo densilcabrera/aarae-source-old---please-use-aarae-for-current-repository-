@@ -28,6 +28,7 @@ function output=TN_LeeCabreraMartensJASA2012(RIR, level, ERdB_User)
 % are necessary.
 %
 % By Doheon Lee and Densil Cabrera (2013)
+% version 1.00 (15 April 2014)
 
 % INPUT
 %     RIR:
@@ -171,7 +172,7 @@ for i=1:chan;
     LAF(:,i)=filter(bb,a,abs(LA(:,i))); % rectify and apply temporal integration
 end
 
-LAFmax=10*log10(sum(max(LAF.^2))); % (sum maxima for 2-chan)
+LAFmax=10*log10(mean(max(LAF.^2))); % (mean maxima for 2-chan)
 gainadjust=level-LAFmax;
 data=data.*10.^(gainadjust/20);
 
@@ -187,24 +188,17 @@ data=data.*10.^(gainadjust/20);
 %%%%%%%%%%%%%%%% EDTN AND TN CALCULATION %%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-[~, LoudnessDecay,~,time]=MGBLoudnessforTN(data, fs, 2, -55.62, 1, 500, 0);
-%[~, LoudnessDecay,~,time]=MGBLoudnessforTN(data, fs, 2, cal, 1, 500, 0);
-% if nargin == 3
-%     switch upper(param)
-%         case 'TN'
-%             ERdB=[-5 -25]; %Evaluation range in dB
-%         case 'EDTN'
-%             ERdB=[0 -10];%Evaluation range in dB
-%     end
-% end
+[~, LoudnessDecay,~,time]=MGBLoudnessforTN(data, fs, 2, -60.83, 1, 500, 0);
 
 LoudnessDecaylog=log(LoudnessDecay)';
+peaks=findpeaks(LoudnessDecay, 'minpeakheight', max(LoudnessDecay)*0.5, 'minpeakdistance', 5); 
+directSound=peaks(1); % Direct sound in loudness
 
 % EDTN CALCULATION
 ERdB = [0 -10]; % Evaluation range in decibel-like units
 ERsone=(10.^(ERdB/20)).^0.6;%Evaluation range in sone
-Point1_EDTN= find(LoudnessDecay>=(max(LoudnessDecay)*ERsone(1)),1,'last');
-Point2_EDTN= find(LoudnessDecay>=(max(LoudnessDecay)*ERsone(2)),1,'last');
+Point1_EDTN= find(LoudnessDecay==(directSound*ERsone(1)),1,'last');
+Point2_EDTN= find(LoudnessDecay>=(directSound*ERsone(2)),1,'last');
 P_EDTN=polyfit(time(Point1_EDTN:Point2_EDTN),LoudnessDecaylog(Point1_EDTN:Point2_EDTN),1);
 BestFitLineEDTN=polyval(P_EDTN,time);
 
@@ -219,8 +213,8 @@ end
 
 ERdB = [-5 -25]; % Evaluation range in decibel-like units
 ERsone=(10.^(ERdB/20)).^0.6;%Evaluation range in sone
-Point1_TN= find(LoudnessDecay>=(max(LoudnessDecay)*ERsone(1)),1,'last');
-Point2_TN= find(LoudnessDecay>=(max(LoudnessDecay)*ERsone(2)),1,'last');
+Point1_TN= find(LoudnessDecay>=(directSound*ERsone(1)),1,'last');
+Point2_TN= find(LoudnessDecay>=(directSound*ERsone(2)),1,'last');
 P_TN=polyfit(time(Point1_TN:Point2_TN),LoudnessDecaylog(Point1_TN:Point2_TN),1);
 BestFitLineTN=polyval(P_TN,time);
 
@@ -239,8 +233,14 @@ if exist('TN_User_start', 'var') || nargin == 3
         ERdB = ERdB_User;
     end
     ERsone=(10.^(ERdB/20)).^0.6;%Evaluation range in sone
-    Point1_TNU= find(LoudnessDecay>=(max(LoudnessDecay)*ERsone(1)),1,'last');
-    Point2_TNU= find(LoudnessDecay>=(max(LoudnessDecay)*ERsone(2)),1,'last');
+    if ERdB(1) == 0
+        Point1_TNU= find(LoudnessDecay==(directSound*ERsone(1)),1,'last');
+        Point2_TNU= find(LoudnessDecay>=(directSound*ERsone(2)),1,'last');
+    else
+        Point1_TNU=find(LoudnessDecay>=(directSound*ERsone(1)),1,'last');
+        Point2_TNU= find(LoudnessDecay>=(directSound*ERsone(2)),1,'last');
+    end
+    
     P_TNU=polyfit(time(Point1_TNU:Point2_TNU),LoudnessDecaylog(Point1_TNU:Point2_TNU),1);
     BestFitLineTNU=polyval(P_TNU,time);
     
@@ -969,7 +969,7 @@ end
                 % roex component levels
                 % this is slow due to the large number of spectrum components
                 %tic
-                intensity = zeros(nfreq,nfreq);rge number of spectrum components
+                intensity = zeros(nfreq,nfreq);
                 intensity(indg) = (1+p(col)'.*(g(indg))).* exp(-p(col)'.*(g(indg))) .* I(row,channel);
                 
                 
