@@ -2,11 +2,11 @@ function [OUT, varargout] = Loudness_MGB2b(IN,fs,filtermethod,cal,faster,decay,d
 % This function cacluclates loudness based on models by Moore, Glasberg and
 % Baer, including Glasberg and Moore's 2002 time-varying loudness model.
 %
-% It is a port of code from PsySound3. See code comments for more
-% information.
+% It is a port and extension of code from PsySound3. See code comments for
+% more information.
 %
 % Code by Densil Cabrera & Doheon Lee
-% version 1.00 (8 April 2014)
+% version 1.01 (16 April 2014)
 
 % SOME COMMENTS FROM ORIGINAL FUNCTION BELOW
 % INPUTS
@@ -87,9 +87,10 @@ function [OUT, varargout] = Loudness_MGB2b(IN,fs,filtermethod,cal,faster,decay,d
 %
 % "doplot" specifies whether a plot is produced at the end.
 % 0 (or ommiting doplot) gives no plot
-% 1 gives a plot of loudness (in sones)
-% 2 gives a plot of loudness level (in phons)
-% 3 does the same plot as 2, and also returns the loudness level instead of
+% 1 gives plots of loudness and specific loudness
+% 2 gives a plot of loudness only (in sones)
+% 3 gives a plot of loudness level (in phons)
+% 4 does the same plot as 3, and also returns the loudness level instead of
 % loudness in the function's output arguments
 %
 % OUTPUTS
@@ -139,7 +140,7 @@ if nargin ==1
         'Calibration offset (dB)';...
         'Faster (0 | 1)';...
         'Duration of additional decay at end (ms)';...
-        'PLOT TYPE: Loudness (1) or Loudness Level (2)'},...
+        'PLOT TYPE: Loudness with specific loudness (1), Loudness only (2) or Loudness Level (3)'},...
         'Loudness Settings',...
         [1 60],...
         {'1';num2str(cal);'1';'1000';'1'});
@@ -418,7 +419,16 @@ if ~isempty(signal) && ~isempty(fs)
     if faster==0
         f = f1; % frequencies in Hz
     else
-        f = [15.625:15.625:2671.875,2695.3125:31.25:4132.8125,4171.875:46.875:5578.125,5632.8125:62.5:7007.8125,7078.125:78.125:8406.25,8492.1875:93.75:9898.4375,10000:109.375:11312.5,11429.6875:125:12804.6875,12937.5:140.625:14625,14773.4375,14929.6875]; % frequencies in Hz
+        f = [15.625:15.625:2671.875,...
+            2695.3125:31.25:4132.8125,...
+            4171.875:46.875:5578.125,...
+            5632.8125:62.5:7007.8125,...
+            7078.125:78.125:8406.25,...
+            8492.1875:93.75:9898.4375,...
+            10000:109.375:11312.5,...
+            11429.6875:125:12804.6875,...
+            12937.5:140.625:14625,...
+            14773.4375,14929.6875]; % frequencies in Hz
         % 346 components < 0.1 erb spacing where possible
     end
     nfreq = length(f); % number of frequencies
@@ -432,7 +442,7 @@ if ~isempty(signal) && ~isempty(fs)
     erb = 24.673 * (4.368 .* f./1000 + 1);
     p = 4 .* f ./ erb;
     g = abs((repmat(f',1,nfreq)-repmat(f,nfreq,1))./repmat(f,nfreq,1)); %memory hungry but fast
-    [row col] = find(g <= 2);
+    [row, col] = find(g <= 2);
     indg = find(g <= 2);
     % row is "component" in the old code
     % col is "i" in the old code
@@ -451,7 +461,7 @@ if ~isempty(signal) && ~isempty(fs)
     p51=repmat(p51,nfreq,1);
     p2(g2pos) = p51(g2pos);
     g2neg = g2<0;
-    [row_g2_neg col_g2_neg]=find(g2<0);
+    [row_g2_neg, col_g2_neg]=find(g2<0);
     
     % Binaural
     B=0.08;
@@ -471,12 +481,15 @@ if ~isempty(signal) && ~isempty(fs)
     A = ones(nERBS,1).*4.62;
     g_N = ones(nERBS,1); % g
     %note - 1:35 are characteristic frequencies less than 500 Hz
-    Ethrq(1:35) = 10.^(0.1.*((-4.500239673E-03.*ERBSfreq(1:35) + 3.666468615 + 1272.362339./ERBSfreq(1:35))));
+    Ethrq(1:35) = 10.^(0.1.*((-4.500239673E-03.*ERBSfreq(1:35)...
+        + 3.666468615 + 1272.362339./ERBSfreq(1:35))));
     g_N(1:35)=2.31./Ethrq(1:35);
     g_NdB = 10*log10(g_N);
-    A(1:35) = -1.03703703E-04 .* (g_NdB(1:35).^3) -6.03174603E-04 .* (g_NdB(1:35).^2) ...
+    A(1:35) = -1.03703703E-04 .* (g_NdB(1:35).^3) -6.03174603E-04...
+        .* (g_NdB(1:35).^2) ...
         -1.21375661E-01 .* g_NdB(1:35) + 4.58825396;
-    alpha(1:35) = 1.346860977E-23 .* (g_NdB(1:35).^3) +  2.571428571E-05 .* (g_NdB(1:35).^2) ...
+    alpha(1:35) = 1.346860977E-23 .* (g_NdB(1:35).^3)...
+        +  2.571428571E-05 .* (g_NdB(1:35).^2) ...
         -2.071428571E-03 .* g_NdB(1:35) + 1.997142857E-01;
     SpecLoudL = zeros(nERBS,1); SpecLoudR=zeros(nERBS,1);
     
@@ -495,6 +508,8 @@ if ~isempty(signal) && ~isempty(fs)
     InstantaneousLoudness = ones(nwindows+2,1) .* minloud;
     ShortTermLoudness = ones(nwindows+2,1) .* minloud;
     LongTermLoudness = ones(nwindows+2,1) .* minloud;
+    % Time-varying specific loudness (instantaneous)
+    SpecLoud_t = zeros(nERBS,nwindows+2); % +2?
     
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     %%%%%%%%%%%%%%%%%%%%%%%%%% MAIN LOOP %%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -718,7 +733,9 @@ if ~isempty(signal) && ~isempty(fs)
                 end %if channel ==
             end % if nchan
         end % for channel = 1:nchan
+        
         index = windowcount+1;
+        SpecLoud_t(:,index) = SpecLoud;
         InstantaneousLoudness(index) = sum(SpecLoud)*0.25; % multiply by erb step
         if InstantaneousLoudness(index) < minloud
             InstantaneousLoudness(index) = minloud;
@@ -776,18 +793,51 @@ if ~isempty(signal) && ~isempty(fs)
     
     switch doplot
         case 1
-            % plot of loudness
-            figure('Name','Time-varying loudness')
+        % plot of loudness and specific loudness
+            figure('Name','Loudness')
+            subplot(2,2,1)
             plot(times,InstantaneousLoudness,'k','DisplayName','Instantaneous');
             hold on
             plot(times,ShortTermLoudness,'r','DisplayName','Short term');
             plot(times,LongTermLoudness,'b','DisplayName','Long term');
             xlabel('Time (s)');
             ylabel('Loudness (sone)');
-            legend('show','Location','EastOutside');
+            title('Time-varying loudness')
+            legend('show','Location','NorthEast');
             hold off
             
-        case 2 | 3
+            subplot(2,2,4)
+            plot(ERBS,mean(SpecLoud_t,2),'r','DisplayName','Mean')
+            hold on
+            plot(ERBS,prctile(SpecLoud_t,95,2),'k','DisplayName','95%')
+            plot(ERBS,prctile(SpecLoud_t,90,2),'b','DisplayName','90%')
+            xlabel('Auditory filter (erb)')
+            ylabel('Specific loudness (sones/erb)')
+            title('Specific loudness pattern')
+            legend('show','Location','NorthEast');
+            hold off
+            
+            subplot(2,2,3)
+            imagesc(times(1:nwindows),ERBS,SpecLoud_t)
+            set(gca,'YDir','normal');
+            xlabel('Time (s)')
+            ylabel('Instantaneous specific loudness (sones/erb)')
+            title('Time-varying specific loudness pattern')
+        
+        case 2
+            % just plot loudness
+            figure('Name','Loudness')
+            plot(times,InstantaneousLoudness,'k','DisplayName','Instantaneous');
+            hold on
+            plot(times,ShortTermLoudness,'r','DisplayName','Short term');
+            plot(times,LongTermLoudness,'b','DisplayName','Long term');
+            xlabel('Time (s)');
+            ylabel('Loudness (sone)');
+            title('Time-varying loudness')
+            legend('show','Location','NorthEast');
+            hold off
+         
+        case 3 | 4
             % plot of loudness level
             % combine loudness into matrix for conversion to loudness level
             N=[InstantaneousLoudness, ShortTermLoudness, LongTermLoudness];
@@ -824,11 +874,11 @@ if ~isempty(signal) && ~isempty(fs)
                 -6.997514386301266  * log2sone(Nmedium2).^2 +25.386669115791680 * log2sone(Nmedium2) ...
                 +26.087617846072916; %+26.472581191744133;
             
-            if doplot == 3
+            if doplot == 4
                 InstantaneousLoudness = LN(:,1);
                 ShortTermLoudness = LN(:,2);
                 LongTermLoudness = LN(:,3);
-            end % if doplot == 3
+            end % if doplot == 4
             
             clear log2sone
             figure('Name','Time-varying loudness level')
@@ -842,6 +892,8 @@ if ~isempty(signal) && ~isempty(fs)
             hold off
             
     end; % switch doplot
+    
+
     
     % Loudness statistics
     Ncat = [InstantaneousLoudness, ShortTermLoudness, LongTermLoudness];
