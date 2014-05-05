@@ -307,7 +307,7 @@ else
     pause(0.000001)
     pause off
     % Set record object
-    handles.har = dsp.AudioRecorder('SampleRate',handles.outputdata.fs,'QueueDuration',str2double(get(handles.IN_qdur,'String')),'OutputDataType','double','NumChannels',handles.numchs,'BufferSizeSource','Property','BufferSize',str2double(get(handles.IN_buffer,'String')));
+    handles.har = dsp.AudioRecorder('SampleRate',handles.fs,'OutputDataType','double','NumChannels',handles.numchs,'BufferSizeSource','Property','BufferSize',str2double(get(handles.IN_buffer,'String')),'QueueDuration',str2double(get(handles.IN_qdur,'String')));
     guidata(hObject,handles)
     handles.rec = [];
     set(hObject,'BackgroundColor','red');
