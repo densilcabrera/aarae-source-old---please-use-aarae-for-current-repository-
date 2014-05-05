@@ -23,7 +23,7 @@ function varargout = audio_recorder(varargin)
 
 % Edit the above text to modify the response to help audio_recorder
 
-% Last Modified by GUIDE v2.5 18-Mar-2014 11:25:22
+% Last Modified by GUIDE v2.5 05-May-2014 10:16:59
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -247,9 +247,9 @@ if get(handles.pb_enable,'Value') == 1
     pause(0.000001)
     pause off
     % Set playback object
-    handles.hap = dsp.AudioPlayer('SampleRate',handles.outputdata.fs,'QueueDuration',.1,'BufferSizeSource','Property','BufferSize',128);
+    handles.hap = dsp.AudioPlayer('SampleRate',handles.outputdata.fs,'QueueDuration',str2double(get(handles.IN_qdur,'String')),'BufferSizeSource','Property','BufferSize',str2double(get(handles.IN_buffer,'String')));
     % Set record object
-    handles.har = dsp.AudioRecorder('SampleRate',handles.outputdata.fs,'OutputDataType','double','NumChannels',handles.numchs,'BufferSizeSource','Property','BufferSize',128);
+    handles.har = dsp.AudioRecorder('SampleRate',handles.outputdata.fs,'QueueDuration',str2double(get(handles.IN_qdur,'String')),'OutputDataType','double','NumChannels',handles.numchs,'BufferSizeSource','Property','BufferSize',str2double(get(handles.IN_buffer,'String')));
     % Set playback audio
     handles.hsr1 = dsp.SignalSource;
     playbackaudio = handles.outputdata.audio;
@@ -307,7 +307,7 @@ else
     pause(0.000001)
     pause off
     % Set record object
-    handles.har = dsp.AudioRecorder('SampleRate',handles.fs,'OutputDataType','double','NumChannels',handles.numchs,'BufferSizeSource','Property','BufferSize',128,'QueueDuration',.1);
+    handles.har = dsp.AudioRecorder('SampleRate',handles.outputdata.fs,'QueueDuration',str2double(get(handles.IN_qdur,'String')),'OutputDataType','double','NumChannels',handles.numchs,'BufferSizeSource','Property','BufferSize',str2double(get(handles.IN_buffer,'String')));
     guidata(hObject,handles)
     handles.rec = [];
     set(hObject,'BackgroundColor','red');
@@ -810,4 +810,50 @@ else
     figure
     subplot(2,1,1); plot(time2,handles.testsignal); title('Recorded signal')
     subplot(2,1,2); plot(time1,handles.rec); title('System calibrated recording')
+end
+
+
+
+function IN_qdur_Callback(hObject, eventdata, handles)
+% hObject    handle to IN_qdur (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: get(hObject,'String') returns contents of IN_qdur as text
+%        str2double(get(hObject,'String')) returns contents of IN_qdur as a double
+
+
+% --- Executes during object creation, after setting all properties.
+function IN_qdur_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to IN_qdur (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: edit controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+
+
+function IN_buffer_Callback(hObject, eventdata, handles)
+% hObject    handle to IN_buffer (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: get(hObject,'String') returns contents of IN_buffer as text
+%        str2double(get(hObject,'String')) returns contents of IN_buffer as a double
+
+
+% --- Executes during object creation, after setting all properties.
+function IN_buffer_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to IN_buffer (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: edit controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
 end

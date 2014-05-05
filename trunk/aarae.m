@@ -663,7 +663,7 @@ function IR_btn_Callback(hObject, eventdata, handles)
 hMain = getappdata(0,'hMain');
 audiodata = getappdata(hMain,'testsignal');
 S = audiodata.audio;
-invS = audiodata.audio2;
+invS = repmat(audiodata.audio2,1,size(audiodata.audio,2));
 fs = audiodata.fs;
 nbits = audiodata.nbits;
 selectedNodes = handles.mytree.getSelectedNodes;
