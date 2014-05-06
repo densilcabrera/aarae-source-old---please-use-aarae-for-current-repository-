@@ -1,4 +1,4 @@
-function [OUT, varargout] = sweep_from_signal(IN, hiF, loF, Duration, LevelLimit,tukeyparam,fs)
+function [OUT, varargout] = sweep_from_signal(IN, hiF, loF, Duration, smoothval, LevelLimit,tukeyparam,fs)
 % This function derives a swept sinusoid from the power spectrum of the
 % input audio. The swept sinusoid has approximately the same power spectrum
 % as the input audio. An inverse filter is also output in audio2, so this
@@ -178,8 +178,13 @@ if ~isempty(signal) && ~isempty(fs)
         OUT = IN;
         OUT.audio = audio;
         OUT.audio2 = audio2;
+        OUT.properties.dur = Duration;
+        OUT.properties.LevelRange = LevelLimit;
+        OUT.properties.tukey = tukeyparam;
+        OUT.properties.smoothing = smoothval;
+        OUT.properties.freq = [loF, hiF];
         OUT.funcallback.name = 'sweep_from_signal.m';
-        OUT.funcallback.inarg = {hiF, loF, Duration, LevelLimit,tukeyparam};
+        OUT.funcallback.inarg = {hiF, loF, Duration, smoothval, LevelLimit,tukeyparam};
     else
         OUT = audio;
     end
