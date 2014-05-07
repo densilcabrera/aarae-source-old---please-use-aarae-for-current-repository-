@@ -23,7 +23,7 @@ function varargout = aarae(varargin)
 
 % Edit the above text to modify the response to help aarae
 
-% Last Modified by GUIDE v2.5 03-Apr-2014 13:54:59
+% Last Modified by GUIDE v2.5 01-May-2014 13:55:14
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -2069,3 +2069,157 @@ xlims = cell2mat(get(iplots,'Xlim'));
 set(iplots,'Xlim',[min(xlims(:,1)) max(xlims(:,2))])
 ylims = cell2mat(get(iplots,'Ylim'));
 set(iplots,'Ylim',[min(ylims(:,1)) max(ylims(:,2))])
+uicontrol('Style', 'pushbutton', 'String', 'Axes limits',...
+        'Position', [0 0 65 30],...
+        'Callback', 'setaxeslimits');
+
+
+% --- Executes on selection change in ntable_popup.
+function ntable_popup_Callback(hObject, eventdata, handles)
+% hObject    handle to ntable_popup (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: contents = cellstr(get(hObject,'String')) returns ntable_popup contents as cell array
+%        contents{get(hObject,'Value')} returns selected item from ntable_popup
+eventdata.NewValue = get(handles.Xvalues_sel,'SelectedObject');
+Xvalues_sel_SelectionChangeFcn(hObject, eventdata, handles)
+Yvalues_box_Callback(hObject, eventdata, handles)
+
+% --- Executes during object creation, after setting all properties.
+function ntable_popup_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to ntable_popup (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: popupmenu controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+
+% --- Executes on selection change in Xvalues_box.
+function Xvalues_box_Callback(hObject, eventdata, handles)
+% hObject    handle to Xvalues_box (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: contents = cellstr(get(hObject,'String')) returns Xvalues_box contents as cell array
+%        contents{get(hObject,'Value')} returns selected item from Xvalues_box
+
+
+% --- Executes during object creation, after setting all properties.
+function Xvalues_box_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to Xvalues_box (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: listbox controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+
+% --- Executes on selection change in Yvalues_box.
+function Yvalues_box_Callback(hObject, eventdata, handles)
+% hObject    handle to Yvalues_box (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: contents = cellstr(get(hObject,'String')) returns Yvalues_box contents as cell array
+%        contents{get(hObject,'Value')} returns selected item from Yvalues_box
+selectedNodes = handles.mytree.getSelectedNodes;
+data = selectedNodes(1).handle.UserData;
+ntable = get(handles.ntable_popup,'Value');
+Xvalues = get(handles.Xvalues_sel,'SelectedObject');
+Xvalues = get(Xvalues,'tag');
+switch Xvalues
+    case 'radiobutton1'
+        bar(handles.axesdata,data.tables(ntable).Data(:,get(handles.Yvalues_box,'Value')),'FaceColor',[0 0.5 0.5])
+        set(handles.axesdata,'XTickLabel',data.tables(ntable).RowName)
+    case 'radiobutton2'
+        bar(handles.axesdata,data.tables(ntable).Data(get(handles.Yvalues_box,'Value'),:),'FaceColor',[0 0.5 0.5])
+        set(handles.axesdata,'XTickLabel',data.tables(ntable).ColumnName)
+end
+
+% --- Executes during object creation, after setting all properties.
+function Yvalues_box_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to Yvalues_box (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: listbox controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+
+% --- Executes when selected object is changed in Xvalues_sel.
+function Xvalues_sel_SelectionChangeFcn(hObject, eventdata, handles)
+% hObject    handle to the selected object in Xvalues_sel 
+% eventdata  structure with the following fields (see UIBUTTONGROUP)
+%	EventName: string 'SelectionChanged' (read only)
+%	OldValue: handle of the previously selected object or empty if none was selected
+%	NewValue: handle of the currently selected object
+% handles    structure with handles and user data (see GUIDATA)
+selectedNodes = handles.mytree.getSelectedNodes;
+data = selectedNodes(1).handle.UserData;
+ntable = get(handles.ntable_popup,'Value');
+switch get(eventdata.NewValue,'Tag')
+    case 'radiobutton1'
+        set(handles.Xvalues_box,'String',data.tables(ntable).RowName,'Value',1)
+        set(handles.Yvalues_box,'String',data.tables(ntable).ColumnName,'Value',1)
+    case 'radiobutton2'
+        set(handles.Yvalues_box,'String',data.tables(ntable).RowName,'Value',1)
+        set(handles.Xvalues_box,'String',data.tables(ntable).ColumnName,'Value',1)
+end
+Yvalues_box_Callback(hObject, eventdata, handles)
+
+
+% --- Executes on selection change in nchart_popup.
+function nchart_popup_Callback(hObject, eventdata, handles)
+% hObject    handle to nchart_popup (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: contents = cellstr(get(hObject,'String')) returns nchart_popup contents as cell array
+%        contents{get(hObject,'Value')} returns selected item from nchart_popup
+plot(handles.axesdata,0,0)
+selectedNodes = handles.mytree.getSelectedNodes;
+data = selectedNodes(1).handle.UserData;
+contents = cellstr(get(hObject,'String'));
+if ~strcmp(contents{get(hObject,'Value')},' ')
+    linedata = data.lines.(contents{get(hObject,'Value')}).data;
+    axis2 = handles.axesdata;
+    for j = 1:length(linedata)
+        l1 = line;
+        linedata(j,1).Parent = axis2;
+        dif = intersect(fieldnames(linedata),fieldnames(set(l1)));
+        for i = 1:size(dif,1)
+            set(l1,dif{i},linedata(j,1).(dif{i,1}))
+        end
+    end
+    axesprop = data.lines.(contents{get(hObject,'Value')}).axisproperties;
+    xlabel(handles.axesdata,axesprop.xlabel)
+    ylabel(handles.axesdata,axesprop.ylabel)
+    zlabel(handles.axesdata,axesprop.zlabel)
+    set(handles.axesdata,'XScale',axesprop.xscale)
+    set(handles.axesdata,'YScale',axesprop.yscale)
+    set(handles.axesdata,'ZScale',axesprop.zscale)
+end
+
+
+% --- Executes during object creation, after setting all properties.
+function nchart_popup_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to nchart_popup (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: popupmenu controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end

@@ -13,7 +13,6 @@ function nodes = mySelectFcn(tree, value)
         set(mainHandles.compare_btn,'Visible','off')
     end
     if ~isempty(selectedNodes)
-        
         % Call the 'desktop'
         hMain = getappdata(0,'hMain');
         selectedNodes = selectedNodes(1);
@@ -28,9 +27,15 @@ function nodes = mySelectFcn(tree, value)
             set(mainHandles.audiodatatext,'String',['Selected: ' selectedNodes.getName.char audiodatatext]); % Output contents in textbox below the tree
             set(mainHandles.datatext,'Visible','off');
             set(mainHandles.datatext,'String',[]);
+            set(mainHandles.data_panel1,'Visible','off');
+            set(mainHandles.data_panel2,'Visible','off');
             set(mainHandles.IR_btn,'Visible','off'); 
             set(mainHandles.tools_panel,'Visible','on');
             set([mainHandles.edit_btn mainHandles.cal_btn],'Enable','on');
+            set(mainHandles.axestime,'Visible','on');
+            set(mainHandles.axesfreq,'Visible','on');
+            plot(mainHandles.axesdata,0,0)
+            set(mainHandles.axesdata,'Visible','off');
             set(mainHandles.time_popup,'Visible','on');
             set(mainHandles.freq_popup,'Visible','on');
             set(mainHandles.smoothtime_popup,'Visible','on');
@@ -67,17 +72,40 @@ function nodes = mySelectFcn(tree, value)
             end
         elseif ~isempty(audiodata) && ~isfield(audiodata,'audio')% If there's data saved in the leaf but not audio...
             plot(mainHandles.axestime,0,0)
-            axis(mainHandles.axestime,[0 10 -1 1]);
-            xlabel(mainHandles.axestime,'Time [s]');
-            set(mainHandles.axestime,'XTickLabel',num2str(get(mainHandles.axestime,'XTick').'))
             semilogx(mainHandles.axesfreq,0,0)
-            xlabel(mainHandles.axesfreq,'Frequency [Hz]');
-            xlim(mainHandles.axesfreq,[20 20000])
-            set(mainHandles.axesfreq,'XTickLabel',num2str(get(mainHandles.axesfreq,'XTick').'))
+            set(mainHandles.axestime,'Visible','off');
+            set(mainHandles.axesfreq,'Visible','off');
+            set(mainHandles.axesdata,'Visible','on');
+%            axis(mainHandles.axestime,[0 10 -1 1]);
+%            xlabel(mainHandles.axestime,'Time [s]');
+%            set(mainHandles.axestime,'XTickLabel',num2str(get(mainHandles.axestime,'XTick').'))
+%            xlabel(mainHandles.axesfreq,'Frequency [Hz]');
+%            xlim(mainHandles.axesfreq,[20 20000])
+%            set(mainHandles.axesfreq,'XTickLabel',num2str(get(mainHandles.axesfreq,'XTick').'))
             set(mainHandles.audiodatatext,'String',[]);
             datatext = evalc('audiodata');
             set(mainHandles.datatext,'Visible','on');
             set(mainHandles.datatext,'String',['Selected: ' selectedNodes.getName.char datatext]); % Output contents in textbox below the tree
+            cla(mainHandles.axesdata)
+            if isfield(audiodata,'lines')
+                set(mainHandles.data_panel1,'Visible','on');
+                set(mainHandles.nchart_popup,'String',[' ';fieldnames(audiodata.lines)])
+                set(mainHandles.nchart_popup,'Value',1)
+            else
+                set(mainHandles.data_panel1,'Visible','off');
+            end
+            if isfield(audiodata,'tables')
+                set(mainHandles.data_panel2,'Visible','on');
+                set(mainHandles.Xvalues_sel,'SelectedObject',mainHandles.radiobutton1);
+                set(mainHandles.ntable_popup,'String',cellstr(num2str((1:length(audiodata.tables))')));
+                set(mainHandles.ntable_popup,'Value',1);
+                set(mainHandles.Xvalues_box,'String',audiodata.tables(1).RowName)
+                set(mainHandles.Yvalues_box,'String',audiodata.tables(1).ColumnName)
+                bar(mainHandles.axesdata,audiodata.tables(1).Data(:,1),'FaceColor',[0 0.5 0.5])
+                set(mainHandles.axesdata,'XTickLabel',audiodata.tables(1).RowName)
+            else
+                set(mainHandles.data_panel2,'Visible','off');
+            end
             set(mainHandles.IR_btn,'Visible','off');
             set(mainHandles.tools_panel,'Visible','on');
             set([mainHandles.edit_btn mainHandles.cal_btn],'Enable','off')
@@ -95,16 +123,16 @@ function nodes = mySelectFcn(tree, value)
             % If selection has no data, hide everything and don't display
             % data
             plot(mainHandles.axestime,0,0)
-            axis(mainHandles.axestime,[0 10 -1 1]);
-            xlabel(mainHandles.axestime,'Time [s]');
-            set(mainHandles.axestime,'XTickLabel',num2str(get(mainHandles.axestime,'XTick').'))
             semilogx(mainHandles.axesfreq,0,0)
-            xlabel(mainHandles.axesfreq,'Frequency [Hz]');
-            xlim(mainHandles.axesfreq,[20 20000])
-            set(mainHandles.axesfreq,'XTickLabel',num2str(get(mainHandles.axesfreq,'XTick').'))
+            plot(mainHandles.axesdata,0,0)
+            set(mainHandles.axestime,'Visible','off');
+            set(mainHandles.axesfreq,'Visible','off');
+            set(mainHandles.axesdata,'Visible','off');
             set(mainHandles.audiodatatext,'String',[]);
             set(mainHandles.datatext,'Visible','off');
             set(mainHandles.datatext,'String',[]);
+            set(mainHandles.data_panel1,'Visible','off');
+            set(mainHandles.data_panel2,'Visible','off');
             set(mainHandles.IR_btn,'Visible','off');
             set(mainHandles.tools_panel,'Visible','off');
             set(mainHandles.process_panel,'Visible','off');
