@@ -908,9 +908,6 @@ if ~isempty(ir) && ~isempty(fs) && ~isempty(startthresh) && ~isempty(bpo) && ~is
         out.TR_T20 = permute(TR_T20,[2,3,1]);
         out.TR_T30 = permute(TR_T30,[2,3,1]);
     end
-    
-    out.funcallback.name = 'ReverberationTime_IR1.m';
-    out.funcallback.inarg = {fs,startthresh,bpo,doplot,filterstrength,phasemode,noisecomp,autotrunc,f_low,f_hi};
 
     % if chans == 1
     %     disp(out)
@@ -987,7 +984,7 @@ if ~isempty(ir) && ~isempty(fs) && ~isempty(startthresh) && ~isempty(bpo) && ~is
     %--------------------------------------------------------------------------
     % AARAE TABLE
     %--------------------------------------------------------------------------
-
+    out.tables = [];
     if isstruct(data)
         for ch = 1:chans
             f = figure('Name','Reverberation Parameters', ...
@@ -1023,11 +1020,12 @@ if ~isempty(ir) && ~isempty(fs) && ~isempty(startthresh) && ~isempty(bpo) && ~is
                 rnames2 = {'EDT', 'T20', 'T30'};
                 t2 =uitable('Data',dat2,'ColumnName',cnames2,'RowName',rnames2);
                 set(t2,'ColumnWidth',{90});
-                disptables(f,[t1 t2]);
+                [~,tables] = disptables(f,[t1 t2]);
             else
-                disptables(f,t1);
+                [~,tables] = disptables(f,t1);
             end
-
+            %out = [];
+            out.tables = [out.tables tables];
         end
 
         %--------------------------------------------------------------------------
@@ -1223,6 +1221,8 @@ if ~isempty(ir) && ~isempty(fs) && ~isempty(startthresh) && ~isempty(bpo) && ~is
             hold off        
         end    
     end
+    out.funcallback.name = 'ReverberationTime_IR1.m';
+    out.funcallback.inarg = {fs,startthresh,bpo,doplot,filterstrength,phasemode,noisecomp,autotrunc,f_low,f_hi};
 else
     out = [];
 end

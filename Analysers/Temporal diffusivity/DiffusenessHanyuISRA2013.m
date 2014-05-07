@@ -249,9 +249,9 @@ if ~isempty(data) && ~isempty(fs) && ~isempty(starttime) && ~isempty(endtime) &&
         end    
         xlabel('Time (s)')
         ylabel('h^2')
-
+        
         hold off
-
+        out.lines.h2 = getplotdata;
 
         %***********************
         subplot(2,1,2)
@@ -289,7 +289,7 @@ if ~isempty(data) && ~isempty(fs) && ~isempty(starttime) && ~isempty(endtime) &&
         ylabel('Running average of h(t)^2')
 
         hold off
-
+        out.lines.rah2 = getplotdata;
 
         %***********************
         % Create a figure to follow Hanyu's Figure 4
@@ -332,7 +332,7 @@ if ~isempty(data) && ~isempty(fs) && ~isempty(starttime) && ~isempty(endtime) &&
             'LineStyle','--','Color',[0.5 0.5 0.5])
 
         hold off
-        
+        out.lines.z = getplotdata;
         % results table
         fig3 = figure('Name','Degree of time series fluctuation (Hanyu ISRA 2013)');
         if exist('chanID','var')
