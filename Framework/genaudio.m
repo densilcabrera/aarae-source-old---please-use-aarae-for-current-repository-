@@ -23,7 +23,7 @@ function varargout = genaudio(varargin)
 
 % Edit the above text to modify the response to help genaudio
 
-% Last Modified by GUIDE v2.5 17-Mar-2014 09:40:50
+% Last Modified by GUIDE v2.5 08-May-2014 16:22:38
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -124,15 +124,22 @@ set(hObject,'Enable','on');
 
 if ~isempty(handles.signaldata)
     set(handles.OK_Btn,'Enable','on')
-    if handles.cycles > 1
+    silence_check = get(handles.silence_chk','Value');
+    if handles.cycles > 1 || silence_check == 1
         numchannels = size(handles.signaldata.audio,2);
         levelrange = linspace(abs(str2num(get(handles.levelrange_IN,'String'))).*-1,0,handles.cycles);
-        audio = [];
-        for i = 1:handles.cycles
+        if silence_check == 1
+            audio = [zeros(size(handles.signaldata.audio));zeros(handles.signaldata.fs,numchannels)];
+        else
+            audio = [];
+        end
+        cycles = handles.cycles;
+        for i = 1:cycles
             chunk = [handles.signaldata.audio;zeros(handles.signaldata.fs,size(handles.signaldata.audio,2))];
             audio = [audio;chunk.*10.^(levelrange(i)/20)];
         end
-        handles.signaldata.properties.startflag = ((0:handles.cycles-1)*length(chunk))+1;
+        if silence_check == 1, cycles = cycles + 1; levelrange = [-Inf levelrange]; end
+        handles.signaldata.properties.startflag = ((0:cycles-1)*length(chunk))+1;
         handles.signaldata.audio = audio;
         handles.signaldata.properties.relgain = levelrange(1,:);
     end
@@ -405,3 +412,12 @@ function levelrange_IN_CreateFcn(hObject, eventdata, handles)
 if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
     set(hObject,'BackgroundColor','white');
 end
+
+
+% --- Executes on button press in silence_chk.
+function silence_chk_Callback(hObject, eventdata, handles)
+% hObject    handle to silence_chk (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hint: get(hObject,'Value') returns toggle state of silence_chk
