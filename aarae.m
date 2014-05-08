@@ -702,6 +702,8 @@ if isfield(audiodata,'properties') && isfield(audiodata.properties,'startflag')
                 S = newS;
                 invS = repmat(invS,1,size(S,2));
         end
+    else
+        return
     end
 else
     method = 1;
@@ -1268,6 +1270,9 @@ if (click == handles.axestime) || (get(click,'Parent') == handles.axestime)
         if plottype <= 7
             plot(t,real(line)) % Plot signal in time domain
             xlabel('Time [s]');
+            yl = cellstr(get(handles.time_popup,'String'));
+            yl = yl{get(handles.time_popup,'Value')};
+            ylabel(yl(8:end));
         end
         if plottype >= 8
             if plottype == 8
@@ -1283,6 +1288,9 @@ if (click == handles.axestime) || (get(click,'Parent') == handles.axestime)
             if plottype ~= 17, semilogx(f,line); end % Plot signal in frequency domain
             log_check = get(handles.logtime_chk,'Value');
             xlabel('Frequency [Hz]');
+            yl = cellstr(get(handles.time_popup,'String'));
+            yl = yl{get(handles.time_popup,'Value')};
+            ylabel(yl(9:end));
             xlim([f(2) signaldata.fs/2])
             if log_check == 1
                 set(gca,'XScale','log')
@@ -1305,6 +1313,9 @@ if (click == handles.axestime) || (get(click,'Parent') == handles.axestime)
         end
         handles.alternate = 0;
     end
+    selectedNodes = handles.mytree.getSelectedNodes;
+    selectedNodes = selectedNodes(1);
+    title(selectedNodes.getName.char)
 end
 if (click == handles.axesfreq) || (get(click,'Parent') == handles.axesfreq)
     hMain = getappdata(0,'hMain');
@@ -1350,6 +1361,9 @@ if (click == handles.axesfreq) || (get(click,'Parent') == handles.axesfreq)
         if plottype <= 7
             plot(t,real(line)) % Plot signal in time domain
             xlabel('Time [s]');
+            yl = cellstr(get(handles.freq_popup,'String'));
+            yl = yl{get(handles.freq_popup,'Value')};
+            ylabel(yl(8:end));
         end
         if plottype >= 8
             if plottype == 8
@@ -1364,6 +1378,9 @@ if (click == handles.axesfreq) || (get(click,'Parent') == handles.axesfreq)
             if plottype == 17, semilogx(f(1:end-1),line,'Marker','None'); end
             if plottype ~= 17, semilogx(f,line); end % Plot signal in frequency domain
             xlabel('Frequency [Hz]');
+            yl = cellstr(get(handles.freq_popup,'String'));
+            yl = yl{get(handles.freq_popup,'Value')};
+            ylabel(yl(9:end));
             xlim([f(2) signaldata.fs/2])
             log_check = get(handles.logfreq_chk,'Value');
             if log_check == 1
@@ -1387,6 +1404,9 @@ if (click == handles.axesfreq) || (get(click,'Parent') == handles.axesfreq)
         end
         handles.alternate = 0;
     end
+    selectedNodes = handles.mytree.getSelectedNodes;
+    selectedNodes = selectedNodes(1);
+    title(selectedNodes.getName.char)
 end
 guidata(hObject,handles)
 
