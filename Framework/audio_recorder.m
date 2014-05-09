@@ -238,7 +238,7 @@ function record_btn_Callback(hObject, eventdata, handles)
 % handles    structure with handles and user data (see GUIDATA)
 
 % Call handles from main window
-mainHandles = guidata(handles.main_stage1);
+%mainHandles = guidata(handles.main_stage1);
 set([handles.cancel_btn handles.load_btn handles.preview_btn handles.syscal_btn],'Enable','off')
 if get(handles.pb_enable,'Value') == 1
     % Simultaneous playback and record routine
@@ -255,25 +255,30 @@ if get(handles.pb_enable,'Value') == 1
     playbackaudio = handles.outputdata.audio;
     if get(handles.invfilter_chk,'Value') == 1, playbackaudio = filter(handles.syscalstats.audio2,1,playbackaudio); end
     handles.hsr1.Signal = [playbackaudio;zeros(floor((handles.addtime+handles.hap.QueueDuration)*handles.fs),size(playbackaudio,2))];
-    handles.hsr1.SamplesPerFrame = 1024;
+    handles.hsr1.SamplesPerFrame = handles.har.BufferSize;
     guidata(hObject,handles)
     handles.rec = [];
+    ncycles = ceil(length(handles.hsr1.Signal)/handles.har.BufferSize);
+    audio = zeros(ncycles*handles.har.BufferSize,handles.numchs);
     set(hObject,'BackgroundColor','red');
     set(handles.stop_btn,'Visible','on');
     % Initialize playback/record routine
     try
         UserData = get(handles.stop_btn,'UserData');
-        while (~isDone(handles.hsr1))
+        %while (~isDone(handles.hsr1))
+        for i = 1:ncycles
            UserData = get(handles.stop_btn,'UserData');
            if UserData.state == false
-               audio = step(handles.har);
+               %audio = step(handles.har);
+               audio((i-1)*handles.har.BufferSize+1:i*handles.har.BufferSize,:) = step(handles.har);
                step(handles.hap,step(handles.hsr1));
-               handles.rec = [handles.rec;audio];
+               %plot(handles.IN_axes,audio)
+               %handles.rec = [handles.rec;audio];
            else
                break
            end
            pause on
-           pause(0.000001)
+           pause(0.0000001)
            pause off
         end
     catch sthgwrong
@@ -283,6 +288,7 @@ if get(handles.pb_enable,'Value') == 1
         warndlg(syswarning,'AARAE info')
     end
     % Check recording and adjust for QueueDuration latency
+    handles.rec = audio;
     if ~isempty(handles.rec)
         handles.rec = handles.rec(handles.hap.QueueDuration*handles.fs:end,:);
         if UserData.state == false
@@ -309,17 +315,20 @@ else
     % Set record object
     handles.har = dsp.AudioRecorder('SampleRate',handles.fs,'OutputDataType','double','NumChannels',handles.numchs,'BufferSizeSource','Property','BufferSize',str2double(get(handles.IN_buffer,'String')),'QueueDuration',str2double(get(handles.IN_qdur,'String')));
     guidata(hObject,handles)
+    ncycles = ceil(dur/handles.har.BufferSize);
     handles.rec = [];
+    audio = zeros(ncycles*handles.har.BufferSize,handles.numchs);
     set(hObject,'BackgroundColor','red');
     set(handles.stop_btn,'Visible','on');
     % Initialize record routine
     try
         UserData = get(handles.stop_btn,'UserData');
-        while length(handles.rec) < dur
+        %while length(handles.rec) < dur
+        for i = 1:ncycles
            UserData = get(handles.stop_btn,'UserData');
            if UserData.state == false
-               audio = step(handles.har);
-               handles.rec = [handles.rec;audio];
+               audio((i-1)*handles.har.BufferSize+1:i*handles.har.BufferSize,:) = step(handles.har);
+               %handles.rec = [handles.rec;audio];
            else
                break
            end
@@ -333,6 +342,7 @@ else
         syswarning = sthgwrong.message;
         warndlg(syswarning,'AARAE info')
     end
+    handles.rec = audio;
     % Check recording and adjust for Duration
     if ~isempty(handles.rec)
         if UserData.state == false
