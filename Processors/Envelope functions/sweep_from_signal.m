@@ -1,4 +1,4 @@
-function [OUT, varargout] = sweep_from_signal(IN, hiF, loF, Duration, smoothval, LevelLimit,tukeyparam,fs)
+function [OUT, varargout] = sweep_from_signal(IN, hiF, loF, Duration, smoothval, LevelLimit,tukeyparam,reverse,fs)
 % This function derives a swept sinusoid from the power spectrum of the
 % input audio. The swept sinusoid has approximately the same power spectrum
 % as the input audio. An inverse filter is also output in audio2, so this
@@ -43,14 +43,15 @@ if nargin ==1
         'Duration (s)';
         'Level compensation limit (dB)';...
         'Spectrum smoothing value (2 or more for linear smoothing, or 1 or a fraction for fractional octave band smoothing)';...
-        'Tukey window (fade-in and out) parameter (0:1)'},...
+        'Tukey window (fade-in and out) parameter (0:1)';...
+        'Ascending [0] or descending [1] sweep'},...
         'Sweep from Signal',...
         [1 30],...
-        {num2str(hiF);num2str(loF);'10';'50';'10';'0.05'});
+        {num2str(hiF);num2str(loF);'10';'50';'10';'0.05';'0'});
     
     param = str2num(char(param));
     
-    if length(param) < 6, param = []; end
+    if length(param) < 7, param = []; end
     if ~isempty(param)
         hiF = param(1);
         loF = param(2);
@@ -58,6 +59,7 @@ if nargin ==1
         LevelLimit = param(4);
         smoothval = param(5);
         tukeyparam = param(6);
+        reverse = param(7);
     end
 else
     param = [];
@@ -174,6 +176,11 @@ if ~isempty(signal) && ~isempty(fs)
     
     audio = audio .* tukeywin(length(audio),tukeyparam);
     %audio2 = audio2 .* tukeywin(length(audio),tukeyparam); %probably unnecessary
+    if reverse == 1
+        audio = flipud(audio);
+        audio2 = flipud(audio2);
+    end
+    
     if isstruct(IN)
         OUT = IN;
         OUT.audio = audio;
@@ -183,8 +190,9 @@ if ~isempty(signal) && ~isempty(fs)
         OUT.properties.tukey = tukeyparam;
         OUT.properties.smoothing = smoothval;
         OUT.properties.freq = [loF, hiF];
+        OUT.properties.reverse = reverse;
         OUT.funcallback.name = 'sweep_from_signal.m';
-        OUT.funcallback.inarg = {hiF, loF, Duration, smoothval, LevelLimit,tukeyparam};
+        OUT.funcallback.inarg = {hiF, loF, Duration, smoothval, LevelLimit,tukeyparam,reverse};
     else
         OUT = audio;
     end

@@ -12,21 +12,23 @@
 % code by Densil Cabrera & Daniel Jimenez
 % version 1.01 (14 March 2014)
 
-function OUT = OATSP(dur,mratio,fs,donorm)
+function OUT = OATSP(dur,mratio,fs,donorm,reverse)
 
 if nargin == 0
     param = inputdlg({'Duration [s]';...
                       'Ratio of main sweep duration to remaining duration [between 0 and 1]';...
                       'Sampling rate [Hz]';...
-                      'Normalize output [0 | 1]'},...
-                      'OATSP input parameters',1,{'1';'0.5';'48000';'1'});
+                      'Normalize output [0 | 1]';...
+                      'Ascending [0] or descending [1] sweep'},...
+                      'OATSP input parameters',1,{'1';'0.5';'48000';'1';'0'});
     param = str2num(char(param));
-    if length(param) < 4, param = []; end
+    if length(param) < 5, param = []; end
     if ~isempty(param)
         dur = param(1);
         mratio = param(2);
         fs = param(3);
         donorm = param(4);
+        reverse = param(5);
     end   
 else
     param = [];
@@ -55,6 +57,11 @@ if ~isempty(param) || nargin ~=0
     if donorm == 1
         S = S ./ max(abs(S));
     end
+    
+    if reverse == 1
+        S = flipud(S);
+        Sinv = flipud(Sinv);
+    end
 
     OUT.audio = S;
     OUT.audio2 = Sinv;
@@ -65,8 +72,9 @@ if ~isempty(param) || nargin ~=0
     OUT.properties.m = m;
     OUT.properties.N = N;
     OUT.properties.freq = [0, fs/2];
+    OUT.properties.reverse = reverse;
     OUT.funcallback.name = 'OATSP.m';
-    OUT.funcallback.inarg = {dur,mratio,fs,donorm};
+    OUT.funcallback.inarg = {dur,mratio,fs,donorm,reverse};
 else
     OUT = [];
 end

@@ -1,4 +1,4 @@
-function [OUT, varargout] = sweep_from_signal_call(hiF, loF, Duration, smoothval, LevelLimit,tukeyparam)
+function [OUT, varargout] = sweep_from_signal_call(hiF, loF, Duration, smoothval, LevelLimit,tukeyparam,reverse)
 % This function is used to call the function sweep_from_signal, which is a
 % processor in AARAE (currently in the /Processors/Envelope Functions
 % directory). While sweep_from_signal can be run directly, this calling
@@ -46,14 +46,15 @@ if nargin == 0
         'Duration (s)';
         'Level compensation limit (dB)';...
         'Spectrum smoothing value (2 or more for linear smoothing, or 1 or a fraction for fractional octave band smoothing)';...
-        'Tukey window (fade-in and out) parameter (0:1)'},...
+        'Tukey window (fade-in and out) parameter (0:1)';...
+        'Ascending [0] or descending [1] sweep'},...
         'Sweep from Signal',...
         [1 30],...
-        {num2str(hiF);num2str(loF);'10';'50';'10';'0.05'});
+        {num2str(hiF);num2str(loF);'10';'50';'10';'0.05';'0'});
     
     param = str2num(char(param));
     
-    if length(param) < 6, param = []; end
+    if length(param) < 7, param = []; end
     if ~isempty(param)
         hiF = param(1);
         loF = param(2);
@@ -61,6 +62,7 @@ if nargin == 0
         LevelLimit = param(4);
         smoothval = param(5);
         tukeyparam = param(6);
+        reverse = param(7);
     end
 else
     param = [];
@@ -69,13 +71,13 @@ end
 
     if ~isempty(param) || nargin ~= 0
         
-        OUT = sweep_from_signal(IN, hiF, loF, Duration, smoothval, LevelLimit,tukeyparam);
+        OUT = sweep_from_signal(IN, hiF, loF, Duration, smoothval, LevelLimit,tukeyparam,reverse);
         
         
             
             OUT.tag = 'SweepfromSignal';      
             OUT.funcallback.name = 'sweep_from_signal_call.m';
-            OUT.funcallback.inarg = {hiF, loF, Duration, smoothval, LevelLimit,tukeyparam};
+            OUT.funcallback.inarg = {hiF, loF, Duration, smoothval, LevelLimit,tukeyparam,reverse};
             
        
     else
