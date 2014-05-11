@@ -28,14 +28,11 @@ if nargin == 0
         [1 60],... 
         {'48000';'1';'0';'0';'0';'0'}); 
     
-    param = str2num(char(param)); % Since inputs are usually numbers it's a
-    % good idea to turn strings into numbers.
+    param = str2num(char(param)); 
     
-    if length(param) < 5, param = []; end % You should check that the user
-    % has input all the required
-    % fields.
-    if ~isempty(param) % If they have, you can then assign the dialog's
-        % inputs to your function's input parameters.
+    if length(param) < 5, param = []; end 
+ 
+    if ~isempty(param) 
         silencelen = param(1);
         doOATSP = param(2);
         doExpSweep = param(3);
@@ -48,27 +45,10 @@ else
 end
 
 
-% Normally generators do not have audio inputs. If you wish to make a
-% generator that has audio input, first think about whether it would be
-% better classified as a processor. If it is really best as a generator,
-% then audio can be input using AARAE's choose_audio function.
-% If you wish to do the same with this function outside
-% the AARAE environment (as a stand-alone), then it might be easiest to
-% have the input audio as an input argument to the function.
-if false % change to true if you wish to enable the following
+
+
     
-    % Use a menu & dialog box to select a wav file or audio within AARAE
-    selection = choose_audio; % call AARAE's choose_audio function
-    if ~isempty(selection)
-        audio = selection.audio; % audio data
-        fs = selection.fs; % sampling rate
-        [len, chans, bands] = size(audio); % input audio dimensions
-    end
-end
     
-    % To make your function work as standalone you can check that the user has
-    % either entered some parameters as inputs or that the inputs have been
-    % acquired through the input dialog window.
     if ~isempty(param) || nargin ~= 0
         OUT.audio = [];
         OUT.audio2 = [];
@@ -116,6 +96,7 @@ end
             OUT.tag = 'Hybrid';     % You may assign it a name to be identified in AARAE.
             OUT.funcallback.name = 'hybrid_test_signal.m';
             %OUT.funcallback.inarg = {silencelen};
+            OUT.funcallback.inarg = {};
 
 %         end
         
