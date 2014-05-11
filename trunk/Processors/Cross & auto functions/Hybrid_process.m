@@ -135,6 +135,21 @@ if isfield(IN,'funcallback') && strcmp(IN.funcallback.name,'hybrid_test_signal.m
                 max(max(max(IRset(:,:,:,n),[],3),[],2),[],1);
         end
         
+        % Fix alignment errors
+        maxlags = ceil(fs * 0.005); % maximum xcorr lags
+        c = xcorr(permute(IRset(:,ceil(chans/2),ceil(bands/2),:),[1,4,2,3])...
+            , maxlags, 'coeff');
+        [~,maxind] = max(c,[],1);
+        maxind = maxind(1:sum(IN.properties.signals));
+        maxind = max(maxind)-maxind;
+        for n = 1:sum(IN.properties.signals)
+            if maxind(n) ~= 0
+                IRset(1:end-maxind(n),:,:,n) =...
+                    IRset(1+maxind(n):end,:,:,n);
+                IRset(end-maxind(n)+1:end,:,:,n)=0;
+            end
+        end
+        
 %         figure('Name','Hybrid test signal impulse response')
 %         t = (1:size(IRset,1))-1 ./fs;
         
