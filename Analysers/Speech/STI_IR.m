@@ -213,7 +213,7 @@ validate = 0;
 % Flag for auralization, which can be set in dialogmode.
 doAuralization = 0;
 
-
+Verbose.tables = [];
 
 
 if nargin == 0
@@ -809,7 +809,7 @@ for ch = 1:chans
                 '; NC=', num2str(NoiseCorrection),')'])
         end
         hold off
-        
+        Verbose.lines.(genvarname(['MTF_ch' num2str(ch)])) = getplotdata;
         subplot(3,1,2)
         % Bar plot of modulation transfer indices
         
@@ -886,6 +886,7 @@ for ch = 1:chans
         end
         legend('show','Location','EastOutside');
         hold off
+        Verbose.lines.(genvarname(['SPL_ch' num2str(ch)])) = getplotdata;
         
         if isstruct(IR)
             f = figure('Name',['STI_IR Channel ',num2str(ch),': STI, MTI & MTF'], ...
@@ -911,7 +912,8 @@ for ch = 1:chans
             t3 =uitable('Data',dat3,'ColumnName',cnames3,'RowName',rnames3);
             %set(t,'ColumnWidth',{100});
             
-            disptables(f,[t3 t2 t1]);
+            [~,tables] = disptables(f,[t3 t2 t1]);
+            Verbose.tables = [Verbose.tables tables];
         end
     end % if doplot
     

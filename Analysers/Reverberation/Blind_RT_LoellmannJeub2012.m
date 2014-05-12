@@ -107,13 +107,13 @@ if ~isempty(audio) && ~isempty(fs)
         clf
         hold on
         plot(fr2sec_idx,rt_est(ch,:),'-r')
-        line([0 fr2sec_idx(end)],[rt_est_mean(ch) rt_est_mean(ch)])
-        line([0 fr2sec_idx(end)],[rt_est_median(ch) rt_est_median(ch)],'Color', [0,0.5,0])
+        plot([0 fr2sec_idx(end)],[rt_est_mean(ch) rt_est_mean(ch)])
+        plot([0 fr2sec_idx(end)],[rt_est_median(ch) rt_est_median(ch)],'Color', [0,0.5,0])
         grid on,box on
         xlabel('Time [s]'),ylabel('RT [s]');
         legend('Estimated T60',['Mean Estimate ',num2str(rt_est_mean(ch)), ' s'], ...
             ['Median Estimate ',num2str(rt_est_median(ch)), ' s'],'location','southeast');
-        
+        OUT.lines.RT = getplotdata;
         %--------------------------------------------------------------------------
         
     end

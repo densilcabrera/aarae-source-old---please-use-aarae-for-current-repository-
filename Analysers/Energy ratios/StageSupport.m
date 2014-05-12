@@ -1,4 +1,4 @@
-function out = StageSupport(data, fs, startthresh, bpo)
+function out = StageSupport(data, fs, startthresh, bpo, doplot)
 % This function calculates stage support parameters from a room impulse 
 % response.
 %--------------------------------------------------------------------------
@@ -36,6 +36,9 @@ if nargin < 3
         startthresh = str2num(answer{1,1});
         bpo = str2num(answer{2,1});
         doplot = str2num(answer{3,1});
+    else
+        out = [];
+        return
     end
 end
 if isstruct(data)
@@ -50,7 +53,7 @@ else
     end
 end
 
-if ~isempty(IR) && ~isempty(fs) && ~isempty(startthresh) && ~isempty(bpo)
+if ~isempty(IR) && ~isempty(fs) && ~isempty(startthresh) && ~isempty(bpo) && ~isempty(doplot)
     %--------------------------------------------------------------------------
     % TRUNCATION
     %--------------------------------------------------------------------------
@@ -176,23 +179,25 @@ if ~isempty(IR) && ~isempty(fs) && ~isempty(startthresh) && ~isempty(bpo)
     % OUTPUT TABLE
 
     if doplot
+        out.tables = [];
         for ch = 1:chans
-        f = figure('Name',['Stage Support, channel: ', num2str(ch)], ...
-                    'Position',[200 200 620 360]);
-                %[left bottom width height]
-                dat1 = [ST1(:,ch)';ST2(:,ch)';STLate(:,ch)'];
-                cnames1 = num2cell(bandfc);
-                rnames1 = {'ST1 or ST Early (dB)', 'ST2 (dB)', 'ST Late (dB)'};
-                t1 =uitable('Data',dat1,'ColumnName',cnames1,'RowName',rnames1);
-                set(t1,'ColumnWidth',{60});
+            f = figure('Name',['Stage Support, channel: ', num2str(ch)], ...
+                        'Position',[200 200 620 360]);
+            %[left bottom width height]
+            dat1 = [ST1(:,ch)';ST2(:,ch)';STLate(:,ch)'];
+            cnames1 = num2cell(bandfc);
+            rnames1 = {'ST1 or ST Early (dB)', 'ST2 (dB)', 'ST Late (dB)'};
+            t1 =uitable('Data',dat1,'ColumnName',cnames1,'RowName',rnames1);
+            set(t1,'ColumnWidth',{60});
 
-                dat2 = [ST1av(:,ch)';ST2av(:,ch)';STLateav(:,ch)'];
-                cnames2 = {'Spectral Average (250 Hz - 2kHz Octave Bands)'};
-                rnames2 = {'ST1 or ST Early (dB)','ST2 (dB)', ...
-                    'ST Late (dB)'};
-                t2 =uitable('Data',dat2,'ColumnName',cnames2,'RowName',rnames2);
+            dat2 = [ST1av(:,ch)';ST2av(:,ch)';STLateav(:,ch)'];
+            cnames2 = {'Spectral Average (250 Hz - 2kHz Octave Bands)'};
+            rnames2 = {'ST1 or ST Early (dB)','ST2 (dB)', ...
+                'ST Late (dB)'};
+            t2 =uitable('Data',dat2,'ColumnName',cnames2,'RowName',rnames2);
 
-                disptables(f,[t2 t1]);
+            [~,tables] = disptables(f,[t2 t1]);
+            out.tables = [out.tables tables];
         end
     end
 else

@@ -2230,7 +2230,8 @@ if ~strcmp(contents{get(hObject,'Value')},' ')
     linedata = data.lines.(contents{get(hObject,'Value')}).data;
     axis2 = handles.axesdata;
     for j = 1:length(linedata)
-        l1 = line;
+        if strcmp(linedata(j,1).Type,'line'), l1 = line; end
+        if strcmp(linedata(j,1).Type,'surface'), l1 = surface; end
         linedata(j,1).Parent = axis2;
         dif = intersect(fieldnames(linedata),fieldnames(set(l1)));
         for i = 1:size(dif,1)
@@ -2241,9 +2242,21 @@ if ~strcmp(contents{get(hObject,'Value')},' ')
     xlabel(handles.axesdata,axesprop.xlabel)
     ylabel(handles.axesdata,axesprop.ylabel)
     zlabel(handles.axesdata,axesprop.zlabel)
-    set(handles.axesdata,'XScale',axesprop.xscale)
-    set(handles.axesdata,'YScale',axesprop.yscale)
-    set(handles.axesdata,'ZScale',axesprop.zscale)
+    propdif = intersect(fieldnames(set(gca)),fieldnames(axesprop));
+    propdif = propdif(~strcmp(propdif,'Children'));
+    propdif = propdif(~strcmp(propdif,'Parent'));
+    propdif = propdif(~strcmp(propdif,'OuterPosition'));
+    propdif = propdif(~strcmp(propdif,'Position'));
+    propdif = propdif(~strcmp(propdif,'Title'));
+    propdif = propdif(~strcmp(propdif,'XLabel'));
+    propdif = propdif(~strcmp(propdif,'YLabel'));
+    propdif = propdif(~strcmp(propdif,'ZLabel'));
+    for i = 1:size(propdif,1)
+        set(handles.axesdata,propdif{i},axesprop.(propdif{i,1}))
+    end
+    %set(handles.axesdata,'XScale',axesprop.xscale)
+    %set(handles.axesdata,'YScale',axesprop.yscale)
+    %set(handles.axesdata,'ZScale',axesprop.zscale)
 end
 
 

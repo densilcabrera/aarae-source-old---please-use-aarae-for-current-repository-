@@ -333,7 +333,7 @@ if ~isempty(audio) && ~isempty(fs) && ~isempty(cal) && ~isempty(AuditoryMasking)
             end
             legend('show','Location','EastOutside');
             hold off
-
+            out.lines.SPL = getplotdata;
         end
     end
 else

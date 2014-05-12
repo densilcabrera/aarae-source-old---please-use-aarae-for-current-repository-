@@ -58,6 +58,9 @@ if nargin < 3
         endtime  = str2num(answer{5,1});
         maxtlim = str2num(answer{6,1});
         doplot = str2num(answer{7,1});
+    else
+        out = [];
+        return
     end
 end
 if isstruct(data)
@@ -173,7 +176,7 @@ if ~isempty(IR) && ~isempty(fs) && ~isempty(startthresh) && ~isempty(highestband
     %--------------------------------------------------------------------------
     % FIGURES
     %--------------------------------------------------------------------------
-
+    out.tables = [];
     if doplot == 1
         bands = length(flist);
         [r, c] = subplotpositions(bands, 0.5);
@@ -203,7 +206,7 @@ if ~isempty(IR) && ~isempty(fs) && ~isempty(startthresh) && ~isempty(highestband
                 text(10,ClarityIndex(index80,ch,b),...
                     [num2str(round(ClarityIndex(index80,ch,b)*10)/10), ' dB'])
                 hold off
-
+                out.lines.(genvarname(['Ch' num2str(ch) '_' num2str(flist(b)) '_Hz'])) = getplotdata;
             end
 
                 % Table
@@ -218,7 +221,8 @@ if ~isempty(IR) && ~isempty(fs) && ~isempty(startthresh) && ~isempty(highestband
                     'RowName',num2cell(tlim*1000));
                 set(table2,'ColumnWidth',{60});
 
-        disptables(fig1,[table1 table2]);
+        [~,tables] = disptables(fig1,[table1 table2]);
+        out.tables = [out.tables tables];
         end
         if chans == 1
             figure('Name', 'Clarity Index')
@@ -245,6 +249,7 @@ if ~isempty(IR) && ~isempty(fs) && ~isempty(startthresh) && ~isempty(highestband
         title('Clarity index, 10-100 ms time limits (o C35; + C50; x C80)')
         %legend('show','Location','EastOutside');
         hold off
+        out.lines.clarity_index = getplotdata;
     end
 else
     out = [];
