@@ -2028,6 +2028,7 @@ function compare_btn_Callback(hObject, eventdata, handles)
 selectedNodes = handles.mytree.getSelectedNodes;
 compplot = figure;
 for i = 1:length(selectedNodes)
+    line = [];
     axes = 'time';
     signaldata = selectedNodes(i).handle.UserData;
     plottype = get(handles.(genvarname([axes '_popup'])),'Value');
@@ -2036,7 +2037,11 @@ for i = 1:length(selectedNodes)
     if ndims(signaldata.audio) > 2
         if ndims(signaldata.audio) == 3, cmap = colormap(hsv(size(signaldata.audio,3))); end
         if ndims(signaldata.audio) >= 4, cmap = colormap(copper(size(signaldata.audio,4))); end
-        line(:,:) = signaldata.audio(:,str2double(get(handles.IN_nchannel,'String')),:);
+        try 
+            line(:,:) = signaldata.audio(:,str2double(get(handles.IN_nchannel,'String')),:);
+        catch
+            line = zeros(size(t));
+        end
     else
         cmap = colormap(lines(size(signaldata.audio,2)));
         line = signaldata.audio;
@@ -2048,7 +2053,7 @@ for i = 1:length(selectedNodes)
     if plottype == 5, line = medfilt1(diff([angle(hilbert(real(line))); zeros(1,size(line,2))])*signaldata.fs/2/pi, 5); end
     if plottype == 6, line = abs(line); end
     if plottype == 7, line = imag(line); end
-    if plottype == 8, line = 10*log10(abs(fft(line)).^2);  set(handles.(genvarname(['smooth' axes '_popup'])),'Visible','on'); end %freq
+    if plottype == 8, line = 10*log10(abs(fft(line)).^2); end %freq
     if plottype == 9, line = abs(fft(line)).^2; end
     if plottype == 10, line = abs(fft(line)); end
     if plottype == 11, line = real(fft(line)); end
@@ -2068,12 +2073,22 @@ for i = 1:length(selectedNodes)
         if smoothfactor ~= 1, line = octavesmoothing(line, octsmooth, signaldata.fs); end
     end
     if plottype <= 7
-        subplot(length(selectedNodes),1,i);plot(t,real(line)) % Plot signal in time domain
+        subplot(length(selectedNodes),1,i);
+        set(gca,'NextPlot','replacechildren','ColorOrder',cmap)
+        plot(t,real(line)) % Plot signal in time domain
         xlabel('Time [s]');
     end
     if plottype >= 8
-        if plottype == 17, h = subplot(length(selectedNodes),1,i);semilogx(f(1:end-1),line,'Marker','None'); end
-        if plottype ~= 17, h = subplot(length(selectedNodes),1,i);semilogx(f,line); end % Plot signal in frequency domain
+        if plottype == 17
+            h = subplot(length(selectedNodes),1,i);
+            set(gca,'NextPlot','replacechildren','ColorOrder',cmap)
+            semilogx(f(1:end-1),line,'Marker','None');
+        end
+        if plottype ~= 17
+            h = subplot(length(selectedNodes),1,i);
+            set(gca,'NextPlot','replacechildren','ColorOrder',cmap)
+            semilogx(f,line);
+        end % Plot signal in frequency domain
         xlabel('Frequency [Hz]');
         xlim([f(2) signaldata.fs/2])
         log_check = get(handles.(genvarname(['log' axes '_chk'])),'Value');
