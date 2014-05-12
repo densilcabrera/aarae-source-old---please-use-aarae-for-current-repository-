@@ -226,6 +226,7 @@ if ~isempty(audio) && ~isempty(fs)
     % Display data in a table
     % ---------------------------------------------------------------------
     if doplot == 1
+        OUT.tables = [];
         fig1 = figure('Name','Interaural Cross Correlation of a Room Impulse Response');
         table1 = uitable('Data',[OUT.IACC_Early; OUT.IACC_Late; OUT.IACC_All],...
             'ColumnName',num2cell(flist),...
@@ -237,12 +238,12 @@ if ~isempty(audio) && ~isempty(fs)
                 'ColumnName',{'Result'},...
                 'RowName',{'IACC E3'; 'IACC L3'; 'Binaural Quality Index'});
             
-            disptables(fig1,[table1 table2]);
+            [~,tables] = disptables(fig1,[table1 table2]);
             
         else
-            disptables(fig1,table1);
+            [~,tables] = disptables(fig1,table1);
         end
-        
+        OUT.tables = tables;
         % ---------------------------------------------------------------------
         % Display data in a figure
         % ---------------------------------------------------------------------
@@ -272,6 +273,7 @@ if ~isempty(audio) && ~isempty(fs)
             xlabel('Lag (ms)')
             title([num2str(flist(bnd)), ' Hz'])
             hold off
+            OUT.lines.(genvarname([num2str(flist(bnd)) 'Hz'])) = getplotdata;
         end
     end
     

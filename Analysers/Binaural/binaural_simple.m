@@ -233,7 +233,7 @@ if ~isempty(wave) && ~isempty(fs) && ~isempty(f_low) && ~isempty(f_high) && ~ise
     ylim([-1 1])
     grid on
     hold off
-
+    out.lines.IACF = getplotdata;
 
     % Group delay
     GD = diff(unwrap(angle(((spectrum(1:round(len/2),1)).*conj(spectrum(1:round(len/2),2))) ...
@@ -248,6 +248,7 @@ if ~isempty(wave) && ~isempty(fs) && ~isempty(f_low) && ~isempty(f_high) && ~ise
     ylabel('Group Delay (ms)')
     grid on
     %median(GD)
+    out.lines.group_delay = getplotdata;
 
     % organise output structure
     out.IACC = IACC;

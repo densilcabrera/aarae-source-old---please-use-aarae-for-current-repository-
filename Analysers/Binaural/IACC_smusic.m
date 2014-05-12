@@ -172,6 +172,7 @@ if ~isempty(audio) && ~isempty(fs)
     set(hleg,'Location','SouthWest');
     
     print -dpng -r140 IACC1-1octave.png
+    OUT.lines.octave = getplotdata;
     
     %%%%%Plot IACC amx and mean response for 1/3 octave bandwidth
     
@@ -202,6 +203,7 @@ if ~isempty(audio) && ~isempty(fs)
     
     print -dpng -r140 IACC1-3octave.png
     
+    OUT.lines.thirdoctave = getplotdata;
     
     if isstruct(IN)
         
