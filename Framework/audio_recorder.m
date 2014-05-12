@@ -255,11 +255,11 @@ if get(handles.pb_enable,'Value') == 1
     playbackaudio = handles.outputdata.audio;
     if get(handles.invfilter_chk,'Value') == 1, playbackaudio = filter(handles.syscalstats.audio2,1,playbackaudio); end
     handles.hsr1.Signal = [playbackaudio;zeros(floor((handles.addtime+handles.hap.QueueDuration)*handles.fs),size(playbackaudio,2))];
-    handles.hsr1.SamplesPerFrame = handles.har.BufferSize;
+    handles.hsr1.SamplesPerFrame = handles.har.SamplesPerFrame;
     guidata(hObject,handles)
     handles.rec = [];
-    ncycles = ceil(length(handles.hsr1.Signal)/handles.har.BufferSize);
-    audio = zeros(ncycles*handles.har.BufferSize,handles.numchs);
+    ncycles = ceil(length(handles.hsr1.Signal)/handles.har.SamplesPerFrame);
+    audio = zeros(ncycles*handles.har.SamplesPerFrame,handles.numchs);
     set(hObject,'BackgroundColor','red');
     set(handles.stop_btn,'Visible','on');
     % Initialize playback/record routine
@@ -270,7 +270,7 @@ if get(handles.pb_enable,'Value') == 1
            UserData = get(handles.stop_btn,'UserData');
            if UserData.state == false
                %audio = step(handles.har);
-               audio((i-1)*handles.har.BufferSize+1:i*handles.har.BufferSize,:) = step(handles.har);
+               audio((i-1)*handles.har.SamplesPerFrame+1:i*handles.har.SamplesPerFrame,:) = step(handles.har);
                step(handles.hap,step(handles.hsr1));
                %plot(handles.IN_axes,audio)
                %handles.rec = [handles.rec;audio];
@@ -315,9 +315,9 @@ else
     % Set record object
     handles.har = dsp.AudioRecorder('SampleRate',handles.fs,'OutputDataType','double','NumChannels',handles.numchs,'BufferSizeSource','Property','BufferSize',str2double(get(handles.IN_buffer,'String')),'QueueDuration',str2double(get(handles.IN_qdur,'String')));
     guidata(hObject,handles)
-    ncycles = ceil(dur/handles.har.BufferSize);
+    ncycles = ceil(dur/handles.har.SamplesPerFrame);
     handles.rec = [];
-    audio = zeros(ncycles*handles.har.BufferSize,handles.numchs);
+    audio = zeros(ncycles*handles.har.SamplesPerFrame,handles.numchs);
     set(hObject,'BackgroundColor','red');
     set(handles.stop_btn,'Visible','on');
     % Initialize record routine
@@ -327,7 +327,7 @@ else
         for i = 1:ncycles
            UserData = get(handles.stop_btn,'UserData');
            if UserData.state == false
-               audio((i-1)*handles.har.BufferSize+1:i*handles.har.BufferSize,:) = step(handles.har);
+               audio((i-1)*handles.har.SamplesPerFrame+1:i*handles.har.SamplesPerFrame,:) = step(handles.har);
                %handles.rec = [handles.rec;audio];
            else
                break
