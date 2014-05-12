@@ -578,6 +578,7 @@ if ~isempty(data) && ~isempty(fs) && ~isempty(P) && ~isempty(BG) && ~isempty(T) 
             title('Modulation Transfer Function');
             grid on
             hold off
+            OUT.lines.MTF = getplotdata;
         end
 
         if length(P) == 6
@@ -607,6 +608,7 @@ if ~isempty(data) && ~isempty(fs) && ~isempty(P) && ~isempty(BG) && ~isempty(T) 
         title('Band Sound Pressure Level')
         grid on
         hold off
+        OUT.lines.BandSPL = getplotdata;
 
         if length(P) == 6
 
@@ -626,7 +628,8 @@ if ~isempty(data) && ~isempty(fs) && ~isempty(P) && ~isempty(BG) && ~isempty(T) 
             t2 =uitable('Data',dat2,'ColumnName',cnames2,'RowName',rnames2);
             %set(t,'ColumnWidth',{60});
 
-            disptables(f,[t2 t1]);
+            [~,tables] = disptables(f,[t2 t1]);
+            OUT.tables = tables;
         end
     end
 end

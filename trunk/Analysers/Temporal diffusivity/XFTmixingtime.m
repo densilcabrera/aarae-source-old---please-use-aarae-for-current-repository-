@@ -113,6 +113,8 @@ if ~isempty(audio) && ~isempty(fs)
         
         xlabel('Time (s)')
         ylabel('Normalized waveform and D')
+        hold off
+        OUT.lines.(genvarname(['XFT_ch' num2str(ch)])) = getplotdata;
     end
     
     

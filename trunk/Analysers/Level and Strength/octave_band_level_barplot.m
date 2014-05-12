@@ -137,6 +137,7 @@ if ~isempty(audio) && ~isempty(fs) && ~isempty(cal) && ~isempty(showpercentiles)
     ymin = 10*floor(min(min(out.L90))/10);
 
     if dosubplots == 0
+        out.tables = [];
         for ch = 1:chans
             figure('name', ['Octave Band Spectrum, Channel ', ...
                 num2str(ch), ', tau = ', num2str(tau),' s'])
@@ -184,11 +185,18 @@ if ~isempty(audio) && ~isempty(fs) && ~isempty(cal) && ~isempty(showpercentiles)
                 text(k-0.25,ymax-(ymax-ymin)*0.025, ...
                     num2str(round(out.Leq(k,ch)*10)/10),'Color',[1,0.3,0.3])
             end
+            fig = figure('Visible','off');
+            table1 = uitable('Data',[out.Leq(:,ch),out.Lmax(:,ch),out.L5(:,ch),out.L10(:,ch),out.L50(:,ch),out.L90(:,ch)],...
+                             'ColumnName',{'Leq','Lmax','L5','L10','L50','L90'},...
+                             'RowName',num2cell(frequencies));
+            [fig,tables] = disptables(fig,table1);
+            delete(fig)
+            out.tables = [out.tables tables];
         end
     else
         [r, c] = subplotpositions(chans, 0.8);
         figure('name', ['Octave Band Spectrum, tau = ', num2str(tau),' s'])
-
+        out.tables = [];
         for ch = 1:chans
             subplot(r,c,ch)
             title(['Channel ', num2str(ch)])
@@ -239,6 +247,13 @@ if ~isempty(audio) && ~isempty(fs) && ~isempty(cal) && ~isempty(showpercentiles)
     %             text(k-0.25,ymax-(ymax-ymin)*0.025, ...
     %                 num2str(round(out.Leq(k,ch)*10)/10),'Color',[1,0.3,0.3])
     %         end
+            fig = figure('Visible','off');
+            table1 = uitable('Data',[out.Leq(:,ch),out.Lmax(:,ch),out.L5(:,ch),out.L10(:,ch),out.L50(:,ch),out.L90(:,ch)],...
+                             'ColumnName',{'Leq','Lmax','L5','L10','L50','L90'},...
+                             'RowName',num2cell(frequencies));
+            [fig,tables] = disptables(fig,table1);
+            delete(fig)
+            out.tables = [out.tables tables];
         end
     end
 else

@@ -367,13 +367,13 @@ switch stimulus
         S = impulse1(0,duration,1,handles.mainHandles.fs);
         handles.hsr1.Signal = S.audio(1:duration*handles.mainHandles.fs);
     case 2
-        S = exponential_sweep(duration,1,handles.mainHandles.fs/2,handles.mainHandles.fs);
+        S = linear_sweep(duration,1,handles.mainHandles.fs/2,0,handles.mainHandles.fs);
         handles.hsr1.Signal = S.audio;
     case 3
         S = noise(-1,duration,handles.mainHandles.fs,1,handles.mainHandles.fs/2,1,0,0);
         handles.hsr1.Signal = S.audio;
     case 4
-        S = OATSP(duration,0.5,handles.mainHandles.fs);
+        S = OATSP(duration,0.5,handles.mainHandles.fs,1,0);
         handles.hsr1.Signal = S.audio./max(abs(S.audio));
 end
 handles.hsr1.Signal = [handles.hsr1.Signal;zeros(length(handles.hsr1.Signal),1)];
@@ -382,17 +382,23 @@ pause on
 pause(0.000001)
 pause off
 try
-    rec = [];
-    while (~isDone(handles.hsr1))
-       audio = step(handles.har);
-       step(handles.hap,step(handles.hsr1));
-       rec = [rec;audio];
+    ncycles = ceil(length(handles.hsr1.Signal)/handles.hsr1.SamplesPerFrame);
+    audio = zeros(ncycles*handles.hsr1.SamplesPerFrame,1);
+    for i = 1:ncycles
+%    while (~isDone(handles.hsr1))
+        audio((i-1)*handles.har.SamplesPerFrame+1:i*handles.har.SamplesPerFrame,:) = step(handles.har);
+        step(handles.hap,step(handles.hsr1));
+%       audio = step(handles.har);
+%       step(handles.hap,step(handles.hsr1));
+%       rec = [rec;audio];
     end
 catch sthgwrong
+    audio = [];
     syswarning = sthgwrong.message;
     set(hObject,'Enable','on');
     warndlg(syswarning,'AARAE info')
 end
+rec = audio;
 if ~isempty(rec)
     qd = handles.mainHandles.fs*handles.hap.QueueDuration;
     rec = rec(qd:end);

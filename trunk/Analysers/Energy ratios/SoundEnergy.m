@@ -27,8 +27,8 @@ function out = SoundEnergy(data, fs, startthresh, bpo, doplot)
 %--------------------------------------------------------------------------
 % OUTPUT VARIABLES
 %
-% C50 = Early (<50 ms) to late energy ratio, in decibals
-% C80 = Early (<80 ms) to late energy ratio, in decibals
+% C50 = Early (<50 ms) to late energy ratio, in decibels
+% C80 = Early (<80 ms) to late energy ratio, in decibels
 % D50 = Early (<50 ms) to total energy ratio, as a percentage
 % D80 = Early (<80 ms) to total energy ratio, as a percentage
 % Ts = Time of the centre of gravity of the squared IR, in seconds
@@ -77,6 +77,9 @@ if nargin < 3
         startthresh = str2num(answer{1,1});
         bpo = str2num(answer{2,1});
         doplot = str2num(answer{3,1});
+    else
+        out = [];
+        return
     end
 end
 if isstruct(data)
@@ -206,6 +209,31 @@ if ~isempty(IR) && ~isempty(fs) && ~isempty(startthresh) && ~isempty(bpo) && ~is
     end % if bpo
 
     %--------------------------------------------------------------------------
+    % TABLE
+    %--------------------------------------------------------------------------
+    
+    if doplot == 1
+        if chans == 1
+            fig1 = figure('Name','Sound Energy');
+            table1 = uitable('Data',[C50;C80;D50;D80;Ts],...
+                             'ColumnName',num2cell(bandfc),...
+                             'RowName',{'C50','C80','D50','D80','Ts'});
+            [~,tables] = disptables(fig1,table1);
+            out.tables = tables;
+        elseif chans == 2
+            fig1 = figure('Name','Sound Energy');
+            table1 = uitable('Data',[C50(:,1)';C80(:,1)';D50(:,1)';D80(:,1)';Ts(:,1)'],...
+                             'ColumnName',num2cell(bandfc),...
+                             'RowName',{'C50','C80','D50','D80','Ts'});
+            table2 = uitable('Data',[C50(:,2)';C80(:,2)';D50(:,2)';D80(:,2)';Ts(:,2)'],...
+                             'ColumnName',num2cell(bandfc),...
+                             'RowName',{'C50','C80','D50','D80','Ts'});
+            [~,tables] = disptables(fig1,[table1 table2]);
+            out.tables = tables;
+        end
+    end
+                     
+    %--------------------------------------------------------------------------
     % OUTPUT STRUCTURE
     %--------------------------------------------------------------------------
 
@@ -237,7 +265,7 @@ if ~isempty(IR) && ~isempty(fs) && ~isempty(startthresh) && ~isempty(bpo) && ~is
         out.funcallback.name = 'SoundEnergy.m';
         out.funcallback.inarg = {fs,startthresh,bpo,doplot};
     else
-        error('Function calcuates for mono or stereo audio only');
+        warndlg('Function calcuates for mono or stereo audio only','AARAE info');
 
     end % if chans
 else

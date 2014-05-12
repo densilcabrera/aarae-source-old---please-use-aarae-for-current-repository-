@@ -330,6 +330,7 @@ if ~isempty(audio) && ~isempty(fs) && ~isempty(calgain) && ~isempty(ReferenceCha
                 '  (AM=', num2str(AuditoryMasking),')'])
 
         hold off
+        Verbose.lines.MTF = getplotdata;
 
         subplot(3,1,2)
         % Bar plot of modulation transfer indices
@@ -406,7 +407,7 @@ if ~isempty(audio) && ~isempty(fs) && ~isempty(calgain) && ~isempty(ReferenceCha
         end
         legend('show','Location','EastOutside');
         hold off
-
+        Verbose.lines.SPL = getplotdata;
     end % if doplot
 end
 % eof

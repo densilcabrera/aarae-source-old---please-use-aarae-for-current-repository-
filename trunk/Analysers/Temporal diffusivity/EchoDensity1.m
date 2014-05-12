@@ -146,6 +146,8 @@ if ~isempty(data) && ~isempty(fs) %&& ~isempty(WindowTime) && ~isempty(OffsetTim
             ylabel('Normalized values')
             xlim([-0.001*WindowTime/2, (len-1)./fs - 0.001*WindowTime/2])
             legend('show','Location','EastOutside');
+            hold off
+            OUT.lines.(genvarname(['Echo_density_ch' num2str(ch) '_' num2str(bandID(b)) 'Hz'])) = getplotdata;
         end
     end
     

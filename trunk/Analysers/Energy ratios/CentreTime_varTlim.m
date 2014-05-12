@@ -33,6 +33,9 @@ if nargin < 3
         highestband  = str2num(answer{3,1});
         lowestband  = str2num(answer{4,1});
         doplot = str2num(answer{5,1});
+    else
+        out = [];
+        return
     end
 end
 if isstruct(data)
@@ -156,7 +159,7 @@ if ~isempty(IR) && ~isempty(fs) && ~isempty(startthresh) && ~isempty(highestband
 
 
     [r, c] = subplotpositions(bands, 0.5);
-
+    out.tables = [];
     for ch = 1:chans
 
         figure('Name',['Centre time vs end truncation, channel ', num2str(ch)]);
@@ -173,7 +176,7 @@ if ~isempty(IR) && ~isempty(fs) && ~isempty(startthresh) && ~isempty(highestband
             plot([0, tlim(end)], ...
                 [Ts(length(tlim),ch,b), Ts(length(tlim),ch,b)], ...
                 'Color',[0.8,0,0], 'LineStyle', ':')
-
+            out.lines.(genvarname(['Ch' num2str(ch) '_' num2str(flist(b)) 'Hz_ts_' num2str(round(Ts(length(tlim),ch,b))) 'ms'])) = getplotdata;
         end
 
         if doplot == 1
@@ -184,8 +187,9 @@ if ~isempty(IR) && ~isempty(fs) && ~isempty(startthresh) && ~isempty(highestband
                 'RowName',num2cell(tlim*1000));
             set(table1,'ColumnWidth',{60});
 
-            disptables(fig1,table1 );
+            [~,tables] = disptables(fig1,table1 );
         end
+        out.tables = [out.tables tables];
     end
 else
     out = [];
