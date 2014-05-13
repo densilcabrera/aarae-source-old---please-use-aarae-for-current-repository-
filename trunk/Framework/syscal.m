@@ -78,8 +78,8 @@ if dontOpen
     disp('-----------------------------------------------------');
 else
     handles.mainHandles = guidata(handles.main_stage1);
-    handles.hap = dsp.AudioPlayer('SampleRate',handles.mainHandles.fs,'QueueDuration',.1,'BufferSizeSource','Property','BufferSize',128);
-    handles.har = dsp.AudioRecorder('SampleRate',handles.mainHandles.fs,'OutputDataType','double','NumChannels',1,'BufferSizeSource','Property','BufferSize',128);
+    handles.hap = dsp.AudioPlayer('SampleRate',handles.mainHandles.fs,'QueueDuration',str2double(get(handles.mainHandles.IN_qdur,'String')),'BufferSizeSource','Property','BufferSize',str2num(get(handles.mainHandles.IN_buffer,'String')));
+    handles.har = dsp.AudioRecorder('SampleRate',handles.mainHandles.fs,'QueueDuration',str2double(get(handles.mainHandles.IN_qdur,'String')),'OutputDataType','double','NumChannels',1,'BufferSizeSource','Property','BufferSize',str2num(get(handles.mainHandles.IN_buffer,'String')));
     handles.hsr1 = dsp.SignalSource;
     handles.hsr1.SamplesPerFrame = 1024;
     set(handles.duration_IN,'String','10')
@@ -376,7 +376,7 @@ switch stimulus
         S = OATSP(duration,0.5,handles.mainHandles.fs,1,0);
         handles.hsr1.Signal = S.audio./max(abs(S.audio));
 end
-handles.hsr1.Signal = [handles.hsr1.Signal;zeros(length(handles.hsr1.Signal),1)];
+handles.hsr1.Signal = [handles.hsr1.Signal;zeros(handles.hap.QueueDuration*handles.mainHandles.fs,1)];
 set(hObject,'BackgroundColor','red');
 pause on
 pause(0.000001)
@@ -397,23 +397,23 @@ catch sthgwrong
     syswarning = sthgwrong.message;
     set(hObject,'Enable','on');
     warndlg(syswarning,'AARAE info')
+    return
 end
 rec = audio;
 if ~isempty(rec)
-    qd = handles.mainHandles.fs*handles.hap.QueueDuration;
+    qd = handles.mainHandles.fs*handles.har.QueueDuration;
     rec = rec(qd:end);
+    rec = rec(1:length(S.audio));
     rec = [rec;zeros(length(handles.hsr1.Signal)-length(rec),1)];
     if stimulus == 1
         ixy = rec;
     else
-        ixy = ifft(fft(rec) .* fft([S.audio2;zeros(length(S.audio2),1)]));
-        ixy = fftshift(ixy);
+        ixy = ifft(fft(rec) .* fft([S.audio2;zeros(length(rec)-length(S.audio2),1)]));
+        ixy = fftshift(ixy(1:duration*handles.mainHandles.fs*2));
     end
-    ixy = ixy(1:end/2);
+    ixy = ixy(1:ceil(end/2));
     LIxy = (mean((20.*log10(abs(fft(ixy)))).^2)).^0.5;
     ixy = ixy./10^(LIxy/20);
-%    Txy = tfestimate(handles.hsr1.Signal,rec,[],[],[],handles.mainHandles.fs);
-%    ixy = ifft(Txy,length(Txy)*2);
     t = linspace(0,length(ixy)/handles.mainHandles.fs,length(ixy));
     IRlevel = (10.*log10((abs(ixy)./max(abs(ixy))).^2));
     abovethresh = find(IRlevel > abs(str2num(get(handles.latthresh_IN,'String')))*-1);

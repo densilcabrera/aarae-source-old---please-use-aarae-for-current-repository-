@@ -873,6 +873,12 @@ function IN_buffer_Callback(hObject, eventdata, handles)
 %        str2double(get(hObject,'String')) returns contents of IN_buffer as a double
 hMain = getappdata(0,'hMain');
 setappdata(hMain,'audio_recorder_buffer',str2num(get(hObject,'String')))
+if isfield(handles,'syscalstats') && isfield(handles.syscalstats,'latency')
+    handles.syscalstats = rmfield(handles.syscalstats,'latency');
+    set(handles.delay_chk,'Enable','off','Value',0)
+    set(handles.delaytext,'String',[])
+end
+guidata(hObject,handles)
 
 
 % --- Executes during object creation, after setting all properties.
