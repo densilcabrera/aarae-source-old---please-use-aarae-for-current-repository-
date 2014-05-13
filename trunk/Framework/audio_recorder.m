@@ -125,12 +125,15 @@ else
         plot(handles.OUT_axes,handles.t,handles.outputdata.audio)
         set(handles.OUT_axes,'tag','OUT_axes')
         set(handles.output_settings,'String',output_settings);
+        set(handles.IN_numchs,'String',num2str(getappdata(hMain,'audio_recorder_numchs')));
         set(handles.text1,'String','Add time');
-        set(handles.IN_duration,'String','1');
+        set(handles.IN_duration,'String',num2str(getappdata(hMain,'audio_recorder_duration')));
         set(handles.IN_fs,'Enable','off');
         set(handles.IN_fs,'String','-');
         set(handles.IN_nbits,'Enable','off');
         set(handles.IN_nbits,'String','-');
+        set(handles.IN_qdur,'String',num2str(getappdata(hMain,'audio_recorder_qdur')));
+        set(handles.IN_buffer,'String',num2str(getappdata(hMain,'audio_recorder_buffer')));
         handles.numchs = str2num(get(handles.IN_numchs,'String'));
         handles.addtime = str2num(get(handles.IN_duration,'String'));
         handles.fs = handles.outputdata.fs;
@@ -143,11 +146,14 @@ else
         set(handles.pb_enable,'Visible','off','Value',0);
         set(handles.output_panel,'Visible','off');
         set(handles.text1,'String','Duration');
-        set(handles.IN_duration,'String','10');
+        set(handles.IN_numchs,'String',num2str(getappdata(hMain,'audio_recorder_numchs')));
+        set(handles.IN_duration,'String',num2str(getappdata(hMain,'audio_recorder_duration')));
         set(handles.IN_fs,'Enable','on');
-        set(handles.IN_fs,'String','48000');
+        set(handles.IN_fs,'String',num2str(getappdata(hMain,'audio_recorder_fs')));
         set(handles.IN_nbits,'Enable','on');
-        set(handles.IN_nbits,'String','16');
+        set(handles.IN_nbits,'String',num2str(getappdata(hMain,'audio_recorder_nbits')));
+        set(handles.IN_qdur,'String',num2str(getappdata(hMain,'audio_recorder_qdur')));
+        set(handles.IN_buffer,'String',num2str(getappdata(hMain,'audio_recorder_buffer')));
         set(handles.OUT_axes,'Visible','off');
         set(handles.audio_recorder,'Position',handles.position-[0 0 0 handles.OUT_axes_position(4)])
         handles.numchs = str2num(get(handles.IN_numchs,'String'));
@@ -431,13 +437,14 @@ function IN_numchs_Callback(hObject, eventdata, handles)
 
 % Get number of channels
 numchs = str2num(get(handles.IN_numchs, 'string'));
-
+hMain = getappdata(0,'hMain');
 % Check user's input
 if (isempty(numchs)||numchs<=0)
     set(hObject,'String',num2str(handles.numchs));
     warndlg('All inputs MUST be real positive numbers!');
 else
     handles.numchs = numchs;
+    setappdata(hMain,'audio_recorder_numchs',numchs)
 end
 guidata(hObject, handles);
 
@@ -465,7 +472,7 @@ function IN_duration_Callback(hObject, eventdata, handles)
 
 % Get duration input
 duration = round(str2num(get(handles.IN_duration, 'string')));
-
+hMain = getappdata(0,'hMain');
 % Check user's input
 if (isempty(duration)||duration<=0)
     if get(handles.pb_enable,'Value') == 1
@@ -476,6 +483,7 @@ if (isempty(duration)||duration<=0)
     warndlg('All inputs MUST be real positive numbers!');
 else
     set(hObject,'String',num2str(duration))
+    setappdata(hMain,'audio_recorder_duration',duration)
     handles.duration = duration;
     handles.addtime = duration;
     if get(handles.pb_enable,'Value') == 1
@@ -512,13 +520,14 @@ function IN_fs_Callback(hObject, eventdata, handles)
 
 % Get sampling frequency input
 fs = str2num(get(handles.IN_fs, 'string'));
-
+hMain = getappdata(0,'hMain');
 % Check user's input
 if (isempty(fs)||fs<=0)
     set(hObject,'String',num2str(handles.fs))
     warndlg('All inputs MUST be real positive numbers!');
 else
     handles.fs = fs;
+    setappdata(hMain,'audio_recorder_fs',fs)
 end
 guidata(hObject, handles);
 
@@ -546,13 +555,14 @@ function IN_nbits_Callback(hObject, eventdata, handles)
 
 % Get bit depth input
 nbits = str2num(get(handles.IN_nbits, 'string'));
-
+hMain = getappdata(0,'hMain');
 % Check user's input
 if (isempty(nbits)||nbits<=0)
     set(hObject,'String',num2str(handles.nbits))
     warndlg('All inputs MUST be real positive numbers!');
 else
     handles.nbits = nbits;
+    setappdata(hMain,'audio_recorder_nbits',nbits)
 end
 guidata(hObject, handles);
 
@@ -642,14 +652,18 @@ function pb_enable_Callback(hObject, eventdata, handles)
 % handles    structure with handles and user data (see GUIDATA)
 
 % Hint: get(hObject,'Value') returns toggle state of pb_enable
+hMain = getappdata(0,'hMain');
 if get(hObject,'Value') == 1
     set(handles.output_panel,'Visible','on');
+    set(handles.IN_numchs,'String',num2str(getappdata(hMain,'audio_recorder_numchs')));
     set(handles.text1,'String','Add time');
-    set(handles.IN_duration,'String','1');
+    set(handles.IN_duration,'String',num2str(getappdata(hMain,'audio_recorder_duration')));
     set(handles.IN_fs,'Enable','off');
     set(handles.IN_fs,'String','-');
     set(handles.IN_nbits,'Enable','off');
     set(handles.IN_nbits,'String','-');
+    set(handles.IN_qdur,'String',num2str(getappdata(hMain,'audio_recorder_qdur')));
+    set(handles.IN_buffer,'String',num2str(getappdata(hMain,'audio_recorder_buffer')));
     set(handles.audio_recorder,'Position',handles.position);
     set(handles.OUT_axes,'Visible','on');
     children = get(handles.OUT_axes,'Children');
@@ -663,11 +677,13 @@ if get(hObject,'Value') == 1
 else
     set(handles.output_panel,'Visible','off');
     set(handles.text1,'String','Duration');
-    set(handles.IN_duration,'String','10');
+    set(handles.IN_duration,'String',num2str(getappdata(hMain,'audio_recorder_duration')));
     set(handles.IN_fs,'Enable','on');
-    set(handles.IN_fs,'String','48000');
+    set(handles.IN_fs,'String',num2str(getappdata(hMain,'audio_recorder_fs')));
     set(handles.IN_nbits,'Enable','on');
-    set(handles.IN_nbits,'String','16');
+    set(handles.IN_nbits,'String',num2str(getappdata(hMain,'audio_recorder_nbits')));
+    set(handles.IN_qdur,'String',num2str(getappdata(hMain,'audio_recorder_qdur')));
+    set(handles.IN_buffer,'String',num2str(getappdata(hMain,'audio_recorder_buffer')));
     set(handles.audio_recorder,'Position',handles.position-[0 0 0 handles.OUT_axes_position(4)]);
     set(handles.OUT_axes,'Visible','off');
     children = get(handles.OUT_axes,'Children');
@@ -831,7 +847,8 @@ function IN_qdur_Callback(hObject, eventdata, handles)
 
 % Hints: get(hObject,'String') returns contents of IN_qdur as text
 %        str2double(get(hObject,'String')) returns contents of IN_qdur as a double
-
+hMain = getappdata(0,'hMain');
+setappdata(hMain,'audio_recorder_qdur',str2num(get(hObject,'String')))
 
 % --- Executes during object creation, after setting all properties.
 function IN_qdur_CreateFcn(hObject, eventdata, handles)
@@ -854,6 +871,8 @@ function IN_buffer_Callback(hObject, eventdata, handles)
 
 % Hints: get(hObject,'String') returns contents of IN_buffer as text
 %        str2double(get(hObject,'String')) returns contents of IN_buffer as a double
+hMain = getappdata(0,'hMain');
+setappdata(hMain,'audio_recorder_buffer',str2num(get(hObject,'String')))
 
 
 % --- Executes during object creation, after setting all properties.
