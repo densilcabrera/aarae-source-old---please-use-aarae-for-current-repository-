@@ -518,16 +518,18 @@ pause off
 % Set record object
 set(handles.har,'NumChannels',get(handles.channum_popup,'Value'))
 guidata(hObject,handles)
+ncycles = ceil(dur/handles.har.SamplesPerFrame);
+audio = zeros(ncycles*handles.har.SamplesPerFrame,get(handles.channum_popup,'Value'));
 rec = [];
 % Initialize record routine
 set(hObject,'BackgroundColor','red');
 try
     UserData = get(handles.stop_btn,'UserData');
-    while length(rec) < dur
+    for i = 1:ncycles
        UserData = get(handles.stop_btn,'UserData');
        if UserData.state == false
-           audio = step(handles.har);
-           rec = [rec;audio];
+           audio((i-1)*handles.har.SamplesPerFrame+1:i*handles.har.SamplesPerFrame,:) = step(handles.har);
+           %rec = [rec;audio];
        else
            break
        end
@@ -541,6 +543,7 @@ catch sthgwrong
     syswarning = sthgwrong.message;
     warndlg(syswarning,'AARAE info')
 end
+rec = audio;
 % Check recording and adjust for Duration
 if ~isempty(rec)
     rec = rec(:,get(handles.channum_popup,'Value'));
