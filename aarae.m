@@ -63,6 +63,12 @@ guidata(hObject, handles);
 setappdata(0, 'hMain', gcf);
 hMain = getappdata(0,'hMain');
 setappdata(hMain,'testsignal',[]);
+setappdata(hMain,'audio_recorder_numchs',1)
+setappdata(hMain,'audio_recorder_duration',1)
+setappdata(hMain,'audio_recorder_fs',48000)
+setappdata(hMain,'audio_recorder_nbits',16)
+setappdata(hMain,'audio_recorder_qdur',1)
+setappdata(hMain,'audio_recorder_buffer',1024)
 
 % In case there are multiple main windows (currently unused until line 81)
 mainGuiInput = find(strcmp(varargin, 'data'));
