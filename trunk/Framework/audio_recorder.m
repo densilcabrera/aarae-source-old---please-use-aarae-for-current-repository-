@@ -329,7 +329,6 @@ else
     % Initialize record routine
     try
         UserData = get(handles.stop_btn,'UserData');
-        %while length(handles.rec) < dur
         for i = 1:ncycles
            UserData = get(handles.stop_btn,'UserData');
            if UserData.state == false
@@ -875,6 +874,8 @@ hMain = getappdata(0,'hMain');
 setappdata(hMain,'audio_recorder_buffer',str2num(get(hObject,'String')))
 if isfield(handles,'syscalstats') && isfield(handles.syscalstats,'latency')
     handles.syscalstats = rmfield(handles.syscalstats,'latency');
+    handles.syscalstats = rmfield(handles.syscalstats,'audio');
+    handles.syscalstats = rmfield(handles.syscalstats,'fs');
     set(handles.delay_chk,'Enable','off','Value',0)
     set(handles.delaytext,'String',[])
 end
