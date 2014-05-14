@@ -99,8 +99,8 @@ function nodes = mySelectFcn(tree, value)
                 set(mainHandles.Xvalues_sel,'SelectedObject',mainHandles.radiobutton1);
                 set(mainHandles.ntable_popup,'String',cellstr(num2str((1:length(audiodata.tables))')));
                 set(mainHandles.ntable_popup,'Value',1);
-                set(mainHandles.Xvalues_box,'String',audiodata.tables(1).RowName)
-                set(mainHandles.Yvalues_box,'String',audiodata.tables(1).ColumnName)
+                set(mainHandles.Xvalues_box,'String',audiodata.tables(1).RowName,'Value',1)
+                set(mainHandles.Yvalues_box,'String',audiodata.tables(1).ColumnName,'Value',1)
                 bar(mainHandles.axesdata,audiodata.tables(1).Data(:,1),'FaceColor',[0 0.5 0.5])
                 set(mainHandles.axesdata,'XTickLabel',audiodata.tables(1).RowName)
             else

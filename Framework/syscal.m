@@ -521,6 +521,7 @@ guidata(hObject,handles)
 ncycles = ceil(dur/handles.har.SamplesPerFrame);
 audio = zeros(ncycles*handles.har.SamplesPerFrame,get(handles.channum_popup,'Value'));
 rec = [];
+handles = rmfield(handles,'filtaudio');
 % Initialize record routine
 set(hObject,'BackgroundColor','red');
 try
