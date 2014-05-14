@@ -520,8 +520,7 @@ set(handles.har,'NumChannels',get(handles.channum_popup,'Value'))
 guidata(hObject,handles)
 ncycles = ceil(dur/handles.har.SamplesPerFrame);
 audio = zeros(ncycles*handles.har.SamplesPerFrame,get(handles.channum_popup,'Value'));
-rec = [];
-handles = rmfield(handles,'filtaudio');
+if isfield(handles,'filtaudio'), handles = rmfield(handles,'filtaudio'); end
 % Initialize record routine
 set(hObject,'BackgroundColor','red');
 try
@@ -540,7 +539,7 @@ try
     end
 catch sthgwrong
     UserData.state = true;
-    rec = [];
+    audio = [];
     syswarning = sthgwrong.message;
     warndlg(syswarning,'AARAE info')
 end
