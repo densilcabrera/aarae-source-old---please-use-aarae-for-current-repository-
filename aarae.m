@@ -23,7 +23,7 @@ function varargout = aarae(varargin)
 
 % Edit the above text to modify the response to help aarae
 
-% Last Modified by GUIDE v2.5 01-May-2014 13:55:14
+% Last Modified by GUIDE v2.5 15-May-2014 11:44:27
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -669,7 +669,16 @@ function IR_btn_Callback(hObject, eventdata, handles)
 hMain = getappdata(0,'hMain');
 audiodata = getappdata(hMain,'testsignal');
 S = audiodata.audio;
-invS = repmat(audiodata.audio2,1,size(audiodata.audio,2));
+if ~isequal(size(audiodata.audio),size(audiodata.audio2))
+    rmsize = size(audiodata.audio);
+    if size(audiodata.audio,2) ~= size(audiodata.audio2,2)
+        invS = repmat(audiodata.audio2,[1 rmsize(2:end)]);
+    else
+        invS = repmat(audiodata.audio2,[1 1 rmsize(3:end)]);
+    end
+else
+    invS = audiodata.audio2;
+end
 fs = audiodata.fs;
 nbits = audiodata.nbits;
 selectedNodes = handles.mytree.getSelectedNodes;
@@ -721,11 +730,12 @@ if method == 1 || method == 3
     IR = convolvedemo(S_pad, invS_pad, 2, fs); % Calls convolvedemo.m
 end
 if method == 1
-    [trimsamp_low,trimsamp_high] = window_signal('main_stage1', handles.aarae,'IR',IR); % Calls the trimming GUI window to trim the IR
+    if ndims(IR) > 2, tempIR(:,:) = IR(:,1,:); else tempIR = IR; end
+    [trimsamp_low,trimsamp_high] = window_signal('main_stage1', handles.aarae,'IR',tempIR); % Calls the trimming GUI window to trim the IR
     %[~, id] = max(abs(IR));
     %trimsamp_low = id-round(IRlength./2);
     %trimsamp_high = trimsamp_low + IRlength -1;
-    IR = IR(trimsamp_low:trimsamp_high,:);
+    IR = IR(trimsamp_low:trimsamp_high,:,:);
     IRlength = length(IR);
 else
     IRlength = length(IR);
@@ -733,9 +743,10 @@ end
 
 % Create new leaf and update the tree
 handles.mytree.setSelectedNode(handles.root);
-newleaf = 'IR';
+newleaf = ['IR ' selectedNodes(1).getName.char];
 if ~isempty(getappdata(hMain,'testsignal'))
-    signaldata = struct;
+    signaldata = audiodata;
+    signaldata = rmfield(signaldata,'audio2');
     signaldata.audio = IR;
     signaldata.fs = fs;
     signaldata.nbits = nbits;
@@ -1431,6 +1442,8 @@ method = menu('Calibration',...
               'Choose from AARAE',...
               'Locate file on disc',...
               'Input value',...
+              'Specify Leq',...
+              'Specify weighted Leq',...
               'Cancel');
 cal_level = [];
 switch method
@@ -1535,7 +1548,44 @@ switch method
             warndlg('Incompatible calibration','Warning!');
         end
     case 4
-        warndlg('Calibration canceled!','AARAE info')
+        caldata = selectedNodes(1).handle.UserData;
+        cal_level = 10 .* log10(mean(caldata.audio.^2,1));
+        cal_offset = inputdlg('Calibration tone RMS level',...
+                    'Calibration value',[1 50],cellstr(num2str(zeros(size(cal_level)))));
+        if isempty(cal_offset), return; end
+        if isequal(size(str2num(char(cal_offset))),size(cal_level))
+            cal_level = str2num(char(cal_offset)) - cal_level;
+        else
+            warndlg('Calibration values mismatch!','AARAE info')
+            return
+        end
+    case 5
+        caldata = selectedNodes(1).handle.UserData;
+        weights = what([cd '/Processors/Filters']);
+        if ~isempty(weights.m)
+            [selection,ok] = listdlg('ListString',cellstr(weights.m),'SelectionMode','single');
+        else
+            warndlg('No weighting filters found!','AARAE info')
+            return
+        end
+        if ok == 1
+            [~,funname] = fileparts(weights.m{selection,1});
+            caldata = feval(funname,caldata);
+            cal_level = 10 .* log10(mean(caldata.audio.^2,1));
+            cal_offset = inputdlg('Calibration tone RMS level',...
+                        'Calibration value',[1 50],cellstr(num2str(zeros(size(cal_level)))));
+            if isempty(cal_offset), return; end
+            if isequal(size(str2num(char(cal_offset))),size(cal_level))
+                cal_level = str2num(char(cal_offset)) - cal_level;
+            else
+                warndlg('Calibration values mismatch!','AARAE info')
+                return
+            end
+        else
+            return
+        end
+    case 6
+        return
 end
 if ~isempty(cal_level)
     for i = 1:length(selectedNodes)
@@ -2277,3 +2327,11 @@ function nchart_popup_CreateFcn(hObject, eventdata, handles)
 if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
     set(hObject,'BackgroundColor','white');
 end
+
+
+% --- Executes on button press in wild_btn.
+function wild_btn_Callback(hObject, eventdata, handles)
+% hObject    handle to wild_btn (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+!matlab -nodesktop
