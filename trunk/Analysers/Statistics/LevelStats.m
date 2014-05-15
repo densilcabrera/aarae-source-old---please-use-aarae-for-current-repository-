@@ -44,6 +44,9 @@ if nargin < 2
         tau = str2num(char(param(1)));
         cal = str2num(char(param(2)));
         weight = char(param(3));
+    else
+        out = [];
+        return
     end
 end
 
