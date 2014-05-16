@@ -755,6 +755,17 @@ end
 % Create new leaf and update the tree
 handles.mytree.setSelectedNode(handles.root);
 newleaf = ['IR ' selectedNodes(1).getName.char];
+leafname = isfield(handles,genvarname(newleaf));
+if leafname == 1
+    index = 1;
+    % This while cycle is just to make sure no signals are
+    % overwriten
+    if length(genvarname([newleaf,'_',num2str(index)])) >= namelengthmax, newleaf = newleaf(1:round(end/2)); end
+    while isfield(handles,genvarname([newleaf,'_',num2str(index)])) == 1
+        index = index + 1;
+    end
+    newleaf = [newleaf,'_',num2str(index)];
+end
 if ~isempty(getappdata(hMain,'testsignal'))
     signaldata = audiodata;
     signaldata = rmfield(signaldata,'audio2');
