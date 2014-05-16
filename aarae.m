@@ -738,6 +738,7 @@ if method == 1 || method == 3
     S_pad = [S; zeros(size(invS))];
     invS_pad = [invS; zeros(size(S))];
     IR = convolvedemo(S_pad, invS_pad, 2, fs); % Calls convolvedemo.m
+    IR = IR(1:length(S_pad),:,:);
 end
 if method == 1
     if ndims(IR) > 2, tempIR(:,:) = IR(:,1,:); else tempIR = IR; end
