@@ -1286,6 +1286,12 @@ if (click == handles.axestime) || (get(click,'Parent') == handles.axestime)
             line = data;
             cmap = colormap(lines(size(data,2)));
         end
+        if isfield(signaldata,'cal')
+            if size(line,2) == length(signaldata.cal)
+                signaldata.cal(find(isnan(signaldata.cal))) = 0;
+                line = line.*repmat(10.^(signaldata.cal./20),length(line),1);
+            end
+        end
         h = figure;
         set(h,'DefaultAxesColorOrder',cmap);
         plottype = get(handles.time_popup,'Value');
@@ -1376,7 +1382,12 @@ if (click == handles.axesfreq) || (get(click,'Parent') == handles.axesfreq)
             line = data;
             cmap = colormap(lines(size(data,2)));
         end
-
+        if isfield(signaldata,'cal')
+            if size(line,2) == length(signaldata.cal)
+                signaldata.cal(find(isnan(signaldata.cal))) = 0;
+                line = line.*repmat(10.^(signaldata.cal./20),length(line),1);
+            end
+        end
         h = figure;
         set(h,'DefaultAxesColorOrder',cmap);
         plottype = get(handles.freq_popup,'Value');
