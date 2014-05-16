@@ -706,13 +706,23 @@ if isfield(audiodata,'properties') && isfield(audiodata.properties,'startflag')
                 %ladjust = length(IR);
                 for j = 1:size(S,2)
                     for i = 1:length(startflag)
-                        newS(:,i) = S(startflag(i):startflag(i)+len-1,j);
+                        newS(:,i,:) = S(startflag(i):startflag(i)+len-1,j,:);
                     end
-                    newS_pad = [newS; zeros(size(invS(:,j),1),size(newS,2))];
-                    invS_pad = [repmat(invS(:,j),1,size(newS,2)); zeros(size(newS))];
+                    newrmsize = size(newS);
+                    newinvS = repmat(audiodata.audio2(:,j),[1 newrmsize(2:end)]);
+                    newS_pad = [newS; zeros(size(newinvS))];
+                    invS_pad = [newinvS; zeros(size(newS))];
                     convolve = convolvedemo(newS_pad, invS_pad, 2, fs);
-                    convolve = convolve(1:round(end/2),:);
-                    IR(:,j,1,1:size(newS,2)) = convolve;%zeros(ladjust-length(convolve),size(newS,2))]; % Calls convolvedemo.m
+                    convolve = convolve(1:round(end/2),:,:);
+                    IR(:,j,:,:) = convolve;%zeros(ladjust-length(convolve),size(newS,2))]; % Calls convolvedemo.m
+                end
+                IR = permute(IR,[1,2,4,3]);
+                if size(IR,2) == 1
+                    button = questdlg('Dimension 2 is singleton, stack IRs in dimension 2?','AARAE info','Yes','No','Yes');
+                    switch button
+                        case 'Yes'
+                            IR = permute(IR,[1,4,3,2]);
+                    end
                 end
                 S = newS;
                 invS = repmat(invS,1,size(S,2));
