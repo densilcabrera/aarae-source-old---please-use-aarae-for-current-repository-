@@ -43,8 +43,8 @@ if nargin == 0 % If the function is called within the AARAE environment it
         fs = param(1);
         T = param(2);
         edge = param(3);
-        hif = param(4);
-        lof = param(5);
+        hifreq = param(4);
+        lofreq = param(5);
         dispersion = param(6);
         wind = param(7);
         modF = param(8);
