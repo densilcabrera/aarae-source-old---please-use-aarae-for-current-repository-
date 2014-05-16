@@ -10,6 +10,12 @@ if ndims(signaldata.audio) > 2
 else
     line = signaldata.audio;
 end
+if isfield(signaldata,'cal')
+    if size(line,2) == length(signaldata.cal)
+        signaldata.cal(find(isnan(signaldata.cal))) = 0;
+        line = line.*repmat(10.^(signaldata.cal./20),length(line),1);
+    end
+end
 set(handles.(genvarname(['smooth' axes '_popup'])),'Visible','off');
 if plottype == 1, line = real(line); end
 if plottype == 2, line = line.^2; end
