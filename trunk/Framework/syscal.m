@@ -404,7 +404,7 @@ if ~isempty(rec)
     qd = handles.mainHandles.fs*handles.har.QueueDuration;
     rec = rec(qd:end);
     rec = rec(1:length(S.audio));
-    rec = [rec;zeros(length(handles.hsr1.Signal)-length(rec),1)];
+    rec = [rec;zeros(length(handles.hsr1.Signal),1)];
     if stimulus == 1
         ixy = rec;
     else
