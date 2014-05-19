@@ -150,7 +150,7 @@ if ~isempty(audio) && ~isempty(fs) && ~isempty(cal) && ~isempty(showpercentiles)
             hold on
 
             % x-axis
-            set(gca,'XTickLabel',num2cell(frequencies))
+            set(gca,'XTick',1:length(frequencies),'XTickLabel',num2cell(frequencies))
             if (frequencies(1) ~= 1) && (frequencies(end) ~= length(frequencies))
                 xlabel('1/3-Octave Band Centre Frequency (Hz)')
             else

@@ -90,19 +90,33 @@ function nodes = mySelectFcn(tree, value)
             if isfield(audiodata,'lines')
                 set(mainHandles.data_panel1,'Visible','on');
                 set(mainHandles.nchart_popup,'String',[' ';fieldnames(audiodata.lines)])
-                set(mainHandles.nchart_popup,'Value',1)
+                %set(mainHandles.nchart_popup,'Value',1)
             else
                 set(mainHandles.data_panel1,'Visible','off');
             end
             if isfield(audiodata,'tables')
                 set(mainHandles.data_panel2,'Visible','on');
-                set(mainHandles.Xvalues_sel,'SelectedObject',mainHandles.radiobutton1);
+                %set(mainHandles.Xvalues_sel,'SelectedObject',mainHandles.radiobutton1);
                 set(mainHandles.ntable_popup,'String',cellstr(num2str((1:length(audiodata.tables))')));
-                set(mainHandles.ntable_popup,'Value',1);
-                set(mainHandles.Xvalues_box,'String',audiodata.tables(1).RowName,'Value',1)
-                set(mainHandles.Yvalues_box,'String',audiodata.tables(1).ColumnName,'Value',1)
-                bar(mainHandles.axesdata,audiodata.tables(1).Data(:,1),'FaceColor',[0 0.5 0.5])
-                set(mainHandles.axesdata,'XTickLabel',audiodata.tables(1).RowName)
+                %set(mainHandles.ntable_popup,'Value',1);
+                ntable = get(mainHandles.ntable_popup,'Value');
+                Xvalues = get(mainHandles.Xvalues_sel,'SelectedObject');
+                Xvalues = get(Xvalues,'tag');
+                switch Xvalues
+                    case 'radiobutton1'
+                        if size(audiodata.tables(ntable).Data,2) < get(mainHandles.Yvalues_box,'Value'), set(mainHandles.Yvalues_box,'Value',1); end
+                        bar(mainHandles.axesdata,audiodata.tables(ntable).Data(:,get(mainHandles.Yvalues_box,'Value')),'FaceColor',[0 0.5 0.5])
+                        set(mainHandles.axesdata,'Xtick',1:length(audiodata.tables(ntable).RowName),'XTickLabel',audiodata.tables(ntable).RowName)
+                        set(mainHandles.Xvalues_box,'String',audiodata.tables(ntable).RowName,'Value',1)
+                        set(mainHandles.Yvalues_box,'String',audiodata.tables(ntable).ColumnName)
+                    case 'radiobutton2'
+                        if size(audiodata.tables(ntable).Data,1) < get(mainHandles.Yvalues_box,'Value'), set(mainHandles.Yvalues_box,'Value',1); end
+                        bar(mainHandles.axesdata,audiodata.tables(ntable).Data(get(mainHandles.Yvalues_box,'Value'),:),'FaceColor',[0 0.5 0.5])
+                        set(mainHandles.axesdata,'Xtick',1:length(audiodata.tables(ntable).ColumnName),'XTickLabel',audiodata.tables(ntable).ColumnName)
+                        set(mainHandles.Xvalues_box,'String',audiodata.tables(ntable).ColumnName,'Value',1)
+                        set(mainHandles.Yvalues_box,'String',audiodata.tables(ntable).RowName)
+                end
+                %set(mainHandles.axesdata,'XTickLabel',audiodata.tables(1).RowName)
             else
                 set(mainHandles.data_panel2,'Visible','off');
             end
