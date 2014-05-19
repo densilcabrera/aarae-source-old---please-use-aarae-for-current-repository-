@@ -1,4 +1,4 @@
-function out = DiffusenessHanyuISRA2013(IR, fs, doplot, threshold)
+function out = DiffusenessHanyuISRA2013(IR, fs, startindex, endindex, doplot, threshold)
 % This function calculates the degree of time series fluctuation of a room
 % impulse response, or part thereof, based on the method proposed in:
 % T. Hanyu, 'Analysis method for estimating diffuseness of sound fields by
@@ -95,6 +95,9 @@ if nargin < 3
             endtime = str2num(answer{2,1});
             threshold = str2num(answer{3,1});
             doplot = str2num(answer{4,1});
+        else
+            out = [];
+            return
         end
 
         startindex = round(starttime*fs)+1;
@@ -103,13 +106,13 @@ if nargin < 3
         if startindex > 0 ...
                 && startindex < endindex ...
                 && endindex <= length(data)
-            data = data(startindex:endindex,:,:);
             settimelimits = 1;
         end
     end %while
 end
 
-if ~isempty(data) && ~isempty(fs) && ~isempty(starttime) && ~isempty(endtime) && ~isempty(doplot) && ~isempty(threshold)
+if ~isempty(data) && ~isempty(fs) && ~isempty(startindex) && ~isempty(endindex) && ~isempty(doplot) && ~isempty(threshold)
+    data = data(startindex:endindex,:,:);
     S = size(data); % size of the IR
     ndim = length(S); % number of dimensions
     switch ndim
@@ -216,7 +219,7 @@ if ~isempty(data) && ~isempty(fs) && ~isempty(starttime) && ~isempty(endtime) &&
 
     % Batch analysing parameters
     out.funcallback.name = 'DiffusenessHanyuISRA2013.m';
-    out.funcallback.inarg = {fs,doplot,threshold};
+    out.funcallback.inarg = {fs,startindex,endindex,doplot,threshold};
 
 
 

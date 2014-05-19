@@ -204,6 +204,14 @@ if ~isempty(getappdata(hMain,'testsignal'))
         end
         newleaf = [newleaf,'_',num2str(index)];
     end
+%    if length(signaldata.audio) > 1e6
+%        audiodata = signaldata.audio;
+%        fileID = fopen([cd '/Utilities/Temp/' newleaf '.dat'],'w');
+%        fwrite(fileID,audiodata,'double');
+%        fclose(fileID);
+%        m = memmapfile([cd '/Utilities/Temp/' newleaf '.dat'],'Format','double');
+%        signaldata.audio = m;
+%    end
     handles.(genvarname(newleaf)) = uitreenode('v0', newleaf,  newleaf,  iconPath, true);
     handles.(genvarname(newleaf)).UserData = signaldata;
     handles.testsignals.add(handles.(genvarname(newleaf)));
@@ -1302,11 +1310,11 @@ if (click == handles.axestime) || (get(click,'Parent') == handles.axestime)
         if plottype == 5, line = medfilt1(diff([angle(hilbert(real(line))); zeros(1,size(line,2))])*signaldata.fs/2/pi, 5); end
         if plottype == 6, line = abs(line); end
         if plottype == 7, line = imag(line); end
-        if plottype == 8, line = 10*log10(abs(fft(line)).^2); end %freq
-        if plottype == 9, line = abs(fft(line)).^2; end
-        if plottype == 10, line = abs(fft(line)); end
-        if plottype == 11, line = real(fft(line)); end
-        if plottype == 12, line = imag(fft(line)); end
+        if plottype == 8, line = 10*log10(abs(fft(line).*2.^0.5/length(line)).^2); end %freq
+        if plottype == 9, line = (abs(fft(line)).*2.^0.5/length(line)).^2; end
+        if plottype == 10, line = abs(fft(line)).*2.^0.5/length(line); end
+        if plottype == 11, line = real(fft(line)).*2.^0.5/length(line); end
+        if plottype == 12, line = imag(fft(line)).*2.^0.5/length(line); end
         if plottype == 13, line = angle(fft(line)); end
         if plottype == 14, line = unwrap(angle(fft(line))); end
         if plottype == 15, line = angle(fft(line)) .* 180/pi; end
@@ -1398,11 +1406,11 @@ if (click == handles.axesfreq) || (get(click,'Parent') == handles.axesfreq)
         if plottype == 5, line = medfilt1(diff([angle(hilbert(real(line))); zeros(1,size(line,2))])*signaldata.fs/2/pi, 5); end
         if plottype == 6, line = abs(line); end
         if plottype == 7, line = imag(line); end
-        if plottype == 8, line = 10*log10(abs(fft(line)).^2); end %freq
-        if plottype == 9, line = abs(fft(line)).^2; end
-        if plottype == 10, line = abs(fft(line)); end
-        if plottype == 11, line = real(fft(line)); end
-        if plottype == 12, line = imag(fft(line)); end
+        if plottype == 8, line = 10*log10(abs(fft(line).*2.^0.5/length(line)).^2); end
+        if plottype == 9, line = (abs(fft(line)).*2.^0.5/length(line)).^2; end
+        if plottype == 10, line = abs(fft(line)).*2.^0.5/length(line); end
+        if plottype == 11, line = real(fft(line)).*2.^0.5/length(line); end
+        if plottype == 12, line = imag(fft(line)).*2.^0.5/length(line); end
         if plottype == 13, line = angle(fft(line)); end
         if plottype == 14, line = unwrap(angle(fft(line))); end
         if plottype == 15, line = angle(fft(line)) .* 180/pi; end
@@ -2262,10 +2270,10 @@ Xvalues = get(Xvalues,'tag');
 switch Xvalues
     case 'radiobutton1'
         bar(handles.axesdata,data.tables(ntable).Data(:,get(handles.Yvalues_box,'Value')),'FaceColor',[0 0.5 0.5])
-        set(handles.axesdata,'XTickLabel',data.tables(ntable).RowName)
+        set(handles.axesdata,'Xtick',1:length(data.tables(ntable).RowName),'XTickLabel',data.tables(ntable).RowName,'XTickLabelStyle','diagonal')
     case 'radiobutton2'
         bar(handles.axesdata,data.tables(ntable).Data(get(handles.Yvalues_box,'Value'),:),'FaceColor',[0 0.5 0.5])
-        set(handles.axesdata,'XTickLabel',data.tables(ntable).ColumnName)
+        set(handles.axesdata,'Xtick',1:length(data.tables(ntable).ColumnName),'XTickLabel',data.tables(ntable).ColumnName,'XTickLabelStyle','diagonal')
 end
 
 % --- Executes during object creation, after setting all properties.

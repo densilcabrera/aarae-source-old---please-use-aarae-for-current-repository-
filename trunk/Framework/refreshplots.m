@@ -2,6 +2,7 @@ function refreshplots(handles,axes)
 
 selectedNodes = handles.mytree.getSelectedNodes;
 signaldata = selectedNodes(1).handle.UserData;
+%if isa(signaldata.audio,'memmapfile'), signaldata.audio = signaldata.audio.Data; end
 plottype = get(handles.(genvarname([axes '_popup'])),'Value');
 t = linspace(0,length(signaldata.audio),length(signaldata.audio))./signaldata.fs;
 f = signaldata.fs .* ((1:length(signaldata.audio))-1) ./ length(signaldata.audio);
@@ -24,11 +25,11 @@ if plottype == 4, line = abs(hilbert(real(line))); end
 if plottype == 5, line = medfilt1(diff([angle(hilbert(real(line))); zeros(1,size(line,2))])*signaldata.fs/2/pi, 5); end
 if plottype == 6, line = abs(line); end
 if plottype == 7, line = imag(line); end
-if plottype == 8, line = 10*log10(abs(fft(line)).^2);  set(handles.(genvarname(['smooth' axes '_popup'])),'Visible','on'); end %freq
-if plottype == 9, line = abs(fft(line)).^2; end
-if plottype == 10, line = abs(fft(line)); end
-if plottype == 11, line = real(fft(line)); end
-if plottype == 12, line = imag(fft(line)); end
+if plottype == 8, line = 10*log10(abs(fft(line).*2.^0.5/length(line)).^2);  set(handles.(genvarname(['smooth' axes '_popup'])),'Visible','on'); end %freq
+if plottype == 9, line = (abs(fft(line)).*2.^0.5/length(line)).^2; end
+if plottype == 10, line = abs(fft(line)).*2.^0.5/length(line); end
+if plottype == 11, line = real(fft(line)).*2.^0.5/length(line); end
+if plottype == 12, line = imag(fft(line)).*2.^0.5/length(line); end
 if plottype == 13, line = angle(fft(line)); end
 if plottype == 14, line = unwrap(angle(fft(line))); end
 if plottype == 15, line = angle(fft(line)) .* 180/pi; end
