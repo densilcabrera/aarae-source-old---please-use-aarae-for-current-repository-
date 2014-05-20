@@ -125,7 +125,7 @@ if ~isempty(data) && ~isempty(fs) %&& ~isempty(WindowTime) && ~isempty(OffsetTim
     
     % find ED ==1
     
-    transition = zeros(chans, bands);
+    [transition, transitionk] = deal(zeros(chans, bands));
     for ch = 1:chans
         for b = 1:bands
             tr = find(ED(:,ch,b) >= 1,1,'first');
