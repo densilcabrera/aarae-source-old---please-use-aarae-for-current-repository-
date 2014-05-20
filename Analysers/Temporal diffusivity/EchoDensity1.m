@@ -1,5 +1,5 @@
-function [OUT,varargout] = EchoDensity1(IN, WindowTime, OffsetTime, DoWindow, fs)
-% This function calculates some indicators of echo density for room
+function [OUT,varargout] = EchoDensity1(IN, WindowTime, OffsetTime, DoWindow,Displaytime, fs)
+% This function calculates two indicators of echo density for room
 % impulse responses. These are calculated in individual time windows (e.g.
 % 20 ms windows) over the course of the impulse response.
 %
@@ -14,18 +14,20 @@ function [OUT,varargout] = EchoDensity1(IN, WindowTime, OffsetTime, DoWindow, fs
 if nargin == 1
     param = inputdlg({'Duration of window (ms)';...
         'Hop between windows (ms)';...
-        'Rectangular window [0] or Hann window [1]'},...
+        'Rectangular window [0] or Hann window [1]';...
+        'Display duration (s)'},...
         'Settings',...
         [1 30],...
-        {'20';'1';'1'}); % Default values
+        {'20';'1';'1';'500'}); % Default values
     
     param = str2num(char(param));
     
-    if length(param) < 3, param = []; end
+    if length(param) < 4, param = []; end
     if ~isempty(param)
         WindowTime = param(1);
         OffsetTime = param(2);
         DoWindow = param(3);
+        Displaytime = param(4);
     else
         OUT = [];
         return
@@ -86,50 +88,58 @@ if ~isempty(data) && ~isempty(fs) %&& ~isempty(WindowTime) && ~isempty(OffsetTim
         truncdata = data(start:finish,:,:);
         %windata = truncdata.*repmat(w2,[1,chans,bands]);
         
-
+        
         
         
         % the following should be vectorized (but it works fine as loops)
-                for ch = 1:chans
-                    for b = 1:bands
-
-
-                            % Equation 4
-                        SD1 = sum(w2.*truncdata(:,ch,b).^2).^0.5;
-                        
-                        
-                        % Equation 3
-                        ED(n,ch,b) = 1./(erfc(1/sqrt(2))) .* ...
-                            sum(w2.*(abs(truncdata(:,ch,b))>SD1));
-
-                        % Equation 5
-                        eta_kurt(n,ch,b) = SD1 ./ ...
-                        (1/3 * sum(w2.*truncdata(:,ch,b).^4)).^0.25;
-                        
-                    end
-                end
-
+        for ch = 1:chans
+            for b = 1:bands
+                % Equations from
+                %  J.S. Abel & P. Huang
+                %  "A simple, robust measure of reverberation echo density,"
+                %  121st Audio Engineering Society Convention, San Francisco USA, 2006.
+                
+                % Equation 4
+                SD1 = sum(w2.*truncdata(:,ch,b).^2).^0.5;
+                
+                % Equation 3
+                ED(n,ch,b) = 1./(erfc(1/sqrt(2))) .* ...
+                    sum(w2.*(abs(truncdata(:,ch,b))>SD1));
+                
+                % Equation 5
+                eta_kurt(n,ch,b) = SD1 ./ ...
+                    (1/3 * sum(w2.*truncdata(:,ch,b).^4)).^0.25;
+                
+            end
+        end
+        
         
         
     end
     
-%     IRt_vec = 0.001*(OffsetTime*((1:nwin)-1)...
-%         +0.5*WindowTime); % window times
+    %     IRt_vec = 0.001*(OffsetTime*((1:nwin)-1)...
+    %         +0.5*WindowTime); % window times
     IRt_vec = 0.001*OffsetTime*((1:nwin)-1);
     
-
+    
     
     % find ED ==1
     
     transition = zeros(chans, bands);
     for ch = 1:chans
         for b = 1:bands
-             tr = find(ED(:,ch,b) >= 1,1,'first');
-             if isempty(tr)
+            tr = find(ED(:,ch,b) >= 1,1,'first');
+            trk = find(eta_kurt(:,ch,b) >= 1,1,'first');
+            if isempty(tr)
                 transition(ch,b) = 1;
-             else
-                 transition(ch,b) = tr;
-             end
+            else
+                transition(ch,b) = tr;
+            end
+            if isempty(trk)
+                transitionk(ch,b) = 1;
+            else
+                transitionk(ch,b) = trk;
+            end
         end
     end
     
@@ -161,7 +171,7 @@ if ~isempty(data) && ~isempty(fs) %&& ~isempty(WindowTime) && ~isempty(OffsetTim
             %plot(IRt_vec,SDn(:,ch,b),'r','DisplayName','Normalized Standard Deviation')
             plot(IRt_vec,ED(:,ch,b),'b','DisplayName','Echo Density')
             plot([IRt_vec(transition(ch,b)),IRt_vec(transition(ch,b))],...
-                [0,1],':b','DisplayName',['Transition time',...
+                [0,1],':b','DisplayName',['Transition time ',...
                 num2str(round(1000*IRt_vec(transition(ch,b)))),' ms'])
             plot(IRt_vec(transition(ch,b)),1,'ob','DisplayName','First ED=1');
             
@@ -169,9 +179,20 @@ if ~isempty(data) && ~isempty(fs) %&& ~isempty(WindowTime) && ~isempty(OffsetTim
             % (above line is for debug)
             plot(IRt_vec,eta_kurt(:,ch,b),'Color',[0,0.5,0],...
                 'DisplayName','Kurtosis method')
+            plot([IRt_vec(transitionk(ch,b)),IRt_vec(transitionk(ch,b))],...
+                [0,1],':','Color',[0,0.5,0],...
+                'DisplayName',['Transition (kurtosis) ',...
+                num2str(round(1000*IRt_vec(transitionk(ch,b)))),' ms'])
+            plot(IRt_vec(transitionk(ch,b)),1,'o','Color',[0,0.5,0],...
+                'DisplayName','First ED(kurtosis)=1');
+            
             xlabel('Time (s)')
             ylabel('Normalized values')
-            xlim([-0.001*WindowTime/2, (len-1)./fs - 0.001*WindowTime/2])
+            if Displaytime == 0
+                xlim([-0.001*WindowTime/2, (len-1)./fs - 0.001*WindowTime/2])
+            else
+                xlim([-0.001*WindowTime/2, Displaytime*0.001])
+            end
             legend('show');
             hold off
             OUT.lines.(genvarname(['Echo_density_ch' num2str(ch) '_' num2str(bandID(b)) 'Hz'])) = getplotdata;
@@ -182,12 +203,16 @@ if ~isempty(data) && ~isempty(fs) %&& ~isempty(WindowTime) && ~isempty(OffsetTim
         
         OUT.ED = ED;
         OUT.eta_kurt = eta_kurt;
+        OUT.transition = transition;
+        OUT.transitionkurtosis = transitionk;
         OUT.funcallback.name = 'EchoDensity1.m';
-        OUT.funcallback.inarg = {WindowTime,OffsetTime,DoWindow};
+        OUT.funcallback.inarg = {WindowTime,OffsetTime,DoWindow,Displaytime};
     else
         OUT = ED;
     end
     varargout{1} = eta_kurt;
+    varargout{2} = transition;
+    varargout{3} = transitionk;
     
     
 else
