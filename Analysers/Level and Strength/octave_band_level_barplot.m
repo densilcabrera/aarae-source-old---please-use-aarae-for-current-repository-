@@ -39,7 +39,7 @@ if nargin < 4,
         {num2str(dosubplots);num2str(tau); num2str(cal);num2str(fhi); ...
         num2str(flo); num2str(showpercentiles)});
     param = str2num(char(param));
-    if length(param) < 6, param = []; end
+    %if length(param) < 6, param = []; end
     if ~isempty(param)
         dosubplots = round(param(1));
         tau = param(2);
@@ -51,18 +51,19 @@ if nargin < 4,
 end
 
 if ~isempty(audio) && ~isempty(fs) && ~isempty(cal) && ~isempty(showpercentiles) && ~isempty(flo) && ~isempty(fhi) && ~isempty(tau) && ~isempty(dosubplots)
-    S = size(audio); % size of the audio matrix
-    ndim = length(S); % number of dimensions
-    switch ndim
-        case 2
-            % len = S(1); % number of samples in audio
-            chans = S(2); % number of channels
-            bands = 1; % number of bands
-        case 3
-            % len = S(1); % number of samples in audio
-            chans = S(2); % number of channels
-            bands = S(3); % number of bands
-    end
+%     S = size(audio); % size of the audio matrix
+%     ndim = length(S); % number of dimensions
+%     switch ndim
+%         case 2
+%             % len = S(1); % number of samples in audio
+%             chans = S(2); % number of channels
+%             bands = 1; % number of bands
+%         case 3
+%             % len = S(1); % number of samples in audio
+%             chans = S(2); % number of channels
+%             bands = S(3); % number of bands
+%     end
+    [~,chans,bands]=size(audio);
     if bands > 1
         if isfield(in,'bandID')
             frequencies = in.bandID;
