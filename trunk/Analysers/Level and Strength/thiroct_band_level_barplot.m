@@ -39,7 +39,7 @@ if nargin < 4
         {num2str(dosubplots);num2str(tau); num2str(cal);num2str(fhi); ...
         num2str(flo); num2str(showpercentiles)});
     param = str2num(char(param));
-    if length(param) < 6, param = []; end
+   % if length(param) < 6, param = []; end
     if ~isempty(param)
         dosubplots = round(param(1));
         tau = param(2);
