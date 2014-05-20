@@ -87,7 +87,6 @@ else
     set(handles.percentage_IN,'String','40')
     set(handles.threshold_IN,'String','0.1')
     set(handles.tonelevel_IN,'String','94')
-    set(handles.tolerance_IN,'String','0.1')
     stats{1} = ['Sampling frequency: ' num2str(handles.mainHandles.fs) ' samples/s'];
     set(handles.statstext,'String',stats);
     UserData.state = false;
@@ -125,13 +124,15 @@ function load_btn_Callback(hObject, eventdata, handles)
 % hObject    handle to load_btn (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
+if isfield(handles,'filtaudio'), handles = rmfield(handles,'filtaudio'); end
 [filename,pathname,filterindex] = uigetfile(...
-    {'*.wav;*.mat','Calibration tone (*.wav,*.mat)'},...
+    {'*.wav;*.mat;.*WAV;*.MAT','Calibration tone (*.wav,*.mat)'},...
     'Select audio file',[cd '/Audio']);
 
 if filename ~= 0
+    [~,~,ext] = fileparts(filename);
     % Check type of file. First 'if' is for .mat, second is for .wav
-    if ~isempty(regexp(filename, '.mat', 'once'))
+    if strcmp(ext,'.mat') || strcmp(ext,'.MAT')
         file = importdata(fullfile(pathname,filename));
         if isstruct(file)
             handles.audio = file.audio;
@@ -153,17 +154,18 @@ if filename ~= 0
 %            end
         end
     end
-    if ~isempty(regexp(filename, '.wav', 'once'))
+    if strcmp(ext,'.wav') || strcmp(ext,'.WAV')
         [handles.audio] = wavread(fullfile(pathname,filename));
     end;
     t = linspace(0,length(handles.audio)/handles.mainHandles.fs,length(handles.audio));
     plot(handles.dispaxes,t,handles.audio)
     xlabel(handles.dispaxes,'Time [s]');
     recrms = (mean(handles.audio.^2))^0.5;
+    handles.calthresh = line([0 length(t)/handles.mainHandles.fs],[recrms recrms],'Color','k');
     set(handles.threshold_IN,'String',num2str(recrms))
-    set([handles.sperframe_IN,handles.percentage_IN,handles.tolerance_IN,handles.threshold_IN,handles.tonelevel_IN,handles.evalcal_btn,handles.filter_btn],'Enable','on')
+    set([handles.sperframe_IN,handles.percentage_IN,handles.threshold_IN,handles.tonelevel_IN,handles.evalcal_btn,handles.filter_btn],'Enable','on')
 else
-    warndlg('Unable to load file','AARAE info')
+    return
 end
 guidata(hObject,handles)
 
@@ -224,7 +226,10 @@ function threshold_IN_Callback(hObject, eventdata, handles)
 
 % Hints: get(hObject,'String') returns contents of threshold_IN as text
 %        str2double(get(hObject,'String')) returns contents of threshold_IN as a double
-
+delete(handles.calthresh)
+Y = str2double(get(hObject,'String'));
+handles.calthresh = line([0 length(handles.audio)/handles.mainHandles.fs],[Y Y],'Color','k');
+guidata(hObject,handles)
 
 % --- Executes during object creation, after setting all properties.
 function threshold_IN_CreateFcn(hObject, eventdata, handles)
@@ -266,7 +271,6 @@ hsr1.SamplesPerFrame = str2double(get(handles.sperframe_IN,'String'));
 percentage = str2double(get(handles.percentage_IN,'String'));
 threshold = str2double(get(handles.threshold_IN,'String'));
 tonelevel = str2double(get(handles.tonelevel_IN,'String'));
-tolerance = str2double(get(handles.tolerance_IN,'String'));
 ms = [];
 while (~isDone(hsr1))
     chunk = step(hsr1);
@@ -282,8 +286,8 @@ release(hsr1)
 ms = ms(1:length(data));
 rec = ones(size(ms));
 rec(find(ms<threshold^2)) = 0;
-m = trimmean(ms(find(ms>threshold^2)),percentage);
-rec(find(ms>m*(1+tolerance))) = 0;
+m = trimmean(ms(find((ms)>threshold^2)),percentage);
+rec(find(ms>m*1.2)) = 0;
 
 t = linspace(0,length(data)/handles.mainHandles.fs,length(data));
 trimdata = data.*rec(1:length(data));
@@ -295,6 +299,8 @@ plot(handles.dispaxes,t,trimdata,'b')
 plot(handles.dispaxes,t,(rec(1:length(data)).*10)-5,'Color','r','LineWidth',1)
 set(handles.dispaxes,'YLim',YLim)
 hold off
+handles.calthresh = line([0 length(t)/handles.mainHandles.fs],[str2double(get(handles.threshold_IN,'String')) str2double(get(handles.threshold_IN,'String'))],'Color','k');
+%line([0 length(t)/handles.mainHandles.fs],[m^.5 m^.5],'Color','k')
 trim = find(trimdata);
 dur = length(trim)/handles.mainHandles.fs;
 trimlevel = tonelevel - 10 .* log10(mean(trimdata(trim).^2,1));
@@ -486,6 +492,7 @@ else
     xlabel(handles.dispaxes,'Time [s]');
 end
 recrms = (mean(handles.audio.^2))^0.5;
+handles.calthresh = line([0 length(t)/handles.mainHandles.fs],[recrms recrms],'Color','k');
 set(handles.threshold_IN,'String',num2str(recrms))
 set(hObject,'BackgroundColor',[0.94 0.94 0.94]);
 set(hObject,'Enable','on');
@@ -508,7 +515,8 @@ function record_btn_Callback(hObject, eventdata, handles)
 % hObject    handle to record_btn (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-set([handles.sperframe_IN,handles.percentage_IN,handles.tolerance_IN,handles.threshold_IN,handles.tonelevel_IN,handles.evalcal_btn,handles.filter_btn],'Enable','off')
+if isfield(handles,'filtaudio'), handles = rmfield(handles,'filtaudio'); end
+set([handles.sperframe_IN,handles.percentage_IN,handles.threshold_IN,handles.tonelevel_IN,handles.evalcal_btn,handles.filter_btn],'Enable','off')
 dur = str2double(get(handles.duration_IN,'String'))*handles.mainHandles.fs;
 set(hObject,'Enable','off');
 set(handles.stop_btn,'Visible','on');
@@ -558,15 +566,16 @@ if ~isempty(rec)
     time = linspace(0,size(handles.audio,1)/handles.mainHandles.fs,length(handles.audio));
     plot(handles.dispaxes,time,handles.audio);
     xlabel(handles.dispaxes,'Time [s]');
+    recrms = (mean(rec.^2))^0.5;
+    handles.calthresh = line([0 length(time)/handles.mainHandles.fs],[recrms recrms],'Color','k');
+    set(handles.threshold_IN,'String',num2str(recrms))
+    set([handles.sperframe_IN,handles.percentage_IN,handles.threshold_IN,handles.tonelevel_IN,handles.evalcal_btn,handles.filter_btn],'Enable','on')
 end
 set(handles.record_btn,'BackgroundColor',[0.94 0.94 0.94]);
 set(handles.record_btn,'Enable','on');
 set(handles.stop_btn,'Visible','off');
 % Release record object
 release(handles.har)
-recrms = (mean(rec.^2))^0.5;
-set(handles.threshold_IN,'String',num2str(recrms))
-set([handles.sperframe_IN,handles.percentage_IN,handles.tolerance_IN,handles.threshold_IN,handles.tonelevel_IN,handles.evalcal_btn,handles.filter_btn],'Enable','on')
 guidata(hObject,handles);
 
 % --- Executes on button press in stop_btn.
@@ -1373,29 +1382,3 @@ function calfield_btn_Callback(hObject, eventdata, handles)
 % handles    structure with handles and user data (see GUIDATA)
 deviceinfo = dspAudioDeviceInfo;
 msgbox(num2str([(1:deviceinfo.maxInputs);handles.output.cal]'))
-
-
-
-function tolerance_IN_Callback(hObject, eventdata, handles)
-% hObject    handle to tolerance_IN (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
-
-% Hints: get(hObject,'String') returns contents of tolerance_IN as text
-%        str2double(get(hObject,'String')) returns contents of tolerance_IN as a double
-if isempty(str2num(get(hObject,'String'))) || str2num(get(hObject,'String')) < 0
-    warndlg('Invalid entry','AARAE info')
-    set(hObject,'String','0.1')
-end
-
-% --- Executes during object creation, after setting all properties.
-function tolerance_IN_CreateFcn(hObject, eventdata, handles)
-% hObject    handle to tolerance_IN (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    empty - handles not created until after all CreateFcns called
-
-% Hint: edit controls usually have a white background on Windows.
-%       See ISPC and COMPUTER.
-if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
-    set(hObject,'BackgroundColor','white');
-end
