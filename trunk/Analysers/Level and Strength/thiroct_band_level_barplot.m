@@ -1,5 +1,13 @@
 function out = thiroct_band_level_barplot(in, fs, cal, showpercentiles, flo, fhi, tau, dosubplots)
-% This function generates octave-band bar plots
+% This function generates 1/3-octave-band bar plots of Leq and percentile 
+% values etc in decibels.
+%
+% An integration time constant can be used (use 0.125 s for 'fast' and 1 s
+% for 'slow'). If it has a value of 0, then temporal integration is not
+% applied.
+%
+% Code by Densil Cabrera and Daniel Jimenez
+% version 1.00 (21 May 2014)
 
 if isstruct(in)
     audio = in.audio;
@@ -23,6 +31,7 @@ else
         fs = str2num(char(fs));
     end
 end
+%if nargin < 8, dotables = 0; end
 if nargin < 8, dosubplots = 0; end % default setting for multichannel plotting
 if nargin < 7, tau = 0.125; end % default temporal integration constant in seconds
 if nargin < 6, fhi = 20000; end % default highest centre frequency
@@ -39,7 +48,7 @@ if nargin < 4
         {num2str(dosubplots);num2str(tau); num2str(cal);num2str(fhi); ...
         num2str(flo); num2str(showpercentiles)});
     param = str2num(char(param));
-   % if length(param) < 6, param = []; end
+   
     if ~isempty(param)
         dosubplots = round(param(1));
         tau = param(2);
@@ -47,22 +56,15 @@ if nargin < 4
         fhi = param(4);
         flo = param(5);
         showpercentiles = param(6);
+        %dotables = param(7);
     end
 end
 
-if ~isempty(audio) && ~isempty(fs) && ~isempty(cal) && ~isempty(showpercentiles) && ~isempty(flo) && ~isempty(fhi) && ~isempty(tau) && ~isempty(dosubplots)
-    S = size(audio); % size of the audio matrix
-    ndim = length(S); % number of dimensions
-    switch ndim
-        case 2
-            % len = S(1); % number of samples in audio
-            chans = S(2); % number of channels
-            bands = 1; % number of bands
-        case 3
-            % len = S(1); % number of samples in audio
-            chans = S(2); % number of channels
-            bands = S(3); % number of bands
-    end
+if ~isempty(audio) && ~isempty(fs)...
+        && ~isempty(cal) && ~isempty(showpercentiles)...
+        && ~isempty(flo) && ~isempty(fhi) && ~isempty(tau)...
+        && ~isempty(dosubplots) % && ~isempty(dotables)
+     [~,chans,bands]=size(audio);
 
     if bands > 1
         if isfield(in,'bandID')
@@ -197,7 +199,7 @@ if ~isempty(audio) && ~isempty(fs) && ~isempty(cal) && ~isempty(showpercentiles)
         end
     else
         [r, c] = subplotpositions(chans, 0.8);
-        figure('name', ['Octave Band Spectrum, tau = ', num2str(tau),' s'])
+        figure('name', ['1/3-Octave Band Spectrum, tau = ', num2str(tau),' s'])
         out.tables = [];
         for ch = 1:chans
             subplot(r,c,ch)
@@ -211,7 +213,7 @@ if ~isempty(audio) && ~isempty(fs) && ~isempty(cal) && ~isempty(showpercentiles)
             % x-axis
             set(gca,'XTickLabel',num2cell(frequencies))
             if (frequencies(1) ~= 1) && (frequencies(end) ~= length(frequencies))
-                xlabel('Octave Band Centre Frequency (Hz)')
+                xlabel('1/3-Octave Band Centre Frequency (Hz)')
             else
                 xlabel('Band')
             end
@@ -236,7 +238,7 @@ if ~isempty(audio) && ~isempty(fs) && ~isempty(cal) && ~isempty(showpercentiles)
                 plot(1:length(frequencies),out.L90(:,ch),'Color',[0.4, 0.4, 0.4], ...
                     'Marker','o', 'LineStyle', ':', 'DisplayName', 'L90')
                 if ch == chans
-                    legend('show','Location','EastOutside');
+                    legend('show');
                 else
                     legend 'off'
                 end
@@ -249,15 +251,46 @@ if ~isempty(audio) && ~isempty(fs) && ~isempty(cal) && ~isempty(showpercentiles)
     %             text(k-0.25,ymax-(ymax-ymin)*0.025, ...
     %                 num2str(round(out.Leq(k,ch)*10)/10),'Color',[1,0.3,0.3])
     %         end
-            fig = figure('Visible','off');
-            table1 = uitable('Data',[out.Leq(:,ch),out.Lmax(:,ch),out.L5(:,ch),out.L10(:,ch),out.L50(:,ch),out.L90(:,ch)],...
-                             'ColumnName',{'Leq','Lmax','L5','L10','L50','L90'},...
-                             'RowName',num2cell(frequencies));
-            [fig,tables] = disptables(fig,table1);
-            delete(fig)
-            out.tables = [out.tables tables];
+    table1 = uitable('Data',[out.Leq(:,ch),out.Lmax(:,ch),out.L5(:,ch),out.L10(:,ch),out.L50(:,ch),out.L90(:,ch)],...
+        'ColumnName',{'Leq','Lmax','L5','L10','L50','L90'},...
+        'RowName',num2cell(frequencies));
+
+        fig = figure('Visible','off');
+        [fig,tables] = disptables(fig,table1);
+        delete(fig)
+        out.tables = [out.tables tables];
         end
     end
 else
     out = [];
 end
+
+%**************************************************************************
+% Copyright (c) 2013-2014, Densil Cabrera & Daniel Jimenez
+% All rights reserved.
+%
+% Redistribution and use in source and binary forms, with or without
+% modification, are permitted provided that the following conditions are
+% met:
+%
+%  * Redistributions of source code must retain the above copyright notice,
+%    this list of conditions and the following disclaimer.
+%  * Redistributions in binary form must reproduce the above copyright
+%    notice, this list of conditions and the following disclaimer in the
+%    documentation and/or other materials provided with the distribution.
+%  * Neither the name of the University of Sydney nor the names of its contributors
+%    may be used to endorse or promote products derived from this software
+%    without specific prior written permission.
+%
+% THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+% "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED
+% TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A
+% PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER
+% OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+% EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+% PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+% PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+% LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+% NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+% SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+%**************************************************************************
