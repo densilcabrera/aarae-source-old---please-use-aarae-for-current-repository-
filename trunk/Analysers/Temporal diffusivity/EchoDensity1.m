@@ -51,7 +51,7 @@ else
         fs = str2double(char(fs));
     end
     if ~exist('DoWindow','var')
-        DoWindow = 1;
+        DoWindow = 0;
     end
     if ~exist('OffsetTime','var')
         OffsetTime = 1;
@@ -66,7 +66,7 @@ if ~isempty(data) && ~isempty(fs) %&& ~isempty(WindowTime) && ~isempty(OffsetTim
     Offset = (OffsetTime*fs)/1000;  % Size of the window offset in samples
     if DoWindow == 1
         w = hann(WindowLength); % Hann window
-        w2 = w/sum(w);  % normalized
+        w2 = w./sum(w);  % normalized
     else
         w2 =ones(WindowLength,1) ./ WindowLength; % Rectangular window
     end
@@ -79,7 +79,7 @@ if ~isempty(data) && ~isempty(fs) %&& ~isempty(WindowTime) && ~isempty(OffsetTim
     nwin = round((len-WindowLength)/Offset); % number of windows
     
     % preallocate
-    [SD, Kurt, ED] = ...
+    [eta_kurt, ED] = ...
         deal(zeros(nwin,chans,bands));
     
     for n = 1:nwin;
@@ -90,30 +90,60 @@ if ~isempty(data) && ~isempty(fs) %&& ~isempty(WindowTime) && ~isempty(OffsetTim
         windata = truncdata.*repmat(w2,[1,chans,bands]);
         
         % standard deviation of each window
-        SD(n,:,:) = std(windata);
+        %SD(n,:,:) = std(windata);
         
         % kurtosis of each window
-        Kurt(n,:,:) = kurtosis(windata,0);
+        %Kurt(n,:,:) = kurtosis(windata,0);
         
         % normalized echo density of each window
         % Abel & Huang equations 3 and 4
-        for ch = 1:chans
-            for b = 1:bands
-                ED(n,ch,b) = ...
-                    sum(w2.*(abs(truncdata(:,ch,b)> ...
-                    (sum(w2.*truncdata(:,ch,b).^2)).^0.5)))...
-                    ./erfc(1/sqrt(2));
-            end
-        end
+                for ch = 1:chans
+                    for b = 1:bands
+%                         ED(n,ch,b) = sum(abs(windata(:,ch,b))>SD(n,ch,b)) ...
+%                             ./(WindowLength*erfc(1/sqrt(2)));
+                        
+
+
+                            % Equation 4
+                        SD1 = sum(w2.*truncdata(:,ch,b).^2).^0.5;
+                        
+                        
+                        % Equation 3
+                        ED(n,ch,b) = 1./(erfc(1/sqrt(2))) .* ...
+                            sum(w2.*(abs(truncdata(:,ch,b))>SD1));
+
+                        % Equation 5
+                        eta_kurt(n,ch,b) = SD1 ./ ...
+                        (1/3 * sum(w2.*truncdata(:,ch,b).^4)).^0.25;
+                        
+                    end
+                end
+
+        
+        
     end
     
 %     IRt_vec = 0.001*(OffsetTime*((1:nwin)-1)...
 %         +0.5*WindowTime); % window times
     IRt_vec = 0.001*OffsetTime*((1:nwin)-1);
     
-    SDn = SD./repmat(max(SD),[nwin,1,1]); % normalise to 1
-    EDn = ED./repmat(max(ED),[nwin,1,1]); % normalise to 1
-    Kurtn = Kurt./repmat(max(Kurt),[nwin,1,1]); % normalise to 1
+    %SDn = SD./repmat(max(SD),[nwin,1,1]); % normalise to 1
+    %EDn = ED./repmat(max(ED),[nwin,1,1]); % normalise to 1
+    %Kurtn = Kurt./repmat(max(Kurt),[nwin,1,1]); % normalise to 1
+    
+    % find ED ==1
+    
+    transition = zeros(chans, bands);
+    for ch = 1:chans
+        for b = 1:bands
+             tr = find(ED(:,ch,b) >= 1,1,'first');
+             if isempty(tr)
+                transition(ch,b) = 1;
+             else
+                 transition(ch,b) = tr;
+             end
+        end
+    end
     
     for ch = 1:chans
         if exist('chanID','var')
@@ -129,19 +159,28 @@ if ~isempty(data) && ~isempty(fs) %&& ~isempty(WindowTime) && ~isempty(OffsetTim
                         num2str(bandID(b))])
                 else
                     figure('Name', ['Echo Density Indicators', chanstring,', ',num2str(b)])
+                    bandID = 1:bands; % needed for OUT.lines
                 end
             else
                 figure('Name', ['Echo Density Indicators', chanstring])
+                if ~exist('bandID','var'),bandID = 1; end % needed for OUT.lines
             end
             
             plot((0:len-1)./fs - 0.001*WindowTime/2,abs(data(:,ch,b))./max(abs(data(:,ch,b))),...
-                'Color',[0.6 0.6 0.6],'DisplayName','Rectified waveform')
+                'Color',[0.6 0.6 0.6],'DisplayName','Normalized Rectified waveform')
             hold on
             
-            plot(IRt_vec,SDn(:,ch,b),'r','DisplayName','Standard Deviation')
-            plot(IRt_vec,EDn(:,ch,b),'b','DisplayName','Echo Density')
-            plot(IRt_vec,Kurtn(:,ch,b),'Color',[0,0.5,0],...
-                'DisplayName','Kurtosis')
+            %plot(IRt_vec,SDn(:,ch,b),'r','DisplayName','Normalized Standard Deviation')
+            plot(IRt_vec,ED(:,ch,b),'b','DisplayName','Echo Density')
+            plot([IRt_vec(transition(ch,b)),IRt_vec(transition(ch,b))],...
+                [0,1],':b','DisplayName',['Transition time',...
+                num2str(round(1000*IRt_vec(transition(ch,b)))),' ms'])
+            plot(IRt_vec(transition(ch,b)),1,'ob','DisplayName','First ED=1');
+            
+            %plot(IRt_vec,ED2(:,ch,b),'g','DisplayName','Echo Density2') %
+            % (above line is for debug)
+            plot(IRt_vec,eta_kurt(:,ch,b),'Color',[0,0.5,0],...
+                'DisplayName','Kurtosis method')
             xlabel('Time (s)')
             ylabel('Normalized values')
             xlim([-0.001*WindowTime/2, (len-1)./fs - 0.001*WindowTime/2])
@@ -153,16 +192,17 @@ if ~isempty(data) && ~isempty(fs) %&& ~isempty(WindowTime) && ~isempty(OffsetTim
     
     if isstruct(IN)
         
-        OUT.EDn = EDn;
-        OUT.SDn = SDn;
-        OUT.Kurtn = Kurtn;
+        OUT.EDn = ED;
+        %OUT.ED2 = ED2; % for debug
+        %OUT.SDn = SDn;
+        OUT.eta_kurt = eta_kurt;
         OUT.funcallback.name = 'EchoDensity1.m';
         OUT.funcallback.inarg = {WindowTime,OffsetTime,DoWindow};
     else
         OUT = EDn;
     end
-    varargout{1} = SDn;
-    varargout{2} = Kurtn;
+    varargout{1} = eta_kurt;
+    
     
 else
     % AARAE requires that in case that the user doesn't input enough
