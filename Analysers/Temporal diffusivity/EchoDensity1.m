@@ -3,16 +3,13 @@ function [OUT,varargout] = EchoDensity1(IN, WindowTime, OffsetTime, DoWindow, fs
 % impulse responses. These are calculated in individual time windows (e.g.
 % 20 ms windows) over the course of the impulse response.
 %
-% Indicators are:
-% Standard deviation of the waveform in each window;
-% Kurtosis of the waveform in each window; and
-% Normalized Echo Density, based on:
+% Indicators are based on:
 %  J.S. Abel & P. Huang
 %  "A simple, robust measure of reverberation echo density,"
 %  121st Audio Engineering Society Convention, San Francisco USA, 2006.
 %
-% Code by David Spargo and Densil Cabrera
-% Version 1.00 (7 April 2014)
+% Code by Densil Cabrera and David Spargo
+% Version 1.01 (20 May 2014)
 
 if nargin == 1
     param = inputdlg({'Duration of window (ms)';...
@@ -87,21 +84,14 @@ if ~isempty(data) && ~isempty(fs) %&& ~isempty(WindowTime) && ~isempty(OffsetTim
         finish = start + WindowLength - 1;
         
         truncdata = data(start:finish,:,:);
-        windata = truncdata.*repmat(w2,[1,chans,bands]);
+        %windata = truncdata.*repmat(w2,[1,chans,bands]);
         
-        % standard deviation of each window
-        %SD(n,:,:) = std(windata);
+
         
-        % kurtosis of each window
-        %Kurt(n,:,:) = kurtosis(windata,0);
         
-        % normalized echo density of each window
-        % Abel & Huang equations 3 and 4
+        % the following should be vectorized (but it works fine as loops)
                 for ch = 1:chans
                     for b = 1:bands
-%                         ED(n,ch,b) = sum(abs(windata(:,ch,b))>SD(n,ch,b)) ...
-%                             ./(WindowLength*erfc(1/sqrt(2)));
-                        
 
 
                             % Equation 4
@@ -127,9 +117,7 @@ if ~isempty(data) && ~isempty(fs) %&& ~isempty(WindowTime) && ~isempty(OffsetTim
 %         +0.5*WindowTime); % window times
     IRt_vec = 0.001*OffsetTime*((1:nwin)-1);
     
-    %SDn = SD./repmat(max(SD),[nwin,1,1]); % normalise to 1
-    %EDn = ED./repmat(max(ED),[nwin,1,1]); % normalise to 1
-    %Kurtn = Kurt./repmat(max(Kurt),[nwin,1,1]); % normalise to 1
+
     
     % find ED ==1
     
@@ -184,7 +172,7 @@ if ~isempty(data) && ~isempty(fs) %&& ~isempty(WindowTime) && ~isempty(OffsetTim
             xlabel('Time (s)')
             ylabel('Normalized values')
             xlim([-0.001*WindowTime/2, (len-1)./fs - 0.001*WindowTime/2])
-            legend('show','Location','EastOutside');
+            legend('show');
             hold off
             OUT.lines.(genvarname(['Echo_density_ch' num2str(ch) '_' num2str(bandID(b)) 'Hz'])) = getplotdata;
         end
@@ -192,14 +180,12 @@ if ~isempty(data) && ~isempty(fs) %&& ~isempty(WindowTime) && ~isempty(OffsetTim
     
     if isstruct(IN)
         
-        OUT.EDn = ED;
-        %OUT.ED2 = ED2; % for debug
-        %OUT.SDn = SDn;
+        OUT.ED = ED;
         OUT.eta_kurt = eta_kurt;
         OUT.funcallback.name = 'EchoDensity1.m';
         OUT.funcallback.inarg = {WindowTime,OffsetTime,DoWindow};
     else
-        OUT = EDn;
+        OUT = ED;
     end
     varargout{1} = eta_kurt;
     
