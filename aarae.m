@@ -1586,7 +1586,8 @@ switch method
         cal_level = str2num(char(cal_level))';
         if chans ~= size(cal_level,2)
             cal_level = [];
-            warndlg('Incompatible calibration','Warning!');
+            warndlg('Calibration values mismatch!','AARAE info');
+            return
         end
     case 4
         caldata = selectedNodes(1).handle.UserData;
@@ -1594,10 +1595,10 @@ switch method
         cal_offset = inputdlg('Calibration tone RMS level',...
                     'Calibration value',[1 50],cellstr(num2str(zeros(size(cal_level)))));
         if isempty(cal_offset), return; end
-        if isequal(size(str2num(char(cal_offset))),size(cal_level))
+        if (isequal(size(str2num(char(cal_offset))),size(cal_level)) || size(str2num(char(cal_offset)),2) == 1) && ndims(caldata.audio) < 3
             cal_level = str2num(char(cal_offset)) - cal_level;
         else
-            warndlg('Calibration values mismatch!','AARAE info')
+            warndlg('Calibration values mismatch!','AARAE info');
             return
         end
     case 5
@@ -1616,10 +1617,10 @@ switch method
             cal_offset = inputdlg('Calibration tone RMS level',...
                         'Calibration value',[1 50],cellstr(num2str(zeros(size(cal_level)))));
             if isempty(cal_offset), return; end
-            if isequal(size(str2num(char(cal_offset))),size(cal_level))
+            if (isequal(size(str2num(char(cal_offset))),size(cal_level)) || size(str2num(char(cal_offset)),2) == 1) && ndims(caldata.audio) < 3
                 cal_level = str2num(char(cal_offset)) - cal_level;
             else
-                warndlg('Calibration values mismatch!','AARAE info')
+                warndlg('Calibration values mismatch!','AARAE info');
                 return
             end
         else
@@ -2270,10 +2271,10 @@ Xvalues = get(Xvalues,'tag');
 switch Xvalues
     case 'radiobutton1'
         bar(handles.axesdata,data.tables(ntable).Data(:,get(handles.Yvalues_box,'Value')),'FaceColor',[0 0.5 0.5])
-        set(handles.axesdata,'Xtick',1:length(data.tables(ntable).RowName),'XTickLabel',data.tables(ntable).RowName,'XTickLabelStyle','diagonal')
+        set(handles.axesdata,'Xtick',1:length(data.tables(ntable).RowName),'XTickLabel',data.tables(ntable).RowName)
     case 'radiobutton2'
         bar(handles.axesdata,data.tables(ntable).Data(get(handles.Yvalues_box,'Value'),:),'FaceColor',[0 0.5 0.5])
-        set(handles.axesdata,'Xtick',1:length(data.tables(ntable).ColumnName),'XTickLabel',data.tables(ntable).ColumnName,'XTickLabelStyle','diagonal')
+        set(handles.axesdata,'Xtick',1:length(data.tables(ntable).ColumnName),'XTickLabel',data.tables(ntable).ColumnName)
 end
 
 % --- Executes during object creation, after setting all properties.
