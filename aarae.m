@@ -1592,6 +1592,7 @@ switch method
     case 4
         caldata = selectedNodes(1).handle.UserData;
         cal_level = 10 .* log10(mean(caldata.audio.^2,1));
+        cal_level = repmat(20*log10(mean(10.^(cal_level./20),2)),1,size(caldata.audio,2));
         cal_offset = inputdlg('Calibration tone RMS level',...
                     'Calibration value',[1 50],cellstr(num2str(zeros(size(cal_level)))));
         if isempty(cal_offset), return; end
@@ -1614,6 +1615,7 @@ switch method
             [~,funname] = fileparts(weights.m{selection,1});
             caldata = feval(funname,caldata);
             cal_level = 10 .* log10(mean(caldata.audio.^2,1));
+            cal_level = repmat(20*log10(mean(10.^(cal_level./20),2)),1,size(caldata.audio,2));
             cal_offset = inputdlg('Calibration tone RMS level',...
                         'Calibration value',[1 50],cellstr(num2str(zeros(size(cal_level)))));
             if isempty(cal_offset), return; end
