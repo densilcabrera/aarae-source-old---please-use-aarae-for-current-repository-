@@ -378,7 +378,7 @@ for i = 1:length(filename)
         % Generate new leaf and update the tree
         %newleaf = filename{i};
         if ~isempty(signaldata)
-            if ~isfield(signaldata,'chanID')
+            if ~isfield(signaldata,'chanID') && isfield(signaldata,'audio')
                 signaldata.chanID = cellstr([repmat('Chan',size(signaldata.audio,2),1) num2str((1:size(signaldata.audio,2))')]);
             end
             if ~isfield(signaldata,'datatype') || (isfield(signaldata,'datatype') && strcmp(signaldata.datatype,'IR'))
@@ -389,6 +389,8 @@ for i = 1:length(filename)
             end
             if isfield(signaldata,'audio')
                 iconPath = fullfile(matlabroot,'/toolbox/fixedpoint/fixedpointtool/resources/plot.png');
+            elseif strcmp(signaldata.datatype,'syscal')
+                iconPath = fullfile(matlabroot,'/toolbox/matlab/icons/boardicon.gif');
             else
                 iconPath = fullfile(matlabroot,'/toolbox/matlab/icons/notesicon.gif');
             end
@@ -404,6 +406,7 @@ for i = 1:length(filename)
             end
             handles.(genvarname(newleaf)) = uitreenode('v0', newleaf,  newleaf,  iconPath, true);
             handles.(genvarname(newleaf)).UserData = signaldata;
+            if strcmp(signaldata.datatype,'syscal'), signaldata.datatype = 'measurements'; end
             handles.(genvarname(signaldata.datatype)).add(handles.(genvarname(newleaf)));
             handles.mytree.reloadNode(handles.(genvarname(signaldata.datatype)));
             handles.mytree.expand(handles.(genvarname(signaldata.datatype)));
