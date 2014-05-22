@@ -31,7 +31,12 @@ function nodes = mySelectFcn(tree, value)
             set(mainHandles.data_panel2,'Visible','off');
             set(mainHandles.IR_btn,'Visible','off'); 
             set(mainHandles.tools_panel,'Visible','on');
-            set([mainHandles.edit_btn mainHandles.cal_btn],'Enable','on');
+            if ~strcmp(audiodata.datatype,'syscal')
+                set([mainHandles.edit_btn mainHandles.cal_btn],'Enable','on');
+            else
+                set(mainHandles.edit_btn,'Enable','on');
+                set(mainHandles.cal_btn,'Enable','off');
+            end
             set(mainHandles.axestime,'Visible','on');
             set(mainHandles.axesfreq,'Visible','on');
             plot(mainHandles.axesdata,0,0)
