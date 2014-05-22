@@ -32,14 +32,13 @@ if nargin == 0 % If the function is called within the AARAE environment it
         ...        % input box and the number of character
         ...        % spaces that each box can display at once
         ...        % per row.
-        {'1';'48000'}); % And the preset answers for your dialog.
+        {'1';'48000'}); % And the default answers for your dialog.
     
     param = str2num(char(param)); % Since inputs are usually numbers it's a
     % good idea to turn strings into numbers.
     
     if length(param) < 2, param = []; end % You should check that the user
-    % has input all the required
-    % fields.
+    % has input all the required fields.
     if ~isempty(param) % If they have, you can then assign the dialog's
         % inputs to your function's input parameters.
         input_1 = param(1);
@@ -88,10 +87,17 @@ end
             %OUT.audio2 = ?;     You may provide additional audio derived from your function.
             OUT.fs = fs;       % You NEED to provide the sampling frequency of your audio.
             %OUT.tag = tag;      You may assign it a name to be identified in AARAE.
-            
-            OUT.param = {input_1,input_2}; % assign all of the input parameters that 
-            % could be used to call the function without dialog box to the 
-            % output field param (as a cell array).
+            %OUT.properties.prop1 = prop1;
+            %OUT.properties.prop2 = prop2; You may provide additional info
+            %OUT.properties.prop3 = prop3; about your generated signal in
+            %                              a structure type field called
+            %                              .properties
+            OUT.funcallback.name = 'generator_template.m'; % Provide AARAE
+            % with the name of your function 
+            OUT.funcallback.inarg = {input_1,input_2}; % assign all of the 
+            % input parameters that could be used to call the function 
+            % without dialog box to the output field param (as a cell
+            % array).
         end
         
         % You may choose to increase the functionality of your code by allowing
