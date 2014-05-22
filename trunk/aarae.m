@@ -387,7 +387,7 @@ for i = 1:length(filename)
                 if filterindex == 3, signaldata.datatype = 'processed'; end;
                 if filterindex == 4, signaldata.datatype = 'results'; end;
             end
-            if isfield(signaldata,'audio')
+            if isfield(signaldata,'audio') && ~strcmp(signaldata.datatype,'syscal')
                 iconPath = fullfile(matlabroot,'/toolbox/fixedpoint/fixedpointtool/resources/plot.png');
             elseif strcmp(signaldata.datatype,'syscal')
                 iconPath = fullfile(matlabroot,'/toolbox/matlab/icons/boardicon.gif');
@@ -442,13 +442,13 @@ if savenewsyscalstats == 1
     handles.mytree.setSelectedNode(handles.root);
     iconPath = fullfile(matlabroot,'/toolbox/matlab/icons/boardicon.gif');
     handles.syscalstats.datatype = 'syscal';
-    funname = 'System_calibration';
-    leafname = isfield(handles,funname);
+    funname = ['System_calibration ' datestr(rem(now,1))];
+    leafname = isfield(handles,genvarname(funname));
     if leafname == 1
         index = 1;
         % This while cycle is just to make sure no signals are
         % overwriten
-        while isfield(handles,genvarname(['System_calibration_',num2str(index)])) == 1
+        while isfield(handles,genvarname([funname,'_',num2str(index)])) == 1
             index = index + 1;
         end
         funname = [funname,'_',num2str(index)];
@@ -621,6 +621,10 @@ switch delete
         selectedNodes = handles.mytree.getSelectedNodes;
         for nleafs = 1:length(selectedNodes)
             audiodata = selectedNodes(nleafs).handle.UserData;
+            if strcmp(audiodata.datatype,'syscal')
+                handles = rmfield(handles,'syscalstats');
+                set(handles.signaltypetext,'String',[])
+            end
             if ~isempty(audiodata)
                 selectedParent = selectedNodes(nleafs).getParent;
                 handles.mytree.remove(selectedNodes(nleafs));
@@ -691,7 +695,7 @@ else
     invS = audiodata.audio2;
 end
 fs = audiodata.fs;
-nbits = audiodata.nbits;
+%nbits = audiodata.nbits;
 selectedNodes = handles.mytree.getSelectedNodes;
 
 if isfield(audiodata,'properties') && isfield(audiodata.properties,'startflag')
@@ -782,7 +786,7 @@ if ~isempty(getappdata(hMain,'testsignal'))
     signaldata = rmfield(signaldata,'audio2');
     signaldata.audio = IR;
     signaldata.fs = fs;
-    signaldata.nbits = nbits;
+    %signaldata.nbits = 16;
     signaldata.chanID = cellstr([repmat('Chan',size(signaldata.audio,2),1) num2str((1:size(signaldata.audio,2))')]);
     signaldata.datatype = 'measurements';
     iconPath = fullfile(matlabroot,'/toolbox/fixedpoint/fixedpointtool/resources/plot.png');

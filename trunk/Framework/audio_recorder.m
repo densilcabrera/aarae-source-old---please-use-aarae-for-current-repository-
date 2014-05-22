@@ -83,9 +83,9 @@ else
     set(handles.inputdevtext,'String',inputdevinfo.name)
     set(handles.outputdevtext,'String',outputdevinfo.name)
     if isfield(mainHandles,'syscalstats') && ~isempty(mainHandles.syscalstats)
-        remember = questdlg('A previous system calibration was found, would you like to reload these settings?','AARAE info','Yes','No','Yes');
-        switch remember
-            case 'Yes'
+        %remember = questdlg('A previous system calibration was found, would you like to reload these settings?','AARAE info','Yes','No','Yes');
+        %switch remember
+        %    case 'Yes'
                 handles.savenewsyscal = 0;
                 handles.syscalstats = mainHandles.syscalstats;
                 if isfield(handles.syscalstats,'latency')
@@ -100,10 +100,10 @@ else
                     set(handles.invfilter_chk,'Enable','on','Value',1)
                     set(handles.invftext,'String','Available')
                 end
-            case 'No'
+        %    case 'No'
                 handles.savenewsyscal = 1;
                 handles.syscalstats = struct([]);
-        end
+        %end
     else
         handles.savenewsyscal = 1;
         handles.syscalstats = struct([]);
@@ -259,7 +259,7 @@ if get(handles.pb_enable,'Value') == 1
     % Set playback audio
     handles.hsr1 = dsp.SignalSource;
     playbackaudio = handles.outputdata.audio;
-    if get(handles.invfilter_chk,'Value') == 1, playbackaudio = filter(handles.syscalstats.audio2,1,playbackaudio); end
+    %if get(handles.invfilter_chk,'Value') == 1, playbackaudio = filter(handles.syscalstats.audio2,1,playbackaudio); end
     handles.hsr1.Signal = [playbackaudio;zeros(floor((handles.addtime+handles.hap.QueueDuration)*handles.fs),size(playbackaudio,2))];
     handles.hsr1.SamplesPerFrame = handles.har.SamplesPerFrame;
     guidata(hObject,handles)
@@ -269,23 +269,18 @@ if get(handles.pb_enable,'Value') == 1
     set(hObject,'BackgroundColor','red');
     set(handles.stop_btn,'Visible','on');
     % Initialize playback/record routine
+    pause on
     try
         UserData = get(handles.stop_btn,'UserData');
-        %while (~isDone(handles.hsr1))
         for i = 1:ncycles
            UserData = get(handles.stop_btn,'UserData');
            if UserData.state == false
-               %audio = step(handles.har);
                audio((i-1)*handles.har.SamplesPerFrame+1:i*handles.har.SamplesPerFrame,:) = step(handles.har);
                step(handles.hap,step(handles.hsr1));
-               %plot(handles.IN_axes,audio)
-               %handles.rec = [handles.rec;audio];
            else
                break
            end
-           pause on
            pause(0.0000001)
-           pause off
         end
     catch sthgwrong
         UserData.state = true;
@@ -293,6 +288,7 @@ if get(handles.pb_enable,'Value') == 1
         syswarning = sthgwrong.message;
         warndlg(syswarning,'AARAE info')
     end
+    pause off
     % Check recording and adjust for QueueDuration latency
     handles.rec = audio;
     if ~isempty(handles.rec)
@@ -327,19 +323,17 @@ else
     set(hObject,'BackgroundColor','red');
     set(handles.stop_btn,'Visible','on');
     % Initialize record routine
+    pause on
     try
         UserData = get(handles.stop_btn,'UserData');
         for i = 1:ncycles
            UserData = get(handles.stop_btn,'UserData');
            if UserData.state == false
                audio((i-1)*handles.har.SamplesPerFrame+1:i*handles.har.SamplesPerFrame,:) = step(handles.har);
-               %handles.rec = [handles.rec;audio];
            else
                break
            end
-           pause on
-           pause(0.000001)
-           pause off
+           pause(0.0000001)
         end
     catch sthgwrong
         UserData.state = true;
@@ -347,6 +341,7 @@ else
         syswarning = sthgwrong.message;
         warndlg(syswarning,'AARAE info')
     end
+    pause off
     handles.rec = audio;
     % Check recording and adjust for Duration
     if ~isempty(handles.rec)
@@ -722,7 +717,7 @@ set([handles.record_btn,handles.syscal_btn,handles.cancel_btn],'Enable','off')
 syscalstats = syscal('audio_recorder', handles.audio_recorder);
 if recavail == 1, set([handles.load_btn,handles.preview_btn],'Enable','on'); end
 set([handles.record_btn,handles.syscal_btn,handles.cancel_btn],'Enable','on')
-if isfield(syscalstats,'audio'), handles.syscalstats(1).audio = syscalstats.audio; end
+if isfield(syscalstats,'audio2'), handles.syscalstats(1).audio2 = syscalstats.audio2; end
 if isfield(syscalstats,'fs'), handles.syscalstats(1).fs = syscalstats.fs; end
 if isfield(syscalstats,'latency') && ~isnan(syscalstats.latency)
     if isfield(handles.syscalstats,'latency')
@@ -771,12 +766,12 @@ if isfield(syscalstats,'invfilter') && ~isempty(syscalstats.invfilter)
              switch replace_value
                  case 'Yes'
                      handles.savenewsyscal = 1;
-                     handles.syscalstats.audio2 = syscalstats.invfilter;
+                     handles.syscalstats.audio = syscalstats.invfilter;
              end
         end
     else
         handles.savenewsyscal = 1;
-        handles.syscalstats(1).audio2 = syscalstats.invfilter;
+        handles.syscalstats(1).audio = syscalstats.invfilter;
     end
     set(handles.invfilter_chk,'Enable','on','Value',1)
     set(handles.invftext,'String','Available')

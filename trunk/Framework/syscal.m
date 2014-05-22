@@ -435,7 +435,7 @@ if ~isempty(rec)
     set(handles.latency_IN,'String',num2str(I),'Enable','on');
     set(handles.latthresh_IN,'Enable','on')
     handles.latthresh = str2num(get(handles.latthresh_IN,'String'));
-    handles.output.audio = ixy;
+    handles.output.audio2 = ixy;
     handles.output.fs = handles.mainHandles.fs;
     handles.output.latency = I;
     handles.sysIR = ixy;

@@ -905,12 +905,17 @@ function wn_btn_Callback(hObject, eventdata, handles)
 mainHandles = guidata(handles.main_stage1);
 if ~isempty(handles.testsignal(handles.version))
     aarae_fig = findobj('type','figure','tag','aarae');
-    iconPath = fullfile(matlabroot,'/toolbox/fixedpoint/fixedpointtool/resources/plot.png');
+    if strcmp(handles.testsignal(handles.version).datatype,'syscal')
+        iconPath = fullfile(matlabroot,'/toolbox/matlab/icons/boardicon.gif');
+    else
+        iconPath = fullfile(matlabroot,'/toolbox/fixedpoint/fixedpointtool/resources/plot.png');
+    end
     handles.selNodeName = [handles.selNodeName '_edit'];
     mainHandles.(genvarname(handles.selNodeName)) = uitreenode('v0', handles.selNodeName, handles.selNodeName,  iconPath, true);
     switch handles.testsignal(handles.version).datatype
         case 'testsignals', ivalue = 1;
         case 'measurements', ivalue = 2;
+        case 'syscal', ivalue = 2;
         case 'processed', ivalue = 3;
         case 'results', ivalue = 4;
     end
@@ -923,6 +928,7 @@ if ~isempty(handles.testsignal(handles.version))
         if branch == 3, mainHandles.processed.add(mainHandles.(genvarname(handles.selNodeName))); handles.testsignal(handles.version).datatype = 'processed'; end
         if branch == 4, mainHandles.results.add(mainHandles.(genvarname(handles.selNodeName))); handles.testsignal(handles.version).datatype = 'results'; end
     end
+    if strcmp(handles.testsignal(handles.version-1).datatype,'syscal'), handles.testsignal(handles.version).datatype = 'syscal'; end
     mainHandles.(genvarname(handles.selNodeName)).UserData = handles.testsignal(handles.version);
     mainHandles.mytree.reloadNode(mainHandles.(genvarname(handles.selNodeName)).getParent);
     mainHandles.mytree.setSelectedNode(mainHandles.(genvarname(handles.selNodeName)));
