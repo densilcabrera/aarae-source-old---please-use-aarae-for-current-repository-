@@ -125,6 +125,17 @@ if ~isempty(audio) && ~isempty(fs)
         %   or,
         %   OUT.audio = audio; if you want to return two fields.
         %   OUT.fs = fs;
+        %OUT.properties.prop1 = prop1;
+        %OUT.properties.prop2 = prop2; You may provide additional info
+        %OUT.properties.prop3 = prop3; about your generated signal in
+        %                              a structure type field called
+        %                              .properties
+        OUT.funcallback.name = 'processor_template.m'; % Provide AARAE
+        % with the name of your function 
+        OUT.funcallback.inarg = {input_1,input_2}; % assign all of the 
+        % input parameters that could be used to call the function 
+        % without dialog box to the output field param (as a cell
+        % array) in order to allow batch processing.
     else
         % You may increase the functionality of your code by allowing the
         % output to be used as standalone and returning individual
