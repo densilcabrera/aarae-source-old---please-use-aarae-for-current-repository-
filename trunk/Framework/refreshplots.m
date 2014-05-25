@@ -51,12 +51,16 @@ if plottype <= 7
         set(handles.(genvarname(['complex' axes])),'Visible','off');
     end
     set(handles.(genvarname(['log' axes '_chk'])),'Visible','off');
+    pixels = get_axes_width(handles.(genvarname(['axes' axes])));
+    [t, line] = reduce_to_width(t', real(line), pixels, [-inf inf]);
     plot(handles.(genvarname(['axes' axes])),t,real(line)) % Plot signal in time domain
     xlabel(handles.(genvarname(['axes' axes])),'Time [s]');
     set(handles.(genvarname(['axes' axes])),'XTickLabel',num2str(get(handles.(genvarname(['axes' axes])),'XTick').'))
 end
 if plottype >= 8
     set(handles.(genvarname(['complex' axes])),'Visible','off')
+    pixels = get_axes_width(handles.(genvarname(['axes' axes])));
+    [f, line] = reduce_to_width(f', line, pixels, [-inf inf]);
     if plottype == 17, semilogx(handles.(genvarname(['axes' axes])),f(1:end-1),line,'Marker','None'); end
     if plottype ~= 17, semilogx(handles.(genvarname(['axes' axes])),f,line); end % Plot signal in frequency domain
     xlabel(handles.(genvarname(['axes' axes])),'Frequency [Hz]');

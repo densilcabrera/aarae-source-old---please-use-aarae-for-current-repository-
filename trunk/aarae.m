@@ -561,11 +561,12 @@ else
     else
         set(hObject,'BackgroundColor','red');
         set(hObject,'Enable','off');
+        leafnames = cellstr(leafnames);
         for i = 1:size(leafnames,1)
             current = handles.(genvarname(leaves(i,:)));
             current = current(1);
             data = current.handle.UserData;
-            save([cd '/Projects/' char(folder) '/' leafnames(i,:) '.mat'], 'data');
+            save([cd '/Projects/' char(folder) '/' leafnames{i,:} '.mat'], 'data');
         end
         if isdir([cd '/Utilities/Temp'])
             nfigs = dir([cd '/Utilities/Temp/*.fig']);
@@ -769,7 +770,7 @@ end
 
 % Create new leaf and update the tree
 handles.mytree.setSelectedNode(handles.root);
-newleaf = ['IR ' selectedNodes(1).getName.char];
+newleaf = ['IR_' selectedNodes(1).getName.char];
 leafname = isfield(handles,genvarname(newleaf));
 if leafname == 1
     index = 1;
@@ -2035,7 +2036,7 @@ else
         rmdir([cd '/Utilities/Temp'],'s');
         mkdir([cd '/Utilities/Temp']);
         addpath([cd '/Utilities/Temp']);
-        set(handles.result_box,'String',[' ' ' ']);
+        set(handles.result_box,'String',{' '});
         fprintf(handles.fid, [' ' datestr(now,16) ' - Cleared workspace \n']);
         set(hObject,'BackgroundColor',[0.94 0.94 0.94]);
         set(hObject,'Enable','off');
