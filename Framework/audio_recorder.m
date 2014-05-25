@@ -83,27 +83,20 @@ else
     set(handles.inputdevtext,'String',inputdevinfo.name)
     set(handles.outputdevtext,'String',outputdevinfo.name)
     if isfield(mainHandles,'syscalstats') && ~isempty(mainHandles.syscalstats)
-        %remember = questdlg('A previous system calibration was found, would you like to reload these settings?','AARAE info','Yes','No','Yes');
-        %switch remember
-        %    case 'Yes'
-                handles.savenewsyscal = 0;
-                handles.syscalstats = mainHandles.syscalstats;
-                if isfield(handles.syscalstats,'latency')
-                    set(handles.delay_chk,'Enable','on','Value',1)
-                    set(handles.delaytext,'String',[num2str(handles.syscalstats.latency) ' samples'])
-                end
-                if isfield(handles.syscalstats,'cal')
-                    set(handles.cal_chk,'Enable','on','Value',1)
-                    set(handles.caltext,'String',[num2str(handles.syscalstats.cal) ' dB'])
-                end
-                if isfield(handles.syscalstats,'audio2')
-                    set(handles.invfilter_chk,'Enable','on','Value',1)
-                    set(handles.invftext,'String','Available')
-                end
-        %    case 'No'
-                handles.savenewsyscal = 1;
-                handles.syscalstats = struct([]);
-        %end
+        handles.savenewsyscal = 0;
+        handles.syscalstats = mainHandles.syscalstats;
+        if isfield(handles.syscalstats,'latency')
+            set(handles.delay_chk,'Enable','on','Value',1)
+            set(handles.delaytext,'String',[num2str(handles.syscalstats.latency) ' samples'])
+        end
+        if isfield(handles.syscalstats,'cal')
+            set(handles.cal_chk,'Enable','on','Value',1)
+            set(handles.caltext,'String',[num2str(handles.syscalstats.cal) ' dB'])
+        end
+        if isfield(handles.syscalstats,'audio2')
+            set(handles.invfilter_chk,'Enable','on','Value',1)
+            set(handles.invftext,'String','Available')
+        end
     else
         handles.savenewsyscal = 1;
         handles.syscalstats = struct([]);
