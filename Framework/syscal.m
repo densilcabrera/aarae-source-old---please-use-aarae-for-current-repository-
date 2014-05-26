@@ -78,8 +78,13 @@ if dontOpen
     disp('-----------------------------------------------------');
 else
     handles.mainHandles = guidata(handles.main_stage1);
-    handles.hap = dsp.AudioPlayer('SampleRate',handles.mainHandles.fs,'QueueDuration',str2double(get(handles.mainHandles.IN_qdur,'String')),'BufferSizeSource','Property','BufferSize',str2num(get(handles.mainHandles.IN_buffer,'String')));
-    handles.har = dsp.AudioRecorder('SampleRate',handles.mainHandles.fs,'QueueDuration',str2double(get(handles.mainHandles.IN_qdur,'String')),'OutputDataType','double','NumChannels',1,'BufferSizeSource','Property','BufferSize',str2num(get(handles.mainHandles.IN_buffer,'String')));
+    if get(handles.mainHandles.pb_enable,'Value') == 0, set(handles.evaldelay_btn,'Enable','off'); end
+    outputs = cellstr(get(handles.mainHandles.outputdev_popup,'String'));
+    outputdevname = outputs{get(handles.mainHandles.outputdev_popup,'Value')};
+    handles.hap = dsp.AudioPlayer('DeviceName',outputdevname,'SampleRate',handles.mainHandles.fs,'QueueDuration',str2double(get(handles.mainHandles.IN_qdur,'String')),'BufferSizeSource','Property','BufferSize',str2num(get(handles.mainHandles.IN_buffer,'String')));
+    inputs = cellstr(get(handles.mainHandles.inputdev_popup,'String'));
+    inputdevname = inputs{get(handles.mainHandles.inputdev_popup,'Value')};
+    handles.har = dsp.AudioRecorder('DeviceName',inputdevname,'SampleRate',handles.mainHandles.fs,'QueueDuration',str2double(get(handles.mainHandles.IN_qdur,'String')),'OutputDataType','double','NumChannels',1,'BufferSizeSource','Property','BufferSize',str2num(get(handles.mainHandles.IN_buffer,'String')));
     handles.hsr1 = dsp.SignalSource;
     handles.hsr1.SamplesPerFrame = 1024;
     set(handles.duration_IN,'String','10')
@@ -94,11 +99,12 @@ else
     handles.output = struct;
     xlabel(handles.IRaxes,'Time [s]')
     ylim(handles.IRaxes,[-60 10])
-    deviceinfo = dspAudioDeviceInfo('defaultInput');
-    set(handles.devnametext,'String',deviceinfo.name)
-    channels = cellstr([repmat('IN - Channel',deviceinfo.maxInputs,1) num2str((1:deviceinfo.maxInputs).')]);
+    deviceinfo = dspAudioDeviceInfo('inputs');
+    set(handles.devnametext,'String',inputdevname)
+    inputsel = get(handles.mainHandles.inputdev_popup,'Value');
+    channels = cellstr([repmat('IN - Channel',deviceinfo(inputsel).maxInputs,1) num2str((1:deviceinfo(inputsel).maxInputs).')]);
     set(handles.channum_popup,'String',channels)
-    handles.output.cal(1,1:deviceinfo.maxInputs) = NaN;
+    handles.output.cal(1,1:deviceinfo(inputsel).maxInputs) = NaN;
     guidata(hObject, handles);
     uiwait(hObject);
 end
