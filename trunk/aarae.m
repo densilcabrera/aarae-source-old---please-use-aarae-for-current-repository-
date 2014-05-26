@@ -63,6 +63,8 @@ guidata(hObject, handles);
 setappdata(0, 'hMain', gcf);
 hMain = getappdata(0,'hMain');
 setappdata(hMain,'testsignal',[]);
+setappdata(hMain,'audio_recorder_input',1)
+setappdata(hMain,'audio_recorder_output',1)
 setappdata(hMain,'audio_recorder_numchs',1)
 setappdata(hMain,'audio_recorder_duration',1)
 setappdata(hMain,'audio_recorder_fs',48000)

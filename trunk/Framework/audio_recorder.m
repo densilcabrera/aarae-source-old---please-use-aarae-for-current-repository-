@@ -23,7 +23,7 @@ function varargout = audio_recorder(varargin)
 
 % Edit the above text to modify the response to help audio_recorder
 
-% Last Modified by GUIDE v2.5 05-May-2014 10:16:59
+% Last Modified by GUIDE v2.5 26-May-2014 09:33:00
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -78,29 +78,16 @@ else
     UserData.state = false;
     set(handles.stop_btn,'UserData',UserData);
     mainHandles = guidata(handles.main_stage1);
-    inputdevinfo = dspAudioDeviceInfo('defaultInput');
-    outputdevinfo = dspAudioDeviceInfo('defaultOutput');
-    set(handles.inputdevtext,'String',inputdevinfo.name)
-    set(handles.outputdevtext,'String',outputdevinfo.name)
-    if isfield(mainHandles,'syscalstats') && ~isempty(mainHandles.syscalstats)
-        handles.savenewsyscal = 0;
-        handles.syscalstats = mainHandles.syscalstats;
-        if isfield(handles.syscalstats,'latency')
-            set(handles.delay_chk,'Enable','on','Value',1)
-            set(handles.delaytext,'String',[num2str(handles.syscalstats.latency) ' samples'])
-        end
-        if isfield(handles.syscalstats,'cal')
-            set(handles.cal_chk,'Enable','on','Value',1)
-            set(handles.caltext,'String',[num2str(handles.syscalstats.cal) ' dB'])
-        end
-        if isfield(handles.syscalstats,'audio2')
-            set(handles.invfilter_chk,'Enable','on','Value',1)
-            set(handles.invftext,'String','Available')
-        end
-    else
-        handles.savenewsyscal = 1;
-        handles.syscalstats = struct([]);
-    end
+    inputdevinfo = dspAudioDeviceInfo('inputs');
+    inputnames = {inputdevinfo.name}';
+    inputnames = regexprep(inputnames,'\s\(Windows DirectSound\)','');
+    inputnames = regexprep(inputnames,'\s\(ASIO\)','');
+    set(handles.inputdev_popup,'String',inputnames)
+    outputdevinfo = dspAudioDeviceInfo('outputs');
+    outputnames = {outputdevinfo.name}';
+    outputnames = regexprep(outputnames,'\s\(Windows DirectSound\)','');
+    outputnames = regexprep(outputnames,'\s\(ASIO\)','');
+    set(handles.outputdev_popup,'String',outputnames)
     if ~isempty(handles.signaldata) && ndims(handles.signaldata.audio) < 3 && ~strcmp(handles.signaldata.datatype,'syscal')% If there's a signal loaded in the 'desktop'...
         % Allow visibility of playback option along with the specs of
         % the playback signal
@@ -118,6 +105,8 @@ else
         plot(handles.OUT_axes,handles.t,handles.outputdata.audio)
         set(handles.OUT_axes,'tag','OUT_axes')
         set(handles.output_settings,'String',output_settings);
+        set(handles.inputdev_popup,'Value',getappdata(hMain,'audio_recorder_input'));
+        set(handles.outputdev_popup,'Value',getappdata(hMain,'audio_recorder_output'));
         set(handles.IN_numchs,'String',num2str(getappdata(hMain,'audio_recorder_numchs')));
         set(handles.text1,'String','Add time');
         set(handles.IN_duration,'String',num2str(getappdata(hMain,'audio_recorder_duration')));
@@ -139,6 +128,7 @@ else
         set(handles.pb_enable,'Visible','off','Value',0);
         set(handles.output_panel,'Visible','off');
         set(handles.text1,'String','Duration');
+        set(handles.inputdev_popup,'Value',getappdata(hMain,'audio_recorder_input'));
         set(handles.IN_numchs,'String',num2str(getappdata(hMain,'audio_recorder_numchs')));
         set(handles.IN_duration,'String',num2str(getappdata(hMain,'audio_recorder_duration')));
         set(handles.IN_fs,'Enable','on');
@@ -155,6 +145,33 @@ else
         handles.nbits = str2num(get(handles.IN_nbits,'String'));
         xlim(handles.IN_axes,[0 round(handles.duration)])
         xlim(handles.OUT_axes,[0 round(handles.duration)])
+    end
+    if isfield(mainHandles,'syscalstats') && ~isempty(mainHandles.syscalstats)
+        handles.savenewsyscal = 0;
+        handles.syscalstats = mainHandles.syscalstats;
+        if isfield(handles.syscalstats,'latency')
+            if get(handles.pb_enable,'Value') == 1
+                set(handles.delay_chk,'Enable','on','Value',1)
+            else
+                set(handles.delay_chk,'Enable','off','Value',0)
+            end
+            set(handles.delaytext,'String',[num2str(handles.syscalstats.latency) ' samples'])
+        end
+        if isfield(handles.syscalstats,'cal')
+            set(handles.cal_chk,'Enable','on','Value',1)
+            set(handles.caltext,'String',[num2str(handles.syscalstats.cal) ' dB'])
+        end
+        if isfield(handles.syscalstats,'audio')
+            if get(handles.pb_enable,'Value') == 1
+                set(handles.invfilter_chk,'Enable','on','Value',1)
+            else
+                set(handles.invfilter_chk,'Enable','off','Value',0)
+            end
+            set(handles.invftext,'String','Available')
+        end
+    else
+        handles.savenewsyscal = 1;
+        handles.syscalstats = struct([]);
     end
 end
 
@@ -197,39 +214,6 @@ varargout{1} = handles.recording;
 delete(hObject);
 
 
-% --- Executes on selection change in select_input.
-function select_input_Callback(hObject, eventdata, handles)
-% hObject    handle to select_input (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
-
-% Hints: contents = cellstr(get(hObject,'String')) returns select_input contents as cell array
-%        contents{get(hObject,'Value')} returns selected item from select_input
-
-% Get input selection from the pop-up menu
-selection = get(hObject,'Value');
-handles.inputid = handles.ideviceidlist(selection);
-guidata(hObject,handles);
-
-% --- Executes during object creation, after setting all properties.
-function select_input_CreateFcn(hObject, eventdata, handles)
-% hObject    handle to select_input (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    empty - handles not created until after all CreateFcns called
-
-% Hint: popupmenu controls usually have a white background on Windows.
-%       See ISPC and COMPUTER.
-if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
-    set(hObject,'BackgroundColor','white');
-end
-
-devinfo = audiodevinfo; % Get available device information
-idevicelist = {devinfo.input.Name}; % Populate list
-handles.ideviceidlist =  cell2mat({devinfo.input.ID});
-handles.inputid = handles.ideviceidlist(1,1);
-set(hObject,'String',idevicelist);
-guidata(hObject,handles);
-
 % --- Executes on button press in record_btn.
 function record_btn_Callback(hObject, eventdata, handles)
 % hObject    handle to record_btn (see GCBO)
@@ -246,9 +230,13 @@ if get(handles.pb_enable,'Value') == 1
     pause(0.000001)
     pause off
     % Set playback object
-    handles.hap = dsp.AudioPlayer('SampleRate',handles.outputdata.fs,'QueueDuration',str2double(get(handles.IN_qdur,'String')),'BufferSizeSource','Property','BufferSize',str2double(get(handles.IN_buffer,'String')));
+    outputs = cellstr(get(handles.outputdev_popup,'String'));
+    outputdevname = outputs{get(handles.outputdev_popup,'Value')};
+    handles.hap = dsp.AudioPlayer('DeviceName',outputdevname,'SampleRate',handles.outputdata.fs,'QueueDuration',str2double(get(handles.IN_qdur,'String')),'BufferSizeSource','Property','BufferSize',str2double(get(handles.IN_buffer,'String')));
     % Set record object
-    handles.har = dsp.AudioRecorder('SampleRate',handles.outputdata.fs,'QueueDuration',str2double(get(handles.IN_qdur,'String')),'OutputDataType','double','NumChannels',handles.numchs,'BufferSizeSource','Property','BufferSize',str2double(get(handles.IN_buffer,'String')));
+    inputs = cellstr(get(handles.inputdev_popup,'String'));
+    inputdevname = inputs{get(handles.inputdev_popup,'Value')};
+    handles.har = dsp.AudioRecorder('DeviceName',inputdevname,'SampleRate',handles.outputdata.fs,'QueueDuration',str2double(get(handles.IN_qdur,'String')),'OutputDataType','double','NumChannels',handles.numchs,'BufferSizeSource','Property','BufferSize',str2double(get(handles.IN_buffer,'String')));
     % Set playback audio
     handles.hsr1 = dsp.SignalSource;
     playbackaudio = handles.outputdata.audio;
@@ -308,7 +296,9 @@ else
     pause(0.000001)
     pause off
     % Set record object
-    handles.har = dsp.AudioRecorder('SampleRate',handles.fs,'OutputDataType','double','NumChannels',handles.numchs,'BufferSizeSource','Property','BufferSize',str2double(get(handles.IN_buffer,'String')),'QueueDuration',str2double(get(handles.IN_qdur,'String')));
+    inputs = cellstr(get(handles.inputdev_popup,'String'));
+    inputdevname = inputs{get(handles.inputdev_popup,'Value')};
+    handles.har = dsp.AudioRecorder('DeviceName',inputdevname,'SampleRate',handles.fs,'OutputDataType','double','NumChannels',handles.numchs,'BufferSizeSource','Property','BufferSize',str2double(get(handles.IN_buffer,'String')),'QueueDuration',str2double(get(handles.IN_qdur,'String')));
     guidata(hObject,handles)
     ncycles = ceil(dur/handles.har.SamplesPerFrame);
     handles.rec = [];
@@ -576,40 +566,6 @@ function audio_recorder_CloseRequestFcn(hObject, eventdata, handles)
 uiresume(hObject);
 
 
-% --- Executes on selection change in select_output.
-function select_output_Callback(hObject, eventdata, handles)
-% hObject    handle to select_output (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
-
-selection = get(hObject,'Value');
-handles.outputid = handles.odeviceidlist(selection);
-guidata(hObject,handles);
-% Hints: contents = cellstr(get(hObject,'String')) returns select_output contents as cell array
-%        contents{get(hObject,'Value')} returns selected item from select_output
-
-
-% --- Executes during object creation, after setting all properties.
-function select_output_CreateFcn(hObject, eventdata, handles)
-% hObject    handle to select_output (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    empty - handles not created until after all CreateFcns called
-
-% Hint: popupmenu controls usually have a white background on Windows.
-%       See ISPC and COMPUTER.
-if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
-    set(hObject,'BackgroundColor','white');
-end
-
-devinfo = audiodevinfo; % Get available device information
-odevicelist = {devinfo.output.Name}; % Populate list
-handles.odeviceidlist =  cell2mat({devinfo.output.ID});
-handles.outputid = handles.odeviceidlist(1,1);
-set(hObject,'String',odevicelist);
-guidata(hObject,handles);
-
-
-
 function IN_name_Callback(hObject, eventdata, handles)
 % hObject    handle to IN_name (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
@@ -641,6 +597,8 @@ function pb_enable_Callback(hObject, eventdata, handles)
 % Hint: get(hObject,'Value') returns toggle state of pb_enable
 hMain = getappdata(0,'hMain');
 if get(hObject,'Value') == 1
+    if isfield(handles.syscalstats,'latency'), set(handles.delay_chk,'Enable','on','Value',1); end
+    if isfield(handles.syscalstats,'audio'), set(handles.invfilter_chk,'Enable','on','Value',1); end
     set(handles.output_panel,'Visible','on');
     set(handles.IN_numchs,'String',num2str(getappdata(hMain,'audio_recorder_numchs')));
     set(handles.text1,'String','Add time');
@@ -662,6 +620,8 @@ if get(hObject,'Value') == 1
     xlim(handles.IN_axes,[0 round(handles.dur+handles.addtime)])
     xlim(handles.OUT_axes,[0 round(handles.dur+handles.addtime)])
 else
+    if isfield(handles.syscalstats,'latency'), set(handles.delay_chk,'Enable','off','Value',0); end
+    if isfield(handles.syscalstats,'audio'), set(handles.invfilter_chk,'Enable','off','Value',0); end
     set(handles.output_panel,'Visible','off');
     set(handles.text1,'String','Duration');
     set(handles.IN_duration,'String',num2str(getappdata(hMain,'audio_recorder_duration')));
@@ -877,6 +837,55 @@ function IN_buffer_CreateFcn(hObject, eventdata, handles)
 % handles    empty - handles not created until after all CreateFcns called
 
 % Hint: edit controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+
+% --- Executes on selection change in inputdev_popup.
+function inputdev_popup_Callback(hObject, eventdata, handles)
+% hObject    handle to inputdev_popup (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: contents = cellstr(get(hObject,'String')) returns inputdev_popup contents as cell array
+%        contents{get(hObject,'Value')} returns selected item from inputdev_popup
+hMain = getappdata(0,'hMain');
+setappdata(hMain,'audio_recorder_input',get(hObject,'Value'));
+
+
+% --- Executes during object creation, after setting all properties.
+function inputdev_popup_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to inputdev_popup (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: popupmenu controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+
+% --- Executes on selection change in outputdev_popup.
+function outputdev_popup_Callback(hObject, eventdata, handles)
+% hObject    handle to outputdev_popup (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: contents = cellstr(get(hObject,'String')) returns outputdev_popup contents as cell array
+%        contents{get(hObject,'Value')} returns selected item from outputdev_popup
+hMain = getappdata(0,'hMain');
+setappdata(hMain,'audio_recorder_output',get(hObject,'Value'));
+
+% --- Executes during object creation, after setting all properties.
+function outputdev_popup_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to outputdev_popup (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: popupmenu controls usually have a white background on Windows.
 %       See ISPC and COMPUTER.
 if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
     set(hObject,'BackgroundColor','white');
