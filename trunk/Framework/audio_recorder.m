@@ -102,7 +102,9 @@ else
         output_settings{3} = ['Sampling frequency = ',num2str(handles.outputdata.fs),' samples/s'];
         output_settings{4} = ['Bit depth = ',num2str(handles.outputdata.nbits)];
         output_settings{5} = ['Duration = ',num2str(handles.dur),' s'];
-        plot(handles.OUT_axes,handles.t,handles.outputdata.audio)
+        pixels = get_axes_width(handles.OUT_axes);
+        [t, line] = reduce_to_width(handles.t', handles.outputdata.audio, pixels, [-inf inf]);
+        plot(handles.OUT_axes,t,line)
         set(handles.OUT_axes,'tag','OUT_axes')
         set(handles.output_settings,'String',output_settings);
         set(handles.inputdev_popup,'Value',getappdata(hMain,'audio_recorder_input'));
