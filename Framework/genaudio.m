@@ -148,7 +148,10 @@ if ~isempty(handles.signaldata)
     end
     duration = length(handles.signaldata.audio)/handles.signaldata.fs;
     time = linspace(0,duration,length(handles.signaldata.audio));
-    plot(time,real(handles.signaldata.audio)); % Plot the generated signal
+    pixels = get_axes_width(gca);
+    line = real(handles.signaldata.audio);
+    [time, line] = reduce_to_width(time', line, pixels, [-inf inf]);
+    plot(time,line); % Plot the generated signal
     xlabel('Time [s]');
     set(handles.axes1,'XTickLabel',num2str(get(handles.axes1,'XTick').'))
     set(handles.play_btn,'Enable','on')
