@@ -88,7 +88,7 @@ if isempty(mainGuiInput) == 0
     end
 end
 if ~isdir([cd '/Log']), mkdir([cd '/Log']); end
-mkdir([cd '/Utilities/Temp']);
+if ~isdir([cd '/Utilities/Temp']), mkdir([cd '/Utilities/Temp']); end
 % Add folder paths for filter functions and signal analyzers
 addpath(genpath(cd));
 handles.player = [];
