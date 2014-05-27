@@ -3,6 +3,7 @@
 % selection commands, it controls also visibility of some functions
 % depending on what type of signal is selected and its contents.
 function nodes = mySelectFcn(tree, value)
+    pause on
     % Get handles of main window
     aarae_fig = findobj('Tag','aarae');
     mainHandles = guidata(aarae_fig);
@@ -70,23 +71,19 @@ function nodes = mySelectFcn(tree, value)
                 cmap = colormap(lines(size(audiodata.audio,2)));
                 set(mainHandles.aarae,'DefaultAxesColorOrder',cmap)
             end
+            pause(0.1)
             refreshplots(mainHandles,'time')
             refreshplots(mainHandles,'freq')
             if isfield(audiodata,'audio2') && ~isempty(audiodata.audio2)%(strcmp(audiodata.datatype,'measurements') || strcmp(audiodata.datatype,'testsignals') || strcmp(audiodata.datatype,'processed'))
                 set(mainHandles.IR_btn,'Visible','on'); % Display process IR button if selection is a measurement based on a sine sweep
             end
+            pause(0.1)
         elseif ~isempty(audiodata) && ~isfield(audiodata,'audio')% If there's data saved in the leaf but not audio...
             plot(mainHandles.axestime,0,0)
             semilogx(mainHandles.axesfreq,0,0)
             set(mainHandles.axestime,'Visible','off');
             set(mainHandles.axesfreq,'Visible','off');
             set(mainHandles.axesdata,'Visible','on');
-%            axis(mainHandles.axestime,[0 10 -1 1]);
-%            xlabel(mainHandles.axestime,'Time [s]');
-%            set(mainHandles.axestime,'XTickLabel',num2str(get(mainHandles.axestime,'XTick').'))
-%            xlabel(mainHandles.axesfreq,'Frequency [Hz]');
-%            xlim(mainHandles.axesfreq,[20 20000])
-%            set(mainHandles.axesfreq,'XTickLabel',num2str(get(mainHandles.axesfreq,'XTick').'))
             set(mainHandles.audiodatatext,'String',[]);
             datatext = evalc('audiodata');
             set(mainHandles.datatext,'Visible','on');
@@ -125,6 +122,7 @@ function nodes = mySelectFcn(tree, value)
             else
                 set(mainHandles.data_panel2,'Visible','off');
             end
+            pause(0.000001)
             set(mainHandles.IR_btn,'Visible','off');
             set(mainHandles.tools_panel,'Visible','on');
             set([mainHandles.edit_btn mainHandles.cal_btn],'Enable','off')
@@ -138,6 +136,7 @@ function nodes = mySelectFcn(tree, value)
             set([mainHandles.complextime mainHandles.complexfreq],'Visible','off')
             if isfield(audiodata,'properties'), set(mainHandles.properties_btn,'Visible','on'); else set(mainHandles.properties_btn,'Visible','off'); end
             setappdata(hMain,'testsignal', []);
+            pause(0.000001)
         else
             % If selection has no data, hide everything and don't display
             % data
@@ -164,6 +163,8 @@ function nodes = mySelectFcn(tree, value)
             set([mainHandles.complextime mainHandles.complexfreq],'Visible','off')
             set(mainHandles.properties_btn,'Visible','off');
             setappdata(hMain,'testsignal', []);
+            pause(0.000001)
         end
     end
+    pause off
 end  % mySelectFcn

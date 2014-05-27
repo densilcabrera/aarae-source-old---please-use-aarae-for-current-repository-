@@ -1,40 +1,42 @@
 function refreshplots(handles,axes)
-
+cla(handles.(genvarname(['axes' axes])))
 selectedNodes = handles.mytree.getSelectedNodes;
 signaldata = selectedNodes(1).handle.UserData;
 %if isa(signaldata.audio,'memmapfile'), signaldata.audio = signaldata.audio.Data; end
 plottype = get(handles.(genvarname([axes '_popup'])),'Value');
-t = linspace(0,length(signaldata.audio),length(signaldata.audio))./signaldata.fs;
-f = signaldata.fs .* ((1:length(signaldata.audio))-1) ./ length(signaldata.audio);
+fftlength = length(signaldata.audio);
+t = (linspace(0,length(signaldata.audio),length(signaldata.audio))./signaldata.fs).';
+%f = signaldata.fs .* ((1:length(signaldata.audio))-1) ./ length(signaldata.audio);
+%f = (signaldata.fs .* ((1:fftlength)-1) ./ fftlength).';
 if ndims(signaldata.audio) > 2
-    line(:,:) = signaldata.audio(:,str2double(get(handles.IN_nchannel,'String')),:);
+    linea(:,:) = signaldata.audio(:,str2double(get(handles.IN_nchannel,'String')),:);
 else
-    line = signaldata.audio;
+    linea = signaldata.audio;
 end
 if isfield(signaldata,'cal')
-    if size(line,2) == length(signaldata.cal)
+    if size(linea,2) == length(signaldata.cal)
         signaldata.cal(find(isnan(signaldata.cal))) = 0;
-        line = line.*repmat(10.^(signaldata.cal./20),length(line),1);
+        linea = linea.*repmat(10.^(signaldata.cal./20),length(linea),1);
     end
 end
 set(handles.(genvarname(['smooth' axes '_popup'])),'Visible','off');
-if plottype == 1, line = real(line); end
-if plottype == 2, line = line.^2; end
-if plottype == 3, line = 10.*log10(line.^2); end
-if plottype == 4, line = abs(hilbert(real(line))); end
-if plottype == 5, line = medfilt1(diff([angle(hilbert(real(line))); zeros(1,size(line,2))])*signaldata.fs/2/pi, 5); end
-if plottype == 6, line = abs(line); end
-if plottype == 7, line = imag(line); end
-if plottype == 8, line = 10*log10(abs(fft(line).*2.^0.5/length(line)).^2);  set(handles.(genvarname(['smooth' axes '_popup'])),'Visible','on'); end %freq
-if plottype == 9, line = (abs(fft(line)).*2.^0.5/length(line)).^2; end
-if plottype == 10, line = abs(fft(line)).*2.^0.5/length(line); end
-if plottype == 11, line = real(fft(line)).*2.^0.5/length(line); end
-if plottype == 12, line = imag(fft(line)).*2.^0.5/length(line); end
-if plottype == 13, line = angle(fft(line)); end
-if plottype == 14, line = unwrap(angle(fft(line))); end
-if plottype == 15, line = angle(fft(line)) .* 180/pi; end
-if plottype == 16, line = unwrap(angle(fft(line))) ./(2*pi); end
-if plottype == 17, line = -diff(unwrap(angle(fft(line)))).*length(fft(line))/(signaldata.fs*2*pi).*1000; end
+if plottype == 1, linea = real(linea); end
+if plottype == 2, linea = linea.^2; end
+if plottype == 3, linea = 10.*log10(linea.^2); end
+if plottype == 4, linea = abs(hilbert(real(linea))); end
+if plottype == 5, linea = medfilt1(diff([angle(hilbert(real(linea))); zeros(1,size(linea,2))])*signaldata.fs/2/pi, 5); end
+if plottype == 6, linea = abs(linea); end
+if plottype == 7, linea = imag(linea); end
+if plottype == 8, linea = 10*log10(abs(fft(linea,fftlength).*2.^0.5/fftlength).^2);  set(handles.(genvarname(['smooth' axes '_popup'])),'Visible','on'); end %freq
+if plottype == 9, linea = (abs(fft(linea,fftlength)).*2.^0.5/fftlength).^2; end
+if plottype == 10, linea = abs(fft(linea,fftlength)).*2.^0.5/fftlength; end
+if plottype == 11, linea = real(fft(linea,fftlength)).*2.^0.5/fftlength; end
+if plottype == 12, linea = imag(fft(linea,fftlength)).*2.^0.5/fftlength; end
+if plottype == 13, linea = angle(fft(linea,fftlength)); end
+if plottype == 14, linea = unwrap(angle(fft(linea,fftlength))); end
+if plottype == 15, linea = angle(fft(linea,fftlength)) .* 180/pi; end
+if plottype == 16, linea = unwrap(angle(fft(linea,fftlength))) ./(2*pi); end
+if plottype == 17, spec = fft(linea,fftlength); linea = -diff(unwrap(angle(spec))).*length(spec)/(signaldata.fs*2*pi).*1000; end
 if strcmp(get(handles.(genvarname(['smooth' axes '_popup'])),'Visible'),'on')
     smoothfactor = get(handles.(genvarname(['smooth' axes '_popup'])),'Value');
     if smoothfactor == 2, octsmooth = 1; end
@@ -42,7 +44,7 @@ if strcmp(get(handles.(genvarname(['smooth' axes '_popup'])),'Visible'),'on')
     if smoothfactor == 4, octsmooth = 6; end
     if smoothfactor == 5, octsmooth = 12; end
     if smoothfactor == 6, octsmooth = 24; end
-    if smoothfactor ~= 1, line = octavesmoothing(line, octsmooth, signaldata.fs); end
+    if smoothfactor ~= 1, linea = octavesmoothing(linea, octsmooth, signaldata.fs); end
 end
 if plottype <= 7
     if ~isreal(signaldata.audio)
@@ -52,17 +54,23 @@ if plottype <= 7
     end
     set(handles.(genvarname(['log' axes '_chk'])),'Visible','off');
     pixels = get_axes_width(handles.(genvarname(['axes' axes])));
-    [t, line] = reduce_to_width(t', real(line), pixels, [-inf inf]);
-    plot(handles.(genvarname(['axes' axes])),t,real(line)) % Plot signal in time domain
+    [t, linea] = reduce_to_width(t, real(linea), pixels, [-inf inf]);
+    hl = line(t,real(linea)); % Plot signal in time domain
+    set(hl,'Parent',handles.(genvarname(['axes' axes])))
     xlabel(handles.(genvarname(['axes' axes])),'Time [s]');
+    xlim(handles.(genvarname(['axes' axes])),[0 length(signaldata.audio)/signaldata.fs])
+    set(handles.(genvarname(['axes' axes])),'XScale','linear','XTickLabelMode','auto')
     set(handles.(genvarname(['axes' axes])),'XTickLabel',num2str(get(handles.(genvarname(['axes' axes])),'XTick').'))
 end
 if plottype >= 8
     set(handles.(genvarname(['complex' axes])),'Visible','off')
     pixels = get_axes_width(handles.(genvarname(['axes' axes])));
-    [f, line] = reduce_to_width(f', line, pixels, [-inf inf]);
-    if plottype == 17, semilogx(handles.(genvarname(['axes' axes])),f(1:end-1),line,'Marker','None'); end
-    if plottype ~= 17, semilogx(handles.(genvarname(['axes' axes])),f,line); end % Plot signal in frequency domain
+    [~, linea] = reduce_to_width(log10(1:length(linea)), linea, pixels, [-inf inf]);
+    %if plottype == 17, hl = line(f(1:end-1),linea); end
+    %if plottype ~= 17, 
+    f = (signaldata.fs .* ((1:length(linea))-1) ./ length(linea)).';
+    hl = line(f,linea);% end % Plot signal in frequency domain
+    set(hl,'Parent',handles.(genvarname(['axes' axes])))
     xlabel(handles.(genvarname(['axes' axes])),'Frequency [Hz]');
     xlim(handles.(genvarname(['axes' axes])),[f(2) signaldata.fs/2])
     set(handles.(genvarname(['log' axes '_chk'])),'Visible','on');
