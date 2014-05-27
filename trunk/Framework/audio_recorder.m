@@ -82,11 +82,13 @@ else
     inputnames = {inputdevinfo.name}';
     inputnames = regexprep(inputnames,'\s\(Windows DirectSound\)','');
     inputnames = regexprep(inputnames,'\s\(ASIO\)','');
+    inputnames = regexprep(inputnames,'\s\(Core Audio\)','');
     set(handles.inputdev_popup,'String',inputnames)
     outputdevinfo = dspAudioDeviceInfo('outputs');
     outputnames = {outputdevinfo.name}';
     outputnames = regexprep(outputnames,'\s\(Windows DirectSound\)','');
     outputnames = regexprep(outputnames,'\s\(ASIO\)','');
+    outputnames = regexprep(outputnames,'\s\(Core Audio\)','');
     set(handles.outputdev_popup,'String',outputnames)
     if ~isempty(handles.signaldata) && ndims(handles.signaldata.audio) < 3 && ~strcmp(handles.signaldata.datatype,'syscal')% If there's a signal loaded in the 'desktop'...
         % Allow visibility of playback option along with the specs of
