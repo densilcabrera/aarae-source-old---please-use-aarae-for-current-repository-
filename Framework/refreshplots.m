@@ -7,7 +7,7 @@ plottype = get(handles.(genvarname([axes '_popup'])),'Value');
 fftlength = length(signaldata.audio);
 t = (linspace(0,length(signaldata.audio),length(signaldata.audio))./signaldata.fs).';
 %f = signaldata.fs .* ((1:length(signaldata.audio))-1) ./ length(signaldata.audio);
-%f = (signaldata.fs .* ((1:fftlength)-1) ./ fftlength).';
+f = (signaldata.fs .* ((1:fftlength)-1) ./ fftlength).';
 if ndims(signaldata.audio) > 2
     linea(:,:) = signaldata.audio(:,str2double(get(handles.IN_nchannel,'String')),:);
 else
@@ -65,16 +65,20 @@ end
 if plottype >= 8
     set(handles.(genvarname(['complex' axes])),'Visible','off')
     pixels = get_axes_width(handles.(genvarname(['axes' axes])));
-    [~, linea] = reduce_to_width(log10(1:length(linea)), linea, pixels, [-inf inf]);
+    log_check = get(handles.(genvarname(['log' axes '_chk'])),'Value');
+    if log_check == 0
+        [f1, linea1] = reduce_to_width(f(1:length(linea)), linea, pixels, [-inf inf]);
+    else
+        [f1, linea1] = reduce_to_width(log10(1:length(linea))', linea, pixels, [-inf inf]);
+        f1 = (10.^f1)./max(10.^f1).*signaldata.fs;
+    end        
     %if plottype == 17, hl = line(f(1:end-1),linea); end
     %if plottype ~= 17, 
-    f = (signaldata.fs .* ((1:length(linea))-1) ./ length(linea)).';
-    hl = line(f,linea);% end % Plot signal in frequency domain
+    hl = line(f1,linea1);% end % Plot signal in frequency domain
     set(hl,'Parent',handles.(genvarname(['axes' axes])))
     xlabel(handles.(genvarname(['axes' axes])),'Frequency [Hz]');
     xlim(handles.(genvarname(['axes' axes])),[f(2) signaldata.fs/2])
     set(handles.(genvarname(['log' axes '_chk'])),'Visible','on');
-    log_check = get(handles.(genvarname(['log' axes '_chk'])),'Value');
     if log_check == 1
         set(handles.(genvarname(['axes' axes])),'XScale','log')
         set(handles.(genvarname(['axes' axes])),'XTickLabel',num2str(get(handles.(genvarname(['axes' axes])),'XTick').'))
