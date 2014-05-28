@@ -1,12 +1,11 @@
 function refreshplots(handles,axes)
-cla(handles.(genvarname(['axes' axes])))
+
 selectedNodes = handles.mytree.getSelectedNodes;
 signaldata = selectedNodes(1).handle.UserData;
 %if isa(signaldata.audio,'memmapfile'), signaldata.audio = signaldata.audio.Data; end
 plottype = get(handles.(genvarname([axes '_popup'])),'Value');
 fftlength = length(signaldata.audio);
 t = (linspace(0,length(signaldata.audio),length(signaldata.audio))./signaldata.fs).';
-%f = signaldata.fs .* ((1:length(signaldata.audio))-1) ./ length(signaldata.audio);
 f = (signaldata.fs .* ((1:fftlength)-1) ./ fftlength).';
 if ndims(signaldata.audio) > 2
     linea(:,:) = signaldata.audio(:,str2double(get(handles.IN_nchannel,'String')),:);
@@ -55,8 +54,8 @@ if plottype <= 7
     set(handles.(genvarname(['log' axes '_chk'])),'Visible','off');
     pixels = get_axes_width(handles.(genvarname(['axes' axes])));
     [t, linea] = reduce_to_width(t, real(linea), pixels, [-inf inf]);
-    hl = line(t,real(linea)); % Plot signal in time domain
-    set(hl,'Parent',handles.(genvarname(['axes' axes])))
+    t = t(:,1);
+    plot(handles.(genvarname(['axes' axes])),t,real(linea)); % Plot signal in time domain
     xlabel(handles.(genvarname(['axes' axes])),'Time [s]');
     xlim(handles.(genvarname(['axes' axes])),[0 length(signaldata.audio)/signaldata.fs])
     set(handles.(genvarname(['axes' axes])),'XScale','linear','XTickLabelMode','auto')
@@ -68,14 +67,13 @@ if plottype >= 8
     log_check = get(handles.(genvarname(['log' axes '_chk'])),'Value');
     if log_check == 0
         [f1, linea1] = reduce_to_width(f(1:length(linea)), linea, pixels, [-inf inf]);
+        f1 = f1(:,1);
     else
         [f1, linea1] = reduce_to_width(log10(1:length(linea))', linea, pixels, [-inf inf]);
+        f1 = f1(:,1);
         f1 = (10.^f1)./max(10.^f1).*signaldata.fs;
-    end        
-    %if plottype == 17, hl = line(f(1:end-1),linea); end
-    %if plottype ~= 17, 
-    hl = line(f1,linea1);% end % Plot signal in frequency domain
-    set(hl,'Parent',handles.(genvarname(['axes' axes])))
+    end
+    plot(handles.(genvarname(['axes' axes])),f1,linea1);% Plot signal in frequency domain
     xlabel(handles.(genvarname(['axes' axes])),'Frequency [Hz]');
     xlim(handles.(genvarname(['axes' axes])),[f(2) signaldata.fs/2])
     set(handles.(genvarname(['log' axes '_chk'])),'Visible','on');
