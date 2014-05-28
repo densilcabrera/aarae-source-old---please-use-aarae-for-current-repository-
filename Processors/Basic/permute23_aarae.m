@@ -24,5 +24,6 @@ if ndims(in.audio) > 2
     out.funcallback.inarg = {};
 else
     out = [];
-    warndlg('Data is two-dimensional','AARAE info')
+    h = warndlg('Data is two-dimensional','AARAE info','modal');
+    uiwait(h)
 end
