@@ -34,7 +34,8 @@ out = in;
 
 if sum(audiofields) == 1
     % if only one audio field exists, then swapping cannot be done
-    disp('Unable to swap audio fields because only one audio field exists')
+    h = warndlg('Unable to swap audio fields because only one audio field exists','AARAE info','modal');
+    uiwait(h)
     
 elseif sum(audiofields) == 2
     % if only two audio fields exist, then swap them without dialog

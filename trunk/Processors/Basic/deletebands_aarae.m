@@ -36,5 +36,6 @@ if ~isempty(param)
     end
 else
     out = [];
-    warndlg('No bands available','AARAE info');
+    h = warndlg('No bands available','AARAE info','modal');
+    uiwait(h)
 end

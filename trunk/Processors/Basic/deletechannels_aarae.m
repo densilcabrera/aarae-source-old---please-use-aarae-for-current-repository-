@@ -34,6 +34,7 @@ if ~isempty(param)
     end
 else
     out = [];
-    warndlg('Audio has a single channel','AARAE info');
+    h = warndlg('Audio has a single channel','AARAE info','modal');
+    uiwait(h)
 end
 end

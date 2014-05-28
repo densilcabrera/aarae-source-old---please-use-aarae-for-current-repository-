@@ -1,4 +1,4 @@
-function [OUT, varargout] = reduce_dims(IN,domain,operation,percent,dim,fs)
+function [OUT, varargout] = reduce_dims(IN, domain, operation, percent,dim,fs)
 % This function reduces one of the dimensions of multidimensional audio 
 % to a singleton dimension by applying a simple selection,
 % arithmetic or statistical operation. Operations include:
@@ -9,8 +9,6 @@ function [OUT, varargout] = reduce_dims(IN,domain,operation,percent,dim,fs)
 % * maximum of the chosen dimension (probably most useful for complex data)
 % * minimum of the chosen dimension (ditto)
 % * percentile of the chosen dimension
-% * sum of the chosen dimension
-% * mean difference of the chosen dimension
 %
 % These operations can be done in the time domain, frequency domain,
 % quefrency domain, Hilbert (analytic) time domain, or an intermediate 
@@ -42,7 +40,8 @@ if nargin ==1
     elseif bands > 1
         dim = 3;
     else
-        disp('Audio data is already 1-dimensional - this processor is for multidimensional data.')
+        h = warndlg('Audio data is already 1-dimensional - this processor is for multidimensional data.','AARAE info','modal');
+        uiwait(h)
         OUT = [];
         return
     end
@@ -77,7 +76,7 @@ if ~isempty(audio) && ~isempty(fs)
     
     dim = abs(round(dim));
     if dim <=1
-        disp('Dimension to operate on must be higher than 1')
+        warndlg('Dimension to operate on must be higher than 1','AARAE info','modal')
         OUT = [];
         return
     end
@@ -104,7 +103,7 @@ if ~isempty(audio) && ~isempty(fs)
             % frequency domain
             audio = fft(audio);
         elseif domain == 2 || domain ==3 || domain == 4
-            % quefrency/Hilbert/fractional Fourier domains
+            % quefrency domain
             for ch = 1:chans
                 for b = 1:bands
                     for n4 = 1:d4
@@ -156,7 +155,7 @@ if ~isempty(audio) && ~isempty(fs)
             % from frequency domain
             audio = ifft(audio);
         elseif domain == 2 || domain == 4
-            % from quefrency domain or fractional Fourier
+            % from quefrency domain
             [~,chans,bands,d4,d5,d6] = size(audio);
             for ch = 1:chans
                 for b = 1:bands

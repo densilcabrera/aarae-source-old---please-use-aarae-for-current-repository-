@@ -16,19 +16,21 @@ if isstruct(in)
            if length(cal) == 1
                cal = repmat(cal,[1,chans]);
            else
-               disp('Cal size does not match audio channels')
+               warndlg('Cal size does not match audio channels','AARAE info','modal')
                out = [];
                return
            end
        end
    else
-       disp('Cal field does not exist')
+       h = warndlg('Cal field does not exist','AARAE info','modal');
+       uiwait(h)
        out = [];
        return
    end
 
 else
-    disp('Input audio must be in an AARAE structure')
+    h = warndlg('Input audio must be in an AARAE structure','AARAE info','modal');
+    uiwait(h)
     out = [];
     return
 end
