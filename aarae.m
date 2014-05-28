@@ -1603,7 +1603,7 @@ switch method
         caldata = selectedNodes(1).handle.UserData;
         cal_level = 10 .* log10(mean(caldata.audio.^2,1));
         cal_level = repmat(20*log10(mean(10.^(cal_level./20),2)),1,size(caldata.audio,2));
-        cal_offset = inputdlg('Calibration tone RMS level',...
+        cal_offset = inputdlg('Signal RMS level',...
                     'Calibration value',[1 50],cellstr(num2str(zeros(size(cal_level)))));
         if isempty(cal_offset), return; end
         if (isequal(size(str2num(char(cal_offset))),size(cal_level)) || size(str2num(char(cal_offset)),2) == 1) && ndims(caldata.audio) < 3
@@ -1626,7 +1626,7 @@ switch method
             caldata = feval(funname,caldata);
             cal_level = 10 .* log10(mean(caldata.audio.^2,1));
             cal_level = repmat(20*log10(mean(10.^(cal_level./20),2)),1,size(caldata.audio,2));
-            cal_offset = inputdlg('Calibration tone RMS level',...
+            cal_offset = inputdlg('Signal RMS level',...
                         'Calibration value',[1 50],cellstr(num2str(zeros(size(cal_level)))));
             if isempty(cal_offset), return; end
             if (isequal(size(str2num(char(cal_offset))),size(cal_level)) || size(str2num(char(cal_offset)),2) == 1) && ndims(caldata.audio) < 3
