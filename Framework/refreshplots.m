@@ -7,7 +7,7 @@ plottype = get(handles.(genvarname([axes '_popup'])),'Value');
 fftlength = length(signaldata.audio);
 t = (linspace(0,length(signaldata.audio),length(signaldata.audio))./signaldata.fs).';
 f = (signaldata.fs .* ((1:fftlength)-1) ./ fftlength).';
-if ndims(signaldata.audio) > 2
+if ~ismatrix(signaldata.audio)
     linea(:,:) = signaldata.audio(:,str2double(get(handles.IN_nchannel,'String')),:);
 else
     linea = signaldata.audio;
@@ -75,7 +75,7 @@ if plottype >= 8
     end
     plot(handles.(genvarname(['axes' axes])),f1,linea1);% Plot signal in frequency domain
     xlabel(handles.(genvarname(['axes' axes])),'Frequency [Hz]');
-    xlim(handles.(genvarname(['axes' axes])),[f(2) signaldata.fs/2])
+    xlim(handles.(genvarname(['axes' axes])),[f1(2) signaldata.fs/2])
     set(handles.(genvarname(['log' axes '_chk'])),'Visible','on');
     if log_check == 1
         set(handles.(genvarname(['axes' axes])),'XScale','log')

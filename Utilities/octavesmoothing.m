@@ -56,7 +56,9 @@ if octsmooth > 0
         smoothmagspectrum = smoothmagspectrum.*abssmoothspec./abs(smoothmagspectrum);
     end
     smoothmagspectrum = interp1(fc,smoothmagspectrum,freqeval,'spline');
-    smoothmagspectrum = smoothmagspectrum';
+    if size(smoothmagspectrum,1) < size(smoothmagspectrum,2)
+        smoothmagspectrum = smoothmagspectrum';
+    end
 else
     smoothmagspectrum = fftdbin;
 end
