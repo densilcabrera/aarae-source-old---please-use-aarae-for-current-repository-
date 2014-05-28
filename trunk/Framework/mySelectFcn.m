@@ -29,7 +29,7 @@ function nodes = mySelectFcn(tree, value)
             set(mainHandles.datatext,'String',[]);
             set(mainHandles.data_panel1,'Visible','off');
             set(mainHandles.data_panel2,'Visible','off');
-            set(mainHandles.IR_btn,'Visible','off'); 
+            %set(mainHandles.IR_btn,'Visible','off'); 
             set(mainHandles.tools_panel,'Visible','on');
             if ~strcmp(audiodata.datatype,'syscal')
                 set([mainHandles.edit_btn mainHandles.cal_btn],'Enable','on');
@@ -39,14 +39,14 @@ function nodes = mySelectFcn(tree, value)
             end
             set(mainHandles.axestime,'Visible','on');
             set(mainHandles.axesfreq,'Visible','on');
-            plot(mainHandles.axesdata,0,0)
+            cla(mainHandles.axesdata)
             set(mainHandles.axesdata,'Visible','off');
             set(mainHandles.time_popup,'Visible','on');
             set(mainHandles.freq_popup,'Visible','on');
-            set(mainHandles.smoothtime_popup,'Visible','on');
-            set(mainHandles.smoothfreq_popup,'Visible','on');
-            set(mainHandles.logtime_chk,'Visible','on');
-            set(mainHandles.logfreq_chk,'Visible','on');
+            %set(mainHandles.smoothtime_popup,'Visible','on');
+            %set(mainHandles.smoothfreq_popup,'Visible','on');
+            %set(mainHandles.logtime_chk,'Visible','on');
+            %set(mainHandles.logfreq_chk,'Visible','on');
             set(mainHandles.process_panel,'Visible','on');
             set(mainHandles.playback_panel,'Visible','on');
             set(mainHandles.channel_panel,'Visible','off');
@@ -59,7 +59,7 @@ function nodes = mySelectFcn(tree, value)
             set(mainHandles.analyze_btn,'Visible','off');
             if isfield(audiodata,'properties'), set(mainHandles.properties_btn,'Visible','on'); else set(mainHandles.properties_btn,'Visible','off'); end
             setappdata(hMain,'testsignal', audiodata); % Set leaf contents in the 'desktop'
-            if ndims(audiodata.audio) > 2
+            if ~ismatrix(audiodata.audio)
                 set(mainHandles.channel_panel,'Visible','on');
                 set(mainHandles.IN_nchannel,'String','1');
                 set(mainHandles.tchannels,'String',['/ ' num2str(size(audiodata.audio,2))]);
@@ -72,9 +72,12 @@ function nodes = mySelectFcn(tree, value)
             end
             pause(0.001)
             refreshplots(mainHandles,'time')
+            pause(0.001)
             refreshplots(mainHandles,'freq')
             if isfield(audiodata,'audio2') && ~isempty(audiodata.audio2)%(strcmp(audiodata.datatype,'measurements') || strcmp(audiodata.datatype,'testsignals') || strcmp(audiodata.datatype,'processed'))
-                set(mainHandles.IR_btn,'Visible','on'); % Display process IR button if selection is a measurement based on a sine sweep
+                set(mainHandles.IR_btn,'Visible','on');
+            else
+                set(mainHandles.IR_btn,'Visible','off');% Display process IR button if selection is a measurement based on a sine sweep
             end
             pause(0.001)
         elseif ~isempty(audiodata) && ~isfield(audiodata,'audio')% If there's data saved in the leaf but not audio...
@@ -91,7 +94,7 @@ function nodes = mySelectFcn(tree, value)
             if isfield(audiodata,'lines')
                 set(mainHandles.data_panel1,'Visible','on');
                 set(mainHandles.nchart_popup,'String',[' ';fieldnames(audiodata.lines)])
-                %set(mainHandles.nchart_popup,'Value',1)
+                set(mainHandles.nchart_popup,'Value',1)
             else
                 set(mainHandles.data_panel1,'Visible','off');
             end
