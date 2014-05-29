@@ -46,7 +46,7 @@ end
 
 
 % --- Executes just before aarae is made visible.
-function aarae_OpeningFcn(hObject, eventdata, handles, varargin)
+function aarae_OpeningFcn(hObject, ~, handles, varargin)
 % This function has no output args, see OutputFcn.
 % hObject    handle to aarae
 % eventdata  reserved - to be defined in a future version of MATLAB
@@ -92,7 +92,7 @@ if ~isdir([cd '/Utilities/Temp']), mkdir([cd '/Utilities/Temp']); end
 % Add folder paths for filter functions and signal analyzers
 addpath(genpath(cd));
 handles.player = [];
-[handles.reference_audio.audio, handles.reference_audio.fs] = wavread('REFERENCE_AUDIO.wav');
+[handles.reference_audio.audio, handles.reference_audio.fs] = audioread('REFERENCE_AUDIO.wav');
 
 % Setup for Densil's tree
 iconPath = fullfile(matlabroot,'/toolbox/matlab/icons/matlabicon.gif');
@@ -109,7 +109,7 @@ handles.root.add(handles.measurements);
 handles.root.add(handles.processed);
 handles.root.add(handles.results);
 
-[handles.mytree container] = uitree('v0','Root', handles.root,'SelectionChangeFcn',@mySelectFcn);
+[handles.mytree,container] = uitree('v0','Root', handles.root,'SelectionChangeFcn',@mySelectFcn);
 set(container, 'Parent', hObject);
 treeheight_char = get(handles.process_panel,'Position')+get(handles.analysis_panel,'Position')+get(handles.uipanel1,'Position');
 treewidth_char = get(handles.analysis_panel,'Position');
@@ -151,7 +151,7 @@ uiwait(handles.aarae);
 
 
 % --- Outputs from this function are returned to the command line.
-function varargout = aarae_OutputFcn(hObject, eventdata, handles) 
+function varargout = aarae_OutputFcn(~, ~, handles) 
 % varargout  cell array for returning output args (see VARARGOUT);
 % hObject    handle to aarae
 % eventdata  reserved - to be defined in a future version of MATLAB
@@ -171,7 +171,7 @@ varargout{1} = [];
 
 
 % --- Executes on button press in genaudio_btn.
-function genaudio_btn_Callback(hObject, eventdata, handles)
+function genaudio_btn_Callback(hObject, ~, handles)
 % hObject    handle to genaudio_btn (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
@@ -227,7 +227,7 @@ guidata(hObject, handles);
 
 
 % --- Executes when user attempts to close aarae.
-function aarae_CloseRequestFcn(hObject,eventdata,handles)
+function aarae_CloseRequestFcn(hObject,eventdata,handles) %#ok
 % hObject    handle to aarae (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
@@ -273,7 +273,7 @@ end
 
 
 % --- Executes on button press in save_btn.
-function save_btn_Callback(hObject, eventdata, handles)
+function save_btn_Callback(hObject, ~, handles)
 % hObject    handle to save_btn (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
@@ -286,40 +286,40 @@ for nleafs = 1:length(selectedNodes)
     audiodata = selectedNodes(nleafs).handle.UserData;
     if ~isempty(audiodata) %Check if there's data to save
         name = inputdlg('File name: (Please specify .wav for wave files)','Save as MATLAB File',1,{[char(selectedNodes(nleafs).getName) '.mat']}); %Request file name
-        if ~isempty(name)
-            name = name{1,1};
-            [~,name,ext]=fileparts(name);
+        if ~isempty(name{1,1})
+            %name = name{1,1};
+            [~,name{1,1},ext]=fileparts(name{1,1});
             if strcmp(ext,'.mat'), ensave = 1;
-            elseif strcmp(ext,'.wav') && ndims(audiodata.audio) < 3, ensave = 1;
-            elseif strcmp(ext,'.wav') && ndims(audiodata.audio) > 2, ensave = 1; ext = '.mat';
+            elseif strcmp(ext,'.wav') && ismatrix(audiodata.audio), ensave = 1;
+            elseif strcmp(ext,'.wav') && ~ismatrix(audiodata.audio), ensave = 1; ext = '.mat';
             elseif isempty(ext), ensave = 1; 
             else ensave = 0;
             end
         end
-        if isempty(name) || ensave == 0
+        if isempty(name{1,1}) || ensave == 0
             warndlg('No data saved');
         else
             if isempty(ext), ext = '.mat'; end
             if strcmp(ext,'.wav') && (~isfield(audiodata,'audio') || ~isfield(audiodata,'fs')), ext = '.mat'; end
             folder_name = uigetdir(handles.defaultaudiopath,'Save AARAE file');
             handles.defaultaudiopath = folder_name;
-            listing = dir([folder_name '/' name ext]);
+            listing = dir([folder_name '/' name{1,1} ext]);
             if isempty(listing)
-                if strcmp(ext,'.mat'), save([folder_name '/' name ext],'audiodata'); end
-                if strcmp(ext,'.wav'), wavwrite(audiodata.audio,audiodata.fs,[folder_name '/' name]); end
+                if strcmp(ext,'.mat'), save([folder_name '/' name{1,1} ext],'audiodata'); end
+                if strcmp(ext,'.wav'), audiowrite(audiodata.audio,audiodata.fs,[folder_name '/' name{1,1}]); end
             else
                 index = 1;
                 % This while cycle is just to make sure no signals are
                 % overwriten
-                while isempty(dir([name,'_',num2str(index),ext])) == 0
+                while isempty(dir([name{1,1},'_',num2str(index),ext])) == 0
                     index = index + 1;
                 end
-                name = [name,'_',num2str(index),ext];
-                if strcmp(ext,'.mat'), save([folder_name '/' name ext],'audiodata'); end
-                if strcmp(ext,'.wav'), wavwrite(audiodata.audio,audiodata.fs,[folder_name '/' name]); end
+                name{1,1} = [name{1,1},'_',num2str(index),ext];
+                if strcmp(ext,'.mat'), save([folder_name '/' name{1,1} ext],'audiodata'); end
+                if strcmp(ext,'.wav'), audiowrite(audiodata.audio,audiodata.fs,[folder_name '/' name{1,1}]); end
             end
             %current = cd;
-            fprintf(handles.fid, [' ' datestr(now,16) ' - Saved "' char(selectedNodes(nleafs).getName) '" to file "' name ext '" in folder "%s"' '\n'],folder_name);
+            fprintf(handles.fid, [' ' datestr(now,16) ' - Saved "' char(selectedNodes(nleafs).getName) '" to file "' name{1,1} ext '" in folder "%s"' '\n'],folder_name);
         end
     end
 end
@@ -327,7 +327,7 @@ guidata(hObject, handles);
 
 
 % --- Executes on button press in load_btn.
-function load_btn_Callback(hObject, eventdata, handles)
+function load_btn_Callback(hObject, ~, handles)
 % hObject    handle to load_btn (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
@@ -348,7 +348,8 @@ if ~iscell(filename)
 end
 for i = 1:length(filename)
     if filename{i} ~= 0
-        [~,newleaf,ext] = fileparts(filename{i});
+        newleaf = cell(1,1);
+        [~,newleaf{1,1},ext] = fileparts(filename{i});
         % Check type of file. First 'if' is for .mat, second is for .wav
         if strcmp(ext,'.mat') || strcmp(ext,'.MAT')
             file = importdata(fullfile(handles.defaultaudiopath,filename{i}));
@@ -360,9 +361,9 @@ for i = 1:length(filename)
                     warndlg('Input field is blank, cannot load data!','AARAE info');
                     signaldata = [];
                 else
-                    fs = str2num(specs{1,1});
-                    nbits = str2num(specs{2,1});
-                    if (isempty(fs) || fs<=0 || isempty(nbits) || nbits<=0)
+                    fs = str2double(specs{1,1});
+                    nbits = str2double(specs{2,1});
+                    if (isnan(fs) || fs<=0 || isnan(nbits) || nbits<=0)
                         warndlg('Input MUST be a real positive number, cannot load data!','AARAE info');
                         signaldata = [];
                     else
@@ -374,11 +375,11 @@ for i = 1:length(filename)
             end
         end
         if strcmp(ext,'.wav') || strcmp(ext,'.WAV')
-            [signaldata.audio,signaldata.fs,signaldata.nbits] = wavread(fullfile(handles.defaultaudiopath,filename{i}));
+            [signaldata.audio,signaldata.fs] = audioread(fullfile(handles.defaultaudiopath,filename{i}));
+            signaldata.nbits = 16;
         end;
 
         % Generate new leaf and update the tree
-        %newleaf = filename{i};
         if ~isempty(signaldata)
             if ~isfield(signaldata,'chanID') && isfield(signaldata,'audio')
                 signaldata.chanID = cellstr([repmat('Chan',size(signaldata.audio,2),1) num2str((1:size(signaldata.audio,2))')]);
@@ -396,23 +397,23 @@ for i = 1:length(filename)
             else
                 iconPath = fullfile(matlabroot,'/toolbox/matlab/icons/notesicon.gif');
             end
-            leafname = isfield(handles,genvarname(newleaf));
+            leafname = isfield(handles,genvarname(newleaf{1,1}));
             if leafname == 1
                 index = 1;
                 % This while cycle is just to make sure no duplicate names
-                if length(genvarname([newleaf,'_',num2str(index)])) >= namelengthmax, newleaf = newleaf(1:round(end/2)); end
-                while isfield(handles,genvarname([newleaf,'_',num2str(index)])) == 1
+                if length(genvarname([newleaf{1,1},'_',num2str(index)])) >= namelengthmax, newleaf{1,1} = newleaf{1,1}(1:round(end/2)); end
+                while isfield(handles,genvarname([newleaf{1,1},'_',num2str(index)])) == 1
                     index = index + 1;
                 end
-                newleaf = [newleaf,'_',num2str(index)];
+                newleaf{1,1} = [newleaf{1,1},'_',num2str(index)];
             end
-            handles.(genvarname(newleaf)) = uitreenode('v0', newleaf,  newleaf,  iconPath, true);
-            handles.(genvarname(newleaf)).UserData = signaldata;
+            handles.(genvarname(newleaf{1,1})) = uitreenode('v0', newleaf{1,1},  newleaf{1,1},  iconPath, true);
+            handles.(genvarname(newleaf{1,1})).UserData = signaldata;
             if strcmp(signaldata.datatype,'syscal'), signaldata.datatype = 'measurements'; end
-            handles.(genvarname(signaldata.datatype)).add(handles.(genvarname(newleaf)));
+            handles.(genvarname(signaldata.datatype)).add(handles.(genvarname(newleaf{1,1})));
             handles.mytree.reloadNode(handles.(genvarname(signaldata.datatype)));
             handles.mytree.expand(handles.(genvarname(signaldata.datatype)));
-            handles.mytree.setSelectedNode(handles.(genvarname(newleaf)));
+            handles.mytree.setSelectedNode(handles.(genvarname(newleaf{1,1})));
             set([handles.clrall_btn,handles.export_btn],'Enable','on')
             fprintf(handles.fid, [' ' datestr(now,16) ' - Loaded "' filename{i} '" to branch "' char(handles.(genvarname(signaldata.datatype)).getName) '"\n']);
         end
@@ -422,7 +423,7 @@ end
 
 
 % --- Executes on button press in rec_btn.
-function rec_btn_Callback(hObject, eventdata, handles)
+function rec_btn_Callback(hObject, ~, handles)
 % hObject    handle to rec_btn (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
@@ -490,7 +491,7 @@ guidata(hObject, handles);
 
 
 % --- Executes on button press in edit_btn.
-function edit_btn_Callback(hObject, eventdata, handles)
+function edit_btn_Callback(~, ~, handles)
 % hObject    handle to edit_btn (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
@@ -503,7 +504,7 @@ if isempty(signaldata), warndlg('No signal loaded!','Whoops...!');
 %elseif ndims(signaldata.audio) > 2, warndlg('Cannot edit file!','Whoops...!');
 else
     % Call editing window
-    [xi xf] = edit_signal('main_stage1', handles.aarae);
+    [xi,xf] = edit_signal('main_stage1', handles.aarae);
     % Update tree with edited signal
     if ~isempty(xi) && ~isempty(xf)
         selectedNodes = handles.mytree.getSelectedNodes;
@@ -516,7 +517,7 @@ end
 
 
 % --- Executes on button press in export_btn.
-function export_btn_Callback(hObject, eventdata, handles)
+function export_btn_Callback(hObject, ~, handles)
 % hObject    handle to export_btn (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
@@ -566,7 +567,7 @@ else
         for i = 1:size(leafnames,1)
             current = handles.(genvarname(leaves(i,:)));
             current = current(1);
-            data = current.handle.UserData;
+            data = current.handle.UserData; %#ok : used in save
             if ~exist([folder '/' leafnames{i,:} '.mat'],'file')
                 save([folder '/' leafnames{i,:} '.mat'], 'data');
             else
@@ -600,7 +601,7 @@ end
 guidata(hObject,handles)
 
 % --- Executes on button press in finish_btn.
-function finish_btn_Callback(hObject, eventdata, handles)
+function finish_btn_Callback(~, eventdata, handles) %#ok
 % hObject    handle to finish_btn (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
@@ -622,7 +623,7 @@ end
 
 
 % --- Executes on button press in delete_btn.
-function delete_btn_Callback(hObject, eventdata, handles)
+function delete_btn_Callback(hObject, ~, handles)
 % hObject    handle to delete_btn (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
@@ -660,7 +661,7 @@ end
 
 
 % --- Executes on button press in play_btn.
-function play_btn_Callback(hObject, eventdata, handles)
+function play_btn_Callback(hObject, ~, handles) %#ok
 % hObject    handle to play_btn (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
@@ -680,7 +681,7 @@ else
     fs = audiodata.fs;
     nbits = 16;
     doesSupport = audiodevinfo(0, handles.odeviceid, fs, nbits, size(testsignal,2));
-    if doesSupport && ndims(testsignal) < 3
+    if doesSupport && ismatrix(testsignal)
         % Play signal
         handles.player = audioplayer(testsignal,fs,nbits,handles.odeviceid);
         play(handles.player);
@@ -696,7 +697,7 @@ guidata(hObject, handles);
 
 
 % --- Executes on button press in IR_btn.
-function IR_btn_Callback(hObject, eventdata, handles)
+function IR_btn_Callback(hObject, ~, handles) %#ok
 % hObject    handle to IR_btn (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
@@ -775,7 +776,7 @@ if method == 1 || method == 3
     IR = IR(1:length(S_pad),:,:);
 end
 if method == 1
-    if ndims(IR) > 2, tempIR(:,:) = IR(:,1,:); else tempIR = IR; end
+    if ~ismatrix(IR), tempIR(:,:) = IR(:,1,:); else tempIR = IR; end
     [trimsamp_low,trimsamp_high] = window_signal('main_stage1', handles.aarae,'IR',tempIR); % Calls the trimming GUI window to trim the IR
     %[~, id] = max(abs(IR));
     %trimsamp_low = id-round(IRlength./2);
@@ -824,7 +825,7 @@ guidata(hObject, handles);
 
 
 % --- Executes on selection change in funcat_box.
-function funcat_box_Callback(hObject, eventdata, handles)
+function funcat_box_Callback(hObject, ~, handles) %#ok
 % hObject    handle to funcat_box (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
@@ -846,7 +847,7 @@ end
 guidata(hObject,handles);
 
 % --- Executes during object creation, after setting all properties.
-function funcat_box_CreateFcn(hObject, eventdata, handles)
+function funcat_box_CreateFcn(hObject, ~, handles) %#ok
 % hObject    handle to funcat_box (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    empty - handles not created until after all CreateFcns called
@@ -866,7 +867,7 @@ guidata(hObject,handles)
 
 
 % --- Executes on button press in analyze_btn.
-function analyze_btn_Callback(hObject, eventdata, handles)
+function analyze_btn_Callback(hObject, ~, handles) %#ok
 % hObject    handle to analyze_btn (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
@@ -907,8 +908,8 @@ for nleafs = 1:length(selectedNodes)
                 feval(funname,audiodata);
             end
 
-            %handles.mytree.setSelectedNode(handles.root);
-            newleaf = [char(selectedNodes(nleafs).getName) ' ' funname];
+            newleaf = cell(1,1);
+            newleaf{1,1} = [char(selectedNodes(nleafs).getName) ' ' funname];
             if ~isempty(out)
                 signaldata = out;
                 signaldata.datatype = 'results';
@@ -917,20 +918,20 @@ for nleafs = 1:length(selectedNodes)
                 else
                     iconPath = fullfile(matlabroot,'/toolbox/matlab/icons/notesicon.gif');
                 end
-                leafname = isfield(handles,genvarname(newleaf));
+                leafname = isfield(handles,genvarname(newleaf{1,1}));
                 if leafname == 1
                     index = 1;
                     % This while cycle is just to make sure no signals are
                     % overwriten
-                    if length(genvarname([newleaf,'_',num2str(index)])) >= namelengthmax, newleaf = newleaf(1:round(end/2)); end
-                    while isfield(handles,genvarname([newleaf,'_',num2str(index)])) == 1
+                    if length(genvarname([newleaf{1,1},'_',num2str(index)])) >= namelengthmax, newleaf{1,1} = newleaf{1,1}(1:round(end/2)); end
+                    while isfield(handles,genvarname([newleaf{1,1},'_',num2str(index)])) == 1
                         index = index + 1;
                     end
-                    newleaf = [newleaf,'_',num2str(index)];
+                    newleaf{1,1} = [newleaf{1,1},'_',num2str(index)];
                 end
-                handles.(genvarname(newleaf)) = uitreenode('v0', newleaf,  newleaf,  iconPath, true);
-                handles.(genvarname(newleaf)).UserData = signaldata;
-                handles.results.add(handles.(genvarname(newleaf)));
+                handles.(genvarname(newleaf{1,1})) = uitreenode('v0', newleaf{1,1},  newleaf{1,1},  iconPath, true);
+                handles.(genvarname(newleaf{1,1})).UserData = signaldata;
+                handles.results.add(handles.(genvarname(newleaf{1,1})));
                 handles.mytree.reloadNode(handles.results);
                 handles.mytree.expand(handles.results);
                 %handles.mytree.setSelectedNode(handles.(genvarname(newleaf)));
@@ -963,7 +964,7 @@ guidata(hObject,handles)
 
 
 % --- Executes on selection change in fun_box.
-function fun_box_Callback(hObject, eventdata, handles)
+function fun_box_Callback(hObject, ~, handles) %#ok
 % hObject    handle to fun_box (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
@@ -990,7 +991,7 @@ end
 guidata(hObject,handles);
 
 % --- Executes during object creation, after setting all properties.
-function fun_box_CreateFcn(hObject, eventdata, handles)
+function fun_box_CreateFcn(hObject, ~, ~) %#ok
 % hObject    handle to fun_box (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    empty - handles not created until after all CreateFcns called
@@ -1003,7 +1004,7 @@ end
 
 
 % --- Executes on selection change in procat_box.
-function procat_box_Callback(hObject, eventdata, handles)
+function procat_box_Callback(hObject, ~, handles) %#ok
 % hObject    handle to procat_box (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
@@ -1012,8 +1013,8 @@ function procat_box_Callback(hObject, eventdata, handles)
 %        contents{get(hObject,'Value')} returns selected item from procat_box
 
 % Displays the processes available for the selected process category
-hMain = getappdata(0,'hMain');
-signaldata = getappdata(hMain,'testsignal');
+%hMain = getappdata(0,'hMain');
+%signaldata = getappdata(hMain,'testsignal');
 
 contents = cellstr(get(hObject,'String'));
 handles.procat = contents{get(hObject,'Value')};
@@ -1030,7 +1031,7 @@ guidata(hObject,handles);
 
 
 % --- Executes during object creation, after setting all properties.
-function procat_box_CreateFcn(hObject, eventdata, handles)
+function procat_box_CreateFcn(hObject, ~, handles) %#ok
 % hObject    handle to procat_box (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    empty - handles not created until after all CreateFcns called
@@ -1050,7 +1051,7 @@ handles.funname = [];
 guidata(hObject,handles)
 
 % --- Executes on selection change in proc_box.
-function proc_box_Callback(hObject, eventdata, handles)
+function proc_box_Callback(hObject, ~, handles) %#ok
 % hObject    handle to proc_box (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
@@ -1076,7 +1077,7 @@ guidata(hObject,handles);
 
 
 % --- Executes during object creation, after setting all properties.
-function proc_box_CreateFcn(hObject, eventdata, handles)
+function proc_box_CreateFcn(hObject, ~, ~) %#ok
 % hObject    handle to proc_box (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    empty - handles not created until after all CreateFcns called
@@ -1089,7 +1090,7 @@ end
 
 
 % --- Executes on button press in proc_btn.
-function proc_btn_Callback(hObject, eventdata, handles)
+function proc_btn_Callback(hObject, ~, handles) %#ok
 % hObject    handle to proc_btn (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
@@ -1119,7 +1120,7 @@ for nleafs = 1:length(selectedNodes)
                             processed(:,j,i) = filter(filterbank(1,i),signaldata.audio(:,j));
                         end
                     end
-                    bandID = [];
+                    %bandID = [];
                 elseif strcmp(w.class,'double')    
                     processed = filter(filterbank,1,signaldata.audio);
                 end
@@ -1139,7 +1140,8 @@ for nleafs = 1:length(selectedNodes)
             end
             if ~isempty(processed)
                 % Generate new leaf and update tree
-                newleaf = [name ' ' char(file(multi,:))];
+                newleaf = cell(1,1);
+                newleaf{1,1} = [name ' ' char(file(multi,:))];
                 if ~isempty(signaldata)
                     if isstruct(processed)
                         dif = intersect(fieldnames(signaldata),fieldnames(processed));
@@ -1159,27 +1161,27 @@ for nleafs = 1:length(selectedNodes)
                     end
                     newdata.datatype = 'processed';
                     iconPath = fullfile(matlabroot,'/toolbox/fixedpoint/fixedpointtool/resources/plot.png');
-                    leafname = isfield(handles,genvarname(newleaf));
+                    leafname = isfield(handles,genvarname(newleaf{1,1}));
                     if leafname == 1
                         index = 1;
                         % This while cycle is just to make sure no signals are
                         % overwriten
-                        if length(genvarname([newleaf,'_',num2str(index)])) >= namelengthmax, newleaf = newleaf(1:round(end/2)); end
-                        while isfield(handles,genvarname([newleaf,'_',num2str(index)])) == 1
+                        if length(genvarname([newleaf{1,1},'_',num2str(index)])) >= namelengthmax, newleaf{1,1} = newleaf{1,1}(1:round(end/2)); end
+                        while isfield(handles,genvarname([newleaf{1,1},'_',num2str(index)])) == 1
                             index = index + 1;
                         end
-                        newleaf = [newleaf,'_',num2str(index)];
+                        newleaf{1,1} = [newleaf{1,1},'_',num2str(index)];
                     end
-                    handles.(genvarname(newleaf)) = uitreenode('v0', newleaf,  newleaf,  iconPath, true);
-                    handles.(genvarname(newleaf)).UserData = newdata;
-                    handles.processed.add(handles.(genvarname(newleaf)));
+                    handles.(genvarname(newleaf{1,1})) = uitreenode('v0', newleaf{1,1},  newleaf{1,1},  iconPath, true);
+                    handles.(genvarname(newleaf{1,1})).UserData = newdata;
+                    handles.processed.add(handles.(genvarname(newleaf{1,1})));
                     handles.mytree.reloadNode(handles.processed);
                     handles.mytree.expand(handles.processed);
                     set([handles.clrall_btn,handles.export_btn],'Enable','on')
                 end
                 fprintf(handles.fid, [' ' datestr(now,16) ' - Processed "' name '" using ' funname ' in ' handles.procat '\n']);
             else
-                newleaf = [];
+                newleaf{1,1} = [];
             end
         end
     end
@@ -1202,15 +1204,15 @@ for nleafs = 1:length(selectedNodes)
     if length(selectedNodes) > 1 || size(file,1) > 1, delete(h); end
     set(hObject,'BackgroundColor',[0.94 0.94 0.94]);
     set(hObject,'Enable','on');
-    if ~isempty(newleaf)
-        handles.mytree.setSelectedNode(handles.(genvarname(newleaf)));
+    if ~isempty(newleaf{1,1})
+        handles.mytree.setSelectedNode(handles.(genvarname(newleaf{1,1})));
     end
 end
 guidata(hObject,handles);
 
 
 % --- Executes on selection change in device_popup.
-function device_popup_Callback(hObject, eventdata, handles)
+function device_popup_Callback(hObject, ~, handles) %#ok
 % hObject    handle to device_popup (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
@@ -1224,7 +1226,7 @@ guidata(hObject,handles);
 
 
 % --- Executes during object creation, after setting all properties.
-function device_popup_CreateFcn(hObject, eventdata, handles)
+function device_popup_CreateFcn(hObject, ~, handles) %#ok
 % hObject    handle to device_popup (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    empty - handles not created until after all CreateFcns called
@@ -1245,7 +1247,7 @@ guidata(hObject,handles);
 
 
 % --- Executes on button press in stop_btn.
-function stop_btn_Callback(hObject, eventdata, handles)
+function stop_btn_Callback(hObject, ~, handles) %#ok
 % hObject    handle to stop_btn (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
@@ -1257,7 +1259,7 @@ guidata(hObject,handles);
 
 
 
-function IN_nchannel_Callback(hObject, eventdata, handles)
+function IN_nchannel_Callback(hObject, ~, handles) %#ok
 % hObject    handle to IN_nchannel (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
@@ -1279,7 +1281,7 @@ guidata(hObject,handles);
 
 
 % --- Executes during object creation, after setting all properties.
-function IN_nchannel_CreateFcn(hObject, eventdata, handles)
+function IN_nchannel_CreateFcn(hObject, ~, handles) %#ok
 % hObject    handle to IN_nchannel (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    empty - handles not created until after all CreateFcns called
@@ -1295,7 +1297,7 @@ guidata(hObject,handles);
 
 % --- Executes on mouse press over figure background, over a disabled or
 % --- inactive control, or over an axes background.
-function aarae_WindowButtonDownFcn(hObject, eventdata, handles)
+function aarae_WindowButtonDownFcn(hObject, ~, handles) %#ok
 % hObject    handle to aarae (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
@@ -1311,7 +1313,7 @@ if (click == handles.axestime) || (get(click,'Parent') == handles.axestime)
         end
         t = linspace(0,length(data),length(data))./signaldata.fs;
         f = signaldata.fs .* ((1:length(data))-1) ./ length(data);
-        if ndims(data) > 2
+        if ~ismatrix(data)
             channel = str2double(get(handles.IN_nchannel,'String'));
             line(:,:) = data(:,channel,:);
             if ndims(data) == 3, cmap = colormap(hsv(size(data,3))); end
@@ -1380,7 +1382,7 @@ if (click == handles.axestime) || (get(click,'Parent') == handles.axestime)
             end
         end
         if handles.alternate == 0
-            if ndims(data)>2
+            if ~ismatrix(data)
                 if isfield(signaldata,'bandID')
                     legend(num2str(signaldata.bandID'));
                 end
@@ -1407,7 +1409,7 @@ if (click == handles.axesfreq) || (get(click,'Parent') == handles.axesfreq)
         end
         t = linspace(0,length(data),length(data))./signaldata.fs;
         f = signaldata.fs .* ((1:length(data))-1) ./ length(data);
-        if ndims(data) > 2
+        if ~ismatrix(data)
             channel = str2double(get(handles.IN_nchannel,'String'));
             line(:,:) = data(:,channel,:);
             if ndims(data) == 3, cmap = colormap(hsv(size(data,3))); end
@@ -1476,7 +1478,7 @@ if (click == handles.axesfreq) || (get(click,'Parent') == handles.axesfreq)
             end
         end
         if handles.alternate == 0
-            if ndims(data)>2
+            if ~ismatrix(data)
                 if isfield(signaldata,'bandID')
                     legend(num2str(signaldata.bandID'));
                 end
@@ -1496,7 +1498,7 @@ guidata(hObject,handles)
 
 
 % --- Executes on button press in cal_btn.
-function cal_btn_Callback(hObject, eventdata, handles)
+function cal_btn_Callback(hObject, ~, handles) %#ok
 % hObject    handle to cal_btn (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
@@ -1558,7 +1560,7 @@ switch method
                 cal_level = 10 .* log10(mean(caldata.audio.^2,1));
                 %calibration = 1./(10.^((cal_level)./20));
                 %signaldata.audio = signaldata.audio.*calibration;
-                if (size(signaldata.audio,2) == size(cal_level,2) || size(cal_level,2) == 1) && ndims(caldata.audio) < 3
+                if (size(signaldata.audio,2) == size(cal_level,2) || size(cal_level,2) == 1) && ismatrix(caldata.audio)
                     cal_offset = inputdlg('Calibration tone RMS level',...
                                 'Calibration value',[1 50],{'0'});
                     cal_level = str2num(char(cal_offset)) - cal_level;
@@ -1571,7 +1573,7 @@ switch method
             warndlg('No signal loaded!','Whoops...!');
         end
     case 2
-        [filename,handles.defaultaudiopath,filterindex] = uigetfile(...
+        [filename,handles.defaultaudiopath] = uigetfile(...
                     {'*.wav;*.mat;.WAV;.MAT','Calibration file (*.wav,*.mat)'},...
                     'Select audio file',handles.defaultaudiopath);
         [~,~,ext] = fileparts(filename);
@@ -1585,19 +1587,19 @@ switch method
                     caltone = file;
                 end
             elseif strcmp(ext,'.wav') || strcmp(ext,'.WAV')
-                caltone = wavread(fullfile(handles.defaultaudiopath,filename));
+                caltone = audioread(fullfile(handles.defaultaudiopath,filename));
             else
                 caltone = [];
             end
             if size(caltone,1) < size(caltone,2), caltone = caltone'; end
             cal_level = 10 * log10(mean(caltone.^2,1));
-            if (size(signaldata.audio,2) == size(cal_level,2) || size(cal_level,2) == 1) && ndims(caltone) < 3
+            if (size(signaldata.audio,2) == size(cal_level,2) || size(cal_level,2) == 1) && ismatrix(caltone)
                 cal_offset = inputdlg('Calibration tone RMS level',...
                             'Calibration value',[1 50],{'0'});
                 cal_level = str2num(char(cal_offset)) - cal_level;
                 if size(cal_level,2) == 1, cal_level = repmat(cal_level,1,size(signaldata.audio,2)); end
             else
-                warndlg('Incompatible calibration file','Warning!');
+                warndlg('Incompatible calibration file!','AARAE info');
             end
         end
     case 3
@@ -1611,7 +1613,6 @@ switch method
                     'Calibration value',[1 60],def);
         cal_level = str2num(char(cal_level))';
         if chans ~= size(cal_level,2)
-            cal_level = [];
             warndlg('Calibration values mismatch!','AARAE info');
             return
         end
@@ -1622,7 +1623,7 @@ switch method
         cal_offset = inputdlg('Signal RMS level',...
                     'Calibration value',[1 50],cellstr(num2str(zeros(size(cal_level)))));
         if isempty(cal_offset), return; end
-        if (isequal(size(str2num(char(cal_offset))),size(cal_level)) || size(str2num(char(cal_offset)),2) == 1) && ndims(caldata.audio) < 3
+        if (isequal(size(str2num(char(cal_offset))),size(cal_level)) || size(str2num(char(cal_offset)),2) == 1) && ismatrix(caldata.audio)
             cal_level = str2num(char(cal_offset)) - cal_level;
         else
             warndlg('Calibration values mismatch!','AARAE info');
@@ -1645,7 +1646,7 @@ switch method
             cal_offset = inputdlg('Signal RMS level',...
                         'Calibration value',[1 50],cellstr(num2str(zeros(size(cal_level)))));
             if isempty(cal_offset), return; end
-            if (isequal(size(str2num(char(cal_offset))),size(cal_level)) || size(str2num(char(cal_offset)),2) == 1) && ndims(caldata.audio) < 3
+            if (isequal(size(str2num(char(cal_offset))),size(cal_level)) || size(str2num(char(cal_offset)),2) == 1) && ismatrix(caldata.audio)
                 cal_level = str2num(char(cal_offset)) - cal_level;
             else
                 warndlg('Calibration values mismatch!','AARAE info');
@@ -1675,7 +1676,7 @@ guidata(hObject,handles)
 
 
 % --- Executes on button press in calc_btn.
-function calc_btn_Callback(hObject, eventdata, handles)
+function calc_btn_Callback(~, ~, handles)
 % hObject    handle to calc_btn (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
@@ -1687,7 +1688,7 @@ calculator('main_stage1', handles.aarae);
 
 
 % --- Executes on key press with focus on aarae or any of its controls.
-function aarae_WindowKeyPressFcn(hObject, eventdata, handles)
+function aarae_WindowKeyPressFcn(hObject, eventdata, handles) %#ok
 % hObject    handle to aarae (see GCBO)
 % eventdata  structure with the following fields (see FIGURE)
 %	Key: name of the key that was pressed, in lower case
@@ -1705,12 +1706,12 @@ selectedNodes = handles.mytree.getSelectedNodes;
 signaldata = selectedNodes(1).handle.UserData;
 if ~isempty(signaldata)
     if strcmp(eventdata.Key,'l') && ~isfield(handles,'legend')
-        if ndims(signaldata.audio) == 2
+        if ismatrix(signaldata.audio)
             if isfield(signaldata,'chanID')
                 handles.legend = legend(handles.axestime,signaldata.chanID);
             end
         end
-        if ndims(signaldata.audio) == 3
+        if ~ismatrix(signaldata.audio)
             if isfield(signaldata,'bandID')
                 handles.legend = legend(handles.axestime,cellstr(num2str(signaldata.bandID')));
             end
@@ -1750,7 +1751,7 @@ guidata(hObject,handles)
 
 
 % --- Executes on selection change in result_box.
-function result_box_Callback(hObject, eventdata, handles)
+function result_box_Callback(hObject, ~, handles) %#ok
 % hObject    handle to result_box (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
@@ -1773,7 +1774,7 @@ if strcmp(get(handles.aarae,'SelectionType'),'open')
 end
 
 % --- Executes during object creation, after setting all properties.
-function result_box_CreateFcn(hObject, eventdata, handles)
+function result_box_CreateFcn(hObject, ~, ~) %#ok
 % hObject    handle to result_box (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    empty - handles not created until after all CreateFcns called
@@ -1786,7 +1787,7 @@ end
 
 
 % --- Executes on selection change in freq_popup.
-function freq_popup_Callback(hObject, eventdata, handles)
+function freq_popup_Callback(hObject, ~, handles) %#ok
 % hObject    handle to freq_popup (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
@@ -1797,7 +1798,7 @@ refreshplots(handles,'freq')
 guidata(hObject,handles)
 
 % --- Executes during object creation, after setting all properties.
-function freq_popup_CreateFcn(hObject, eventdata, handles)
+function freq_popup_CreateFcn(hObject, ~, ~) %#ok
 % hObject    handle to freq_popup (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    empty - handles not created until after all CreateFcns called
@@ -1810,7 +1811,7 @@ end
 
 
 % --- Executes on selection change in time_popup.
-function time_popup_Callback(hObject, eventdata, handles)
+function time_popup_Callback(hObject, ~, handles) %#ok
 % hObject    handle to time_popup (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
@@ -1821,7 +1822,7 @@ refreshplots(handles,'time')
 guidata(hObject,handles)
 
 % --- Executes during object creation, after setting all properties.
-function time_popup_CreateFcn(hObject, eventdata, handles)
+function time_popup_CreateFcn(hObject, ~, ~) %#ok
 % hObject    handle to time_popup (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    empty - handles not created until after all CreateFcns called
@@ -1834,7 +1835,7 @@ end
 
 
 % --- Executes on button press in playreverse_btn.
-function playreverse_btn_Callback(hObject, eventdata, handles)
+function playreverse_btn_Callback(hObject, ~, handles) %#ok
 % hObject    handle to playreverse_btn (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
@@ -1853,7 +1854,7 @@ else
     fs = audiodata.fs;
     nbits = 16;
     doesSupport = audiodevinfo(0, handles.odeviceid, fs, nbits, size(testsignal,2));
-    if doesSupport && ndims(testsignal) < 3
+    if doesSupport && ismatrix(testsignal)
         % Play signal
         handles.player = audioplayer(testsignal,fs,nbits,handles.odeviceid);
         play(handles.player);
@@ -1869,7 +1870,7 @@ guidata(hObject, handles);
 
 
 % --- Executes on button press in randphaseplay_btn.
-function randphaseplay_btn_Callback(hObject, eventdata, handles)
+function randphaseplay_btn_Callback(hObject, ~, handles) %#ok
 % hObject    handle to randphaseplay_btn (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
@@ -1895,7 +1896,7 @@ else
     fs = audiodata.fs;
     nbits = 16;
     doesSupport = audiodevinfo(0, handles.odeviceid, fs, nbits, size(testsignal,2));
-    if doesSupport && ndims(testsignal) < 3
+    if doesSupport && ismatrix(testsignal)
         % Play signal
         handles.player = audioplayer(testsignal,fs,nbits,handles.odeviceid);
         play(handles.player);
@@ -1911,7 +1912,7 @@ guidata(hObject, handles);
 
 
 % --- Executes on button press in flatmagplay_btn.
-function flatmagplay_btn_Callback(hObject, eventdata, handles)
+function flatmagplay_btn_Callback(hObject, ~, handles) %#ok
 % hObject    handle to flatmagplay_btn (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
@@ -1940,7 +1941,7 @@ else
     fs = audiodata.fs;
     nbits = 16;
     doesSupport = audiodevinfo(0, handles.odeviceid, fs, nbits, size(testsignal,2));
-    if doesSupport && ndims(testsignal) < 3
+    if doesSupport && ismatrix(testsignal)
         % Play signal
         handles.player = audioplayer(testsignal,fs,nbits,handles.odeviceid);
         play(handles.player);
@@ -1956,7 +1957,7 @@ guidata(hObject, handles);
 
 
 % --- Executes on button press in convplay_btn.
-function convplay_btn_Callback(hObject, eventdata, handles)
+function convplay_btn_Callback(hObject, ~, handles) %#ok
 % hObject    handle to convplay_btn (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
@@ -1981,7 +1982,7 @@ else
     testsignal = testsignal./max(max(max(abs(testsignal))));
     nbits = 16;
     doesSupport = audiodevinfo(0, handles.odeviceid, fs, nbits, size(testsignal,2));
-    if doesSupport && ndims(testsignal) < 3
+    if doesSupport && ismatrix(testsignal)
         % Play signal
         handles.player = audioplayer(testsignal,fs,nbits,handles.odeviceid);
         play(handles.player);
@@ -1997,7 +1998,7 @@ guidata(hObject, handles);
 
 
 % --- Executes on button press in clrall_btn.
-function clrall_btn_Callback(hObject, eventdata, handles)
+function clrall_btn_Callback(hObject, ~, handles) %#ok
 % hObject    handle to clrall_btn (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
@@ -2065,7 +2066,7 @@ guidata(hObject,handles)
 
 
 % --- Executes on selection change in smoothfreq_popup.
-function smoothfreq_popup_Callback(hObject, eventdata, handles)
+function smoothfreq_popup_Callback(hObject, ~, handles) %#ok
 % hObject    handle to smoothfreq_popup (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
@@ -2076,7 +2077,7 @@ refreshplots(handles,'freq')
 guidata(hObject,handles)
 
 % --- Executes during object creation, after setting all properties.
-function smoothfreq_popup_CreateFcn(hObject, eventdata, handles)
+function smoothfreq_popup_CreateFcn(hObject, ~, ~) %#ok
 % hObject    handle to smoothfreq_popup (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    empty - handles not created until after all CreateFcns called
@@ -2089,7 +2090,7 @@ end
 
 
 % --- Executes on selection change in smoothtime_popup.
-function smoothtime_popup_Callback(hObject, eventdata, handles)
+function smoothtime_popup_Callback(hObject, ~, handles) %#ok
 % hObject    handle to smoothtime_popup (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
@@ -2100,7 +2101,7 @@ refreshplots(handles,'time')
 guidata(hObject,handles)
 
 % --- Executes during object creation, after setting all properties.
-function smoothtime_popup_CreateFcn(hObject, eventdata, handles)
+function smoothtime_popup_CreateFcn(hObject, ~, ~) %#ok
 % hObject    handle to smoothtime_popup (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    empty - handles not created until after all CreateFcns called
@@ -2113,7 +2114,7 @@ end
 
 
 % --- Executes on button press in logfreq_chk.
-function logfreq_chk_Callback(hObject, eventdata, handles)
+function logfreq_chk_Callback(hObject, ~, handles) %#ok
 % hObject    handle to logfreq_chk (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
@@ -2123,7 +2124,7 @@ refreshplots(handles,'freq')
 guidata(hObject,handles)
 
 % --- Executes on button press in logtime_chk.
-function logtime_chk_Callback(hObject, eventdata, handles)
+function logtime_chk_Callback(hObject, ~, handles) %#ok
 % hObject    handle to logtime_chk (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
@@ -2134,20 +2135,20 @@ guidata(hObject,handles)
 
 
 % --- Executes on button press in properties_btn.
-function properties_btn_Callback(hObject, eventdata, handles)
+function properties_btn_Callback(~, ~, handles) %#ok
 % hObject    handle to properties_btn (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 selectedNodes = handles.mytree.getSelectedNodes;
 signaldata = selectedNodes(1).handle.UserData;
 if isfield(signaldata,'properties')
-    properties = signaldata.properties;
+    properties = signaldata.properties; %#ok : used for evalc
     msgbox([selectedNodes(1).getName.char evalc('properties')],'AARAE info')
 end
 
 
 % --- Executes on button press in compare_btn.
-function compare_btn_Callback(hObject, eventdata, handles)
+function compare_btn_Callback(~, ~, handles) %#ok
 % hObject    handle to compare_btn (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
@@ -2160,7 +2161,7 @@ for i = 1:length(selectedNodes)
     plottype = get(handles.(genvarname([axes '_popup'])),'Value');
     t = linspace(0,length(signaldata.audio),length(signaldata.audio))./signaldata.fs;
     f = signaldata.fs .* ((1:length(signaldata.audio))-1) ./ length(signaldata.audio);
-    if ndims(signaldata.audio) > 2
+    if ~ismatrix(signaldata.audio)
         if ndims(signaldata.audio) == 3, cmap = colormap(hsv(size(signaldata.audio,3))); end
         if ndims(signaldata.audio) >= 4, cmap = colormap(copper(size(signaldata.audio,4))); end
         try 
@@ -2236,7 +2237,7 @@ uicontrol('Style', 'pushbutton', 'String', 'Axes limits',...
 
 
 % --- Executes on selection change in ntable_popup.
-function ntable_popup_Callback(hObject, eventdata, handles)
+function ntable_popup_Callback(hObject, eventdata, handles) %#ok
 % hObject    handle to ntable_popup (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
@@ -2248,7 +2249,7 @@ Xvalues_sel_SelectionChangeFcn(hObject, eventdata, handles)
 Yvalues_box_Callback(hObject, eventdata, handles)
 
 % --- Executes during object creation, after setting all properties.
-function ntable_popup_CreateFcn(hObject, eventdata, handles)
+function ntable_popup_CreateFcn(hObject, ~, ~) %#ok
 % hObject    handle to ntable_popup (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    empty - handles not created until after all CreateFcns called
@@ -2261,7 +2262,7 @@ end
 
 
 % --- Executes on selection change in Xvalues_box.
-function Xvalues_box_Callback(hObject, eventdata, handles)
+function Xvalues_box_Callback(~, ~, ~) %#ok
 % hObject    handle to Xvalues_box (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
@@ -2271,7 +2272,7 @@ function Xvalues_box_Callback(hObject, eventdata, handles)
 
 
 % --- Executes during object creation, after setting all properties.
-function Xvalues_box_CreateFcn(hObject, eventdata, handles)
+function Xvalues_box_CreateFcn(hObject, ~, ~) %#ok
 % hObject    handle to Xvalues_box (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    empty - handles not created until after all CreateFcns called
@@ -2284,7 +2285,7 @@ end
 
 
 % --- Executes on selection change in Yvalues_box.
-function Yvalues_box_Callback(hObject, eventdata, handles)
+function Yvalues_box_Callback(~, ~, handles)
 % hObject    handle to Yvalues_box (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
@@ -2306,7 +2307,7 @@ switch Xvalues
 end
 
 % --- Executes during object creation, after setting all properties.
-function Yvalues_box_CreateFcn(hObject, eventdata, handles)
+function Yvalues_box_CreateFcn(hObject, ~, ~) %#ok
 % hObject    handle to Yvalues_box (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    empty - handles not created until after all CreateFcns called
@@ -2341,7 +2342,7 @@ Yvalues_box_Callback(hObject, eventdata, handles)
 
 
 % --- Executes on selection change in nchart_popup.
-function nchart_popup_Callback(hObject, eventdata, handles)
+function nchart_popup_Callback(hObject, ~, handles) %#ok
 % hObject    handle to nchart_popup (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
@@ -2387,7 +2388,7 @@ end
 
 
 % --- Executes during object creation, after setting all properties.
-function nchart_popup_CreateFcn(hObject, eventdata, handles)
+function nchart_popup_CreateFcn(hObject, ~, ~) %#ok
 % hObject    handle to nchart_popup (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    empty - handles not created until after all CreateFcns called
