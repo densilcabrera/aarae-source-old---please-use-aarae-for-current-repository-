@@ -11,23 +11,28 @@ switch method
         root = handles.root; % Get selected leaf
         root = root(1);
         first = root.getFirstChild;
-        branches{1,:} = char(first.getValue);
+        nbranches = root.getChildCount;
+        branches = cell(nbranches,1);
+        branches{1,1} = char(first.getValue);
+        nleaves = 0;
+        nleaves = nleaves + handles.(genvarname(branches{1,1}))(1).getChildCount;
         next = first.getNextSibling;
-        for n = 1:root.getChildCount-1
-            branches{n+1,:} = char(next.getValue);
+        for n = 2:nbranches
+            branches{n,1} = char(next.getValue);
+            nleaves = nleaves + handles.(genvarname(branches{n,1}))(1).getChildCount;
             next = next.getNextSibling;
         end
-        branches = char(branches);
-        
+        if nleaves == 0, return; end
+        leaves = cell(nleaves,1);
         i = 0;
         for n = 1:size(branches,1)
-            currentbranch = handles.(genvarname(branches(n,:)));
+            currentbranch = handles.(genvarname(branches{n,1}));
             if currentbranch.getChildCount ~= 0
                 first = currentbranch.getFirstChild;
                 data = first(1).handle.UserData;
                 if isfield(data,'audio')
                     i = i + 1;
-                    leafnames(i,:) = first.getName;
+                    %leafnames(i,:) = first.getName;
                     leaves{i,:} = char(first.getValue);
                 end
                 next = first.getNextSibling;
@@ -36,7 +41,7 @@ switch method
                     for m = 1:currentbranch.getChildCount-1
                         if isfield(data,'audio')
                             i = i + 1;
-                            leafnames(i,:) = next.getName;
+                            %leafnames(i,:) = next.getName;
                             leaves{i,:} = char(next.getValue);
                             next = next.getNextSibling;
                             if ~isempty(next)
@@ -47,14 +52,14 @@ switch method
                 end
             end
         end
-        if exist('leafnames')
-            leafnames = char(leafnames);
+        if nleaves ~=0
+            %leafnames = char(leafnames);
             [s,ok] = listdlg('PromptString','Select a file:',...
                     'SelectionMode','single',...
-                    'ListString',leafnames);
-            leaves = char(leaves);
+                    'ListString',leaves);
+            %leaves = char(leaves);
             if ok == 1
-                out = handles.(genvarname(leaves(s,:))).handle.UserData;
+                out = handles.(genvarname(leaves{s,1})).handle.UserData;
             else
                 out = [];
                 warndlg('No signal loaded!','Whoops...!');
@@ -63,7 +68,7 @@ switch method
             out = [];
         end
     case 2
-        [filename,pathname,filterindex] = uigetfile(...
+        [filename,pathname] = uigetfile(...
                     {'*.wav;*.mat','Calibration file (*.wav,*.mat)'});
         [~,~,ext] = fileparts(filename);
         if filename ~= 0
@@ -74,8 +79,8 @@ switch method
                     out.audio = audio;
                     out.fs = inputdlg('Sampling frequency',...
                                 ['Please specify ' filename ' sampling frequency'],[1 50]);
-                    out.fs = str2num(char(out.fs))';
-                    if isempty(out.fs) || out.fs <= 0
+                    out.fs = str2double(char(out.fs))';
+                    if isnan(out.fs) || out.fs <= 0
                         out = [];
                         warndlg('Cannot import file without a valid sampling frequency!','AARAE info')
                     end
@@ -87,7 +92,7 @@ switch method
                     end
                 end
             elseif strcmp(ext,'.wav') || strcmp(ext,'.WAV')
-                [out.audio out.fs] = wavread(fullfile(pathname,filename));
+                [out.audio,out.fs] = audioread(fullfile(pathname,filename));
             else
                 out = [];
             end
