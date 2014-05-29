@@ -2,7 +2,7 @@
 % This function is almost the brains behind the tree's response to
 % selection commands, it controls also visibility of some functions
 % depending on what type of signal is selected and its contents.
-function nodes = mySelectFcn(tree, value)
+function mySelectFcn(tree, ~)
     pause on
     % Get handles of main window
     aarae_fig = findobj('Tag','aarae');
@@ -74,7 +74,7 @@ function nodes = mySelectFcn(tree, value)
             refreshplots(mainHandles,'time')
             pause(0.001)
             refreshplots(mainHandles,'freq')
-            if isfield(audiodata,'audio2') && ~isempty(audiodata.audio2)%(strcmp(audiodata.datatype,'measurements') || strcmp(audiodata.datatype,'testsignals') || strcmp(audiodata.datatype,'processed'))
+            if isfield(audiodata,'audio2') && ~isempty(audiodata.audio2) && ismatrix(audiodata.audio)%(strcmp(audiodata.datatype,'measurements') || strcmp(audiodata.datatype,'testsignals') || strcmp(audiodata.datatype,'processed'))
                 set(mainHandles.IR_btn,'Visible','on');
             else
                 set(mainHandles.IR_btn,'Visible','off');% Display process IR button if selection is a measurement based on a sine sweep

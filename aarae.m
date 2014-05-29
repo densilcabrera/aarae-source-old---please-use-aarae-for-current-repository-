@@ -2072,7 +2072,7 @@ for n = 1:size(branches,1)
         end
     end
 end
-if isempty(leaves)
+if nleaves == 0
     warndlg('Nothing to delete!','AARAE info');
 else
     %leafnames = char(leafnames);

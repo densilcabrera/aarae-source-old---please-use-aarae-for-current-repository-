@@ -14,7 +14,7 @@ else
 end
 if isfield(signaldata,'cal')
     if size(linea,2) == length(signaldata.cal)
-        signaldata.cal(find(isnan(signaldata.cal))) = 0;
+        signaldata.cal(isnan(signaldata.cal)) = 0;
         linea = linea.*repmat(10.^(signaldata.cal./20),length(linea),1);
     end
 end
