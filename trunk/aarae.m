@@ -747,8 +747,9 @@ if isfield(audiodata,'properties') && isfield(audiodata.properties,'startflag')
                 end
                 S = tempS;
             case 2
-                IR = [];%audiodata.audio;
+                %IR = [];%audiodata.audio;
                 %ladjust = length(IR);
+                IR = zeros(startflag(2)-1+length(invS),size(S,2),length(startflag),1);
                 for j = 1:size(S,2)
                     newS = zeros(startflag(2)-1,length(startflag));
                     for i = 1:length(startflag)
@@ -1113,8 +1114,8 @@ for nleafs = 1:length(selectedNodes)
         set(hObject,'BackgroundColor','red');
         set(hObject,'Enable','off');
         % Processes the selected leaf using the selected process from proc_box
-        contents = cellstr(get(handles.procat_box,'String'));
-        category = contents{get(handles.procat_box,'Value')};
+%        contents = cellstr(get(handles.procat_box,'String'));
+%        category = contents{get(handles.procat_box,'Value')};
         contents = cellstr(get(handles.proc_box,'String'));
         file = contents(get(handles.proc_box,'Value'));
         name = selectedNodes(nleafs).getName.char;
@@ -1122,19 +1123,20 @@ for nleafs = 1:length(selectedNodes)
             processed = [];
             [~,~,ext] = fileparts(file{multi,1});
             if strcmp(ext,'.mat')
-                content = load([cd '/Processors/' category '/' num2str(signaldata.fs) 'Hz/' char(file(multi,:))]);
-                filterbank = content.filterbank;
-                w = whos('filterbank');
-                if strcmp(w.class,'dfilt.df2sos')
-                    for i = 1:length(filterbank)
-                        for j = 1:min(size(signaldata.audio))
-                            processed(:,j,i) = filter(filterbank(1,i),signaldata.audio(:,j));
-                        end
-                    end
-                    %bandID = [];
-                elseif strcmp(w.class,'double')    
-                    processed = filter(filterbank,1,signaldata.audio);
-                end
+                warndlg('Option not yet available','AARAE info','modal')
+%                content = load([cd '/Processors/' category '/' num2str(signaldata.fs) 'Hz/' char(file(multi,:))]);
+%                filterbank = content.filterbank;
+%                w = whos('filterbank');
+%                if strcmp(w.class,'dfilt.df2sos')
+%                    for i = 1:length(filterbank)
+%                        for j = 1:min(size(signaldata.audio))
+%                            processed(:,j,i) = filter(filterbank(1,i),signaldata.audio(:,j));
+%                        end
+%                    end
+%                    bandID = [];
+%                elseif strcmp(w.class,'double')    
+%                    processed = filter(filterbank,1,signaldata.audio);
+%                end
             elseif strcmp(ext,'.m')
                 [~,funname] = fileparts(char(file(multi,:)));
                 if ~isempty(funcallback) && strcmp(funname,funcallback.name)
@@ -1335,7 +1337,7 @@ if (click == handles.axestime) || (get(click,'Parent') == handles.axestime)
         end
         if isfield(signaldata,'cal')
             if size(line,2) == length(signaldata.cal)
-                signaldata.cal(find(isnan(signaldata.cal))) = 0;
+                signaldata.cal(isnan(signaldata.cal)) = 0;
                 line = line.*repmat(10.^(signaldata.cal./20),length(line),1);
             end
         end
@@ -1431,7 +1433,7 @@ if (click == handles.axesfreq) || (get(click,'Parent') == handles.axesfreq)
         end
         if isfield(signaldata,'cal')
             if size(line,2) == length(signaldata.cal)
-                signaldata.cal(find(isnan(signaldata.cal))) = 0;
+                signaldata.cal(isnan(signaldata.cal)) = 0;
                 line = line.*repmat(10.^(signaldata.cal./20),length(line),1);
             end
         end
@@ -2439,8 +2441,8 @@ end
 
 
 % --- Executes on button press in wild_btn.
-function wild_btn_Callback(hObject, eventdata, handles)
+%function wild_btn_Callback(hObject, eventdata, handles)
 % hObject    handle to wild_btn (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-!matlab -nodesktop
+%!matlab -nodesktop
