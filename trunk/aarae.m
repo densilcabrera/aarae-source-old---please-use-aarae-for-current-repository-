@@ -286,7 +286,7 @@ for nleafs = 1:length(selectedNodes)
     audiodata = selectedNodes(nleafs).handle.UserData;
     if ~isempty(audiodata) %Check if there's data to save
         name = inputdlg('File name: (Please specify .wav for wave files)','Save as MATLAB File',1,{[char(selectedNodes(nleafs).getName) '.mat']}); %Request file name
-        if ~isempty(name{1,1})
+        if ~isempty(name)
             %name = name{1,1};
             [~,name{1,1},ext]=fileparts(name{1,1});
             if strcmp(ext,'.mat'), ensave = 1;
@@ -295,9 +295,12 @@ for nleafs = 1:length(selectedNodes)
             elseif isempty(ext), ensave = 1; 
             else ensave = 0;
             end
+        else
+            return
         end
         if isempty(name{1,1}) || ensave == 0
-            warndlg('No data saved');
+            warndlg('No data saved','AARAE info');
+            return
         else
             if isempty(ext), ext = '.mat'; end
             if strcmp(ext,'.wav') && (~isfield(audiodata,'audio') || ~isfield(audiodata,'fs')), ext = '.mat'; end
@@ -525,65 +528,69 @@ function export_btn_Callback(hObject, ~, handles)
 root = handles.root; % Get selected leaf
 root = root(1);
 first = root.getFirstChild;
-branches{1,:} = char(first.getValue);
+nbranches = root.getChildCount;
+branches = cell(nbranches,1);
+branches{1,1} = char(first.getValue);
+nleaves = 0;
+nleaves = nleaves + handles.(genvarname(branches{1,1}))(1).getChildCount;
 next = first.getNextSibling;
-for n = 1:root.getChildCount-1
-    branches{n+1,:} = char(next.getValue);
+for n = 2:nbranches
+    branches{n,1} = char(next.getValue);
+    nleaves = nleaves + handles.(genvarname(branches{n,1}))(1).getChildCount;
     next = next.getNextSibling;
 end
-branches = char(branches);
-
-i = 0;
-for n = 1:size(branches,1)
-    currentbranch = handles.(genvarname(branches(n,:)));
-    if currentbranch.getChildCount ~= 0
-        i = i + 1;
-        first = currentbranch.getFirstChild;
-        leafnames(i,:) = first.getName;
-        leaves{i,:} = char(first.getValue);
-        next = first.getNextSibling;
-        if ~isempty(next)
-            for m = 1:currentbranch.getChildCount-1
-                i = i + 1;
-                leafnames(i,:) = next.getName;
-                leaves{i,:} = char(next.getValue);
-                next = next.getNextSibling;
+if nleaves == 0
+    warndlg('Nothing to export!','AARAE info');
+else
+    leaves = cell(nleaves,1);
+    i = 0;
+    for n = 1:size(branches,1)
+        currentbranch = handles.(genvarname(branches{n,1}));
+        if currentbranch.getChildCount ~= 0
+            i = i + 1;
+            first = currentbranch.getFirstChild;
+            %leafnames(i,:) = first.getName;
+            leaves{i,1} = char(first.getValue);
+            next = first.getNextSibling;
+            if ~isempty(next)
+                for m = 1:currentbranch.getChildCount-1
+                    i = i + 1;
+                    %leafnames(i,:) = next.getName;
+                    leaves{i,1} = char(next.getValue);
+                    next = next.getNextSibling;
+                end
             end
         end
     end
-end
-if ~exist('leafnames')
-    warndlg('Nothing to export!','AARAE info');
-else
-    leafnames = char(leafnames);
-    leaves = char(leaves);
+    %leafnames = char(leafnames);
+    %leaves = char(leaves);
     %folder = inputdlg('Folder name','Export all',[1 60],{'New Project'});
     if ~isdir([cd '/Projects']), mkdir([cd '/Projects']); end
 	folder = uigetdir([cd '/Projects'],'Export all');
     if ischar(folder)
         set(hObject,'BackgroundColor','red');
         set(hObject,'Enable','off');
-        leafnames = cellstr(leafnames);
-        for i = 1:size(leafnames,1)
-            current = handles.(genvarname(leaves(i,:)));
+        %leafnames = cellstr(leafnames);
+        for i = 1:size(leaves,1)
+            current = handles.(genvarname(leaves{i,:}));
             current = current(1);
             data = current.handle.UserData; %#ok : used in save
-            if ~exist([folder '/' leafnames{i,:} '.mat'],'file')
-                save([folder '/' leafnames{i,:} '.mat'], 'data');
+            if ~exist([folder '/' leaves{i,:} '.mat'],'file')
+                save([folder '/' leaves{i,:} '.mat'], 'data');
             else
-                button = questdlg(['A file called ' leafnames{i,:} '.mat is already in the destination folder, would you like to replace it?'],...
+                button = questdlg(['A file called ' leaves{i,:} '.mat is already in the destination folder, would you like to replace it?'],...
                                   'AARAE info','Yes','No','Append','Append');
                 switch button
                     case 'Yes'
-                        save([folder '/' leafnames{i,:} '.mat'], 'data');
+                        save([folder '/' leaves{i,:} '.mat'], 'data');
                     case 'Append'
                         index = 1;
                         % This while cycle is just to make sure no signals are
                         % overwriten
-                        while exist([folder '/' leafnames{i,:} '_' num2str(index) '.mat'],'file')
+                        while exist([folder '/' leaves{i,:} '_' num2str(index) '.mat'],'file')
                             index = index + 1;
                         end
-                        save([folder '/' leafnames{i,:} '_' num2str(index) '.mat'], 'data');
+                        save([folder '/' leaves{i,:} '_' num2str(index) '.mat'], 'data');
                 end
             end
         end
@@ -591,11 +598,12 @@ else
             nfigs = dir([cd '/Utilities/Temp/*.fig']);
             copyfile([cd '/Utilities/Temp'],[folder '/figures']);
         end
-        current = [cd '/Projects/' char(folder)];
         addpath(genpath([cd '/Projects']))
-        fprintf(handles.fid, [' ' datestr(now,16) ' - Exported ' num2str(size(leafnames,1)) ' data files and ' num2str(size(nfigs,1)) ' figures to "%s" \n'],current);
+        fprintf(handles.fid, [' ' datestr(now,16) ' - Exported ' num2str(size(leaves,1)) ' data files and ' num2str(size(nfigs,1)) ' figures to "%s" \n'],folder);
         set(hObject,'BackgroundColor',[0.94 0.94 0.94]);
         set(hObject,'Enable','off');
+    else
+        addpath(genpath([cd '/Projects']))
     end
 end
 guidata(hObject,handles)
@@ -729,7 +737,9 @@ if isfield(audiodata,'properties') && isfield(audiodata.properties,'startflag')
         len = startflag(2)-startflag(1);
         switch method
             case 1
+                tempS = zeros(startflag(2)-1,size(S,2));
                 for j = 1:size(S,2)
+                    newS = zeros(startflag(2)-1,length(startflag));
                     for i = 1:length(startflag)
                         newS(:,i) = S(startflag(i):startflag(i)+len-1,j);
                     end
@@ -740,6 +750,7 @@ if isfield(audiodata,'properties') && isfield(audiodata.properties,'startflag')
                 IR = [];%audiodata.audio;
                 %ladjust = length(IR);
                 for j = 1:size(S,2)
+                    newS = zeros(startflag(2)-1,length(startflag));
                     for i = 1:length(startflag)
                         newS(:,i,:) = S(startflag(i):startflag(i)+len-1,j,:);
                     end
@@ -1520,40 +1531,42 @@ switch method
         root = handles.root; % Get selected leaf
         root = root(1);
         first = root.getFirstChild;
-        branches{1,:} = char(first.getValue);
+        nbranches = root.getChildCount;
+        branches = cell(nbranches,1);
+        branches{1,1} = char(first.getValue);
+        nleaves = 0;
+        nleaves = nleaves + handles.(genvarname(branches{1,1}))(1).getChildCount;
         next = first.getNextSibling;
-        for n = 1:root.getChildCount-1
-            branches{n+1,:} = char(next.getValue);
+        for n = 2:nbranches
+            branches{n,1} = char(next.getValue);
+            nleaves = nleaves + handles.(genvarname(branches{n,1}))(1).getChildCount;
             next = next.getNextSibling;
         end
-        branches = char(branches);
-        
+        leaves = cell(nleaves,1);
         i = 0;
         for n = 1:size(branches,1)
-            currentbranch = handles.(genvarname(branches(n,:)));
+            currentbranch = handles.(genvarname(branches{n,1}));
             if currentbranch.getChildCount ~= 0
                 i = i + 1;
                 first = currentbranch.getFirstChild;
-                leafnames(i,:) = first.getName;
+                %leafnames(i,:) = first.getName;
                 leaves{i,:} = char(first.getValue);
                 next = first.getNextSibling;
                 if ~isempty(next)
                     for m = 1:currentbranch.getChildCount-1
                         i = i + 1;
-                        leafnames(i,:) = next.getName;
+                        %leafnames(i,:) = next.getName;
                         leaves{i,:} = char(next.getValue);
                         next = next.getNextSibling;
                     end
                 end
             end
         end
-        leafnames = char(leafnames);
         [s,ok] = listdlg('PromptString','Select a file:',...
                 'SelectionMode','single',...
-                'ListString',leafnames);
-        leaves = char(leaves);
+                'ListString',leaves);
         if ok == 1
-            caldata = handles.(genvarname(leaves(s,:))).handle.UserData;
+            caldata = handles.(genvarname(leaves{s,1})).handle.UserData;
             if ~isfield(caldata,'audio')
                 warndlg('Incompatible calibration file','Warning!');
             else
@@ -1563,7 +1576,11 @@ switch method
                 if (size(signaldata.audio,2) == size(cal_level,2) || size(cal_level,2) == 1) && ismatrix(caldata.audio)
                     cal_offset = inputdlg('Calibration tone RMS level',...
                                 'Calibration value',[1 50],{'0'});
-                    cal_level = str2num(char(cal_offset)) - cal_level;
+                    if isnan(str2double(char(cal_offset)))
+                        return
+                    else
+                        cal_level = str2double(char(cal_offset)) - cal_level;
+                    end
                     if size(cal_level,2) == 1, cal_level = repmat(cal_level,1,size(signaldata.audio,2)); end
                 else
                     warndlg('Incompatible calibration file','Warning!');
@@ -1576,7 +1593,11 @@ switch method
         [filename,handles.defaultaudiopath] = uigetfile(...
                     {'*.wav;*.mat;.WAV;.MAT','Calibration file (*.wav,*.mat)'},...
                     'Select audio file',handles.defaultaudiopath);
-        [~,~,ext] = fileparts(filename);
+        if ~ischar(filename)
+            return
+        else
+            [~,~,ext] = fileparts(filename);
+        end
         if filename ~= 0
             % Check type of file. First 'if' is for .mat, second is for .wav
             if strcmp(ext,'.mat') || strcmp(ext,'.MAT')
@@ -1596,7 +1617,11 @@ switch method
             if (size(signaldata.audio,2) == size(cal_level,2) || size(cal_level,2) == 1) && ismatrix(caltone)
                 cal_offset = inputdlg('Calibration tone RMS level',...
                             'Calibration value',[1 50],{'0'});
-                cal_level = str2num(char(cal_offset)) - cal_level;
+                if isnan(str2double(char(cal_offset)))
+                    return
+                else
+                    cal_level = str2double(char(cal_offset)) - cal_level;
+                end
                 if size(cal_level,2) == 1, cal_level = repmat(cal_level,1,size(signaldata.audio,2)); end
             else
                 warndlg('Incompatible calibration file!','AARAE info');
@@ -1611,8 +1636,9 @@ switch method
         end
         cal_level = inputdlg(cellstr([repmat('channel ',chans,1) num2str((1:chans)')]),...
                     'Calibration value',[1 60],def);
-        cal_level = str2num(char(cal_level))';
-        if chans ~= size(cal_level,2)
+        cal_level = str2num(char(cal_level))'; %#ok to prevent from spaces introduced in the input boxes
+        if size(cal_level,1) > size(cal_level,2), cal_level = cal_level'; end
+        if isempty(cal_level) || chans ~= size(cal_level,2)
             warndlg('Calibration values mismatch!','AARAE info');
             return
         end
@@ -1622,9 +1648,13 @@ switch method
         cal_level = repmat(20*log10(mean(10.^(cal_level./20),2)),1,size(caldata.audio,2));
         cal_offset = inputdlg('Signal RMS level',...
                     'Calibration value',[1 50],cellstr(num2str(zeros(size(cal_level)))));
-        if isempty(cal_offset), return; end
-        if (isequal(size(str2num(char(cal_offset))),size(cal_level)) || size(str2num(char(cal_offset)),2) == 1) && ismatrix(caldata.audio)
-            cal_level = str2num(char(cal_offset)) - cal_level;
+        if isempty(cal_offset)
+            return;
+        else
+            cal_offset = str2num(char(cal_offset)); %#ok : to allow spaces between calibration values
+        end
+        if (isequal(size(cal_offset),size(cal_level)) || size(cal_offset,2) == 1) && ismatrix(caldata.audio)
+            cal_level = cal_offset - cal_level;
         else
             warndlg('Calibration values mismatch!','AARAE info');
             return
@@ -1645,9 +1675,13 @@ switch method
             cal_level = repmat(20*log10(mean(10.^(cal_level./20),2)),1,size(caldata.audio,2));
             cal_offset = inputdlg('Signal RMS level',...
                         'Calibration value',[1 50],cellstr(num2str(zeros(size(cal_level)))));
-            if isempty(cal_offset), return; end
-            if (isequal(size(str2num(char(cal_offset))),size(cal_level)) || size(str2num(char(cal_offset)),2) == 1) && ismatrix(caldata.audio)
-                cal_level = str2num(char(cal_offset)) - cal_level;
+            if isempty(cal_offset)
+                return;
+            else
+                cal_offset = str2num(char(cal_offset)); %#ok : to allow spaces between calibration values
+            end
+            if (isequal(size(cal_offset),size(cal_level)) || size(cal_offset,2) == 1) && ismatrix(caldata.audio)
+                cal_level = cal_offset - cal_level;
             else
                 warndlg('Calibration values mismatch!','AARAE info');
                 return
@@ -2005,38 +2039,42 @@ function clrall_btn_Callback(hObject, ~, handles) %#ok
 root = handles.root; % Get selected leaf
 root = root(1);
 first = root.getFirstChild;
-branches{1,:} = char(first.getValue);
+nbranches = root.getChildCount;
+branches = cell(nbranches,1);
+branches{1,1} = char(first.getValue);
+nleaves = 0;
+nleaves = nleaves + handles.(genvarname(branches{1,1}))(1).getChildCount;
 next = first.getNextSibling;
-for n = 1:root.getChildCount-1
-    branches{n+1,:} = char(next.getValue);
+for n = 2:nbranches
+    branches{n,1} = char(next.getValue);
+    nleaves = nleaves + handles.(genvarname(branches{n,1}))(1).getChildCount;
     next = next.getNextSibling;
 end
-branches = char(branches);
-
+leaves = cell(nleaves,1);
 i = 0;
 for n = 1:size(branches,1)
-    currentbranch = handles.(genvarname(branches(n,:)));
+    currentbranch = handles.(genvarname(branches{n,1}));
     if currentbranch.getChildCount ~= 0
         i = i + 1;
         first = currentbranch.getFirstChild;
-        leafnames(i,:) = first.getName;
+        %leafnames(i,:) = first.getName;
         leaves{i,:} = char(first.getValue);
         next = first.getNextSibling;
         if ~isempty(next)
             for m = 1:currentbranch.getChildCount-1
                 i = i + 1;
-                leafnames(i,:) = next.getName;
+                %leafnames(i,:) = next.getName;
                 leaves{i,:} = char(next.getValue);
                 next = next.getNextSibling;
             end
         end
     end
 end
-if ~exist('leafnames')
+if isempty(leaves)
     warndlg('Nothing to delete!','AARAE info');
 else
-    leafnames = char(leafnames);
-    leaves = char(leaves);
+    %leafnames = char(leafnames);
+    %leaves = char(leaves);
     delete = questdlg('Current workspace will be cleared, would you like to proceed?',...
         'Warning',...
         'Yes','No','Yes');
@@ -2044,10 +2082,10 @@ else
         case 'Yes'
         set(hObject,'BackgroundColor','red');
         set(hObject,'Enable','off');
-        for i = 1:size(leafnames,1)
-            current = handles.(genvarname(leaves(i,:)));
+        for i = 1:size(leaves,1)
+            current = handles.(genvarname(leaves{i,1}));
             handles.mytree.remove(current);
-            handles = rmfield(handles,genvarname(leaves(i,:)));
+            handles = rmfield(handles,genvarname(leaves{i,1}));
         end
         handles.mytree.reloadNode(handles.root);
         handles.mytree.setSelectedNode(handles.root);
