@@ -556,11 +556,10 @@ if ~exist('leafnames')
 else
     leafnames = char(leafnames);
     leaves = char(leaves);
-    folder = inputdlg('Folder name','Export all',[1 60],{'New Project'});
-    [~,mess,~] = mkdir('Projects',char(folder));
-    if ~isempty(mess)
-        warndlg(mess,'AARAE info');
-    else
+    %folder = inputdlg('Folder name','Export all',[1 60],{'New Project'});
+    if ~isdir([cd '/Projects']), mkdir([cd '/Projects']); end
+	folder = uigetdir([cd '/Projects'],'Export all');
+    if ischar(folder)
         set(hObject,'BackgroundColor','red');
         set(hObject,'Enable','off');
         leafnames = cellstr(leafnames);
@@ -568,11 +567,28 @@ else
             current = handles.(genvarname(leaves(i,:)));
             current = current(1);
             data = current.handle.UserData;
-            save([cd '/Projects/' char(folder) '/' leafnames{i,:} '.mat'], 'data');
+            if ~exist([folder '/' leafnames{i,:} '.mat'],'file')
+                save([folder '/' leafnames{i,:} '.mat'], 'data');
+            else
+                button = questdlg(['A file called ' leafnames{i,:} '.mat is already in the destination folder, would you like to replace it?'],...
+                                  'AARAE info','Yes','No','Append','Append');
+                switch button
+                    case 'Yes'
+                        save([folder '/' leafnames{i,:} '.mat'], 'data');
+                    case 'Append'
+                        index = 1;
+                        % This while cycle is just to make sure no signals are
+                        % overwriten
+                        while exist([folder '/' leafnames{i,:} '_' num2str(index) '.mat'],'file')
+                            index = index + 1;
+                        end
+                        save([folder '/' leafnames{i,:} '_' num2str(index) '.mat'], 'data');
+                end
+            end
         end
         if isdir([cd '/Utilities/Temp'])
             nfigs = dir([cd '/Utilities/Temp/*.fig']);
-            copyfile([cd '/Utilities/Temp'],[cd '/Projects/' char(folder) '/figures']);
+            copyfile([cd '/Utilities/Temp'],[folder '/figures']);
         end
         current = [cd '/Projects/' char(folder)];
         addpath(genpath([cd '/Projects']))
@@ -2038,7 +2054,7 @@ else
         rmdir([cd '/Utilities/Temp'],'s');
         mkdir([cd '/Utilities/Temp']);
         addpath([cd '/Utilities/Temp']);
-        set(handles.result_box,'String',{' '});
+        set(handles.result_box,'String',cell(1,1));
         fprintf(handles.fid, [' ' datestr(now,16) ' - Cleared workspace \n']);
         set(hObject,'BackgroundColor',[0.94 0.94 0.94]);
         set(hObject,'Enable','off');
