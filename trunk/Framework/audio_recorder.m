@@ -188,11 +188,11 @@ guidata(hObject, handles);
 
 if dontOpen
    disp('-----------------------------------------------------');
-   disp('Improper input arguments. Pass a property value pair') 
-   disp('whose name is "changeme_main" and value is the handle')
-   disp('to the changeme_main figure, e.g:');
-   disp('   x = changeme_main()');
-   disp('   changeme_dialog(''changeme_main'', x)');
+   disp('This function is part of the AARAE framework, it is') 
+   disp('not a standalone function. To call this function,')
+   disp('click on the appropriate calling button on the main');
+   disp('Window. E.g.:');
+   disp('   Record');
    disp('-----------------------------------------------------');
 else
    uiwait(hObject);
