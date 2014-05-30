@@ -46,7 +46,7 @@ end
 
 
 % --- Executes just before calculator is made visible.
-function calculator_OpeningFcn(hObject, eventdata, handles, varargin)
+function calculator_OpeningFcn(hObject, ~, handles, varargin)
 % This function has no output args, see OutputFcn.
 % hObject    handle to figure
 % eventdata  reserved - to be defined in a future version of MATLAB
@@ -76,11 +76,11 @@ guidata(hObject, handles);
 
 if dontOpen
    disp('-----------------------------------------------------');
-   disp('Improper input arguments. Pass a property value pair') 
-   disp('whose name is "changeme_main" and value is the handle')
-   disp('to the changeme_main figure, e.g:');
-   disp('   x = changeme_main()');
-   disp('   changeme_dialog(''changeme_main'', x)');
+   disp('This function is part of the AARAE framework, it is') 
+   disp('not a standalone function. To call this function,')
+   disp('click on the appropriate calling button on the main');
+   disp('Window. E.g.:');
+   disp('   Calculators');
    disp('-----------------------------------------------------');
 else
    uiwait(hObject);
@@ -88,7 +88,7 @@ end
 
 
 % --- Outputs from this function are returned to the command line.
-function varargout = calculator_OutputFcn(hObject, eventdata, handles) 
+function varargout = calculator_OutputFcn(hObject, ~, ~) 
 % varargout  cell array for returning output args (see VARARGOUT);
 % hObject    handle to figure
 % eventdata  reserved - to be defined in a future version of MATLAB
@@ -100,7 +100,7 @@ delete(hObject);
 
 
 % --- Executes on button press in calc_btn.
-function calc_btn_Callback(hObject, eventdata, handles)
+function calc_btn_Callback(hObject, ~, handles) %#ok : Executes on Calculate button click
 % hObject    handle to calc_btn (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
@@ -164,7 +164,7 @@ guidata(hObject, handles);
 
 
 % --- Executes on button press in close_btn.
-function close_btn_Callback(hObject, eventdata, handles)
+function close_btn_Callback(~, ~, handles) %#ok : Executes on Close button click
 % hObject    handle to close_btn (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
@@ -172,7 +172,7 @@ uiresume(handles.calculators);
 
 
 % --- Executes when user attempts to close calculator.
-function calculators_CloseRequestFcn(hObject, eventdata, handles)
+function calculators_CloseRequestFcn(hObject, ~, ~) %#ok : Window close request function
 % hObject    handle to calculator (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
@@ -182,7 +182,7 @@ uiresume(hObject);
 
 
 % --- Executes on selection change in signalcat_box.
-function signalcat_box_Callback(hObject, eventdata, handles)
+function signalcat_box_Callback(hObject, ~, handles) %#ok : Calculator categories selection box
 % hObject    handle to signalcat_box (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
@@ -204,7 +204,7 @@ end
 guidata(hObject,handles);
 
 % --- Executes during object creation, after setting all properties.
-function signalcat_box_CreateFcn(hObject, eventdata, handles)
+function signalcat_box_CreateFcn(hObject, ~, handles) %#ok : Calculator categories box creation
 % hObject    handle to signalcat_box (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    empty - handles not created until after all CreateFcns called
@@ -224,7 +224,7 @@ guidata(hObject,handles)
 
 
 % --- Executes on selection change in signal_box.
-function signal_box_Callback(hObject, eventdata, handles)
+function signal_box_Callback(hObject, ~, handles) %#ok : Calculator list selection box
 % hObject    handle to signal_box (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
@@ -248,7 +248,7 @@ end
 guidata(hObject,handles);
 
 % --- Executes during object creation, after setting all properties.
-function signal_box_CreateFcn(hObject, eventdata, handles)
+function signal_box_CreateFcn(hObject, ~, ~) %#ok : Calculator selection box creation
 % hObject    handle to signal_box (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    empty - handles not created until after all CreateFcns called

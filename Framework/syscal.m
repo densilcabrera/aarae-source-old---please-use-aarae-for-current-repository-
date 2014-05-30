@@ -45,7 +45,7 @@ end
 
 
 % --- Executes just before syscal is made visible.
-function syscal_OpeningFcn(hObject, eventdata, handles, varargin)
+function syscal_OpeningFcn(hObject, ~, handles, varargin)
 % This function has no output args, see OutputFcn.
 % hObject    handle to figure
 % eventdata  reserved - to be defined in a future version of MATLAB
@@ -69,22 +69,22 @@ else
 end
 
 if dontOpen
-    disp('-----------------------------------------------------');
-    disp('Improper input arguments. Pass a property value pair') 
-    disp('whose name is "changeme_main" and value is the handle')
-    disp('to the changeme_main figure, e.g:');
-    disp('   x = changeme_main()');
-    disp('   changeme_dialog(''changeme_main'', x)');
-    disp('-----------------------------------------------------');
+   disp('-----------------------------------------------------');
+   disp('This function is part of the AARAE framework, it is') 
+   disp('not a standalone function. To call this function,')
+   disp('click on the appropriate calling button on the Audio');
+   disp('Recording Window. E.g.:');
+   disp('   Recording > SYSCAL');
+   disp('-----------------------------------------------------');
 else
     handles.mainHandles = guidata(handles.main_stage1);
     if get(handles.mainHandles.pb_enable,'Value') == 0, set(handles.evaldelay_btn,'Enable','off'); end
     outputs = cellstr(get(handles.mainHandles.outputdev_popup,'String'));
     outputdevname = outputs{get(handles.mainHandles.outputdev_popup,'Value')};
-    handles.hap = dsp.AudioPlayer('DeviceName',outputdevname,'SampleRate',handles.mainHandles.fs,'QueueDuration',str2double(get(handles.mainHandles.IN_qdur,'String')),'BufferSizeSource','Property','BufferSize',str2num(get(handles.mainHandles.IN_buffer,'String')));
+    handles.hap = dsp.AudioPlayer('DeviceName',outputdevname,'SampleRate',handles.mainHandles.fs,'QueueDuration',handles.mainHandles.qdur,'BufferSizeSource','Property','BufferSize',handles.mainHandles.buffer);
     inputs = cellstr(get(handles.mainHandles.inputdev_popup,'String'));
     inputdevname = inputs{get(handles.mainHandles.inputdev_popup,'Value')};
-    handles.har = dsp.AudioRecorder('DeviceName',inputdevname,'SampleRate',handles.mainHandles.fs,'QueueDuration',str2double(get(handles.mainHandles.IN_qdur,'String')),'OutputDataType','double','NumChannels',1,'BufferSizeSource','Property','BufferSize',str2num(get(handles.mainHandles.IN_buffer,'String')));
+    handles.har = dsp.AudioRecorder('DeviceName',inputdevname,'SampleRate',handles.mainHandles.fs,'QueueDuration',handles.mainHandles.qdur,'OutputDataType','double','NumChannels',1,'BufferSizeSource','Property','BufferSize',handles.mainHandles.buffer);
     handles.hsr1 = dsp.SignalSource;
     handles.hsr1.SamplesPerFrame = 1024;
     set(handles.duration_IN,'String','10')
@@ -114,7 +114,7 @@ end
 
 
 % --- Outputs from this function are returned to the command line.
-function varargout = syscal_OutputFcn(hObject, eventdata, handles) 
+function varargout = syscal_OutputFcn(hObject, ~, handles) 
 % varargout  cell array for returning output args (see VARARGOUT);
 % hObject    handle to figure
 % eventdata  reserved - to be defined in a future version of MATLAB
@@ -126,12 +126,12 @@ delete(hObject);
 
 
 % --- Executes on button press in load_btn.
-function load_btn_Callback(hObject, eventdata, handles)
+function load_btn_Callback(hObject, ~, handles) %#ok : Executed when Load button is clicked
 % hObject    handle to load_btn (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 if isfield(handles,'filtaudio'), handles = rmfield(handles,'filtaudio'); end
-[filename,pathname,filterindex] = uigetfile(...
+[filename,pathname] = uigetfile(...
     {'*.wav;*.mat;.*WAV;*.MAT','Calibration tone (*.wav,*.mat)'},...
     'Select audio file',[cd '/Audio']);
 
@@ -161,7 +161,7 @@ if filename ~= 0
         end
     end
     if strcmp(ext,'.wav') || strcmp(ext,'.WAV')
-        [handles.audio] = wavread(fullfile(pathname,filename));
+        [handles.audio] = audioread(fullfile(pathname,filename));
     end;
     t = linspace(0,length(handles.audio)/handles.mainHandles.fs,length(handles.audio));
     plot(handles.dispaxes,t,handles.audio)
@@ -176,7 +176,7 @@ end
 guidata(hObject,handles)
 
 
-function sperframe_IN_Callback(hObject, eventdata, handles)
+function sperframe_IN_Callback(~, ~, ~) %#ok : Executed when samples per frame input box changes
 % hObject    handle to sperframe_IN (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
@@ -186,7 +186,7 @@ function sperframe_IN_Callback(hObject, eventdata, handles)
 
 
 % --- Executes during object creation, after setting all properties.
-function sperframe_IN_CreateFcn(hObject, eventdata, handles)
+function sperframe_IN_CreateFcn(hObject, ~, ~) %#ok : Samples per frame input box creation
 % hObject    handle to sperframe_IN (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    empty - handles not created until after all CreateFcns called
@@ -199,20 +199,21 @@ end
 
 
 
-function percentage_IN_Callback(hObject, eventdata, handles)
+function percentage_IN_Callback(hObject, ~, ~) %#ok : Executed when percentage input box changes
 % hObject    handle to percentage_IN (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
 % Hints: get(hObject,'String') returns contents of percentage_IN as text
 %        str2double(get(hObject,'String')) returns contents of percentage_IN as a double
-if isempty(str2num(get(hObject,'String'))) || str2num(get(hObject,'String')) <=0 || str2num(get(hObject,'String')) >= 100
+percentage = str2double(get(hObject,'String'));
+if isnan(percentage) || percentage <=0 || percentage >= 100
     warndlg('Invalid entry. Percentage must be a scalar between 0 and 100.','AARAE info')
     set(hObject,'String','40')
 end
 
 % --- Executes during object creation, after setting all properties.
-function percentage_IN_CreateFcn(hObject, eventdata, handles)
+function percentage_IN_CreateFcn(hObject, ~, ~) %#ok : percentage input box creation
 % hObject    handle to percentage_IN (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    empty - handles not created until after all CreateFcns called
@@ -225,7 +226,7 @@ end
 
 
 
-function threshold_IN_Callback(hObject, eventdata, handles)
+function threshold_IN_Callback(hObject, ~, handles) %#ok : Executed when threshold input box changes 
 % hObject    handle to threshold_IN (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
@@ -238,7 +239,7 @@ handles.calthresh = line([0 length(handles.audio)/handles.mainHandles.fs],[Y Y],
 guidata(hObject,handles)
 
 % --- Executes during object creation, after setting all properties.
-function threshold_IN_CreateFcn(hObject, eventdata, handles)
+function threshold_IN_CreateFcn(hObject, ~, ~) %#ok : Threshold input box creation
 % hObject    handle to threshold_IN (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    empty - handles not created until after all CreateFcns called
@@ -251,7 +252,7 @@ end
 
 
 % --- Executes on button press in evalcal_btn.
-function evalcal_btn_Callback(hObject, eventdata, handles)
+function evalcal_btn_Callback(hObject, ~, handles) %#ok : Executed when Evaluate button is clicked on the gain calibration panel
 % hObject    handle to evalcal_btn (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
@@ -269,31 +270,24 @@ if isfield(handles,'filtaudio')
 else
     data = handles.audio;
 end
-%envelope = abs(hilbert(data));
 hsr1 = dsp.SignalSource;
-%hsr1.Signal = envelope;
 hsr1.Signal = data;
 hsr1.SamplesPerFrame = str2double(get(handles.sperframe_IN,'String'));
 percentage = str2double(get(handles.percentage_IN,'String'));
 threshold = str2double(get(handles.threshold_IN,'String'));
 tonelevel = str2double(get(handles.tonelevel_IN,'String'));
-ms = [];
-while (~isDone(hsr1))
+ncycles = ceil(length(data)/hsr1.SamplesPerFrame);
+ms = zeros(ncycles*hsr1.SamplesPerFrame,1);
+for i = 1:ncycles
     chunk = step(hsr1);
-    ms = [ms;ones(size(chunk)).*mean(chunk.^2)];
-%    chunklevel = trimmean(chunk,percentage);
-%    if chunklevel > threshold
-%        rec = [rec;ones(length(chunk),1)];
-%    else
-%        rec = [rec;zeros(length(chunk),1)];
-%    end
+    ms((i-1)*hsr1.SamplesPerFrame+1:i*hsr1.SamplesPerFrame,:) = ones(size(chunk)).*mean(chunk.^2);
 end
 release(hsr1)
 ms = ms(1:length(data));
 rec = ones(size(ms));
-rec(find(ms<threshold^2)) = 0;
-m = trimmean(ms(find((ms)>threshold^2)),percentage);
-rec(find(ms>m*1.2)) = 0;
+rec(ms<threshold^2) = 0;
+m = trimmean(ms(ms>threshold^2),percentage);
+rec(ms>m*1.2) = 0;
 
 t = linspace(0,length(data)/handles.mainHandles.fs,length(data));
 trimdata = data.*rec(1:length(data));
@@ -306,7 +300,6 @@ plot(handles.dispaxes,t,(rec(1:length(data)).*10)-5,'Color','r','LineWidth',1)
 set(handles.dispaxes,'YLim',YLim)
 hold off
 handles.calthresh = line([0 length(t)/handles.mainHandles.fs],[str2double(get(handles.threshold_IN,'String')) str2double(get(handles.threshold_IN,'String'))],'Color','k');
-%line([0 length(t)/handles.mainHandles.fs],[m^.5 m^.5],'Color','k')
 trim = find(trimdata);
 dur = length(trim)/handles.mainHandles.fs;
 trimlevel = tonelevel - 10 .* log10(mean(trimdata(trim).^2,1));
@@ -321,7 +314,7 @@ handles.output.cal(1,get(handles.channum_popup,'Value')) = trimlevel;
 guidata(hObject,handles)
 
 
-function tonelevel_IN_Callback(hObject, eventdata, handles)
+function tonelevel_IN_Callback(~, ~, ~) %#ok : Executed when level input box changes
 % hObject    handle to tonelevel_IN (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
@@ -331,7 +324,7 @@ function tonelevel_IN_Callback(hObject, eventdata, handles)
 
 
 % --- Executes during object creation, after setting all properties.
-function tonelevel_IN_CreateFcn(hObject, eventdata, handles)
+function tonelevel_IN_CreateFcn(hObject, ~, ~) %#ok : level input box creation
 % hObject    handle to tonelevel_IN (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    empty - handles not created until after all CreateFcns called
@@ -344,7 +337,7 @@ end
 
 
 % --- Executes on selection change in stimulus_popup.
-function stimulus_popup_Callback(hObject, eventdata, handles)
+function stimulus_popup_Callback(~, ~, ~) %#ok : Executed when latency stimulus menu changes
 % hObject    handle to stimulus_popup (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
@@ -354,7 +347,7 @@ function stimulus_popup_Callback(hObject, eventdata, handles)
 
 
 % --- Executes during object creation, after setting all properties.
-function stimulus_popup_CreateFcn(hObject, eventdata, handles)
+function stimulus_popup_CreateFcn(hObject, ~, ~) %#ok : Latency stimulus menu creation
 % hObject    handle to stimulus_popup (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    empty - handles not created until after all CreateFcns called
@@ -367,11 +360,11 @@ end
 
 
 % --- Executes on button press in evaldelay_btn.
-function evaldelay_btn_Callback(hObject, eventdata, handles)
+function evaldelay_btn_Callback(hObject, eventdata, handles) %#ok : Executed when evaluate button is clicked in the latency panel
 % hObject    handle to evaldelay_btn (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-duration = str2num(get(handles.slength_IN,'String'));
+duration = str2double(get(handles.slength_IN,'String'));
 set(hObject,'Enable','off');
 stimulus = get(handles.stimulus_popup,'Value');
 switch stimulus
@@ -397,15 +390,10 @@ try
     ncycles = ceil(length(handles.hsr1.Signal)/handles.hsr1.SamplesPerFrame);
     audio = zeros(ncycles*handles.hsr1.SamplesPerFrame,1);
     for i = 1:ncycles
-%    while (~isDone(handles.hsr1))
         audio((i-1)*handles.har.SamplesPerFrame+1:i*handles.har.SamplesPerFrame,:) = step(handles.har);
         step(handles.hap,step(handles.hsr1));
-%       audio = step(handles.har);
-%       step(handles.hap,step(handles.hsr1));
-%       rec = [rec;audio];
     end
 catch sthgwrong
-    audio = [];
     syswarning = sthgwrong.message;
     set(hObject,'Enable','on');
     warndlg(syswarning,'AARAE info')
@@ -428,11 +416,12 @@ if ~isempty(rec)
     ixy = ixy./10^(LIxy/20);
     t = linspace(0,length(ixy)/handles.mainHandles.fs,length(ixy));
     IRlevel = (10.*log10((abs(ixy)./max(abs(ixy))).^2));
-    abovethresh = find(IRlevel > abs(str2num(get(handles.latthresh_IN,'String')))*-1);
+    handles.latthresh = str2double(get(handles.latthresh_IN,'String'));
+    abovethresh = find(IRlevel > abs(handles.latthresh)*-1);
     [~,I1] = max(IRlevel(abovethresh));
     handles.maxIR = abovethresh(I1);
     I = abovethresh(1);
-    plot(handles.IRaxes,t,IRlevel,t,ones(size(t)).*str2num(get(handles.latthresh_IN,'String')).*-1,'r',handles.maxIR/handles.mainHandles.fs,IRlevel(handles.maxIR),'or')
+    plot(handles.IRaxes,t,IRlevel,t,ones(size(t)).*handles.latthresh.*-1,'r',handles.maxIR/handles.mainHandles.fs,IRlevel(handles.maxIR),'or')
     hold(handles.IRaxes,'on')
     plot(handles.IRaxes,I/handles.mainHandles.fs,IRlevel(I),'o','Color',[0 .6 0])
     hold(handles.IRaxes,'off')
@@ -440,7 +429,6 @@ if ~isempty(rec)
     ylim(handles.IRaxes,[-60 10])
     set(handles.latency_IN,'String',num2str(I),'Enable','on');
     set(handles.latthresh_IN,'Enable','on')
-    handles.latthresh = str2num(get(handles.latthresh_IN,'String'));
     handles.output.audio2 = ixy;
     handles.output.fs = handles.mainHandles.fs;
     handles.output.latency = I;
@@ -462,7 +450,7 @@ preproc_popup_Callback(handles.preproc_popup,eventdata,handles)
 
 
 % --- Executes on button press in done_btn.
-function done_btn_Callback(hObject, eventdata, handles)
+function done_btn_Callback(~, ~, handles) %#ok : Executed when Done bunnos is clicked
 % hObject    handle to done_btn (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
@@ -471,7 +459,7 @@ uiresume(handles.syscal);
 
 
 % --- Executes on button press in filter_btn.
-function filter_btn_Callback(hObject, eventdata, handles)
+function filter_btn_Callback(hObject, ~, handles) %#ok : Executed when filter button is clicked
 % hObject    handle to filter_btn (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
@@ -506,7 +494,7 @@ guidata(hObject,handles)
 
 
 % --- Executes when user attempts to close syscal.
-function syscal_CloseRequestFcn(hObject, eventdata, handles)
+function syscal_CloseRequestFcn(hObject, ~, handles) %#ok : Window close request function
 % hObject    handle to syscal (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
@@ -517,7 +505,7 @@ uiresume(hObject);
 
 
 % --- Executes on button press in record_btn.
-function record_btn_Callback(hObject, eventdata, handles)
+function record_btn_Callback(hObject, ~, handles) %#ok : Executed when clicking the Record button on the gain calibration panel
 % hObject    handle to record_btn (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
@@ -543,7 +531,6 @@ try
        UserData = get(handles.stop_btn,'UserData');
        if UserData.state == false
            audio((i-1)*handles.har.SamplesPerFrame+1:i*handles.har.SamplesPerFrame,:) = step(handles.har);
-           %rec = [rec;audio];
        else
            break
        end
@@ -553,9 +540,9 @@ try
     end
 catch sthgwrong
     UserData.state = true;
-    audio = [];
     syswarning = sthgwrong.message;
     warndlg(syswarning,'AARAE info')
+    return
 end
 rec = audio;
 % Check recording and adjust for Duration
@@ -585,7 +572,7 @@ release(handles.har)
 guidata(hObject,handles);
 
 % --- Executes on button press in stop_btn.
-function stop_btn_Callback(hObject, eventdata, handles)
+function stop_btn_Callback(hObject, ~, handles) %#ok : Executed when Stop button is clicked on the gain calibration panel
 % hObject    handle to stop_btn (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
@@ -597,15 +584,15 @@ pause off
 guidata(hObject,handles)
 
 
-function duration_IN_Callback(hObject, eventdata, handles)
+function duration_IN_Callback(hObject, ~, handles) %#ok : Executed when duration input box changes
 % hObject    handle to duration_IN (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
 % Hints: get(hObject,'String') returns contents of duration_IN as text
 %        str2double(get(hObject,'String')) returns contents of duration_IN as a double
-num = str2num(get(hObject,'String'));
-if isempty(num) || num <= 0
+num = str2double(get(hObject,'String'));
+if isnan(num) || num <= 0
     warndlg('Invalid entry','AARAE info')
     set(hObject,'String',num2str(handles.dur))
 else
@@ -614,7 +601,7 @@ end
 guidata(hObject,handles)
 
 % --- Executes during object creation, after setting all properties.
-function duration_IN_CreateFcn(hObject, eventdata, handles)
+function duration_IN_CreateFcn(hObject, ~, handles) %#ok : duration input box creation
 % hObject    handle to duration_IN (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    empty - handles not created until after all CreateFcns called
@@ -624,12 +611,12 @@ function duration_IN_CreateFcn(hObject, eventdata, handles)
 if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
     set(hObject,'BackgroundColor','white');
 end
-handles.dur = str2num(get(hObject,'String'));
+handles.dur = str2double(get(hObject,'String'));
 guidata(hObject,handles)
 
 
 % --- Executes on selection change in invf_popup.
-function invf_popup_Callback(hObject, eventdata, handles)
+function invf_popup_Callback(hObject, ~, handles) %#ok : Executed when inverse filter type menu changes
 % hObject    handle to invf_popup (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
@@ -641,7 +628,7 @@ set(handles.invfpreview_btn,'Enable','off')
 guidata(hObject,handles)
 
 % --- Executes during object creation, after setting all properties.
-function invf_popup_CreateFcn(hObject, eventdata, handles)
+function invf_popup_CreateFcn(hObject, ~, ~) %#ok : Inverse filter type menu creation
 % hObject    handle to invf_popup (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    empty - handles not created until after all CreateFcns called
@@ -654,7 +641,7 @@ end
 
 
 % --- Executes on selection change in invfsmooth_popup.
-function invfsmooth_popup_Callback(hObject, eventdata, handles)
+function invfsmooth_popup_Callback(hObject, ~, handles) %#ok : Executed when smoothing type for inverse filter menu changes
 % hObject    handle to invfsmooth_popup (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
@@ -667,7 +654,7 @@ guidata(hObject,handles)
 
 
 % --- Executes during object creation, after setting all properties.
-function invfsmooth_popup_CreateFcn(hObject, eventdata, handles)
+function invfsmooth_popup_CreateFcn(hObject, ~, ~) %#ok : inverse filter smoothing type menu creation
 % hObject    handle to invfsmooth_popup (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    empty - handles not created until after all CreateFcns called
@@ -680,15 +667,15 @@ end
 
 
 
-function invfLF_IN_Callback(hObject, eventdata, handles)
+function invfLF_IN_Callback(hObject, ~, handles) %#ok : inverse filter low cutoff frequency input box creation
 % hObject    handle to invfLF_IN (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
 % Hints: get(hObject,'String') returns contents of invfLF_IN as text
 %        str2double(get(hObject,'String')) returns contents of invfLF_IN as a double
-num = str2num(get(hObject,'String'));
-if isempty(num) || num <= 0 || num >= handles.invfHF
+num = str2double(get(hObject,'String'));
+if isnan(num) || num <= 0 || num >= handles.invfHF
     warndlg('Invalid entry','AARAE info')
     set(hObject,'String',num2str(handles.invfLF))
 else
@@ -699,7 +686,7 @@ end
 guidata(hObject,handles)
 
 % --- Executes during object creation, after setting all properties.
-function invfLF_IN_CreateFcn(hObject, eventdata, handles)
+function invfLF_IN_CreateFcn(hObject, ~, handles) %#ok : inverse filter low cutoff frequency input box creation
 % hObject    handle to invfLF_IN (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    empty - handles not created until after all CreateFcns called
@@ -709,19 +696,19 @@ function invfLF_IN_CreateFcn(hObject, eventdata, handles)
 if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
     set(hObject,'BackgroundColor','white');
 end
-handles.invfLF = str2num(get(hObject,'String'));
+handles.invfLF = str2double(get(hObject,'String'));
 guidata(hObject,handles)
 
 
-function invfHF_IN_Callback(hObject, eventdata, handles)
+function invfHF_IN_Callback(hObject, ~, handles) %#ok : Executed when inverse filter high frequency cutoff input box changes
 % hObject    handle to invfHF_IN (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
 % Hints: get(hObject,'String') returns contents of invfHF_IN as text
 %        str2double(get(hObject,'String')) returns contents of invfHF_IN as a double
-num = str2num(get(hObject,'String'));
-if isempty(num) || num <= 0 || num <= handles.invfLF
+num = str2double(get(hObject,'String'));
+if isnan(num) || num <= 0 || num <= handles.invfLF
     warndlg('Invalid entry','AARAE info')
     set(hObject,'String',num2str(handles.invfHF))
 else
@@ -732,7 +719,7 @@ end
 guidata(hObject,handles)
 
 % --- Executes during object creation, after setting all properties.
-function invfHF_IN_CreateFcn(hObject, eventdata, handles)
+function invfHF_IN_CreateFcn(hObject, ~, handles) %#ok : Inverse filter low cutoff frequency input box creation
 % hObject    handle to invfHF_IN (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    empty - handles not created until after all CreateFcns called
@@ -742,19 +729,19 @@ function invfHF_IN_CreateFcn(hObject, eventdata, handles)
 if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
     set(hObject,'BackgroundColor','white');
 end
-handles.invfHF = str2num(get(hObject,'String'));
+handles.invfHF = str2double(get(hObject,'String'));
 guidata(hObject,handles)
 
 
-function invfIB_IN_Callback(hObject, eventdata, handles)
+function invfIB_IN_Callback(hObject, ~, handles) %#ok : Executes when inverse filter in-bound level input box changes
 % hObject    handle to invfIB_IN (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
 % Hints: get(hObject,'String') returns contents of invfIB_IN as text
 %        str2double(get(hObject,'String')) returns contents of invfIB_IN as a double
-num = str2num(get(hObject,'String'));
-if isempty(num)
+num = str2double(get(hObject,'String'));
+if isnan(num)
     warndlg('Invalid entry','AARAE info')
     set(hObject,'String',num2str(handles.invfIB))
 else
@@ -765,7 +752,7 @@ end
 guidata(hObject,handles)
 
 % --- Executes during object creation, after setting all properties.
-function invfIB_IN_CreateFcn(hObject, eventdata, handles)
+function invfIB_IN_CreateFcn(hObject, ~, handles) %#ok : Inverse filter in-bound level input box creation
 % hObject    handle to invfIB_IN (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    empty - handles not created until after all CreateFcns called
@@ -775,19 +762,19 @@ function invfIB_IN_CreateFcn(hObject, eventdata, handles)
 if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
     set(hObject,'BackgroundColor','white');
 end
-handles.invfIB = str2num(get(hObject,'String'));
+handles.invfIB = str2double(get(hObject,'String'));
 guidata(hObject,handles)
 
 
-function invfOB_IN_Callback(hObject, eventdata, handles)
+function invfOB_IN_Callback(hObject, ~, handles) %#ok : Executes when inverse filter out-of-bound level input box changes
 % hObject    handle to invfOB_IN (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
 % Hints: get(hObject,'String') returns contents of invfOB_IN as text
 %        str2double(get(hObject,'String')) returns contents of invfOB_IN as a double
-num = str2num(get(hObject,'String'));
-if isempty(num)
+num = str2double(get(hObject,'String'));
+if isnan(num)
     warndlg('Invalid entry','AARAE info')
     set(hObject,'String',num2str(handles.invfOB))
 else
@@ -798,7 +785,7 @@ end
 guidata(hObject,handles)
 
 % --- Executes during object creation, after setting all properties.
-function invfOB_IN_CreateFcn(hObject, eventdata, handles)
+function invfOB_IN_CreateFcn(hObject, ~, handles) %#ok : Inverse filter out-of-bound level input box creation
 % hObject    handle to invfOB_IN (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    empty - handles not created until after all CreateFcns called
@@ -808,12 +795,12 @@ function invfOB_IN_CreateFcn(hObject, eventdata, handles)
 if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
     set(hObject,'BackgroundColor','white');
 end
-handles.invfOB = str2num(get(hObject,'String'));
+handles.invfOB = str2double(get(hObject,'String'));
 guidata(hObject,handles)
 
 
 % --- Executes on button press in invfdesign_btn.
-function invfdesign_btn_Callback(hObject, eventdata, handles)
+function invfdesign_btn_Callback(hObject, ~, handles) %#ok : Executed when design button is clicken on inferse filter panel
 % hObject    handle to invfdesign_btn (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
@@ -823,10 +810,10 @@ pause on
 pause(0.000001)
 pause off
 fs = handles.mainHandles.fs;
-f = [str2num(get(handles.invfLF_IN,'String')) str2num(get(handles.invfHF_IN,'String'))];
-reg = [str2num(get(handles.invfIB_IN,'String')) str2num(get(handles.invfOB_IN,'String'))];
-nfft = str2num(get(handles.invfnfft_IN,'String'));
-flength = str2num(get(handles.invflength_IN,'String'));
+f = [handles.invfLF,handles.invfHF];
+reg = [handles.invfIB,handles.invfOB];
+nfft = handles.invfnfft;
+flength = handles.invflength;
 
 % Thresholding
 if f(1) > 0 && f(2) < fs/2
@@ -937,7 +924,7 @@ h_min(:) = real(ifft(exp(fft(wn.*h_cep(:)))));
 
 
 % --- Executes on button press in invfpreview_btn.
-function invfpreview_btn_Callback(hObject, eventdata, handles)
+function invfpreview_btn_Callback(hObject, ~, handles) %#ok : Executed when clicking on the Preview button in the inverse filter panel
 % hObject    handle to invfpreview_btn (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
@@ -1001,15 +988,15 @@ set(hObject,'BackgroundColor',[0.94 0.94 0.94]);
 set(hObject,'Enable','on');
 
 
-function invfnfft_IN_Callback(hObject, eventdata, handles)
+function invfnfft_IN_Callback(hObject, ~, handles) %#ok : Executed when the nfft input box changes
 % hObject    handle to invfnfft_IN (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
 % Hints: get(hObject,'String') returns contents of invfnfft_IN as text
 %        str2double(get(hObject,'String')) returns contents of invfnfft_IN as a double
-num = str2num(get(hObject,'String'));
-if isempty(num) || num <= 0
+num = str2double(get(hObject,'String'));
+if isnan(num) || num <= 0
     warndlg('Invalid entry','AARAE info')
     set(hObject,'String',num2str(handles.invfnfft))
 else
@@ -1025,7 +1012,7 @@ end
 guidata(hObject,handles)
 
 % --- Executes during object creation, after setting all properties.
-function invfnfft_IN_CreateFcn(hObject, eventdata, handles)
+function invfnfft_IN_CreateFcn(hObject, ~, handles) %#ok : nfft input box creation
 % hObject    handle to invfnfft_IN (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    empty - handles not created until after all CreateFcns called
@@ -1035,18 +1022,18 @@ function invfnfft_IN_CreateFcn(hObject, eventdata, handles)
 if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
     set(hObject,'BackgroundColor','white');
 end
-handles.invfnfft = str2num(get(hObject,'String'));
+handles.invfnfft = str2double(get(hObject,'String'));
 guidata(hObject,handles)
 
 
-function invflength_IN_Callback(hObject, eventdata, handles)
+function invflength_IN_Callback(hObject, ~, handles) %#ok : Executed when inverse filter lenght input box changes
 % hObject    handle to invflength_IN (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
 % Hints: get(hObject,'String') returns contents of invflength_IN as text
 %        str2double(get(hObject,'String')) returns contents of invflength_IN as a double
-num = str2num(get(hObject,'String'));
+num = str2double(get(hObject,'String'));
 if isempty(num) || num <= 0 || num > handles.invfnfft
     warndlg('Invalid entry','AARAE info')
     set(hObject,'String',num2str(handles.invflength))
@@ -1060,7 +1047,7 @@ guidata(hObject,handles)
 
 
 % --- Executes during object creation, after setting all properties.
-function invflength_IN_CreateFcn(hObject, eventdata, handles)
+function invflength_IN_CreateFcn(hObject, ~, handles) %#ok : inverse filter length input box creation
 % hObject    handle to invflength_IN (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    empty - handles not created until after all CreateFcns called
@@ -1070,12 +1057,12 @@ function invflength_IN_CreateFcn(hObject, eventdata, handles)
 if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
     set(hObject,'BackgroundColor','white');
 end
-handles.invflength = str2num(get(hObject,'String'));
+handles.invflength = str2double(get(hObject,'String'));
 guidata(hObject,handles)
 
 
 % --- Executes on button press in latinstructions_btn.
-function latinstructions_btn_Callback(hObject, eventdata, handles)
+function latinstructions_btn_Callback(~, ~, ~) %#ok : Executed when instructions button is pressed in the latency panel
 % hObject    handle to latinstructions_btn (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
@@ -1088,16 +1075,17 @@ helpdlg(message,'AARAE info')
 
 
 
-function latency_IN_Callback(hObject, eventdata, handles)
+function latency_IN_Callback(hObject, eventdata, handles) %#ok : Executed when latency input box changes
 % hObject    handle to latency_IN (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
 % Hints: get(hObject,'String') returns contents of latency_IN as text
 %        str2double(get(hObject,'String')) returns contents of latency_IN as a double
-if str2num(get(hObject,'String')) <= handles.maxIR && str2num(get(hObject,'String')) > 0
-    handles.output.latency = round(str2num(get(hObject,'String')));
-    set(hObject,'String',round(str2num(get(hObject,'String'))))
+latency = str2double(get(hObject,'String'));
+if ~isnan(latency) && latency <= handles.maxIR && latency > 0
+    handles.output.latency = round(latency);
+    set(hObject,'String',round(latency))
     ixy = handles.sysIR;
     t = linspace(0,length(ixy)/handles.mainHandles.fs,length(ixy));
     IRlevel = (10.*log10((abs(ixy)./max(abs(ixy))).^2));
@@ -1107,7 +1095,7 @@ if str2num(get(hObject,'String')) <= handles.maxIR && str2num(get(hObject,'Strin
     hold(handles.IRaxes,'off')
     ylim(handles.IRaxes,[-60 10])
     set(handles.IRlength_IN,'String',num2str(length(ixy)-handles.output.latency))
-    set(handles.latencytext,'String',[num2str(handles.output.latency) ' samples = ~' num2str(str2num(get(hObject,'String'))/handles.mainHandles.fs) ' s'])
+    set(handles.latencytext,'String',[num2str(handles.output.latency) ' samples = ~' num2str(latency/handles.mainHandles.fs) ' s'])
 else
     set(hObject,'String',num2str(handles.output.latency))
     warndlg('Input cannot be greater than the auto-detected latency or zero','AARAE info')
@@ -1118,7 +1106,7 @@ preproc_popup_Callback(handles.preproc_popup,eventdata,handles)
 
 
 % --- Executes during object creation, after setting all properties.
-function latency_IN_CreateFcn(hObject, eventdata, handles)
+function latency_IN_CreateFcn(hObject, ~, ~) %#ok : latency input box creation
 % hObject    handle to latency_IN (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    empty - handles not created until after all CreateFcns called
@@ -1131,17 +1119,17 @@ end
 
 
 
-function latthresh_IN_Callback(hObject, eventdata, handles)
+function latthresh_IN_Callback(hObject, eventdata, handles) %#ok : Executed when latency threshold input box changes
 % hObject    handle to latthresh_IN (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
 % Hints: get(hObject,'String') returns contents of latthresh_IN as text
 %        str2double(get(hObject,'String')) returns contents of latthresh_IN as a double
-latthresh = abs(str2num(get(hObject,'String')));
-if 0 < latthresh && latthresh <= 60
+latthresh = abs(str2double(get(hObject,'String')));
+if ~isnan(latthresh) && 0 < latthresh && latthresh <= 60
     ixy = handles.sysIR;
-    handles.latthresh = str2num(get(handles.latthresh_IN,'String'));
+    handles.latthresh = latthresh;
     t = linspace(0,length(ixy)/handles.mainHandles.fs,length(ixy));
     IRlevel = (10.*log10((abs(ixy)./max(abs(ixy))).^2));
     abovethresh = find(IRlevel > latthresh*-1);
@@ -1166,7 +1154,7 @@ guidata(hObject,handles)
 preproc_popup_Callback(handles.preproc_popup,eventdata,handles)
 
 % --- Executes during object creation, after setting all properties.
-function latthresh_IN_CreateFcn(hObject, eventdata, handles)
+function latthresh_IN_CreateFcn(hObject, ~, ~) %#ok : latency threshold input box creation
 % hObject    handle to latthresh_IN (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    empty - handles not created until after all CreateFcns called
@@ -1179,7 +1167,7 @@ end
 
 
 % --- Executes on button press in invfiltinstructions_btn.
-function invfiltinstructions_btn_Callback(hObject, eventdata, handles)
+function invfiltinstructions_btn_Callback(~, ~, ~) %#ok : Executed when instruction button is clicked on the inverse filter panel
 % hObject    handle to invfiltinstructions_btn (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
@@ -1199,7 +1187,7 @@ helpdlg(message,'AARAE info')
 
 
 % --- Executes on button press in calinstructions_btn.
-function calinstructions_btn_Callback(hObject, eventdata, handles)
+function calinstructions_btn_Callback(~, ~, ~) %#ok : Executed when instruction button is clicked on the gain calibration panel
 % hObject    handle to calinstructions_btn (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
@@ -1219,14 +1207,15 @@ helpdlg(message,'AARAE info')
 
 
 
-function IRlength_IN_Callback(hObject, eventdata, handles)
+function IRlength_IN_Callback(hObject, eventdata, handles) %#ok : Executed when the IR length input box changes
 % hObject    handle to IRlength_IN (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
 % Hints: get(hObject,'String') returns contents of IRlength_IN as text
 %        str2double(get(hObject,'String')) returns contents of IRlength_IN as a double
-if ~isempty(str2num(get(hObject,'String'))) && str2num(get(hObject,'String')) <= (length(handles.sysIR)-handles.output.latency) && str2num(get(hObject,'String')) > 0
+IRlength = str2double(get(hObject,'String'));
+if ~isnan(IRlength) && IRlength <= (length(handles.sysIR)-handles.output.latency) && IRlength > 0
     preproc_popup_Callback(handles.preproc_popup,eventdata,handles)
     set(handles.invftext,'Visible','off')
     set(handles.invfpreview_btn,'Enable','off')
@@ -1239,7 +1228,7 @@ end
 
 
 % --- Executes during object creation, after setting all properties.
-function IRlength_IN_CreateFcn(hObject, eventdata, handles)
+function IRlength_IN_CreateFcn(hObject, ~, ~) %#ok : IRlength input box creation
 % hObject    handle to IRlength_IN (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    empty - handles not created until after all CreateFcns called
@@ -1252,7 +1241,7 @@ end
 
 
 % --- Executes on selection change in preproc_popup.
-function preproc_popup_Callback(hObject, eventdata, handles)
+function preproc_popup_Callback(hObject, ~, handles)
 % hObject    handle to preproc_popup (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
@@ -1265,7 +1254,7 @@ if get(hObject,'Value') == 1
 else
     set([handles.prelengthtext handles.IRlength_IN handles.presamplestext],'Visible','on')
 end
-IRlength = str2num(get(handles.IRlength_IN,'String'));
+IRlength = str2double(get(handles.IRlength_IN,'String'));
 if get(hObject,'Value') == 2
     if isfield(handles,'IRwinline'), delete(handles.IRwinline); handles = rmfield(handles,'IRwinline'); end
     hold(handles.IRaxes,'on')
@@ -1289,7 +1278,7 @@ guidata(hObject,handles)
 
 
 % --- Executes during object creation, after setting all properties.
-function preproc_popup_CreateFcn(hObject, eventdata, handles)
+function preproc_popup_CreateFcn(hObject, ~, ~) %#ok : Windowing menu creation for preprocessing subpanel
 % hObject    handle to preproc_popup (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    empty - handles not created until after all CreateFcns called
@@ -1302,7 +1291,7 @@ end
 
 
 % --- Executes on selection change in postproc_popup.
-function postproc_popup_Callback(hObject, eventdata, handles)
+function postproc_popup_Callback(hObject, ~, handles) %#ok : Executes when windowing menu in the postprocessing subpanel changes
 % hObject    handle to postproc_popup (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
@@ -1319,7 +1308,7 @@ set(handles.invfpreview_btn,'Enable','off')
 guidata(hObject,handles)
 
 % --- Executes during object creation, after setting all properties.
-function postproc_popup_CreateFcn(hObject, eventdata, handles)
+function postproc_popup_CreateFcn(hObject, ~, ~) %#ok : Windowing menu on the post processing panel creation
 % hObject    handle to postproc_popup (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    empty - handles not created until after all CreateFcns called
@@ -1331,22 +1320,22 @@ if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgr
 end
 
 
-
-function slength_IN_Callback(hObject, eventdata, handles)
+function slength_IN_Callback(hObject, ~, ~) %#ok : Executes when signal duration changes on the latency panel
 % hObject    handle to slength_IN (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
 % Hints: get(hObject,'String') returns contents of slength_IN as text
 %        str2double(get(hObject,'String')) returns contents of slength_IN as a double
-if isempty(str2num(get(hObject,'String'))) || str2num(get(hObject,'String')) <=0
+slength = str2double(get(hObject,'String'));
+if isnan(slength) || slength <=0
     warndlg('Invalid entry','AARAE info')
     set(hObject,'String','1')
 end
 
 
 % --- Executes during object creation, after setting all properties.
-function slength_IN_CreateFcn(hObject, eventdata, handles)
+function slength_IN_CreateFcn(hObject, ~, ~) %#ok : Signal duration input box creation
 % hObject    handle to slength_IN (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    empty - handles not created until after all CreateFcns called
@@ -1359,7 +1348,7 @@ end
 
 
 % --- Executes on selection change in channum_popup.
-function channum_popup_Callback(hObject, eventdata, handles)
+function channum_popup_Callback(~, ~, ~) %#ok : Executes when channel menu changes in the gain calibration panel
 % hObject    handle to channum_popup (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
@@ -1369,7 +1358,7 @@ function channum_popup_Callback(hObject, eventdata, handles)
 
 
 % --- Executes during object creation, after setting all properties.
-function channum_popup_CreateFcn(hObject, eventdata, handles)
+function channum_popup_CreateFcn(hObject, ~, ~) %#ok : Channel selection menu creation
 % hObject    handle to channum_popup (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    empty - handles not created until after all CreateFcns called
@@ -1382,9 +1371,10 @@ end
 
 
 % --- Executes on button press in calfield_btn.
-function calfield_btn_Callback(hObject, eventdata, handles)
+function calfield_btn_Callback(~, ~, handles) %#ok : Executed when cal field values button is clicked
 % hObject    handle to calfield_btn (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-deviceinfo = dspAudioDeviceInfo;
-msgbox(num2str([(1:deviceinfo.maxInputs);handles.output.cal]'))
+deviceinfo = dspAudioDeviceInfo('inputs');
+inputsel = get(handles.mainHandles.inputdev_popup,'Value');
+msgbox(num2str([(1:deviceinfo(inputsel).maxInputs);handles.output.cal]'))
