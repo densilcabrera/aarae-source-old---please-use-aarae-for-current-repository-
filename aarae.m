@@ -2400,6 +2400,7 @@ if ~strcmp(contents{get(hObject,'Value')},' ')
         l1 = [];
         if strcmp(linedata{j,1}.Type,'line'), l1 = line; end
         if strcmp(linedata{j,1}.Type,'surface'), l1 = surface; end
+        %if strcmp(linedata{j,1}.Type,'hggroup'), l1 = hggroup; end
         if ~isempty(l1)
             linedata{j,1}.Parent = axis2;
             dif = intersect(fieldnames(linedata{j,1}),fieldnames(set(l1)));
