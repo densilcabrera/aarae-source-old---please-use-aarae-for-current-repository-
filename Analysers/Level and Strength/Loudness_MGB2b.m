@@ -825,7 +825,6 @@ if ~isempty(signal) && ~isempty(fs)
             xlabel('Time (s)')
             ylabel('Instantaneous specific loudness (sones/erb)')
             title('Time-varying specific loudness pattern')
-            OUT.lines.t_varying_spec_loud_pattern = getplotdata;
         
         case 2
             % just plot loudness
