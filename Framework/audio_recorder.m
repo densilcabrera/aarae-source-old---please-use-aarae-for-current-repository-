@@ -46,7 +46,7 @@ end
 
 
 % --- Executes just before audio_recorder is made visible.
-function audio_recorder_OpeningFcn(hObject, eventdata, handles, varargin)
+function audio_recorder_OpeningFcn(hObject, ~, handles, varargin)
 % This function has no output args, see OutputFcn.
 % hObject    handle to figure
 % eventdata  reserved - to be defined in a future version of MATLAB
@@ -90,7 +90,7 @@ else
     outputnames = regexprep(outputnames,'\s\(ASIO\)','');
     outputnames = regexprep(outputnames,'\s\(Core Audio\)','');
     set(handles.outputdev_popup,'String',outputnames)
-    if ~isempty(handles.signaldata) && ndims(handles.signaldata.audio) < 3 && ~strcmp(handles.signaldata.datatype,'syscal')% If there's a signal loaded in the 'desktop'...
+    if ~isempty(handles.signaldata) && ismatrix(handles.signaldata.audio) && ~strcmp(handles.signaldata.datatype,'syscal')% If there's a signal loaded in the 'desktop'...
         % Allow visibility of playback option along with the specs of
         % the playback signal
         mainHandles = guidata(handles.main_stage1);
@@ -120,10 +120,12 @@ else
         set(handles.IN_nbits,'String','-');
         set(handles.IN_qdur,'String',num2str(getappdata(hMain,'audio_recorder_qdur')));
         set(handles.IN_buffer,'String',num2str(getappdata(hMain,'audio_recorder_buffer')));
-        handles.numchs = str2num(get(handles.IN_numchs,'String'));
-        handles.addtime = str2num(get(handles.IN_duration,'String'));
+        handles.numchs = str2double(get(handles.IN_numchs,'String'));
+        handles.addtime = str2double(get(handles.IN_duration,'String'));
         handles.fs = handles.outputdata.fs;
         handles.nbits = handles.outputdata.nbits;
+        handles.qdur = str2double(get(handles.IN_qdur,'String'));
+        handles.buffer = str2double(get(handles.IN_buffer,'String'));
         xlim(handles.IN_axes,[0 round(handles.dur+handles.addtime)])
         xlim(handles.OUT_axes,[0 round(handles.dur+handles.addtime)])
     else
@@ -143,10 +145,12 @@ else
         set(handles.IN_buffer,'String',num2str(getappdata(hMain,'audio_recorder_buffer')));
         set(handles.OUT_axes,'Visible','off');
         set(handles.audio_recorder,'Position',handles.position-[0 0 0 handles.OUT_axes_position(4)])
-        handles.numchs = str2num(get(handles.IN_numchs,'String'));
-        handles.duration = str2num(get(handles.IN_duration,'String'));
-        handles.fs = str2num(get(handles.IN_fs,'String'));
-        handles.nbits = str2num(get(handles.IN_nbits,'String'));
+        handles.numchs = str2double(get(handles.IN_numchs,'String'));
+        handles.duration = str2double(get(handles.IN_duration,'String'));
+        handles.fs = str2double(get(handles.IN_fs,'String'));
+        handles.nbits = str2double(get(handles.IN_nbits,'String'));
+        handles.qdur = str2double(get(handles.IN_qdur,'String'));
+        handles.buffer = str2double(get(handles.IN_buffer,'String'));
         xlim(handles.IN_axes,[0 round(handles.duration)])
         xlim(handles.OUT_axes,[0 round(handles.duration)])
     end
@@ -199,7 +203,7 @@ end
 
 
 % --- Outputs from this function are returned to the command line.
-function varargout = audio_recorder_OutputFcn(hObject, eventdata, handles) 
+function varargout = audio_recorder_OutputFcn(hObject, ~, handles) 
 % varargout  cell array for returning output args (see VARARGOUT);
 % hObject    handle to figure
 % eventdata  reserved - to be defined in a future version of MATLAB
@@ -219,7 +223,7 @@ delete(hObject);
 
 
 % --- Executes on button press in record_btn.
-function record_btn_Callback(hObject, eventdata, handles)
+function record_btn_Callback(hObject, ~, handles) %#ok : called with record button
 % hObject    handle to record_btn (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
@@ -236,11 +240,11 @@ if get(handles.pb_enable,'Value') == 1
     % Set playback object
     outputs = cellstr(get(handles.outputdev_popup,'String'));
     outputdevname = outputs{get(handles.outputdev_popup,'Value')};
-    handles.hap = dsp.AudioPlayer('DeviceName',outputdevname,'SampleRate',handles.outputdata.fs,'QueueDuration',str2double(get(handles.IN_qdur,'String')),'BufferSizeSource','Property','BufferSize',str2double(get(handles.IN_buffer,'String')));
+    handles.hap = dsp.AudioPlayer('DeviceName',outputdevname,'SampleRate',handles.outputdata.fs,'QueueDuration',handles.qdur,'BufferSizeSource','Property','BufferSize',handles.buffer);
     % Set record object
     inputs = cellstr(get(handles.inputdev_popup,'String'));
     inputdevname = inputs{get(handles.inputdev_popup,'Value')};
-    handles.har = dsp.AudioRecorder('DeviceName',inputdevname,'SampleRate',handles.outputdata.fs,'QueueDuration',str2double(get(handles.IN_qdur,'String')),'OutputDataType','double','NumChannels',handles.numchs,'BufferSizeSource','Property','BufferSize',str2double(get(handles.IN_buffer,'String')));
+    handles.har = dsp.AudioRecorder('DeviceName',inputdevname,'SampleRate',handles.outputdata.fs,'QueueDuration',handles.qdur,'OutputDataType','double','NumChannels',handles.numchs,'BufferSizeSource','Property','BufferSize',handles.buffer);
     % Set playback audio
     handles.hsr1 = dsp.SignalSource;
     playbackaudio = handles.outputdata.audio;
@@ -302,7 +306,7 @@ else
     % Set record object
     inputs = cellstr(get(handles.inputdev_popup,'String'));
     inputdevname = inputs{get(handles.inputdev_popup,'Value')};
-    handles.har = dsp.AudioRecorder('DeviceName',inputdevname,'SampleRate',handles.fs,'OutputDataType','double','NumChannels',handles.numchs,'BufferSizeSource','Property','BufferSize',str2double(get(handles.IN_buffer,'String')),'QueueDuration',str2double(get(handles.IN_qdur,'String')));
+    handles.har = dsp.AudioRecorder('DeviceName',inputdevname,'SampleRate',handles.fs,'OutputDataType','double','NumChannels',handles.numchs,'BufferSizeSource','Property','BufferSize',handles.buffer,'QueueDuration',handles.qdur);
     guidata(hObject,handles)
     ncycles = ceil(dur/handles.har.SamplesPerFrame);
     handles.rec = [];
@@ -354,7 +358,7 @@ guidata(hObject,handles);
 
 
 % --- Executes on button press in load_btn.
-function load_btn_Callback(hObject, eventdata, handles)
+function load_btn_Callback(hObject, ~, handles) %#ok : called when sending recording to main window
 % hObject    handle to load_btn (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
@@ -396,7 +400,7 @@ guidata(hObject,handles)
 uiresume(handles.audio_recorder);
 
 % --- Executes on button press in cancel_btn.
-function cancel_btn_Callback(hObject, eventdata, handles)
+function cancel_btn_Callback(~, ~, handles) %#ok : called with the Cancel button
 % hObject    handle to cancel_btn (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
@@ -408,7 +412,7 @@ setappdata(hMain,'testsignal',[]);
 uiresume(handles.audio_recorder);
 
 
-function IN_numchs_Callback(hObject, eventdata, handles)
+function IN_numchs_Callback(hObject, ~, handles) %#ok number of channels input
 % hObject    handle to IN_numchs (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
@@ -417,10 +421,10 @@ function IN_numchs_Callback(hObject, eventdata, handles)
 %        str2double(get(hObject,'String')) returns contents of IN_numchs as a double
 
 % Get number of channels
-numchs = str2num(get(handles.IN_numchs, 'string'));
+numchs = str2double(get(handles.IN_numchs, 'string'));
 hMain = getappdata(0,'hMain');
 % Check user's input
-if (isempty(numchs)||numchs<=0)
+if (isnan(numchs)||numchs<=0)
     set(hObject,'String',num2str(handles.numchs));
     warndlg('All inputs MUST be real positive numbers!');
 else
@@ -430,7 +434,7 @@ end
 guidata(hObject, handles);
 
 % --- Executes during object creation, after setting all properties.
-function IN_numchs_CreateFcn(hObject, eventdata, handles)
+function IN_numchs_CreateFcn(hObject, ~, ~) %#ok number of channels input box creation
 % hObject    handle to IN_numchs (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    empty - handles not created until after all CreateFcns called
@@ -443,7 +447,7 @@ end
 
 
 
-function IN_duration_Callback(hObject, eventdata, handles)
+function IN_duration_Callback(hObject, ~, handles) %#ok : duration input box
 % hObject    handle to IN_duration (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
@@ -452,10 +456,10 @@ function IN_duration_Callback(hObject, eventdata, handles)
 %        str2double(get(hObject,'String')) returns contents of IN_duration as a double
 
 % Get duration input
-duration = round(str2num(get(handles.IN_duration, 'string')));
+duration = round(str2double(get(handles.IN_duration, 'string')));
 hMain = getappdata(0,'hMain');
 % Check user's input
-if (isempty(duration)||duration<=0)
+if (isnan(duration)||duration<=0)
     if get(handles.pb_enable,'Value') == 1
         set(hObject,'String',num2str(handles.addtime));
     else
@@ -478,7 +482,7 @@ end
 guidata(hObject, handles);
 
 % --- Executes during object creation, after setting all properties.
-function IN_duration_CreateFcn(hObject, eventdata, handles)
+function IN_duration_CreateFcn(hObject, ~, ~) %#ok : duration input box creation
 % hObject    handle to IN_duration (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    empty - handles not created until after all CreateFcns called
@@ -491,7 +495,7 @@ end
 
 
 
-function IN_fs_Callback(hObject, eventdata, handles)
+function IN_fs_Callback(hObject, ~, handles) %#ok : sampling frequency input box
 % hObject    handle to IN_fs (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
@@ -500,10 +504,10 @@ function IN_fs_Callback(hObject, eventdata, handles)
 %        str2double(get(hObject,'String')) returns contents of IN_fs as a double
 
 % Get sampling frequency input
-fs = str2num(get(handles.IN_fs, 'string'));
+fs = str2double(get(handles.IN_fs, 'string'));
 hMain = getappdata(0,'hMain');
 % Check user's input
-if (isempty(fs)||fs<=0)
+if (isnan(fs)||fs<=0)
     set(hObject,'String',num2str(handles.fs))
     warndlg('All inputs MUST be real positive numbers!');
 else
@@ -513,7 +517,7 @@ end
 guidata(hObject, handles);
 
 % --- Executes during object creation, after setting all properties.
-function IN_fs_CreateFcn(hObject, eventdata, handles)
+function IN_fs_CreateFcn(hObject, ~, ~) %#ok : sampling frequency input box creation
 % hObject    handle to IN_fs (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    empty - handles not created until after all CreateFcns called
@@ -526,7 +530,7 @@ end
 
 
 
-function IN_nbits_Callback(hObject, eventdata, handles)
+function IN_nbits_Callback(hObject, ~, handles) %#ok : bit depth input box
 % hObject    handle to IN_nbits (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
@@ -535,10 +539,10 @@ function IN_nbits_Callback(hObject, eventdata, handles)
 %        str2double(get(hObject,'String')) returns contents of IN_nbits as a double
 
 % Get bit depth input
-nbits = str2num(get(handles.IN_nbits, 'string'));
+nbits = str2double(get(handles.IN_nbits, 'string'));
 hMain = getappdata(0,'hMain');
 % Check user's input
-if (isempty(nbits)||nbits<=0)
+if (isnan(nbits)||nbits<=0)
     set(hObject,'String',num2str(handles.nbits))
     warndlg('All inputs MUST be real positive numbers!');
 else
@@ -548,7 +552,7 @@ end
 guidata(hObject, handles);
 
 % --- Executes during object creation, after setting all properties.
-function IN_nbits_CreateFcn(hObject, eventdata, handles)
+function IN_nbits_CreateFcn(hObject, ~, ~) %#ok : bit depth input box creation
 % hObject    handle to IN_nbits (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    empty - handles not created until after all CreateFcns called
@@ -561,7 +565,7 @@ end
 
 
 % --- Executes when user attempts to close audio_recorder.
-function audio_recorder_CloseRequestFcn(hObject, eventdata, handles)
+function audio_recorder_CloseRequestFcn(hObject, ~, ~) %#ok: window close request function
 % hObject    handle to audio_recorder (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
@@ -570,7 +574,7 @@ function audio_recorder_CloseRequestFcn(hObject, eventdata, handles)
 uiresume(hObject);
 
 
-function IN_name_Callback(hObject, eventdata, handles)
+function IN_name_Callback(~, ~, ~) %#ok : recording name input box
 % hObject    handle to IN_name (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
@@ -580,7 +584,7 @@ function IN_name_Callback(hObject, eventdata, handles)
 
 
 % --- Executes during object creation, after setting all properties.
-function IN_name_CreateFcn(hObject, eventdata, handles)
+function IN_name_CreateFcn(hObject, ~, ~) %#ok : recording name input box creation
 % hObject    handle to IN_name (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    empty - handles not created until after all CreateFcns called
@@ -593,7 +597,7 @@ end
 
 
 % --- Executes on button press in pb_enable.
-function pb_enable_Callback(hObject, eventdata, handles)
+function pb_enable_Callback(hObject, ~, handles) %#ok : playback enable checkbox function
 % hObject    handle to pb_enable (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
@@ -617,8 +621,8 @@ if get(hObject,'Value') == 1
     set(handles.OUT_axes,'Visible','on');
     children = get(handles.OUT_axes,'Children');
     set(children,'Visible','on');
-    handles.numchs = str2num(get(handles.IN_numchs,'String'));
-    handles.addtime = str2num(get(handles.IN_duration,'String'));
+    handles.numchs = str2double(get(handles.IN_numchs,'String'));
+    handles.addtime = str2double(get(handles.IN_duration,'String'));
     handles.fs = handles.outputdata.fs;
     handles.nbits = handles.outputdata.nbits;
     xlim(handles.IN_axes,[0 round(handles.dur+handles.addtime)])
@@ -639,10 +643,10 @@ else
     set(handles.OUT_axes,'Visible','off');
     children = get(handles.OUT_axes,'Children');
     set(children,'Visible','off');
-    handles.numchs = str2num(get(handles.IN_numchs,'String'));
-    handles.duration = str2num(get(handles.IN_duration,'String'));
-    handles.fs = str2num(get(handles.IN_fs,'String'));
-    handles.nbits = str2num(get(handles.IN_nbits,'String'));
+    handles.numchs = str2double(get(handles.IN_numchs,'String'));
+    handles.duration = str2double(get(handles.IN_duration,'String'));
+    handles.fs = str2double(get(handles.IN_fs,'String'));
+    handles.nbits = str2double(get(handles.IN_nbits,'String'));
     xlim(handles.IN_axes,[0 round(handles.duration)])
     xlim(handles.OUT_axes,[0 round(handles.duration)])
 end
@@ -650,7 +654,7 @@ guidata(hObject,handles);
 
 
 % --- Executes on button press in stop_btn.
-function stop_btn_Callback(hObject, eventdata, handles)
+function stop_btn_Callback(hObject, ~, handles) %#ok : stop recording button
 % hObject    handle to stop_btn (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
@@ -663,7 +667,7 @@ guidata(hObject,handles)
 
 
 % --- Executes on button press in syscal_btn.
-function syscal_btn_Callback(hObject, eventdata, handles)
+function syscal_btn_Callback(hObject, ~, handles) %#ok : system calibration button
 % hObject    handle to syscal_btn (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
@@ -737,7 +741,7 @@ guidata(hObject,handles)
 
 
 % --- Executes on button press in delay_chk.
-function delay_chk_Callback(hObject, eventdata, handles)
+function delay_chk_Callback(~, ~, ~) %#ok : latency checkbox
 % hObject    handle to delay_chk (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
@@ -746,7 +750,7 @@ function delay_chk_Callback(hObject, eventdata, handles)
 
 
 % --- Executes on button press in cal_chk.
-function cal_chk_Callback(hObject, eventdata, handles)
+function cal_chk_Callback(~, ~, ~) %#ok : calibration checkbox
 % hObject    handle to cal_chk (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
@@ -755,7 +759,7 @@ function cal_chk_Callback(hObject, eventdata, handles)
 
 
 % --- Executes on button press in invfilter_chk.
-function invfilter_chk_Callback(hObject, eventdata, handles)
+function invfilter_chk_Callback(~, ~, ~) %#ok : inverse filter checkbox
 % hObject    handle to invfilter_chk (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
@@ -764,7 +768,7 @@ function invfilter_chk_Callback(hObject, eventdata, handles)
 
 
 % --- Executes on button press in preview_btn.
-function preview_btn_Callback(hObject, eventdata, handles)
+function preview_btn_Callback(~, ~, handles) %#ok : executes on preview button click
 % hObject    handle to preview_btn (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
@@ -791,7 +795,7 @@ end
 
 
 
-function IN_qdur_Callback(hObject, eventdata, handles)
+function IN_qdur_Callback(hObject, ~, handles) %#ok : queue duration input box
 % hObject    handle to IN_qdur (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
@@ -799,10 +803,20 @@ function IN_qdur_Callback(hObject, eventdata, handles)
 % Hints: get(hObject,'String') returns contents of IN_qdur as text
 %        str2double(get(hObject,'String')) returns contents of IN_qdur as a double
 hMain = getappdata(0,'hMain');
-setappdata(hMain,'audio_recorder_qdur',str2num(get(hObject,'String')))
+% Get bit depth input
+qdur = str2double(get(hObject, 'string'));
+% Check user's input
+if (isnan(qdur) || qdur<=0)
+    set(hObject,'String',num2str(handles.qdur))
+    warndlg('All inputs MUST be real positive numbers!');
+else
+    handles.qdur = qdur;
+    setappdata(hMain,'audio_recorder_qdur',qdur)
+end
+guidata(hObject, handles);
 
 % --- Executes during object creation, after setting all properties.
-function IN_qdur_CreateFcn(hObject, eventdata, handles)
+function IN_qdur_CreateFcn(hObject, ~, ~) %#ok : queue dueration input box creation
 % hObject    handle to IN_qdur (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    empty - handles not created until after all CreateFcns called
@@ -815,7 +829,7 @@ end
 
 
 
-function IN_buffer_Callback(hObject, eventdata, handles)
+function IN_buffer_Callback(hObject, ~, handles) %#ok : buffer size input box
 % hObject    handle to IN_buffer (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
@@ -823,19 +837,26 @@ function IN_buffer_Callback(hObject, eventdata, handles)
 % Hints: get(hObject,'String') returns contents of IN_buffer as text
 %        str2double(get(hObject,'String')) returns contents of IN_buffer as a double
 hMain = getappdata(0,'hMain');
-setappdata(hMain,'audio_recorder_buffer',str2num(get(hObject,'String')))
-if isfield(handles,'syscalstats') && isfield(handles.syscalstats,'latency')
-    handles.syscalstats = rmfield(handles.syscalstats,'latency');
-    handles.syscalstats = rmfield(handles.syscalstats,'audio');
-    handles.syscalstats = rmfield(handles.syscalstats,'fs');
-    set(handles.delay_chk,'Enable','off','Value',0)
-    set(handles.delaytext,'String',[])
+buffer = str2double(get(hObject,'String'));
+if (isnan(buffer) || buffer<=0)
+    set(hObject,'String',num2str(handles.buffer))
+    warndlg('All inputs MUST be real positive numbers!');
+else
+    handles.buffer = buffer;
+    setappdata(hMain,'audio_recorder_buffer',buffer)
+    if isfield(handles,'syscalstats') && isfield(handles.syscalstats,'latency')
+        handles.syscalstats = rmfield(handles.syscalstats,'latency');
+        handles.syscalstats = rmfield(handles.syscalstats,'audio');
+        handles.syscalstats = rmfield(handles.syscalstats,'fs');
+        set(handles.delay_chk,'Enable','off','Value',0)
+        set(handles.delaytext,'String',[])
+    end
 end
-guidata(hObject,handles)
+guidata(hObject, handles);
 
 
 % --- Executes during object creation, after setting all properties.
-function IN_buffer_CreateFcn(hObject, eventdata, handles)
+function IN_buffer_CreateFcn(hObject, ~, ~) %#ok : buffer size input box creation
 % hObject    handle to IN_buffer (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    empty - handles not created until after all CreateFcns called
@@ -848,7 +869,7 @@ end
 
 
 % --- Executes on selection change in inputdev_popup.
-function inputdev_popup_Callback(hObject, eventdata, handles)
+function inputdev_popup_Callback(hObject, ~, ~) %#ok : input device menu
 % hObject    handle to inputdev_popup (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
@@ -860,7 +881,7 @@ setappdata(hMain,'audio_recorder_input',get(hObject,'Value'));
 
 
 % --- Executes during object creation, after setting all properties.
-function inputdev_popup_CreateFcn(hObject, eventdata, handles)
+function inputdev_popup_CreateFcn(hObject, ~, ~) %#ok : input device menu creation
 % hObject    handle to inputdev_popup (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    empty - handles not created until after all CreateFcns called
@@ -873,7 +894,7 @@ end
 
 
 % --- Executes on selection change in outputdev_popup.
-function outputdev_popup_Callback(hObject, eventdata, handles)
+function outputdev_popup_Callback(hObject, ~, ~)  %#ok : output device menu
 % hObject    handle to outputdev_popup (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
@@ -884,7 +905,7 @@ hMain = getappdata(0,'hMain');
 setappdata(hMain,'audio_recorder_output',get(hObject,'Value'));
 
 % --- Executes during object creation, after setting all properties.
-function outputdev_popup_CreateFcn(hObject, eventdata, handles)
+function outputdev_popup_CreateFcn(hObject, ~, ~) %#ok : output device menu creation
 % hObject    handle to outputdev_popup (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    empty - handles not created until after all CreateFcns called
