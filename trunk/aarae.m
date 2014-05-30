@@ -2397,12 +2397,15 @@ if ~strcmp(contents{get(hObject,'Value')},' ')
     linedata = data.lines.(contents{get(hObject,'Value')}).data;
     axis2 = handles.axesdata;
     for j = 1:length(linedata)
-        if strcmp(linedata(j,1).Type,'line'), l1 = line; end
-        if strcmp(linedata(j,1).Type,'surface'), l1 = surface; end
-        linedata(j,1).Parent = axis2;
-        dif = intersect(fieldnames(linedata),fieldnames(set(l1)));
-        for i = 1:size(dif,1)
-            set(l1,dif{i},linedata(j,1).(dif{i,1}))
+        l1 = [];
+        if strcmp(linedata{j,1}.Type,'line'), l1 = line; end
+        if strcmp(linedata{j,1}.Type,'surface'), l1 = surface; end
+        if ~isempty(l1)
+            linedata{j,1}.Parent = axis2;
+            dif = intersect(fieldnames(linedata{j,1}),fieldnames(set(l1)));
+            for i = 1:size(dif,1)
+                set(l1,dif{i},linedata{j,1}.(dif{i,1}))
+            end
         end
     end
     axesprop = data.lines.(contents{get(hObject,'Value')}).axisproperties;
