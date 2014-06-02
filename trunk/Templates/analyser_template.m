@@ -1,4 +1,4 @@
-function [OUT, varargout] = analyser_template(IN, input_1, input_2)
+function [OUT, varargout] = analyser_template(IN, input_1, input_2, input_3, input_4)
 % This function can be used as a template for adapting your audio
 % analysing functions to work in the AARAE environment.
 %
@@ -30,8 +30,8 @@ if nargin ==1 % If the function is called within the AARAE environment it
               % for the additional parameters that you require for your
               % function to work if they're not part of the AARAE structure
 
-    param = inputdlg({'Input 1';... % These are the input box titles in the
-                      'Input 2'},...% inputdlg window.
+    param = inputdlg({'Parameter 1';... % These are the input box titles in the
+                      'Parameter 2'},...% inputdlg window.
                       'Window title',... % This is the dialog window title.
                       [1 30],... % You can define the number of rows per
                       ...        % input box and the number of character
@@ -131,8 +131,12 @@ elseif ~isempty(param) || nargin > 1
                        % and assign it to the audio your function is going
                        % to process.
     audio = IN;
-    fs = input_1;
-    cal = input_2;
+    % for the sake of this example, input_3 is being used for fs and
+    % input_4 for cal. These values would be provided by an AARAE
+    % structure, but need to be provided as additional inputs if the audio
+    % is not input as a structure.
+    fs = input_3;
+    cal = input_4;
 end
 % *************************************************************************
 
@@ -141,13 +145,25 @@ end
 
 
 % To make your function work as standalone you can check that the user has
-% either entered at least an audio variable and it's sampling frequency.
+% either entered at least an audio variable and its sampling frequency, and
+% potentially check for other required data.
 if ~isempty(audio) && ~isempty(fs) && ~isempty(cal)
     % If the requirements are met, your code can be executed!
     % You may copy and paste some code you've written or write something 
     % new in the lines below, such as:
-
-    audio = flipud(audio);
+    
+    % the audio's length, number of channels, and number of bands
+    [len,chans,bands] = size(audio);
+    
+    if bands > 1
+        audio = sum(audio,3); % mixdown bands if multiband
+    end
+    
+    if chans > 1
+        audio = mean(audio,2); % mixdown channels
+    end
+    
+    audio = flipdim(audio,1);
     duration = length(audio)/fs;
     maximum = max(audio);
     minimum = min(audio);
@@ -159,12 +175,15 @@ if ~isempty(audio) && ~isempty(fs) && ~isempty(cal)
     % cal_reset_aarae can be used to simplify the process of applying the
     % calibration offset to your audio. In the following case, gain is
     % applied to the audio waveform such that the cal value is changed to 0
-    % dB
+    % dB. The cal_reset_aarae function is in the Processors>Basic folder.
     audio = cal_reset_aarae(audio,0,cal);
     
     % autocropstart_aarae is especially useful for impulse response
     % analysis, when data prior to the impulse response start needs to be
-    % cropped (deleted).
+    % cropped (deleted). In the following example, the start of the audio
+    % wave that is before the first sample -20 dB below the peak is
+    % cropped (as suggested in ISO3382-1). The autocropstart_aarae function
+    % is in the Processors>Basic folder.
     audio = autocropstart_aarae(audio,-20,2);
     
     % Aweight, along with similar functions in the Processors>Filters 
@@ -180,28 +199,38 @@ if ~isempty(audio) && ~isempty(fs) && ~isempty(cal)
         [125,250,500,1000,2000,4000]);
     
     % You may include tables to display your results using AARAE's
-    % disptables.m function, this is just an easy way to display the
-    % built-in uitable function in MATLAB
+    % disptables.m function - this is just an easy way to display the
+    % built-in uitable function in MATLAB. It has several advantages,
+    % including:
+    %   * automatically sizing the table(s);
+    %   * allowing multiple tables to be concatenated;
+    %   * allowing concatenated tables to be copied to the clipboard
+    %     by clicking on the grey space between the tables in the figure;
+    %   * and, if its output is used as described below, returning data to
+    %     the AARAE GUI in a format that can be browsed using a bar-plots.
+    
     fig1 = figure('Name','My results table');
     table1 = uitable('Data',[duration maximum minimum],...
                 'ColumnName',{'Duration','Maximum','Minimum'},...
                 'RowName',{'Results'});
     disptables(fig1,table1);
-    % You may want to display your tables as barplots in teh AARAE
+    % You may want to display your tables as barplots in the AARAE
     % environment, in order to do this simply use the output of the
     % disptables funtion as follows:
     %       [~,table] = disptables(fig1,table1);
     % And include your table in the output data structure
     %       OUT.tables = table;
+    %
+    %
     % If you have multiple tables to combine in the figure, you can
     % concatenate them:
-    % 
     %       disptables(fig1,[table1 table2 table3]);
     % 
     % You may export these tables to be displayed as bar plots as if you
     % were doing it for a single table:
     %       [~,tables] = disptables(fig1,[table1 table2 table3]);
     %       OUT.tables = tables;
+    %
     % The disptables function will take care of allocating each table to a
     % different barplot, there is no need to generate more than one .tables
     % field to display all your tables.
@@ -232,17 +261,26 @@ if ~isempty(audio) && ~isempty(fs) && ~isempty(cal)
     if isstruct(IN)
         OUT = IN; % You can replicate the input structure for your output
         OUT.audio = audio; % And modify the fields you processed
+        % However, for an analyser, you might not wish to output audio (in
+        % which case the two lines above might not be wanted.
+        %
         % Or simply output the fields you consider necessary after
         % processing the input audio data, AARAE will figure out what has
         % changed and complete the structure. But remember, it HAS TO BE a
         % structure if you're returning more than one field:
-        %   OUT = audio;  if you just want to return the audio,
-        %   or,
-        %   OUT.audio = audio; if you want to return two fields.
-        %   OUT.fs = fs;
+        
+        OUT.duration = duration;
+        OUT.maximum = maximum;
+        OUT.minimum = minimum;
+        % (Note that the above outputs might be considered to be redundant
+        % if OUT.tables is used, as described above).
+        
+        % The following outputs are needed so that AARAE can repeat the
+        % analysis without user interaction (e.g. for batch processing).
         OUT.funcallback.name = 'analyser_template.m'; % Provide AARAE
         % with the name of your function 
-        OUT.funcallback.inarg = {input_1,input_2}; % assign all of the 
+        OUT.funcallback.inarg = {input_1,input_2,input_3,input_4}; 
+        % assign all of the 
         % input parameters that could be used to call the function 
         % without dialog box to the output field param (as a cell
         % array) in order to allow batch analysing.
