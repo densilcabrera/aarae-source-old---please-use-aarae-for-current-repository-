@@ -2462,12 +2462,23 @@ function To_freq_Callback(hObject, ~, handles) %#ok : Executed when initial time
 % Hints: get(hObject,'String') returns contents of To_freq as text
 %        str2double(get(hObject,'String')) returns contents of To_freq as a double
 To_freq = str2double(get(hObject,'String'));
-if isnan(To_freq) || To_freq >= str2double(get(handles.Tf_freq,'String')) || To_freq < 0
+selectedNodes = handles.mytree.getSelectedNodes;
+signaldata = selectedNodes(1).handle.UserData;
+if isnan(To_freq) || To_freq < 0 || To_freq == length(signaldata.audio)/signaldata.fs
     warndlg('Invalid entry','AARAE info','modal')
-    set(hObject,'String','0')
+    set(hObject,'String',num2str(handles.To_freq_IN))
+elseif To_freq >= str2double(get(handles.Tf_freq,'String'))
+    Tf_freq = To_freq + (handles.Tf_freq_IN - handles.To_freq_IN);
+    if Tf_freq > length(signaldata.audio)/signaldata.fs
+        Tf_freq = length(signaldata.audio)/signaldata.fs;
+    end
+    set(handles.Tf_freq,'String',num2str(Tf_freq))
+    handles.To_freq_IN = To_freq;
+    handles.Tf_freq_IN = Tf_freq;
     refreshplots(handles,'freq')
     guidata(hObject,handles)
 else
+    handles.To_freq_IN = To_freq;
     refreshplots(handles,'freq')
     guidata(hObject,handles)
 end
@@ -2475,7 +2486,7 @@ end
 
 
 % --- Executes during object creation, after setting all properties.
-function To_freq_CreateFcn(hObject, ~, ~)
+function To_freq_CreateFcn(hObject, ~, ~) %#ok : creation of initial time input box for the lower axes
 % hObject    handle to To_freq (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    empty - handles not created until after all CreateFcns called
@@ -2488,7 +2499,7 @@ end
 
 
 
-function Tf_freq_Callback(hObject, ~, handles)
+function Tf_freq_Callback(hObject, ~, handles) %#ok : Executed when final time input box for lower axes changes
 % hObject    handle to Tf_freq (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
@@ -2500,21 +2511,18 @@ selectedNodes = handles.mytree.getSelectedNodes;
 signaldata = selectedNodes(1).handle.UserData;
 if isnan(Tf_freq) || Tf_freq <= str2double(get(handles.To_freq,'String')) || Tf_freq > length(signaldata.audio)/signaldata.fs
     warndlg('Invalid entry','AARAE info','modal')
-    if length(signaldata.audio) <= handles.maxtimetodisplay*signaldata.fs
-        set(hObject,'String',num2str(length(signaldata.audio)/signaldata.fs))
-    else
-        set(hObject,'String',num2str(handles.maxtimetodisplay))
-    end
+    set(hObject,'String',handles.Tf_freq_IN)
     refreshplots(handles,'freq')
     guidata(hObject,handles)
 else
+    handles.Tf_freq_IN = Tf_freq;
     refreshplots(handles,'freq')
     guidata(hObject,handles)
 end
 
 
 % --- Executes during object creation, after setting all properties.
-function Tf_freq_CreateFcn(hObject, ~, ~)
+function Tf_freq_CreateFcn(hObject, ~, ~) %#ok : creation of final time input box for the lower axes
 % hObject    handle to Tf_freq (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    empty - handles not created until after all CreateFcns called
@@ -2535,19 +2543,30 @@ function To_time_Callback(hObject, ~, handles) %#ok : Executed when initial time
 % Hints: get(hObject,'String') returns contents of To_time as text
 %        str2double(get(hObject,'String')) returns contents of To_time as a double
 To_time = str2double(get(hObject,'String'));
-if isnan(To_time) || To_time >= str2double(get(handles.Tf_time,'String')) || To_time < 0
+selectedNodes = handles.mytree.getSelectedNodes;
+signaldata = selectedNodes(1).handle.UserData;
+if isnan(To_time) || To_time < 0 || To_time == length(signaldata.audio)/signaldata.fs
     warndlg('Invalid entry','AARAE info','modal')
-    set(hObject,'String','0')
+    set(hObject,'String',num2str(handles.To_time_IN))
+elseif To_time >= str2double(get(handles.Tf_time,'String'))
+    Tf_time = To_time + (handles.Tf_time_IN - handles.To_time_IN);
+    if Tf_time > length(signaldata.audio)/signaldata.fs
+        Tf_time = length(signaldata.audio)/signaldata.fs;
+    end
+    set(handles.Tf_time,'String',num2str(Tf_time))
+    handles.To_time_IN = To_time;
+    handles.Tf_time_IN = Tf_time;
     refreshplots(handles,'time')
     guidata(hObject,handles)
 else
+    handles.To_time_IN = To_time;
     refreshplots(handles,'time')
     guidata(hObject,handles)
 end
 
 
 % --- Executes during object creation, after setting all properties.
-function To_time_CreateFcn(hObject, ~, ~)
+function To_time_CreateFcn(hObject, ~, ~) %#ok : creation of initial time input box for the upper axes
 % hObject    handle to To_time (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    empty - handles not created until after all CreateFcns called
@@ -2560,7 +2579,7 @@ end
 
 
 
-function Tf_time_Callback(hObject, ~, handles)
+function Tf_time_Callback(hObject, ~, handles) %#ok : Executed when final time input box for upper axes changes
 % hObject    handle to Tf_time (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
@@ -2572,21 +2591,18 @@ selectedNodes = handles.mytree.getSelectedNodes;
 signaldata = selectedNodes(1).handle.UserData;
 if isnan(Tf_time) || Tf_time <= str2double(get(handles.To_time,'String')) || Tf_time > length(signaldata.audio)/signaldata.fs
     warndlg('Invalid entry','AARAE info','modal')
-    if length(signaldata.audio) <= handles.maxtimetodisplay*signaldata.fs
-        set(hObject,'String',num2str(length(signaldata.audio)/signaldata.fs))
-    else
-        set(hObject,'String',num2str(handles.maxtimetodisplay))
-    end
+	set(hObject,'String',handles.Tf_time_IN)
     refreshplots(handles,'time')
     guidata(hObject,handles)
 else
+    handles.Tf_time_IN = Tf_time;
     refreshplots(handles,'time')
     guidata(hObject,handles)
 end
 
 
 % --- Executes during object creation, after setting all properties.
-function Tf_time_CreateFcn(hObject, ~, ~)
+function Tf_time_CreateFcn(hObject, ~, ~) %#ok : creation of final time input box for the upper axes
 % hObject    handle to Tf_time (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    empty - handles not created until after all CreateFcns called

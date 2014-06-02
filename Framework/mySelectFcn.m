@@ -45,10 +45,16 @@ function mySelectFcn(tree, ~)
             set(mainHandles.freq_popup,'Visible','on');
             set([mainHandles.text16,mainHandles.text17,mainHandles.text18,mainHandles.text19,mainHandles.text20,mainHandles.text21],'Visible','on')
             set([mainHandles.To_time,mainHandles.To_freq],'String','0')
+            mainHandles.To_time_IN = 0;
+            mainHandles.To_freq_IN = 0;
             if length(audiodata.audio) <= mainHandles.maxtimetodisplay*audiodata.fs
                 set([mainHandles.Tf_time,mainHandles.Tf_freq],'String',num2str(length(audiodata.audio)/audiodata.fs))
+                mainHandles.Tf_time_IN = length(audiodata.audio)/audiodata.fs;
+                mainHandles.Tf_freq_IN = length(audiodata.audio)/audiodata.fs;
             else
                 set([mainHandles.Tf_time,mainHandles.Tf_freq],'String',num2str(mainHandles.maxtimetodisplay))
+                mainHandles.Tf_time_IN = mainHandles.maxtimetodisplay;
+                mainHandles.Tf_freq_IN = mainHandles.maxtimetodisplay;
             end
             set([mainHandles.text20,mainHandles.text21],'String',[num2str(length(audiodata.audio)/audiodata.fs) ' s'])
             %set(mainHandles.smoothtime_popup,'Visible','on');
