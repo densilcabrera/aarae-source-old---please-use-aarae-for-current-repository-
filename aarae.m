@@ -23,7 +23,7 @@ function varargout = aarae(varargin)
 
 % Edit the above text to modify the response to help aarae
 
-% Last Modified by GUIDE v2.5 15-May-2014 19:12:12
+% Last Modified by GUIDE v2.5 02-Jun-2014 16:31:43
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -71,6 +71,7 @@ setappdata(hMain,'audio_recorder_fs',48000)
 setappdata(hMain,'audio_recorder_nbits',16)
 setappdata(hMain,'audio_recorder_qdur',1)
 setappdata(hMain,'audio_recorder_buffer',1024)
+handles.maxtimetodisplay = 10;
 
 % In case there are multiple main windows (currently unused until line 81)
 mainGuiInput = find(strcmp(varargin, 'data'));
@@ -2450,3 +2451,148 @@ end
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 %!matlab -nodesktop
+
+
+
+function To_freq_Callback(hObject, ~, handles) %#ok : Executed when initial time input box changes above the lower axes
+% hObject    handle to To_freq (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: get(hObject,'String') returns contents of To_freq as text
+%        str2double(get(hObject,'String')) returns contents of To_freq as a double
+To_freq = str2double(get(hObject,'String'));
+if isnan(To_freq) || To_freq >= str2double(get(handles.Tf_freq,'String')) || To_freq < 0
+    warndlg('Invalid entry','AARAE info','modal')
+    set(hObject,'String','0')
+    refreshplots(handles,'freq')
+    guidata(hObject,handles)
+else
+    refreshplots(handles,'freq')
+    guidata(hObject,handles)
+end
+
+
+
+% --- Executes during object creation, after setting all properties.
+function To_freq_CreateFcn(hObject, ~, ~)
+% hObject    handle to To_freq (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: edit controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+
+
+function Tf_freq_Callback(hObject, ~, handles)
+% hObject    handle to Tf_freq (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: get(hObject,'String') returns contents of Tf_freq as text
+%        str2double(get(hObject,'String')) returns contents of Tf_freq as a double
+Tf_freq = str2double(get(hObject,'String'));
+selectedNodes = handles.mytree.getSelectedNodes;
+signaldata = selectedNodes(1).handle.UserData;
+if isnan(Tf_freq) || Tf_freq <= str2double(get(handles.To_freq,'String')) || Tf_freq > length(signaldata.audio)/signaldata.fs
+    warndlg('Invalid entry','AARAE info','modal')
+    if length(signaldata.audio) <= handles.maxtimetodisplay*signaldata.fs
+        set(hObject,'String',num2str(length(signaldata.audio)/signaldata.fs))
+    else
+        set(hObject,'String',num2str(handles.maxtimetodisplay))
+    end
+    refreshplots(handles,'freq')
+    guidata(hObject,handles)
+else
+    refreshplots(handles,'freq')
+    guidata(hObject,handles)
+end
+
+
+% --- Executes during object creation, after setting all properties.
+function Tf_freq_CreateFcn(hObject, ~, ~)
+% hObject    handle to Tf_freq (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: edit controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+
+
+function To_time_Callback(hObject, ~, handles) %#ok : Executed when initial time input box changes above upper axes
+% hObject    handle to To_time (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: get(hObject,'String') returns contents of To_time as text
+%        str2double(get(hObject,'String')) returns contents of To_time as a double
+To_time = str2double(get(hObject,'String'));
+if isnan(To_time) || To_time >= str2double(get(handles.Tf_time,'String')) || To_time < 0
+    warndlg('Invalid entry','AARAE info','modal')
+    set(hObject,'String','0')
+    refreshplots(handles,'time')
+    guidata(hObject,handles)
+else
+    refreshplots(handles,'time')
+    guidata(hObject,handles)
+end
+
+
+% --- Executes during object creation, after setting all properties.
+function To_time_CreateFcn(hObject, ~, ~)
+% hObject    handle to To_time (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: edit controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+
+
+function Tf_time_Callback(hObject, ~, handles)
+% hObject    handle to Tf_time (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: get(hObject,'String') returns contents of Tf_time as text
+%        str2double(get(hObject,'String')) returns contents of Tf_time as a double
+Tf_time = str2double(get(hObject,'String'));
+selectedNodes = handles.mytree.getSelectedNodes;
+signaldata = selectedNodes(1).handle.UserData;
+if isnan(Tf_time) || Tf_time <= str2double(get(handles.To_time,'String')) || Tf_time > length(signaldata.audio)/signaldata.fs
+    warndlg('Invalid entry','AARAE info','modal')
+    if length(signaldata.audio) <= handles.maxtimetodisplay*signaldata.fs
+        set(hObject,'String',num2str(length(signaldata.audio)/signaldata.fs))
+    else
+        set(hObject,'String',num2str(handles.maxtimetodisplay))
+    end
+    refreshplots(handles,'time')
+    guidata(hObject,handles)
+else
+    refreshplots(handles,'time')
+    guidata(hObject,handles)
+end
+
+
+% --- Executes during object creation, after setting all properties.
+function Tf_time_CreateFcn(hObject, ~, ~)
+% hObject    handle to Tf_time (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: edit controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
