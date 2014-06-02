@@ -46,7 +46,7 @@ end
 
 
 % --- Executes just before genaudio is made visible.
-function genaudio_OpeningFcn(hObject, eventdata, handles, varargin)
+function genaudio_OpeningFcn(hObject, ~, handles, varargin)
 % This function has no output args, see OutputFcn.
 % hObject    handle to figure
 % eventdata  reserved - to be defined in a future version of MATLAB
@@ -80,11 +80,11 @@ guidata(hObject, handles);
 
 if dontOpen
    disp('-----------------------------------------------------');
-   disp('Improper input arguments. Pass a property value pair') 
-   disp('whose name is "changeme_main" and value is the handle')
-   disp('to the changeme_main figure, e.g:');
-   disp('   x = changeme_main()');
-   disp('   changeme_dialog(''changeme_main'', x)');
+   disp('This function is part of the AARAE framework, it is') 
+   disp('not a standalone function. To call this function,')
+   disp('click on the appropriate calling button on the main');
+   disp('Window. E.g.:');
+   disp('   New signal');
    disp('-----------------------------------------------------');
 else
    uiwait(hObject);
@@ -92,7 +92,7 @@ end
 
 
 % --- Outputs from this function are returned to the command line.
-function varargout = genaudio_OutputFcn(hObject, eventdata, handles) 
+function varargout = genaudio_OutputFcn(hObject, ~, handles) 
 % varargout  cell array for returning output args (see VARARGOUT);
 % hObject    handle to figure
 % eventdata  reserved - to be defined in a future version of MATLAB
@@ -111,7 +111,7 @@ delete(hObject);
 
 
 % --- Executes on button press in gen_btn.
-function gen_btn_Callback(hObject, eventdata, handles)
+function gen_btn_Callback(hObject, ~, handles) %#ok : Executed when Generate button is clicked
 % hObject    handle to gen_btn (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
@@ -127,7 +127,7 @@ if ~isempty(handles.signaldata)
     silence_check = get(handles.silence_chk','Value');
     if handles.cycles > 1 || silence_check == 1
         numchannels = size(handles.signaldata.audio,2);
-        levelrange = linspace(abs(str2num(get(handles.levelrange_IN,'String'))).*-1,0,handles.cycles);
+        levelrange = linspace(abs(str2double(get(handles.levelrange_IN,'String'))).*-1,0,handles.cycles);
         if silence_check == 1
             audio = [zeros(size(handles.signaldata.audio));zeros(handles.signaldata.fs,numchannels)];
         else
@@ -164,7 +164,7 @@ end
 guidata(hObject, handles);
 
 % --- Executes on button press in OK_Btn.
-function OK_Btn_Callback(hObject, eventdata, handles)
+function OK_Btn_Callback(hObject, ~, handles) %#ok : Executed when OK button is clicked
 % hObject    handle to OK_Btn (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
@@ -187,7 +187,7 @@ uiresume(handles.genaudio);
 
 
 % --- Executes on button press in Cancel_Btn.
-function Cancel_Btn_Callback(hObject, eventdata, handles)
+function Cancel_Btn_Callback(~, ~, handles) %#ok : Executed when Cancel button is clicked
 % hObject    handle to Cancel_Btn (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
@@ -195,7 +195,7 @@ uiresume(handles.genaudio);
 
 
 % --- Executes when user attempts to close genaudio.
-function genaudio_CloseRequestFcn(hObject, eventdata, handles)
+function genaudio_CloseRequestFcn(hObject, ~, ~) %#ok : Executed upon window close request
 % hObject    handle to genaudio (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
@@ -204,16 +204,16 @@ function genaudio_CloseRequestFcn(hObject, eventdata, handles)
 uiresume(hObject);
 
 
-function IN_cycles_Callback(hObject, eventdata, handles)
+function IN_cycles_Callback(hObject, ~, handles) %#ok : Executed when number of cycles input box changes
 % hObject    handle to IN_cycles (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
 % Get number of cycles input
-cycles = str2num(get(handles.IN_cycles, 'string'));
+cycles = str2double(get(handles.IN_cycles, 'string'));
 
 % Check user's input
-if (isempty(cycles)||cycles<=0)
+if (isnan(cycles)||cycles<=0)
     set(hObject,'String',num2str(handles.cycles));
     warndlg('All inputs MUST be real positive numbers!');
 else
@@ -230,7 +230,7 @@ guidata(hObject, handles);
 
 
 % --- Executes during object creation, after setting all properties.
-function IN_cycles_CreateFcn(hObject, eventdata, handles)
+function IN_cycles_CreateFcn(hObject, ~, ~) %#ok : Number of cycles input box creation
 % hObject    handle to IN_cycles (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    empty - handles not created until after all CreateFcns called
@@ -243,7 +243,7 @@ end
 
 
 % --- Executes on selection change in signalcat_box.
-function signalcat_box_Callback(hObject, eventdata, handles)
+function signalcat_box_Callback(hObject, ~, handles) %#ok : Executed when category box selection changes
 % hObject    handle to signalcat_box (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
@@ -265,7 +265,7 @@ end
 guidata(hObject,handles);
 
 % --- Executes during object creation, after setting all properties.
-function signalcat_box_CreateFcn(hObject, eventdata, handles)
+function signalcat_box_CreateFcn(hObject, ~, handles) %#ok : Signal generator categories selection box creation
 % hObject    handle to signalcat_box (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    empty - handles not created until after all CreateFcns called
@@ -285,7 +285,7 @@ guidata(hObject,handles)
 
 
 % --- Executes on selection change in signal_box.
-function signal_box_Callback(hObject, eventdata, handles)
+function signal_box_Callback(hObject, ~, handles) %#ok : Executed when selection changes in the signal selection box
 % hObject    handle to signal_box (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
@@ -309,7 +309,7 @@ end
 guidata(hObject,handles);
 
 % --- Executes during object creation, after setting all properties.
-function signal_box_CreateFcn(hObject, eventdata, handles)
+function signal_box_CreateFcn(hObject, ~, ~) %#ok : Signal selection box creation
 % hObject    handle to signal_box (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    empty - handles not created until after all CreateFcns called
@@ -322,7 +322,7 @@ end
 
 
 % --- Executes on selection change in device_popup.
-function device_popup_Callback(hObject, eventdata, handles)
+function device_popup_Callback(hObject, ~, handles) %#ok : Executed when output device selection changes
 % hObject    handle to device_popup (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
@@ -335,7 +335,7 @@ handles.odeviceid = handles.odeviceidlist(selection);
 guidata(hObject,handles);
 
 % --- Executes during object creation, after setting all properties.
-function device_popup_CreateFcn(hObject, eventdata, handles)
+function device_popup_CreateFcn(hObject, ~, handles) %#ok : Output device selection menu creation
 % hObject    handle to device_popup (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    empty - handles not created until after all CreateFcns called
@@ -355,7 +355,7 @@ guidata(hObject,handles);
 
 
 % --- Executes on button press in play_btn.
-function play_btn_Callback(hObject, eventdata, handles)
+function play_btn_Callback(hObject, ~, handles) %#ok : Executed when play button is clicked
 % hObject    handle to play_btn (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
@@ -371,7 +371,7 @@ else
     fs = handles.signaldata.fs;
     nbits = 16;
     doesSupport = audiodevinfo(0, handles.odeviceid, fs, nbits, size(testsignal,2));
-    if doesSupport && ndims(testsignal) < 3
+    if doesSupport && ismatrix(testsignal)
         % Play signal
         handles.player = audioplayer(testsignal,fs,nbits,handles.odeviceid);
         play(handles.player);
@@ -383,7 +383,7 @@ end
 guidata(hObject, handles);
 
 % --- Executes on button press in stop_btn.
-function stop_btn_Callback(hObject, eventdata, handles)
+function stop_btn_Callback(hObject, ~, handles) %#ok : Executed when stop button in clicked
 % hObject    handle to stop_btn (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
@@ -395,7 +395,7 @@ guidata(hObject,handles);
 
 
 
-function levelrange_IN_Callback(hObject, eventdata, handles)
+function levelrange_IN_Callback(~, ~, ~) %#ok : Executed when level range input box changes
 % hObject    handle to levelrange_IN (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
@@ -405,7 +405,7 @@ function levelrange_IN_Callback(hObject, eventdata, handles)
 
 
 % --- Executes during object creation, after setting all properties.
-function levelrange_IN_CreateFcn(hObject, eventdata, handles)
+function levelrange_IN_CreateFcn(hObject, ~, ~) %#ok : Level range input box creation
 % hObject    handle to levelrange_IN (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    empty - handles not created until after all CreateFcns called
@@ -418,7 +418,7 @@ end
 
 
 % --- Executes on button press in silence_chk.
-function silence_chk_Callback(hObject, eventdata, handles)
+function silence_chk_Callback(~, ~, ~) %#ok : Executed when add silence cycle checkbox changes
 % hObject    handle to silence_chk (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)

@@ -46,7 +46,7 @@ end
 
 
 % --- Executes just before window_signal is made visible.
-function window_signal_OpeningFcn(hObject, eventdata, handles, varargin)
+function window_signal_OpeningFcn(hObject, ~, handles, varargin)
 % This function has no output args, see OutputFcn.
 % hObject    handle to figure
 % eventdata  reserved - to be defined in a future version of MATLAB
@@ -71,13 +71,13 @@ else
 end
 
 if dontOpen
-    disp('-----------------------------------------------------');
-    disp('Improper input arguments. Pass a property value pair') 
-    disp('whose name is "changeme_main" and value is the handle')
-    disp('to the changeme_main figure, e.g:');
-    disp('   x = changeme_main()');
-    disp('   changeme_dialog(''changeme_main'', x)');
-    disp('-----------------------------------------------------');
+   disp('-----------------------------------------------------');
+   disp('This function is part of the AARAE framework, it is') 
+   disp('not a standalone function. To call this function,')
+   disp('click on the appropriate calling button on the main');
+   disp('Window. E.g.:');
+   disp('   Convolve with audio2');
+   disp('-----------------------------------------------------');
 else
     % Find the IR signal being sent to window
     impulse = find(strcmp(varargin, 'IR'));
@@ -113,7 +113,7 @@ end
 
 
 % --- Outputs from this function are returned to the command line.
-function varargout = window_signal_OutputFcn(hObject, eventdata, handles) 
+function varargout = window_signal_OutputFcn(hObject, ~, handles) 
 % varargout  cell array for returning output args (see VARARGOUT);
 % hObject    handle to figure
 % eventdata  reserved - to be defined in a future version of MATLAB
@@ -126,7 +126,7 @@ delete(hObject);
 
 
 % --- Executes on button press in done_btn.
-function done_btn_Callback(hObject, eventdata, handles)
+function done_btn_Callback(~, ~, handles) %#ok : Executed when Done button is clicked
 % hObject    handle to done_btn (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
@@ -134,7 +134,7 @@ uiresume(handles.window_signal);
 
 
 % --- Executes when user attempts to close window_signal.
-function window_signal_CloseRequestFcn(hObject, eventdata, handles)
+function window_signal_CloseRequestFcn(hObject, ~, ~) %#ok : Executed upon close request function on window
 % hObject    handle to window_signal (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
@@ -143,7 +143,7 @@ function window_signal_CloseRequestFcn(hObject, eventdata, handles)
 uiresume(hObject);
 
 
-function trimlow_Callback(hObject, eventdata, handles)
+function trimlow_Callback(hObject, ~, handles) %#ok : Executed when lower limit input box changes
 % hObject    handle to trimlow (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
@@ -151,15 +151,15 @@ function trimlow_Callback(hObject, eventdata, handles)
 % Hints: get(hObject,'String') returns contents of trimlow as text
 %        str2double(get(hObject,'String')) returns contents of trimlow as a double
 
-trimsamp_low = round(str2num(get(hObject,'String')));
+trimsamp_low = round(str2double(get(hObject,'String')));
 % Check user's input
-if isempty(trimsamp_low) || trimsamp_low <= 0
+if isnan(trimsamp_low) || trimsamp_low <= 0
     set(hObject,'String',num2str(handles.slow))
     warndlg('Invalid lower limit!','AARAE info');
 else
     delete(handles.win)
     handles = rmfield(handles,'win');
-    trimsamp_high = round(str2num(get(handles.trimhigh,'String')));
+    trimsamp_high = round(str2double(get(handles.trimhigh,'String')));
     handles.slow = trimsamp_low;
     t = linspace(0,size(handles.IR,1),size(handles.IR,1));
     B=interp1([0 trimsamp_low trimsamp_low+1 trimsamp_high-1 trimsamp_high t(end)],[0 0 max(handles.IR(:)) max(handles.IR(:)) 0 0],t,'linear');
@@ -174,7 +174,7 @@ end
 guidata(hObject, handles);
 
 % --- Executes during object creation, after setting all properties.
-function trimlow_CreateFcn(hObject, eventdata, handles)
+function trimlow_CreateFcn(hObject, ~, ~) %#ok : Lower limit input box creation
 % hObject    handle to trimlow (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    empty - handles not created until after all CreateFcns called
@@ -187,7 +187,7 @@ end
 
 
 
-function trimhigh_Callback(hObject, eventdata, handles)
+function trimhigh_Callback(hObject, ~, handles) %#ok : Executed when higher limit input box changes
 % hObject    handle to trimhigh (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
@@ -195,15 +195,15 @@ function trimhigh_Callback(hObject, eventdata, handles)
 % Hints: get(hObject,'String') returns contents of trimhigh as text
 %        str2double(get(hObject,'String')) returns contents of trimhigh as a double
 
-trimsamp_high = round(str2num(get(hObject,'String')));
+trimsamp_high = round(str2double(get(hObject,'String')));
 % Check user's input
-if isempty(trimsamp_high) || trimsamp_high >= length(handles.IR)
+if isnan(trimsamp_high) || trimsamp_high >= length(handles.IR)
     set(hObject,'String',num2str(handles.shigh))
     warndlg('Invalid upper limit!','AARAE info');
 else
     delete(handles.win)
     handles = rmfield(handles,'win');
-    trimsamp_low = round(str2num(get(handles.trimlow,'String')));
+    trimsamp_low = round(str2double(get(handles.trimlow,'String')));
     handles.shigh = trimsamp_high;
     t = linspace(0,size(handles.IR,1),size(handles.IR,1));
     B=interp1([0 trimsamp_low trimsamp_low+1 trimsamp_high-1 trimsamp_high t(end)],[0 0 max(handles.IR(:)) max(handles.IR(:)) 0 0],t,'linear');
@@ -218,7 +218,7 @@ end
 guidata(hObject, handles);
 
 % --- Executes during object creation, after setting all properties.
-function trimhigh_CreateFcn(hObject, eventdata, handles)
+function trimhigh_CreateFcn(hObject, ~, ~) %#ok : Higher limit input box creation
 % hObject    handle to trimhigh (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    empty - handles not created until after all CreateFcns called
