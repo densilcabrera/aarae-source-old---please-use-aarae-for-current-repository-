@@ -3,10 +3,6 @@ function refreshplots(handles,axes)
 selectedNodes = handles.mytree.getSelectedNodes;
 signaldata = selectedNodes(1).handle.UserData;
 %if isa(signaldata.audio,'memmapfile'), signaldata.audio = signaldata.audio.Data; end
-plottype = get(handles.(genvarname([axes '_popup'])),'Value');
-fftlength = length(signaldata.audio);
-t = (linspace(0,length(signaldata.audio),length(signaldata.audio))./signaldata.fs).';
-f = (signaldata.fs .* ((1:fftlength)-1) ./ fftlength).';
 if ~ismatrix(signaldata.audio)
     linea(:,:) = signaldata.audio(:,str2double(get(handles.IN_nchannel,'String')),:);
 else
@@ -18,6 +14,23 @@ if isfield(signaldata,'cal')
         linea = linea.*repmat(10.^(signaldata.cal./20),length(linea),1);
     end
 end
+plottype = get(handles.(genvarname([axes '_popup'])),'Value');
+%if plottype == 4 || plottype == 5 || plottype > 7
+    set(handles.(genvarname(['To_' axes])),'Visible','on')
+    To_s = str2double(get(handles.(genvarname(['To_' axes])),'String'));
+    To = round(To_s*signaldata.fs)+1;
+    if length(signaldata.audio) <= 60*signaldata.fs
+        set(handles.(genvarname(['Tf_' axes])),'Visible','on')
+    else
+        set(handles.(genvarname(['Tf_' axes])),'Visible','on')
+    end
+    Tf_s = str2double(get(handles.(genvarname(['Tf_' axes])),'String'));
+    Tf = round(Tf_s*signaldata.fs);
+    linea = linea(To:Tf,:);
+%else
+%    set([handles.(genvarname(['To_' axes])),handles.(genvarname(['Tf_' axes]))],'Visible','off')
+%end
+fftlength = length(linea);
 set(handles.(genvarname(['smooth' axes '_popup'])),'Visible','off');
 if plottype == 1, linea = real(linea); end
 if plottype == 2, linea = linea.^2; end
@@ -45,6 +58,8 @@ if strcmp(get(handles.(genvarname(['smooth' axes '_popup'])),'Visible'),'on')
     if smoothfactor == 6, octsmooth = 24; end
     if smoothfactor ~= 1, linea = octavesmoothing(linea, octsmooth, signaldata.fs); end
 end
+t = (linspace(To_s,Tf_s,length(linea))).';
+f = (signaldata.fs .* ((1:fftlength)-1) ./ fftlength).';
 if plottype <= 7
     if ~isreal(signaldata.audio)
         set(handles.(genvarname(['complex' axes])),'Visible','on');
@@ -57,7 +72,8 @@ if plottype <= 7
     t = t(:,1);
     plot(handles.(genvarname(['axes' axes])),t,real(linea)); % Plot signal in time domain
     xlabel(handles.(genvarname(['axes' axes])),'Time [s]');
-    xlim(handles.(genvarname(['axes' axes])),[0 length(signaldata.audio)/signaldata.fs])
+    %xlim(handles.(genvarname(['axes' axes])),[0 length(signaldata.audio)/signaldata.fs])
+    xlim(handles.(genvarname(['axes' axes])),[To_s Tf_s])
     set(handles.(genvarname(['axes' axes])),'XScale','linear','XTickLabelMode','auto')
     set(handles.(genvarname(['axes' axes])),'XTickLabel',num2str(get(handles.(genvarname(['axes' axes])),'XTick').'))
 end

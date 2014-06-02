@@ -43,6 +43,14 @@ function mySelectFcn(tree, ~)
             set(mainHandles.axesdata,'Visible','off');
             set(mainHandles.time_popup,'Visible','on');
             set(mainHandles.freq_popup,'Visible','on');
+            set([mainHandles.text16,mainHandles.text17,mainHandles.text18,mainHandles.text19,mainHandles.text20,mainHandles.text21],'Visible','on')
+            set([mainHandles.To_time,mainHandles.To_freq],'String','0')
+            if length(audiodata.audio) <= mainHandles.maxtimetodisplay*audiodata.fs
+                set([mainHandles.Tf_time,mainHandles.Tf_freq],'String',num2str(length(audiodata.audio)/audiodata.fs))
+            else
+                set([mainHandles.Tf_time,mainHandles.Tf_freq],'String',num2str(mainHandles.maxtimetodisplay))
+            end
+            set([mainHandles.text20,mainHandles.text21],'String',[num2str(length(audiodata.audio)/audiodata.fs) ' s'])
             %set(mainHandles.smoothtime_popup,'Visible','on');
             %set(mainHandles.smoothfreq_popup,'Visible','on');
             %set(mainHandles.logtime_chk,'Visible','on');
@@ -82,9 +90,10 @@ function mySelectFcn(tree, ~)
             pause(0.001)
         elseif ~isempty(audiodata) && ~isfield(audiodata,'audio')% If there's data saved in the leaf but not audio...
             plot(mainHandles.axestime,0,0)
-            semilogx(mainHandles.axesfreq,0,0)
+            plot(mainHandles.axesfreq,0,0)
             set(mainHandles.axestime,'Visible','off');
             set(mainHandles.axesfreq,'Visible','off');
+            set([mainHandles.text16,mainHandles.text17,mainHandles.text18,mainHandles.text19,mainHandles.text20,mainHandles.text21],'Visible','off')
             set(mainHandles.axesdata,'Visible','on');
             set(mainHandles.audiodatatext,'String',[]);
             datatext = evalc('audiodata');
@@ -128,7 +137,7 @@ function mySelectFcn(tree, ~)
             set(mainHandles.IR_btn,'Visible','off');
             set(mainHandles.tools_panel,'Visible','on');
             set([mainHandles.edit_btn mainHandles.cal_btn],'Enable','off')
-            set([mainHandles.time_popup mainHandles.freq_popup mainHandles.smoothtime_popup mainHandles.smoothfreq_popup],'Visible','off');
+            set([mainHandles.time_popup,mainHandles.freq_popup,mainHandles.smoothtime_popup,mainHandles.smoothfreq_popup,mainHandles.To_freq,mainHandles.Tf_freq,mainHandles.To_time,mainHandles.Tf_time],'Visible','off');
             set(mainHandles.logtime_chk,'Visible','off');
             set(mainHandles.logfreq_chk,'Visible','off');
             set(mainHandles.process_panel,'Visible','off');
@@ -148,6 +157,7 @@ function mySelectFcn(tree, ~)
             set(mainHandles.axestime,'Visible','off');
             set(mainHandles.axesfreq,'Visible','off');
             set(mainHandles.axesdata,'Visible','off');
+            set([mainHandles.text16,mainHandles.text17,mainHandles.text18,mainHandles.text19,mainHandles.text20,mainHandles.text21],'Visible','off')
             set(mainHandles.audiodatatext,'String',[]);
             set(mainHandles.datatext,'Visible','off');
             set(mainHandles.datatext,'String',[]);
@@ -159,7 +169,7 @@ function mySelectFcn(tree, ~)
             set(mainHandles.analysis_panel,'Visible','off');
             set(mainHandles.playback_panel,'Visible','off');
             set(mainHandles.channel_panel,'Visible','off');
-            set([mainHandles.time_popup mainHandles.freq_popup mainHandles.smoothtime_popup mainHandles.smoothfreq_popup],'Visible','off');
+            set([mainHandles.time_popup,mainHandles.freq_popup,mainHandles.smoothtime_popup,mainHandles.smoothfreq_popup,mainHandles.To_freq,mainHandles.Tf_freq,mainHandles.To_time,mainHandles.Tf_time],'Visible','off');
             set(mainHandles.logtime_chk,'Visible','off');
             set(mainHandles.logfreq_chk,'Visible','off');
             set([mainHandles.complextime mainHandles.complexfreq],'Visible','off')
