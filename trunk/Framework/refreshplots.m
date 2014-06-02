@@ -18,14 +18,15 @@ plottype = get(handles.(genvarname([axes '_popup'])),'Value');
 %if plottype == 4 || plottype == 5 || plottype > 7
     set(handles.(genvarname(['To_' axes])),'Visible','on')
     To_s = str2double(get(handles.(genvarname(['To_' axes])),'String'));
-    To = round(To_s*signaldata.fs)+1;
+    To = floor(To_s*signaldata.fs)+1;
     if length(signaldata.audio) <= 60*signaldata.fs
         set(handles.(genvarname(['Tf_' axes])),'Visible','on')
     else
         set(handles.(genvarname(['Tf_' axes])),'Visible','on')
     end
     Tf_s = str2double(get(handles.(genvarname(['Tf_' axes])),'String'));
-    Tf = round(Tf_s*signaldata.fs);
+    Tf = floor(Tf_s*signaldata.fs);
+    if Tf > length(linea), Tf = length(linea); end
     linea = linea(To:Tf,:);
 %else
 %    set([handles.(genvarname(['To_' axes])),handles.(genvarname(['Tf_' axes]))],'Visible','off')
