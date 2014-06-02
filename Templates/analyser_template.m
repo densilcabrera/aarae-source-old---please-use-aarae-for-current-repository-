@@ -1,4 +1,4 @@
-function [OUT varargout] = analyser_template(IN, input_1, input_2)
+function [OUT, varargout] = analyser_template(IN, input_1, input_2)
 % This function can be used as a template for adapting your audio
 % analysing functions to work in the AARAE environment.
 %
@@ -16,10 +16,11 @@ function [OUT varargout] = analyser_template(IN, input_1, input_2)
 % user hoovers the mouse over the box where your function is displayed in
 % AARAE
 %
+
+% *************************************************************************
 % The next few lines show an example on how you may use MATLAB's built-in
 % inputdlg function to allow the user to type in the input arguments your
 % function requires to work.
-
 if nargin ==1 % If the function is called within the AARAE environment it
               % will have at least one input parameter which is the audio
               % data structure that your function will process, therefore
@@ -40,6 +41,8 @@ if nargin ==1 % If the function is called within the AARAE environment it
 
     param = str2num(char(param)); % Since inputs are usually numbers it's a
                                   % good idea to turn strings into numbers.
+                                  % Note that str2double does not work
+                                  % here.
 
     if length(param) < 2, param = []; end % You should check that the user 
                                           % has input all the required
@@ -52,33 +55,73 @@ if nargin ==1 % If the function is called within the AARAE environment it
 else
     param = [];
 end
+
+
+% *************************************************************************
 if isstruct(IN) % You should check that the function is being called within
                 % the AARAE environment, if so, you can extract the
                 % information you need to run your processor.
     audio = IN.audio; % Extract the audio data
     fs = IN.fs;       % Extract the sampling frequency of the audio data
     
+    
+    % The following field values might not be needed for your anlyser, but
+    % in some cases they are (delete if not needed). Bear in mind that
+    % these fields might not be present in the input structure, and so a
+    % way of dealing with missing field values might be needed. Options
+    % include: using default values, asking for user input via a dialog
+    % box, analysing the sound to derive values (probably impractical), and
+    % exiting from the function
+    if isfield(IN,'cal') % Get the calibration offset if it exists
+        cal = IN.cal;
+    else
+        % Here is an example of how to exit the function with a warning
+        % message
+        h=warndlg('Calibration data missing - please calibrate prior to calling this function.','AARAE info','modal');
+        uiwait(h)
+        OUT = []; % you need to return an empty output
+        return % get out of here!
+    end
+    
+    % chanID is a cell array of strings describing each channel
+    if isfield(IN,'chanID') % Get the channel ID if it exists
+        chanID = IN.chanID;
+    end
+    
+    % bandID is a vector, usually listing the centre frequencies of the
+    % bands
+    if isfield(IN,'bandID') % Get the band ID if it exists
+        bandID = IN.bandID;
+    else
+        % asssign ordinal band numbers if bandID does not exist (as an
+        % example of how to deal with missing data)
+        bandID = 1:size(audio,3);
+    end
+    
+    % *********************************************************************
     % Sometimes you may wish to get another audio input
     % The following uses an in-built AARAE function 'choose_audio' to do
     % this for you. If you wish to do the same with this function outside
     % the AARAE environment (as a stand-alone), then it might be easiest to
     % have the additional audio as an input argument to the function.
     if false % change to true if you wish to enable the following
-        
         % Use a menu & dialog box to select a wav file or audio within AARAE 
         selection = choose_audio; % call AARAE's choose_audio function
         if ~isempty(selection)
             auxiliary_audio = selection.audio; % additional audio data
             fs2 = selection.fs; % sampling rate
-            
             if ~(fs2 == fs)
                 % match sampling rates if desired
-                auxiliary_audio = resample(auxiliary_audio,fs,fs2);
+                gcd_fs = gcd(fs,fs2); % greatest common denominator
+                auxiliary_audio = resample(auxiliary_audio,fs/gcd_fs,fs2/gcd_fs);
+                % note that you can also improve the accuracy of resampling
+                % by specifying the filter characteristics (see Matlab's
+                % help on resample)
             end
             [len2, chans2, bands2] = size(auxiliary_audio); % new wave dimensions
         end
     end
-    
+    % *********************************************************************
     
     
 elseif ~isempty(param) || nargin > 1
@@ -89,11 +132,17 @@ elseif ~isempty(param) || nargin > 1
                        % to process.
     audio = IN;
     fs = input_1;
+    cal = input_2;
 end
+% *************************************************************************
+
+
+
+
 
 % To make your function work as standalone you can check that the user has
 % either entered at least an audio variable and it's sampling frequency.
-if ~isempty(audio) && ~isempty(fs)
+if ~isempty(audio) && ~isempty(fs) && ~isempty(cal)
     % If the requirements are met, your code can be executed!
     % You may copy and paste some code you've written or write something 
     % new in the lines below, such as:
@@ -102,6 +151,34 @@ if ~isempty(audio) && ~isempty(fs)
     duration = length(audio)/fs;
     maximum = max(audio);
     minimum = min(audio);
+    
+    % AARAE has many functions in it, some of which may be particularly
+    % useful when writing a processor or analyser. Here are a few examples
+    % of potentially useful AARAE functions:
+    
+    % cal_reset_aarae can be used to simplify the process of applying the
+    % calibration offset to your audio. In the following case, gain is
+    % applied to the audio waveform such that the cal value is changed to 0
+    % dB
+    audio = cal_reset_aarae(audio,0,cal);
+    
+    % autocropstart_aarae is especially useful for impulse response
+    % analysis, when data prior to the impulse response start needs to be
+    % cropped (deleted).
+    audio = autocropstart_aarae(audio,-20,2);
+    
+    % Aweight, along with similar functions in the Processors>Filters 
+    % folder, provides an easy way to implement a weighting filter.
+    audio = Aweight(audio,fs);
+    
+    % octbandfilter_viaFFT is a versatile octave band filterbank. In the
+    % example below only the first three input arguments are used, but more
+    % can be used if there are particular requirements for the octave band
+    % filters' performance. There are other similar functions in the
+    % Processors>Filterbanks folder.
+    [audio,bandID] = octbandfilter_viaFFT(audio,fs,...
+        [125,250,500,1000,2000,4000]);
+    
     % You may include tables to display your results using AARAE's
     % disptables.m function, this is just an easy way to display the
     % built-in uitable function in MATLAB
