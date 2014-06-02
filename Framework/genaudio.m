@@ -128,18 +128,20 @@ if ~isempty(handles.signaldata)
     if handles.cycles > 1 || silence_check == 1
         numchannels = size(handles.signaldata.audio,2);
         levelrange = linspace(abs(str2double(get(handles.levelrange_IN,'String'))).*-1,0,handles.cycles);
-        if silence_check == 1
-            audio = [zeros(size(handles.signaldata.audio));zeros(handles.signaldata.fs,numchannels)];
-        else
-            audio = [];
-        end
         cycles = handles.cycles;
+        scdur = length(handles.signaldata.audio) + handles.signaldata.fs;
+        handles.signaldata.properties.startflag = ((0:cycles-1)*scdur)+1;
+        audio = zeros(scdur*cycles,numchannels);
         for i = 1:cycles
-            chunk = [handles.signaldata.audio;zeros(handles.signaldata.fs,size(handles.signaldata.audio,2))];
-            audio = [audio;chunk.*10.^(levelrange(i)/20)];
+            chunk = [handles.signaldata.audio;zeros(handles.signaldata.fs,numchannels)];
+            audio(handles.signaldata.properties.startflag(i):handles.signaldata.properties.startflag(i)+length(chunk)-1,:) = chunk.*10.^(levelrange(i)/20);
         end
-        if silence_check == 1, cycles = cycles + 1; levelrange = [-Inf levelrange]; end
-        handles.signaldata.properties.startflag = ((0:cycles-1)*length(chunk))+1;
+        if silence_check == 1
+            cycles = cycles + 1;
+            levelrange = [-Inf levelrange];
+            audio = [zeros(scdur,numchannels);audio];
+            handles.signaldata.properties.startflag = ((0:cycles-1)*scdur)+1;
+        end
         handles.signaldata.audio = audio;
         handles.signaldata.properties.relgain = levelrange(1,:);
     end
