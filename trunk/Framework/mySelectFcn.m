@@ -9,9 +9,9 @@ function mySelectFcn(tree, ~)
     mainHandles = guidata(aarae_fig);
     selectedNodes = tree.getSelectedNodes; % Get selected leaf
     if length(selectedNodes) > 1
-        set(mainHandles.compare_btn,'Visible','on')
+        set(mainHandles.compare_btn,'Enable','on')
     else
-        set(mainHandles.compare_btn,'Visible','off')
+        set(mainHandles.compare_btn,'Enable','on')
     end
     if ~isempty(selectedNodes)
         % Call the 'desktop'
@@ -33,8 +33,7 @@ function mySelectFcn(tree, ~)
             set(mainHandles.datatext,'Visible','off');
             set(mainHandles.datatext,'String',[]);
             set(mainHandles.data_panel1,'Visible','off');
-            set(mainHandles.data_panel2,'Visible','off');
-            %set(mainHandles.IR_btn,'Visible','off'); 
+            set(mainHandles.data_panel2,'Visible','off'); 
             set(mainHandles.tools_panel,'Visible','on');
             if ~strcmp(audiodata.datatype,'syscal')
                 set([mainHandles.edit_btn mainHandles.cal_btn],'Enable','on');
@@ -94,9 +93,9 @@ function mySelectFcn(tree, ~)
             pause(0.001)
             refreshplots(mainHandles,'freq')
             if isfield(audiodata,'audio2') && ~isempty(audiodata.audio2) && ismatrix(audiodata.audio)%(strcmp(audiodata.datatype,'measurements') || strcmp(audiodata.datatype,'testsignals') || strcmp(audiodata.datatype,'processed'))
-                set(mainHandles.IR_btn,'Visible','on');
+                set(mainHandles.IR_btn,'Enable','on');
             else
-                set(mainHandles.IR_btn,'Visible','off');% Display process IR button if selection is a measurement based on a sine sweep
+                set(mainHandles.IR_btn,'Enable','off');% Display process IR button if selection is a measurement based on a sine sweep
             end
             pause(0.001)
         elseif ~isempty(audiodata) && ~isfield(audiodata,'audio')% If there's data saved in the leaf but not audio...
@@ -145,7 +144,6 @@ function mySelectFcn(tree, ~)
                 set(mainHandles.data_panel2,'Visible','off');
             end
             pause(0.001)
-            set(mainHandles.IR_btn,'Visible','off');
             set(mainHandles.tools_panel,'Visible','on');
             set([mainHandles.edit_btn mainHandles.cal_btn],'Enable','off')
             set([mainHandles.time_popup,mainHandles.freq_popup,mainHandles.smoothtime_popup,mainHandles.smoothfreq_popup,mainHandles.To_freq,mainHandles.Tf_freq,mainHandles.To_time,mainHandles.Tf_time],'Visible','off');
@@ -174,7 +172,6 @@ function mySelectFcn(tree, ~)
             set(mainHandles.datatext,'String',[]);
             set(mainHandles.data_panel1,'Visible','off');
             set(mainHandles.data_panel2,'Visible','off');
-            set(mainHandles.IR_btn,'Visible','off');
             set(mainHandles.tools_panel,'Visible','off');
             set(mainHandles.process_panel,'Visible','off');
             set(mainHandles.analysis_panel,'Visible','off');

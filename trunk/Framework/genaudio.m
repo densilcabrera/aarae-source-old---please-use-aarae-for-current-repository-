@@ -381,7 +381,7 @@ else
         % Play signal
         handles.player = audioplayer(testsignal,fs,nbits,handles.odeviceid);
         play(handles.player);
-        set(handles.stop_btn,'Visible','on');
+        set(handles.stop_btn,'Enable','on')
     else
         warndlg('Device not supported for playback!');
     end

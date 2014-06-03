@@ -23,7 +23,7 @@ function varargout = aarae(varargin)
 
 % Edit the above text to modify the response to help aarae
 
-% Last Modified by GUIDE v2.5 02-Jun-2014 16:31:43
+% Last Modified by GUIDE v2.5 03-Jun-2014 16:59:16
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -71,28 +71,23 @@ setappdata(hMain,'audio_recorder_fs',48000)
 setappdata(hMain,'audio_recorder_nbits',16)
 setappdata(hMain,'audio_recorder_qdur',1)
 setappdata(hMain,'audio_recorder_buffer',1024)
-handles.maxtimetodisplay = 10;
 
-% In case there are multiple main windows (currently unused until line 81)
-mainGuiInput = find(strcmp(varargin, 'data'));
-if isempty(mainGuiInput) == 0
-    data = varargin{mainGuiInput+1};
-    if isempty(data.testsignal) == 0
-        hMain = getappdata(0,'hMain');
-        setappdata(hMain,'testsignal',data.testsignal);
-        setappdata(hMain,'fs',data.fs);
-        setappdata(hMain,'nbits',data.nbits);
-        setappdata(hMain,'datatype',data.datatype);
-        %set(handles.datatypetext,'String',data.datatype);
-        t = linspace(0,length(data.testsignal),length(data.testsignal))./data.fs;
-        plot(t,data.testsignal);
-    end
+% Read preferences file
+preferences = [];
+if ~isempty(dir([cd '/Preferences.mat']))
+    load([cd '/Preferences.mat']);
+    handles.maxtimetodisplay = preferences.maxtimetodisplay;
+else
+    preferences.maxtimetodisplay = 10;
+    handles.maxtimetodisplay = 10;
+    save([cd '/Preferences.mat'],'preferences')
 end
+
 if ~isdir([cd '/Log']), mkdir([cd '/Log']); end
 if ~isdir([cd '/Utilities/Temp']), mkdir([cd '/Utilities/Temp']); end
 % Add folder paths for filter functions and signal analyzers
 addpath(genpath(cd));
-handles.player = [];
+handles.player = audioplayer(0,48000);
 [handles.reference_audio.audio, handles.reference_audio.fs] = audioread('REFERENCE_AUDIO.wav');
 
 % Setup for Densil's tree
@@ -694,7 +689,6 @@ else
         % Play signal
         handles.player = audioplayer(testsignal,fs,nbits,handles.odeviceid);
         play(handles.player);
-        set(handles.stop_btn,'Visible','on');
         selectedNodes = handles.mytree.getSelectedNodes;
         contents = cellstr(get(handles.device_popup,'String'));
         fprintf(handles.fid, [' ' datestr(now,16) ' - Played "' char(selectedNodes(1).getName) '" using ' contents{get(hObject,'Value')} '\n']);
@@ -1909,7 +1903,6 @@ else
         % Play signal
         handles.player = audioplayer(testsignal,fs,nbits,handles.odeviceid);
         play(handles.player);
-        set(handles.stop_btn,'Visible','on');
         selectedNodes = handles.mytree.getSelectedNodes;
         contents = cellstr(get(handles.device_popup,'String'));
         fprintf(handles.fid, [' ' datestr(now,16) ' - Played "' char(selectedNodes(1).getName) '" using ' contents{get(hObject,'Value')} '\n']);
@@ -1951,7 +1944,6 @@ else
         % Play signal
         handles.player = audioplayer(testsignal,fs,nbits,handles.odeviceid);
         play(handles.player);
-        set(handles.stop_btn,'Visible','on');
         selectedNodes = handles.mytree.getSelectedNodes;
         contents = cellstr(get(handles.device_popup,'String'));
         fprintf(handles.fid, [' ' datestr(now,16) ' - Played "' char(selectedNodes(1).getName) '" using ' contents{get(hObject,'Value')} '\n']);
@@ -1996,7 +1988,6 @@ else
         % Play signal
         handles.player = audioplayer(testsignal,fs,nbits,handles.odeviceid);
         play(handles.player);
-        set(handles.stop_btn,'Visible','on');
         selectedNodes = handles.mytree.getSelectedNodes;
         contents = cellstr(get(handles.device_popup,'String'));
         fprintf(handles.fid, [' ' datestr(now,16) ' - Played "' char(selectedNodes(1).getName) '" using ' contents{get(hObject,'Value')} '\n']);
@@ -2037,7 +2028,6 @@ else
         % Play signal
         handles.player = audioplayer(testsignal,fs,nbits,handles.odeviceid);
         play(handles.player);
-        set(handles.stop_btn,'Visible','on');
         selectedNodes = handles.mytree.getSelectedNodes;
         contents = cellstr(get(handles.device_popup,'String'));
         fprintf(handles.fid, [' ' datestr(now,16) ' - Played "' char(selectedNodes(1).getName) '" using ' contents{get(hObject,'Value')} '\n']);
@@ -2213,82 +2203,106 @@ for i = 1:length(selectedNodes)
     line = [];
     axes = 'time';
     signaldata = selectedNodes(i).handle.UserData;
-    plottype = get(handles.(genvarname([axes '_popup'])),'Value');
-    t = linspace(0,length(signaldata.audio),length(signaldata.audio))./signaldata.fs;
-    f = signaldata.fs .* ((1:length(signaldata.audio))-1) ./ length(signaldata.audio);
-    if ~ismatrix(signaldata.audio)
-        if ndims(signaldata.audio) == 3, cmap = colormap(hsv(size(signaldata.audio,3))); end
-        if ndims(signaldata.audio) >= 4, cmap = colormap(copper(size(signaldata.audio,4))); end
-        try 
-            line(:,:) = signaldata.audio(:,str2double(get(handles.IN_nchannel,'String')),:);
-        catch
-            line = zeros(size(t));
-        end
-    else
-        cmap = colormap(lines(size(signaldata.audio,2)));
-        line = signaldata.audio;
-    end
-    if plottype == 1, line = real(line); end
-    if plottype == 2, line = line.^2; end
-    if plottype == 3, line = 10.*log10(line.^2); end
-    if plottype == 4, line = abs(hilbert(real(line))); end
-    if plottype == 5, line = medfilt1(diff([angle(hilbert(real(line))); zeros(1,size(line,2))])*signaldata.fs/2/pi, 5); end
-    if plottype == 6, line = abs(line); end
-    if plottype == 7, line = imag(line); end
-    if plottype == 8, line = 10*log10(abs(fft(line)).^2); end %freq
-    if plottype == 9, line = abs(fft(line)).^2; end
-    if plottype == 10, line = abs(fft(line)); end
-    if plottype == 11, line = real(fft(line)); end
-    if plottype == 12, line = imag(fft(line)); end
-    if plottype == 13, line = angle(fft(line)); end
-    if plottype == 14, line = unwrap(angle(fft(line))); end
-    if plottype == 15, line = angle(fft(line)) .* 180/pi; end
-    if plottype == 16, line = unwrap(angle(fft(line))) ./(2*pi); end
-    if plottype == 17, line = -diff(unwrap(angle(fft(line)))).*length(fft(line))/(signaldata.fs*2*pi).*1000; end
-    if strcmp(get(handles.(genvarname(['smooth' axes '_popup'])),'Visible'),'on')
-        smoothfactor = get(handles.(genvarname(['smooth' axes '_popup'])),'Value');
-        if smoothfactor == 2, octsmooth = 1; end
-        if smoothfactor == 3, octsmooth = 3; end
-        if smoothfactor == 4, octsmooth = 6; end
-        if smoothfactor == 5, octsmooth = 12; end
-        if smoothfactor == 6, octsmooth = 24; end
-        if smoothfactor ~= 1, line = octavesmoothing(line, octsmooth, signaldata.fs); end
-    end
-    if plottype <= 7
-        subplot(length(selectedNodes),1,i);
-        set(gca,'NextPlot','replacechildren','ColorOrder',cmap)
-        plot(t,real(line)) % Plot signal in time domain
-        xlabel('Time [s]');
-    end
-    if plottype >= 8
-        if plottype == 17
-            h = subplot(length(selectedNodes),1,i);
-            set(gca,'NextPlot','replacechildren','ColorOrder',cmap)
-            semilogx(f(1:end-1),line,'Marker','None');
-        end
-        if plottype ~= 17
-            h = subplot(length(selectedNodes),1,i);
-            set(gca,'NextPlot','replacechildren','ColorOrder',cmap)
-            semilogx(f,line);
-        end % Plot signal in frequency domain
-        xlabel('Frequency [Hz]');
-        xlim([f(2) signaldata.fs/2])
-        log_check = get(handles.(genvarname(['log' axes '_chk'])),'Value');
-        if log_check == 1
-            set(h,'XScale','log')
+    if ~isempty(signaldata)
+        plottype = get(handles.(genvarname([axes '_popup'])),'Value');
+        t = linspace(0,length(signaldata.audio),length(signaldata.audio))./signaldata.fs;
+        f = signaldata.fs .* ((1:length(signaldata.audio))-1) ./ length(signaldata.audio);
+        if ~ismatrix(signaldata.audio)
+            if ndims(signaldata.audio) == 3, cmap = colormap(hsv(size(signaldata.audio,3))); end
+            if ndims(signaldata.audio) >= 4, cmap = colormap(copper(size(signaldata.audio,4))); end
+            try 
+                line(:,:) = signaldata.audio(:,str2double(get(handles.IN_nchannel,'String')),:);
+            catch
+                line = zeros(size(t));
+            end
         else
-            set(h,'XScale','linear','XTickLabelMode','auto')
+            cmap = colormap(lines(size(signaldata.audio,2)));
+            line = signaldata.audio;
+        end
+        if plottype == 1, line = real(line); end
+        if plottype == 2, line = line.^2; end
+        if plottype == 3, line = 10.*log10(line.^2); end
+        if plottype == 4, line = abs(hilbert(real(line))); end
+        if plottype == 5, line = medfilt1(diff([angle(hilbert(real(line))); zeros(1,size(line,2))])*signaldata.fs/2/pi, 5); end
+        if plottype == 6, line = abs(line); end
+        if plottype == 7, line = imag(line); end
+        if plottype == 8, line = 10*log10(abs(fft(line)).^2); end %freq
+        if plottype == 9, line = abs(fft(line)).^2; end
+        if plottype == 10, line = abs(fft(line)); end
+        if plottype == 11, line = real(fft(line)); end
+        if plottype == 12, line = imag(fft(line)); end
+        if plottype == 13, line = angle(fft(line)); end
+        if plottype == 14, line = unwrap(angle(fft(line))); end
+        if plottype == 15, line = angle(fft(line)) .* 180/pi; end
+        if plottype == 16, line = unwrap(angle(fft(line))) ./(2*pi); end
+        if plottype == 17, line = -diff(unwrap(angle(fft(line)))).*length(fft(line))/(signaldata.fs*2*pi).*1000; end
+        if strcmp(get(handles.(genvarname(['smooth' axes '_popup'])),'Visible'),'on')
+            smoothfactor = get(handles.(genvarname(['smooth' axes '_popup'])),'Value');
+            if smoothfactor == 2, octsmooth = 1; end
+            if smoothfactor == 3, octsmooth = 3; end
+            if smoothfactor == 4, octsmooth = 6; end
+            if smoothfactor == 5, octsmooth = 12; end
+            if smoothfactor == 6, octsmooth = 24; end
+            if smoothfactor ~= 1, line = octavesmoothing(line, octsmooth, signaldata.fs); end
+        end
+        if length(selectedNodes) == 1
+            [r, c] = subplotpositions(size(line,2), 0.5);
+            for j = 1:size(line,2)
+                if plottype <= 7
+                    subplot(r,c,j);
+                    set(gca,'NextPlot','replacechildren','ColorOrder',cmap(j,:))
+                    plot(t,real(line(:,j))) % Plot signal in time domain
+                    if ismatrix(signaldata.audio) && isfield(signaldata,'chanID'), title(signaldata.chanID{j,1}); end
+                    if ~ismatrix(signaldata.audio) && isfield(signaldata,'bandID'), title(num2str(signaldata.bandID(1,j))); end
+                    xlabel('Time [s]');
+                end
+                if plottype >= 8
+                    h = subplot(r,c,j);
+                    set(gca,'NextPlot','replacechildren','ColorOrder',cmap(j,:))
+                    plot(f(1:length(line(:,j))),line(:,j));% Plot signal in frequency domain
+                    xlabel('Frequency [Hz]');
+                    xlim([f(2) signaldata.fs/2])
+                    log_check = get(handles.(genvarname(['log' axes '_chk'])),'Value');
+                    if log_check == 1
+                        set(h,'XScale','log')
+                    else
+                        set(h,'XScale','linear','XTickLabelMode','auto')
+                    end
+                end
+            end
+        else
+            if plottype <= 7
+                subplot(length(selectedNodes),1,i);
+                set(gca,'NextPlot','replacechildren','ColorOrder',cmap)
+                plot(t,real(line)) % Plot signal in time domain
+                xlabel('Time [s]');
+            end
+            if plottype >= 8
+                h = subplot(length(selectedNodes),1,i);
+                set(gca,'NextPlot','replacechildren','ColorOrder',cmap)
+                plot(f(1:length(line)),line);% Plot signal in frequency domain
+                xlabel('Frequency [Hz]');
+                xlim([f(2) signaldata.fs/2])
+                log_check = get(handles.(genvarname(['log' axes '_chk'])),'Value');
+                if log_check == 1
+                    set(h,'XScale','log')
+                else
+                    set(h,'XScale','linear','XTickLabelMode','auto')
+                end
+            end
         end
     end
 end
 iplots = get(compplot,'Children');
-xlims = cell2mat(get(iplots,'Xlim'));
-set(iplots,'Xlim',[min(xlims(:,1)) max(xlims(:,2))])
-ylims = cell2mat(get(iplots,'Ylim'));
-set(iplots,'Ylim',[min(ylims(:,1)) max(ylims(:,2))])
-uicontrol('Style', 'pushbutton', 'String', 'Axes limits',...
-        'Position', [0 0 65 30],...
-        'Callback', 'setaxeslimits');
+if length(iplots) > 1
+    xlims = cell2mat(get(iplots,'Xlim'));
+    set(iplots,'Xlim',[min(xlims(:,1)) max(xlims(:,2))])
+    ylims = cell2mat(get(iplots,'Ylim'));
+    set(iplots,'Ylim',[min(ylims(:,1)) max(ylims(:,2))])
+    uicontrol('Style', 'pushbutton', 'String', 'Axes limits',...
+            'Position', [0 0 65 30],...
+            'Callback', 'setaxeslimits');
+end
 
 
 % --- Executes on selection change in ntable_popup.
@@ -2625,4 +2639,18 @@ function Tf_time_CreateFcn(hObject, ~, ~) %#ok : creation of final time input bo
 %       See ISPC and COMPUTER.
 if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
     set(hObject,'BackgroundColor','white');
+end
+
+
+% --- Executes on button press in preferences_btn.
+function preferences_btn_Callback(hObject, ~, handles) %#ok : Executed when Preferences button is clicked
+% hObject    handle to preferences_btn (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+preferences = inputdlg('Maximum time period to display','AARAE preferences',[1 50],{num2str(handles.maxtimetodisplay)});
+if ~isempty(preferences)
+    preferences = cell2struct(preferences,{'maxtimetodisplay'});
+    handles.maxtimetodisplay = preferences.maxtimetodisplay;
+    save([cd '/Preferences.mat'],'preferences')
+    guidata(hObject,handles)
 end

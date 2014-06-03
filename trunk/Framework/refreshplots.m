@@ -13,11 +13,7 @@ plottype = get(handles.(genvarname([axes '_popup'])),'Value');
     set(handles.(genvarname(['To_' axes])),'Visible','on')
     To_s = str2double(get(handles.(genvarname(['To_' axes])),'String'));
     To = floor(To_s*signaldata.fs)+1;
-    if length(signaldata.audio) <= 60*signaldata.fs
-        set(handles.(genvarname(['Tf_' axes])),'Visible','on')
-    else
-        set(handles.(genvarname(['Tf_' axes])),'Visible','on')
-    end
+    set(handles.(genvarname(['Tf_' axes])),'Visible','on')
     Tf_s = str2double(get(handles.(genvarname(['Tf_' axes])),'String'));
     Tf = floor(Tf_s*signaldata.fs);
     if Tf > length(linea), Tf = length(linea); end
@@ -29,6 +25,10 @@ if isfield(signaldata,'cal')
     if size(linea,2) == length(signaldata.cal)
         signaldata.cal(isnan(signaldata.cal)) = 0;
         linea = linea.*repmat(10.^(signaldata.cal./20),length(linea),1);
+    elseif ~ismatrix(signaldata.audio) && size(signaldata.audio,2) == length(signaldata.cal)
+        signaldata.cal(isnan(signaldata.cal)) = 0;
+        cal = repmat(signaldata.cal(str2double(get(handles.IN_nchannel,'String'))),1,size(linea,2));
+        linea = linea.*repmat(10.^(cal./20),length(linea),1);
     end
 end
 fftlength = length(linea);
