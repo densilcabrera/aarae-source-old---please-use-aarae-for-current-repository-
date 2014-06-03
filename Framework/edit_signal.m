@@ -828,7 +828,7 @@ else
         % Play signal
         handles.player = audioplayer(testsignal,fs,nbits,handles.odeviceid);
         play(handles.player);
-        set(handles.stop_btn,'Visible','on');
+        set(handles.stop_btn,'Enable','on');
     else
         warndlg('Device not supported for playback!');
     end
@@ -887,7 +887,7 @@ if oktoedit == 1
     handles.selNodeName = fields{1,1};
     handles.testsignal(handles.version).fs = str2double(fields{2,1});
     handles.testsignal(handles.version).nbits = str2double(fields{3,1});
-    if isfield(handles.testsignal(handles.version),'cal'), handles.testsignal(handles.version).nbits = str2double(fields{4,1}); end
+    if isfield(handles.testsignal(handles.version),'cal'), handles.testsignal(handles.version).cal = str2double(fields{4,1}); end
     audiodata = handles.testsignal(handles.version); %#ok : Used in evalc below
     audiodatatext = evalc('audiodata');
     set(handles.audiodatatext,'String',['Selected: ' handles.selNodeName audiodatatext]);
