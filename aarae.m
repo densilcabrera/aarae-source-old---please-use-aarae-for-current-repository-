@@ -1325,15 +1325,20 @@ if (click == handles.axestime) || (get(click,'Parent') == handles.axestime)
         else
             data = signaldata.audio;
         end
-        t = linspace(0,length(data),length(data))./signaldata.fs;
-        f = signaldata.fs .* ((1:length(data))-1) ./ length(data);
+        To = floor(str2double(get(handles.To_time,'String'))*signaldata.fs)+1;
+        Tf = floor(str2double(get(handles.Tf_time,'String'))*signaldata.fs);
+        if Tf > length(signaldata.audio), Tf = length(linea); end
         if ~ismatrix(data)
             channel = str2double(get(handles.IN_nchannel,'String'));
-            line(:,:) = data(:,channel,:);
+            if handles.alternate == 0
+                line(:,:) = data(To:Tf,channel,:);
+            else
+                line(:,:) = data(:,channel,:);
+            end
             if ndims(data) == 3, cmap = colormap(hsv(size(data,3))); end
             if ndims(data) >= 4, cmap = colormap(copper(size(data,4))); end
         else
-            line = data;
+            line = data(To:Tf,:);
             cmap = colormap(lines(size(data,2)));
         end
         if isfield(signaldata,'cal')
@@ -1342,6 +1347,8 @@ if (click == handles.axestime) || (get(click,'Parent') == handles.axestime)
                 line = line.*repmat(10.^(signaldata.cal./20),length(line),1);
             end
         end
+        t = linspace(To,Tf,length(line))./signaldata.fs;
+        f = signaldata.fs .* ((1:length(line))-1) ./ length(line);
         h = figure;
         set(h,'DefaultAxesColorOrder',cmap);
         plottype = get(handles.time_popup,'Value');
@@ -1421,15 +1428,20 @@ if (click == handles.axesfreq) || (get(click,'Parent') == handles.axesfreq)
         else
             data = signaldata.audio;
         end
-        t = linspace(0,length(data),length(data))./signaldata.fs;
-        f = signaldata.fs .* ((1:length(data))-1) ./ length(data);
+        To = floor(str2double(get(handles.To_freq,'String'))*signaldata.fs)+1;
+        Tf = floor(str2double(get(handles.Tf_freq,'String'))*signaldata.fs);
+        if Tf > length(signaldata.audio), Tf = length(linea); end
         if ~ismatrix(data)
             channel = str2double(get(handles.IN_nchannel,'String'));
-            line(:,:) = data(:,channel,:);
+            if handles.alternate == 0
+                line(:,:) = data(To:Tf,channel,:);
+            else
+                line(:,:) = data(:,channel,:);
+            end
             if ndims(data) == 3, cmap = colormap(hsv(size(data,3))); end
             if ndims(data) >= 4, cmap = colormap(copper(size(data,4))); end
         else
-            line = data;
+            line = data(To:Tf,:);
             cmap = colormap(lines(size(data,2)));
         end
         if isfield(signaldata,'cal')
@@ -1438,6 +1450,8 @@ if (click == handles.axesfreq) || (get(click,'Parent') == handles.axesfreq)
                 line = line.*repmat(10.^(signaldata.cal./20),length(line),1);
             end
         end
+        t = linspace(To,Tf,length(line))./signaldata.fs;
+        f = signaldata.fs .* ((1:length(line))-1) ./ length(line);
         h = figure;
         set(h,'DefaultAxesColorOrder',cmap);
         plottype = get(handles.freq_popup,'Value');

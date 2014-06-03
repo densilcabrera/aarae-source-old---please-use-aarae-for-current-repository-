@@ -8,12 +8,6 @@ if ~ismatrix(signaldata.audio)
 else
     linea = signaldata.audio;
 end
-if isfield(signaldata,'cal')
-    if size(linea,2) == length(signaldata.cal)
-        signaldata.cal(isnan(signaldata.cal)) = 0;
-        linea = linea.*repmat(10.^(signaldata.cal./20),length(linea),1);
-    end
-end
 plottype = get(handles.(genvarname([axes '_popup'])),'Value');
 %if plottype == 4 || plottype == 5 || plottype > 7
     set(handles.(genvarname(['To_' axes])),'Visible','on')
@@ -31,6 +25,12 @@ plottype = get(handles.(genvarname([axes '_popup'])),'Value');
 %else
 %    set([handles.(genvarname(['To_' axes])),handles.(genvarname(['Tf_' axes]))],'Visible','off')
 %end
+if isfield(signaldata,'cal')
+    if size(linea,2) == length(signaldata.cal)
+        signaldata.cal(isnan(signaldata.cal)) = 0;
+        linea = linea.*repmat(10.^(signaldata.cal./20),length(linea),1);
+    end
+end
 fftlength = length(linea);
 set(handles.(genvarname(['smooth' axes '_popup'])),'Visible','off');
 if plottype == 1, linea = real(linea); end

@@ -23,7 +23,12 @@ function mySelectFcn(tree, ~)
             set(mainHandles.signaltypetext,'String',[selectedNodes.getName.char ' selected']);
         end
         if ~isempty(audiodata) && isfield(audiodata,'audio')% If there's data saved in the leaf...
-            audiodatatext = evalc('audiodata');
+            dispaudiodata = audiodata;
+            if isfield(dispaudiodata,'datatype'), dispaudiodata = rmfield(dispaudiodata,'datatype'); end
+            if isfield(dispaudiodata,'funcallback'), dispaudiodata = rmfield(dispaudiodata,'funcallback'); end
+            if isfield(dispaudiodata,'properties'), dispaudiodata = rmfield(dispaudiodata,'properties'); end %#ok : used in lines 30 and 31
+            audiodatatext = evalc('dispaudiodata');
+            clear('dispaudiodata')
             set(mainHandles.audiodatatext,'String',['Selected: ' selectedNodes.getName.char audiodatatext]); % Output contents in textbox below the tree
             set(mainHandles.datatext,'Visible','off');
             set(mainHandles.datatext,'String',[]);
