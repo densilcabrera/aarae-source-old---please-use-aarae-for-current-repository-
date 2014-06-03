@@ -23,7 +23,7 @@ function varargout = genaudio(varargin)
 
 % Edit the above text to modify the response to help genaudio
 
-% Last Modified by GUIDE v2.5 08-May-2014 16:22:38
+% Last Modified by GUIDE v2.5 03-Jun-2014 11:38:06
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -72,6 +72,7 @@ end
 
 % Initialize signal parameters
 handles.cycles = 1;
+handles.lsilence = 1;
 handles.signaldata = [];
 handles.newleaf = [];
 axis([0 10 -1 1]); xlabel('Time [s]');
@@ -129,11 +130,12 @@ if ~isempty(handles.signaldata)
         numchannels = size(handles.signaldata.audio,2);
         levelrange = linspace(abs(str2double(get(handles.levelrange_IN,'String'))).*-1,0,handles.cycles);
         cycles = handles.cycles;
-        scdur = length(handles.signaldata.audio) + handles.signaldata.fs;
+        lsilence = handles.lsilence*handles.signaldata.fs;
+        scdur = length(handles.signaldata.audio) + lsilence;
         handles.signaldata.properties.startflag = ((0:cycles-1)*scdur)+1;
         audio = zeros(scdur*cycles,numchannels);
         for i = 1:cycles
-            chunk = [handles.signaldata.audio;zeros(handles.signaldata.fs,numchannels)];
+            chunk = [handles.signaldata.audio;zeros(lsilence,numchannels)];
             audio(handles.signaldata.properties.startflag(i):handles.signaldata.properties.startflag(i)+length(chunk)-1,:) = chunk.*10.^(levelrange(i)/20);
         end
         if silence_check == 1
@@ -222,8 +224,10 @@ else
     handles.cycles = cycles;
     if cycles > 1
         set([handles.levelrange_IN,handles.text15,handles.text16],'Visible','on')
+        set([handles.lsilence_IN,handles.text17,handles.text18],'Visible','on')
     else
         set([handles.levelrange_IN,handles.text15,handles.text16],'Visible','off')
+        set([handles.lsilence_IN,handles.text17,handles.text18],'Visible','off')
     end
 end
 guidata(hObject, handles);
@@ -420,9 +424,49 @@ end
 
 
 % --- Executes on button press in silence_chk.
-function silence_chk_Callback(~, ~, ~) %#ok : Executed when add silence cycle checkbox changes
+function silence_chk_Callback(hObject, ~, handles) %#ok : Executed when add silence cycle checkbox changes
 % hObject    handle to silence_chk (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
 % Hint: get(hObject,'Value') returns toggle state of silence_chk
+if get(hObject,'Value') == 1
+    set([handles.lsilence_IN,handles.text17,handles.text18],'Visible','on')
+elseif get(hObject,'Value') == 0 && str2double(get(handles.IN_cycles,'String')) > 1
+    set([handles.lsilence_IN,handles.text17,handles.text18],'Visible','on')
+else
+    set([handles.lsilence_IN,handles.text17,handles.text18],'Visible','off')
+end
+
+
+function lsilence_IN_Callback(hObject, ~, handles) %#ok : Executed when silence gap input box changes
+% hObject    handle to lsilence_IN (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: get(hObject,'String') returns contents of lsilence_IN as text
+%        str2double(get(hObject,'String')) returns contents of lsilence_IN as a double
+% Get number of cycles input
+lsilence = str2double(get(hObject, 'string'));
+
+% Check user's input
+if (isnan(lsilence)||lsilence<0)
+    set(hObject,'String',num2str(handles.lsilence));
+    warndlg('All inputs MUST be real positive numbers!');
+else
+    handles.lsilence = lsilence;
+end
+guidata(hObject, handles);
+
+
+% --- Executes during object creation, after setting all properties.
+function lsilence_IN_CreateFcn(hObject, ~, ~) %#ok : silence gap input box creation
+% hObject    handle to lsilence_IN (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: edit controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
