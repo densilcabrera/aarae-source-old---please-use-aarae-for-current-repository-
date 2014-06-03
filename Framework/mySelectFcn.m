@@ -8,8 +8,8 @@ function mySelectFcn(tree, ~)
     aarae_fig = findobj('Tag','aarae');
     mainHandles = guidata(aarae_fig);
     selectedNodes = tree.getSelectedNodes; % Get selected leaf
-    if length(selectedNodes) > 1
-        set(mainHandles.compare_btn,'Enable','on')
+    if ~isfield(selectedNodes(1).handle.UserData,'audio')
+        set(mainHandles.compare_btn,'Enable','off')
     else
         set(mainHandles.compare_btn,'Enable','on')
     end
