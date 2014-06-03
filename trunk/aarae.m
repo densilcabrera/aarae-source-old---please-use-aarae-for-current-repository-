@@ -2203,7 +2203,7 @@ for i = 1:length(selectedNodes)
     line = [];
     axes = 'time';
     signaldata = selectedNodes(i).handle.UserData;
-    if ~isempty(signaldata)
+    if ~isempty(signaldata) && isfield(signaldata,'audio')
         plottype = get(handles.(genvarname([axes '_popup'])),'Value');
         t = linspace(0,length(signaldata.audio),length(signaldata.audio))./signaldata.fs;
         f = signaldata.fs .* ((1:length(signaldata.audio))-1) ./ length(signaldata.audio);
