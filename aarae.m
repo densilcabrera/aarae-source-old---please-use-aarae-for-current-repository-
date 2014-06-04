@@ -139,7 +139,6 @@ guidata(hObject, handles);
 if ismac
     fontsize
 end
-    
 % Set waiting flag in appdata
 setappdata(handles.aarae,'waiting',1)
 % UIWAIT makes aarae wait for user response (see UIRESUME)
@@ -412,13 +411,14 @@ for i = 1:length(filename)
             handles.(genvarname(signaldata.datatype)).add(handles.(genvarname(newleaf{1,1})));
             handles.mytree.reloadNode(handles.(genvarname(signaldata.datatype)));
             handles.mytree.expand(handles.(genvarname(signaldata.datatype)));
-            handles.mytree.setSelectedNode(handles.(genvarname(newleaf{1,1})));
+            %handles.mytree.setSelectedNode(handles.(genvarname(newleaf{1,1})));
             set([handles.clrall_btn,handles.export_btn],'Enable','on')
             fprintf(handles.fid, [' ' datestr(now,16) ' - Loaded "' filename{i} '" to branch "' char(handles.(genvarname(signaldata.datatype)).getName) '"\n']);
         end
         guidata(hObject, handles);
     end
 end
+handles.mytree.setSelectedNode(handles.(genvarname(newleaf{1,1})));
 
 
 % --- Executes on button press in rec_btn.
@@ -2658,7 +2658,7 @@ function preferences_btn_Callback(hObject, ~, handles) %#ok : Executed when Pref
 preferences = inputdlg('Maximum time period to display','AARAE preferences',[1 50],{num2str(handles.maxtimetodisplay)});
 if ~isempty(preferences)
     preferences = cell2struct(preferences,{'maxtimetodisplay'});
-    handles.maxtimetodisplay = preferences.maxtimetodisplay;
+    handles.maxtimetodisplay = str2double(preferences.maxtimetodisplay);
     save([cd '/Preferences.mat'],'preferences')
     guidata(hObject,handles)
 end
