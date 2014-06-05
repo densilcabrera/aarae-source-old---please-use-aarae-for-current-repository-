@@ -1873,6 +1873,9 @@ function time_popup_Callback(hObject, ~, handles) %#ok
 
 % Hints: contents = cellstr(get(hObject,'String')) returns time_popup contents as cell array
 %        contents{get(hObject,'Value')} returns selected item from time_popup
+contents = cellstr(get(hObject,'String'));
+selection = contents{get(hObject,'Value')};
+set(handles.compare_btn,'TooltipString',['Compare selected signals in ' selection])
 refreshplots(handles,'time')
 guidata(hObject,handles)
 
@@ -2280,6 +2283,8 @@ for i = 1:length(selectedNodes)
                     h = subplot(r,c,j);
                     set(gca,'NextPlot','replacechildren','ColorOrder',cmap(j,:))
                     plot(f(1:length(linea(:,j))),linea(:,j));% Plot signal in frequency domain
+                    if ismatrix(signaldata.audio) && isfield(signaldata,'chanID'), title(signaldata.chanID{j,1}); end
+                    if ~ismatrix(signaldata.audio) && isfield(signaldata,'bandID'), title(num2str(signaldata.bandID(1,j))); end
                     xlabel('Frequency [Hz]');
                     xlim([f(2) signaldata.fs/2])
                     log_check = get(handles.(genvarname(['log' axes '_chk'])),'Value');
@@ -2295,12 +2300,14 @@ for i = 1:length(selectedNodes)
                 subplot(length(selectedNodes),1,i);
                 set(gca,'NextPlot','replacechildren','ColorOrder',cmap)
                 plot(t,real(linea)) % Plot signal in time domain
+                title(selectedNodes(i).getName.char)
                 xlabel('Time [s]');
             end
             if plottype >= 8
                 h = subplot(length(selectedNodes),1,i);
                 set(gca,'NextPlot','replacechildren','ColorOrder',cmap)
                 plot(f(1:length(linea)),linea);% Plot signal in frequency domain
+                title(selectedNodes(i).getName.char)
                 xlabel('Frequency [Hz]');
                 xlim([f(2) signaldata.fs/2])
                 log_check = get(handles.(genvarname(['log' axes '_chk'])),'Value');
@@ -2513,7 +2520,7 @@ To_freq = str2double(get(hObject,'String'));
 selectedNodes = handles.mytree.getSelectedNodes;
 signaldata = selectedNodes(1).handle.UserData;
 if isnan(To_freq) || To_freq < 0 || To_freq == length(signaldata.audio)/signaldata.fs
-    warndlg('Invalid entry','AARAE info','modal')
+    %warndlg('Invalid entry','AARAE info','modal')
     set(hObject,'String',num2str(handles.To_freq_IN))
 elseif To_freq >= str2double(get(handles.Tf_freq,'String'))
     Tf_freq = To_freq + (handles.Tf_freq_IN - handles.To_freq_IN);
@@ -2558,7 +2565,7 @@ Tf_freq = str2double(get(hObject,'String'));
 selectedNodes = handles.mytree.getSelectedNodes;
 signaldata = selectedNodes(1).handle.UserData;
 if isnan(Tf_freq) || Tf_freq <= str2double(get(handles.To_freq,'String')) || Tf_freq > length(signaldata.audio)/signaldata.fs
-    warndlg('Invalid entry','AARAE info','modal')
+    %warndlg('Invalid entry','AARAE info','modal')
     set(hObject,'String',handles.Tf_freq_IN)
     refreshplots(handles,'freq')
     guidata(hObject,handles)
@@ -2594,7 +2601,7 @@ To_time = str2double(get(hObject,'String'));
 selectedNodes = handles.mytree.getSelectedNodes;
 signaldata = selectedNodes(1).handle.UserData;
 if isnan(To_time) || To_time < 0 || To_time == length(signaldata.audio)/signaldata.fs
-    warndlg('Invalid entry','AARAE info','modal')
+    %warndlg('Invalid entry','AARAE info','modal')
     set(hObject,'String',num2str(handles.To_time_IN))
 elseif To_time >= str2double(get(handles.Tf_time,'String'))
     Tf_time = To_time + (handles.Tf_time_IN - handles.To_time_IN);
@@ -2638,7 +2645,7 @@ Tf_time = str2double(get(hObject,'String'));
 selectedNodes = handles.mytree.getSelectedNodes;
 signaldata = selectedNodes(1).handle.UserData;
 if isnan(Tf_time) || Tf_time <= str2double(get(handles.To_time,'String')) || Tf_time > length(signaldata.audio)/signaldata.fs
-    warndlg('Invalid entry','AARAE info','modal')
+    %warndlg('Invalid entry','AARAE info','modal')
 	set(hObject,'String',handles.Tf_time_IN)
     refreshplots(handles,'time')
     guidata(hObject,handles)
@@ -2670,7 +2677,8 @@ function preferences_btn_Callback(hObject, ~, handles) %#ok : Executed when Pref
 preferences = inputdlg('Maximum time period to display','AARAE preferences',[1 50],{num2str(handles.maxtimetodisplay)});
 if ~isempty(preferences)
     preferences = cell2struct(preferences,{'maxtimetodisplay'});
-    handles.maxtimetodisplay = str2double(preferences.maxtimetodisplay);
+    preferences.maxtimetodisplay = str2double(preferences.maxtimetodisplay);
+    handles.maxtimetodisplay = preferences.maxtimetodisplay;
     save([cd '/Preferences.mat'],'preferences')
     guidata(hObject,handles)
 end
