@@ -21,7 +21,7 @@ plottype = get(handles.(genvarname([axes '_popup'])),'Value');
 %else
 %    set([handles.(genvarname(['To_' axes])),handles.(genvarname(['Tf_' axes]))],'Visible','off')
 %end
-if isfield(signaldata,'cal')
+if isfield(signaldata,'cal') && handles.Preferences.calibrationtoggle == 1
     if size(linea,2) == length(signaldata.cal)
         signaldata.cal(isnan(signaldata.cal)) = 0;
         linea = linea.*repmat(10.^(signaldata.cal./20),length(linea),1);
@@ -92,7 +92,11 @@ if plottype >= 8
     end
     plot(handles.(genvarname(['axes' axes])),f1,linea1);% Plot signal in frequency domain
     xlabel(handles.(genvarname(['axes' axes])),'Frequency [Hz]');
-    xlim(handles.(genvarname(['axes' axes])),[f1(2) signaldata.fs/2])
+    if ischar(handles.Preferences.frequencylimits)
+        xlim(handles.(genvarname(['axes' axes])),[f1(2) signaldata.fs/2])
+    else
+        xlim(handles.(genvarname(['axes' axes])),handles.Preferences.frequencylimits)
+    end
     set(handles.(genvarname(['log' axes '_chk'])),'Visible','on');
     if log_check == 1
         set(handles.(genvarname(['axes' axes])),'XScale','log')
