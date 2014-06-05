@@ -73,14 +73,16 @@ setappdata(hMain,'audio_recorder_qdur',1)
 setappdata(hMain,'audio_recorder_buffer',1024)
 
 % Read preferences file
-preferences = [];
+Preferences = [];
 if ~isempty(dir([cd '/Preferences.mat']))
     load([cd '/Preferences.mat']);
-    handles.maxtimetodisplay = preferences.maxtimetodisplay;
+    handles.Preferences = Preferences;
 else
-    preferences.maxtimetodisplay = 10;
-    handles.maxtimetodisplay = 10;
-    save([cd '/Preferences.mat'],'preferences')
+    Preferences.maxtimetodisplay = 10;
+    Preferences.frequencylimits = 'Default';
+    Preferences.calibrationtoggle = 1;
+    handles.Preferences = Preferences;
+    save([cd '/Preferences.mat'],'Preferences')
 end
 
 if ~isdir([cd '/Log']), mkdir([cd '/Log']); end
@@ -1337,7 +1339,7 @@ if (click == handles.axestime) || (get(click,'Parent') == handles.axestime)
             linea = data(To:Tf,:);
             cmap = colormap(lines(size(data,2)));
         end
-        if isfield(signaldata,'cal')
+        if isfield(signaldata,'cal') && handles.Preferences.calibrationtoggle == 1
             if size(linea,2) == length(signaldata.cal)
                 signaldata.cal(isnan(signaldata.cal)) = 0;
                 linea = linea.*repmat(10.^(signaldata.cal./20),length(linea),1);
@@ -1386,14 +1388,19 @@ if (click == handles.axestime) || (get(click,'Parent') == handles.axestime)
                 if smoothfactor == 6, octsmooth = 24; end
                 if smoothfactor ~= 1, linea = octavesmoothing(linea, octsmooth, signaldata.fs); end
             end
-            if plottype == 17, semilogx(f(1:end-1),linea,'Marker','None'); end
-            if plottype ~= 17, semilogx(f,linea); end % Plot signal in frequency domain
+            %if plottype == 17, 
+            plot(f(1:length(linea)),linea)%,'Marker','None'); end
+            %if plottype ~= 17, semilogx(f,linea); end % Plot signal in frequency domain
             log_check = get(handles.logtime_chk,'Value');
             xlabel('Frequency [Hz]');
             yl = cellstr(get(handles.time_popup,'String'));
             yl = yl{get(handles.time_popup,'Value')};
             ylabel(yl(9:end));
-            xlim([f(2) signaldata.fs/2])
+            if ischar(handles.Preferences.frequencylimits)
+                xlim([f(2) signaldata.fs/2])
+            else
+                xlim(handles.Preferences.frequencylimits)
+            end
             if log_check == 1
                 set(gca,'XScale','log')
                 %set(gca,'XTickLabel',num2str(get(gca,'XTick').'))
@@ -1444,7 +1451,7 @@ if (click == handles.axesfreq) || (get(click,'Parent') == handles.axesfreq)
             linea = data(To:Tf,:);
             cmap = colormap(lines(size(data,2)));
         end
-        if isfield(signaldata,'cal')
+        if isfield(signaldata,'cal') && handles.Preferences.calibrationtoggle == 1
             if size(linea,2) == length(signaldata.cal)
                 signaldata.cal(isnan(signaldata.cal)) = 0;
                 linea = linea.*repmat(10.^(signaldata.cal./20),length(linea),1);
@@ -1493,13 +1500,18 @@ if (click == handles.axesfreq) || (get(click,'Parent') == handles.axesfreq)
                 if smoothfactor == 6, octsmooth = 24; end
                 if smoothfactor ~= 1, linea = octavesmoothing(linea, octsmooth, signaldata.fs); end
             end
-            if plottype == 17, semilogx(f(1:end-1),linea,'Marker','None'); end
-            if plottype ~= 17, semilogx(f,linea); end % Plot signal in frequency domain
+            %if plottype == 17, 
+            plot(f(1:length(linea)),linea)%,'Marker','None'); end
+            %if plottype ~= 17, semilogx(f,linea); end % Plot signal in frequency domain
             xlabel('Frequency [Hz]');
             yl = cellstr(get(handles.freq_popup,'String'));
             yl = yl{get(handles.freq_popup,'Value')};
             ylabel(yl(9:end));
-            xlim([f(2) signaldata.fs/2])
+            if ischar(handles.Preferences.frequencylimits)
+                xlim([f(2) signaldata.fs/2])
+            else
+                xlim(handles.Preferences.frequencylimits)
+            end
             log_check = get(handles.logfreq_chk,'Value');
             if log_check == 1
                 set(gca,'XScale','log')
@@ -2232,7 +2244,7 @@ for i = 1:length(selectedNodes)
             cmap = colormap(lines(size(signaldata.audio,2)));
             linea = signaldata.audio;
         end
-        if isfield(signaldata,'cal')
+        if isfield(signaldata,'cal') && handles.Preferences.calibrationtoggle == 1
             if size(linea,2) == length(signaldata.cal)
                 signaldata.cal(isnan(signaldata.cal)) = 0;
                 linea = linea.*repmat(10.^(signaldata.cal./20),length(linea),1);
@@ -2286,7 +2298,11 @@ for i = 1:length(selectedNodes)
                     if ismatrix(signaldata.audio) && isfield(signaldata,'chanID'), title(signaldata.chanID{j,1}); end
                     if ~ismatrix(signaldata.audio) && isfield(signaldata,'bandID'), title(num2str(signaldata.bandID(1,j))); end
                     xlabel('Frequency [Hz]');
-                    xlim([f(2) signaldata.fs/2])
+                    if ischar(handles.Preferences.frequencylimits)
+                        xlim([f(2) signaldata.fs/2])
+                    else
+                        xlim(handles.Preferences.frequencylimits)
+                    end
                     log_check = get(handles.(genvarname(['log' axes '_chk'])),'Value');
                     if log_check == 1
                         set(h,'XScale','log')
@@ -2309,7 +2325,11 @@ for i = 1:length(selectedNodes)
                 plot(f(1:length(linea)),linea);% Plot signal in frequency domain
                 title(selectedNodes(i).getName.char)
                 xlabel('Frequency [Hz]');
-                xlim([f(2) signaldata.fs/2])
+                if ischar(handles.Preferences.frequencylimits)
+                    xlim([f(2) signaldata.fs/2])
+                else
+                    xlim(handles.Preferences.frequencylimits)
+                end
                 log_check = get(handles.(genvarname(['log' axes '_chk'])),'Value');
                 if log_check == 1
                     set(h,'XScale','log')
@@ -2674,11 +2694,14 @@ function preferences_btn_Callback(hObject, ~, handles) %#ok : Executed when Pref
 % hObject    handle to preferences_btn (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-preferences = inputdlg('Maximum time period to display','AARAE preferences',[1 50],{num2str(handles.maxtimetodisplay)});
-if ~isempty(preferences)
-    preferences = cell2struct(preferences,{'maxtimetodisplay'});
-    preferences.maxtimetodisplay = str2double(preferences.maxtimetodisplay);
-    handles.maxtimetodisplay = preferences.maxtimetodisplay;
-    save([cd '/Preferences.mat'],'preferences')
+Preferences = preferences('main_stage1', handles.aarae);%inputdlg('Maximum time period to display','AARAE preferences',[1 50],{num2str(handles.preferences.maxtimetodisplay)});
+if ~isempty(Preferences)
+    %newpref = cell2struct(newpref,{'maxtimetodisplay'});
+    %newpref.maxtimetodisplay = str2double(newpref.maxtimetodisplay);
+    handles.Preferences = Preferences;
+    save([cd '/Preferences.mat'],'Preferences')
     guidata(hObject,handles)
+    selectedNodes = handles.mytree.getSelectedNodes;
+    handles.mytree.setSelectedNode(handles.root);
+    handles.mytree.setSelectedNode(selectedNodes(1));
 end
