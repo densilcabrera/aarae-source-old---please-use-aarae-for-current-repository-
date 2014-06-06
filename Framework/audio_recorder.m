@@ -290,7 +290,10 @@ if get(handles.pb_enable,'Value') == 1
         end
     % Plot recording
         time = linspace(0,size(handles.rec,1)/handles.fs,length(handles.rec));
-        plot(handles.IN_axes,time,handles.rec);
+        pixels = get_axes_width(handles.IN_axes);
+        [t, linea] = reduce_to_width(time', handles.rec, pixels, [-inf inf]);
+        plot(handles.IN_axes,t,linea);
+        xlim(handles.IN_axes,[0 max(time)])
     end
     % Release playback, record and audio data objects
     release(handles.hap)
@@ -344,7 +347,10 @@ else
         end
         % Plot recording
         time = linspace(0,size(handles.rec,1)/handles.fs,length(handles.rec));
-        plot(handles.IN_axes,time,handles.rec);
+        pixels = get_axes_width(handles.IN_axes);
+        [t, linea] = reduce_to_width(time', handles.rec, pixels, [-inf inf]);
+        plot(handles.IN_axes,t,linea);
+        xlim(handles.IN_axes,[0 max(time)])
     end
     % Release record object
     release(handles.har)
@@ -376,6 +382,11 @@ if isempty(handles.rec)
     warndlg('No signal recorded!');
     setappdata(hMain,'testsignal',[]);
 else
+    pause on
+    set(hObject,'BackgroundColor','red');
+    set([handles.record_btn,handles.syscal_btn,handles.cancel_btn,handles.load_btn,handles.preview_btn],'Enable','off')
+    pause(0.000001)
+    pause off
     hMain = getappdata(0,'hMain');
     if get(handles.delay_chk,'Value') == 1, handles.rec = [handles.rec(handles.syscalstats.latency:end,:);zeros(handles.syscalstats.latency,size(handles.rec,2))]; end
     if get(handles.invfilter_chk,'Value') == 1, handles.rec = filter(handles.syscalstats.audio2,1,handles.rec); end

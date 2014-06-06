@@ -141,7 +141,7 @@ if filename ~= 0
     if strcmp(ext,'.mat') || strcmp(ext,'.MAT')
         file = importdata(fullfile(pathname,filename));
         if isstruct(file)
-            handles.audio = file.audio;
+            handles.audio = file.audio(:,1);
 %            handles.fs = file.fs;
         else
 %            fs = inputdlg('Please specify the sampling frequency','Sampling frequency',1);
@@ -154,7 +154,7 @@ if filename ~= 0
 %                    warndlg('Input MUST be a real positive number, cannot load data!');
 %                    handles.audio = [];
 %                else
-                    handles.audio = file;
+                    handles.audio = file(:,1);
 %                    handles.fs = fs;
 %                end
 %            end
@@ -162,6 +162,7 @@ if filename ~= 0
     end
     if strcmp(ext,'.wav') || strcmp(ext,'.WAV')
         [handles.audio] = audioread(fullfile(pathname,filename));
+        handles.audio = handles.audio(:,1);
     end;
     t = linspace(0,length(handles.audio)/handles.mainHandles.fs,length(handles.audio));
     plot(handles.dispaxes,t,handles.audio)
