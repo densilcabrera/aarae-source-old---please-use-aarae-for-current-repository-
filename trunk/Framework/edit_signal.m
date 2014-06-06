@@ -822,7 +822,7 @@ else
     % Retrieve information from the selected leaf
     testsignal = handles.testsignal(handles.version).audio./max(max(max(abs(handles.testsignal(handles.version).audio))));
     fs = handles.testsignal(handles.version).fs;
-    nbits = handles.testsignal(handles.version).nbits;
+    nbits = 16;
     doesSupport = audiodevinfo(0, handles.odeviceid, fs, nbits, size(testsignal,2));
     if doesSupport && ismatrix(testsignal)
         % Play signal
@@ -856,19 +856,19 @@ function editfield_btn_Callback(hObject, ~, handles) %#ok : Executed when edit f
 %mainHandles = guidata(handles.main_stage1);
 %selectedNodes = mainHandles.mytree.getSelectedNodes;
 if isfield(handles.testsignal(handles.version),'cal')
-    prompt = {'Name','Sampling frequency [samples/s]','Bit depth [8,16,32,64]','Calibration offset'};
-    defans = {handles.selNodeName,num2str(handles.testsignal(handles.version).fs),num2str(handles.testsignal(handles.version).nbits),num2str(handles.testsignal(handles.version).cal)};
+    prompt = {'Name','Sampling frequency [samples/s]','Calibration offset'};
+    defans = {handles.selNodeName,num2str(handles.testsignal(handles.version).fs),num2str(handles.testsignal(handles.version).cal)};
     fields = inputdlg(prompt,'Edit fields',[1 60],defans);
-    if ~isempty(fields) && ~isempty(fields{1,1}) && str2double(fields{2,1}) > 0 && (str2double(fields{3,1}) == 8 || str2double(fields{3,1}) == 16 ||str2double(fields{3,1}) == 32 ||str2double(fields{3,1}) == 64) && str2double(fields{4,1})
+    if ~isempty(fields) && ~isempty(fields{1,1}) && str2double(fields{2,1}) > 0 && str2double(fields{3,1})
         oktoedit = 1;
     else
         oktoedit = 0;
     end
 else
-    prompt = {'Name','Sampling frequency [samples/s]','Bit depth [8,16,32,64]'};
-    defans = {handles.selNodeName,num2str(handles.testsignal(handles.version).fs),num2str(handles.testsignal(handles.version).nbits)};
+    prompt = {'Name','Sampling frequency [samples/s]'};
+    defans = {handles.selNodeName,num2str(handles.testsignal(handles.version).fs)};
     fields = inputdlg(prompt,'Edit fields',[1 60],defans);
-    if ~isempty(fields) && ~isempty(fields{1,1}) && str2double(fields{2,1}) > 0 && (str2double(fields{3,1}) == 8 || str2double(fields{3,1}) == 16 ||str2double(fields{3,1}) == 32 ||str2double(fields{3,1}) == 64)
+    if ~isempty(fields) && ~isempty(fields{1,1}) && str2double(fields{2,1}) > 0
         oktoedit = 1;
     else
         oktoedit = 0;
@@ -886,8 +886,7 @@ if oktoedit == 1
     handles.timescale = handles.timescale(1:handles.version);
     handles.selNodeName = fields{1,1};
     handles.testsignal(handles.version).fs = str2double(fields{2,1});
-    handles.testsignal(handles.version).nbits = str2double(fields{3,1});
-    if isfield(handles.testsignal(handles.version),'cal'), handles.testsignal(handles.version).cal = str2double(fields{4,1}); end
+    if isfield(handles.testsignal(handles.version),'cal'), handles.testsignal(handles.version).cal = str2double(fields{3,1}); end
     audiodata = handles.testsignal(handles.version); %#ok : Used in evalc below
     audiodatatext = evalc('audiodata');
     set(handles.audiodatatext,'String',['Selected: ' handles.selNodeName audiodatatext]);
@@ -920,6 +919,7 @@ if ~isempty(handles.testsignal(handles.version))
         case 'results', ivalue = 4;
     end
     [branch,ok] = listdlg('ListString',{'Test signals','Measurements','Processed','Results'},'SelectionMode','single','PromptString','Save edited audio in:','InitialValue',ivalue);
+    datatype = handles.testsignal(handles.version).datatype;
     if ok == 0
         mainHandles.(genvarname(handles.testsignal(handles.version).datatype)).add(mainHandles.(genvarname(handles.selNodeName)));
     else
@@ -928,7 +928,7 @@ if ~isempty(handles.testsignal(handles.version))
         if branch == 3, mainHandles.processed.add(mainHandles.(genvarname(handles.selNodeName))); handles.testsignal(handles.version).datatype = 'processed'; end
         if branch == 4, mainHandles.results.add(mainHandles.(genvarname(handles.selNodeName))); handles.testsignal(handles.version).datatype = 'results'; end
     end
-    if strcmp(handles.testsignal(handles.version-1).datatype,'syscal'), handles.testsignal(handles.version).datatype = 'syscal'; end
+    if strcmp(datatype,'syscal'), handles.testsignal(handles.version).datatype = 'syscal'; end
     mainHandles.(genvarname(handles.selNodeName)).UserData = handles.testsignal(handles.version);
     mainHandles.mytree.reloadNode(mainHandles.(genvarname(handles.selNodeName)).getParent);
     mainHandles.mytree.setSelectedNode(mainHandles.(genvarname(handles.selNodeName)));

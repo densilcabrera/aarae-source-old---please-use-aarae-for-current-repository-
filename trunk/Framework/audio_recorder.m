@@ -102,8 +102,8 @@ else
         output_settings{1} = ['Playback audio loaded: ' selectednode(1).getName.char];
         output_settings{2} = ['Number of audio channels: ' num2str(size(handles.outputdata.audio,2))];
         output_settings{3} = ['Sampling frequency = ',num2str(handles.outputdata.fs),' samples/s'];
-        output_settings{4} = ['Bit depth = ',num2str(handles.outputdata.nbits)];
-        output_settings{5} = ['Duration = ',num2str(handles.dur),' s'];
+        %output_settings{4} = ['Bit depth = ',num2str(handles.outputdata.nbits)];
+        output_settings{4} = ['Duration = ',num2str(handles.dur),' s'];
         pixels = get_axes_width(handles.OUT_axes);
         [t, line] = reduce_to_width(handles.t', handles.outputdata.audio, pixels, [-inf inf]);
         plot(handles.OUT_axes,t,line)
@@ -116,14 +116,14 @@ else
         set(handles.IN_duration,'String',num2str(getappdata(hMain,'audio_recorder_duration')));
         set(handles.IN_fs,'Enable','off');
         set(handles.IN_fs,'String','-');
-        set(handles.IN_nbits,'Enable','off');
-        set(handles.IN_nbits,'String','-');
+        %set(handles.IN_nbits,'Enable','off');
+        %set(handles.IN_nbits,'String','-');
         set(handles.IN_qdur,'String',num2str(getappdata(hMain,'audio_recorder_qdur')));
         set(handles.IN_buffer,'String',num2str(getappdata(hMain,'audio_recorder_buffer')));
         handles.numchs = str2double(get(handles.IN_numchs,'String'));
         handles.addtime = str2double(get(handles.IN_duration,'String'));
         handles.fs = handles.outputdata.fs;
-        handles.nbits = handles.outputdata.nbits;
+        %handles.nbits = handles.outputdata.nbits;
         handles.qdur = str2double(get(handles.IN_qdur,'String'));
         handles.buffer = str2double(get(handles.IN_buffer,'String'));
         xlim(handles.IN_axes,[0 round(handles.dur+handles.addtime)])
@@ -139,8 +139,8 @@ else
         set(handles.IN_duration,'String',num2str(getappdata(hMain,'audio_recorder_duration')));
         set(handles.IN_fs,'Enable','on');
         set(handles.IN_fs,'String',num2str(getappdata(hMain,'audio_recorder_fs')));
-        set(handles.IN_nbits,'Enable','on');
-        set(handles.IN_nbits,'String',num2str(getappdata(hMain,'audio_recorder_nbits')));
+        %set(handles.IN_nbits,'Enable','on');
+        %set(handles.IN_nbits,'String',num2str(getappdata(hMain,'audio_recorder_nbits')));
         set(handles.IN_qdur,'String',num2str(getappdata(hMain,'audio_recorder_qdur')));
         set(handles.IN_buffer,'String',num2str(getappdata(hMain,'audio_recorder_buffer')));
         set(handles.OUT_axes,'Visible','off');
@@ -148,7 +148,7 @@ else
         handles.numchs = str2double(get(handles.IN_numchs,'String'));
         handles.duration = str2double(get(handles.IN_duration,'String'));
         handles.fs = str2double(get(handles.IN_fs,'String'));
-        handles.nbits = str2double(get(handles.IN_nbits,'String'));
+        %handles.nbits = str2double(get(handles.IN_nbits,'String'));
         handles.qdur = str2double(get(handles.IN_qdur,'String'));
         handles.buffer = str2double(get(handles.IN_buffer,'String'));
         xlim(handles.IN_axes,[0 round(handles.duration)])
@@ -388,7 +388,7 @@ else
         handles.recording.audio2 = [];
     end
     handles.recording.fs = handles.fs;
-    handles.recording.nbits = handles.nbits;
+    %handles.recording.nbits = handles.nbits;
     handles.recording.chanID = cellstr([repmat('Chan',size(handles.recording.audio,2),1) num2str((1:size(handles.recording.audio,2))')]);
     if get(handles.cal_chk,'Value') == 1, handles.recording.cal = handles.syscalstats.cal(1:size(handles.recording.audio,2)); end
     name = get(handles.IN_name,'String');
@@ -530,7 +530,7 @@ end
 
 
 
-function IN_nbits_Callback(hObject, ~, handles) %#ok : bit depth input box
+%function IN_nbits_Callback(hObject, ~, handles) %#ok : bit depth input box
 % hObject    handle to IN_nbits (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
@@ -539,29 +539,29 @@ function IN_nbits_Callback(hObject, ~, handles) %#ok : bit depth input box
 %        str2double(get(hObject,'String')) returns contents of IN_nbits as a double
 
 % Get bit depth input
-nbits = str2double(get(handles.IN_nbits, 'string'));
-hMain = getappdata(0,'hMain');
+%nbits = str2double(get(handles.IN_nbits, 'string'));
+%hMain = getappdata(0,'hMain');
 % Check user's input
-if (isnan(nbits)||nbits<=0)
-    set(hObject,'String',num2str(handles.nbits))
-    warndlg('All inputs MUST be real positive numbers!');
-else
-    handles.nbits = nbits;
-    setappdata(hMain,'audio_recorder_nbits',nbits)
-end
-guidata(hObject, handles);
+%if (isnan(nbits)||nbits<=0)
+%    set(hObject,'String',num2str(handles.nbits))
+%    warndlg('All inputs MUST be real positive numbers!');
+%else
+%    handles.nbits = nbits;
+%    setappdata(hMain,'audio_recorder_nbits',nbits)
+%end
+%guidata(hObject, handles);
 
 % --- Executes during object creation, after setting all properties.
-function IN_nbits_CreateFcn(hObject, ~, ~) %#ok : bit depth input box creation
+%function IN_nbits_CreateFcn(hObject, ~, ~) %#ok : bit depth input box creation
 % hObject    handle to IN_nbits (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    empty - handles not created until after all CreateFcns called
 
 % Hint: edit controls usually have a white background on Windows.
 %       See ISPC and COMPUTER.
-if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
-    set(hObject,'BackgroundColor','white');
-end
+%if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+%    set(hObject,'BackgroundColor','white');
+%end
 
 
 % --- Executes when user attempts to close audio_recorder.
@@ -613,8 +613,8 @@ if get(hObject,'Value') == 1
     set(handles.IN_duration,'String',num2str(getappdata(hMain,'audio_recorder_duration')));
     set(handles.IN_fs,'Enable','off');
     set(handles.IN_fs,'String','-');
-    set(handles.IN_nbits,'Enable','off');
-    set(handles.IN_nbits,'String','-');
+    %set(handles.IN_nbits,'Enable','off');
+    %set(handles.IN_nbits,'String','-');
     set(handles.IN_qdur,'String',num2str(getappdata(hMain,'audio_recorder_qdur')));
     set(handles.IN_buffer,'String',num2str(getappdata(hMain,'audio_recorder_buffer')));
     set(handles.audio_recorder,'Position',handles.position);
@@ -624,7 +624,7 @@ if get(hObject,'Value') == 1
     handles.numchs = str2double(get(handles.IN_numchs,'String'));
     handles.addtime = str2double(get(handles.IN_duration,'String'));
     handles.fs = handles.outputdata.fs;
-    handles.nbits = handles.outputdata.nbits;
+    %handles.nbits = handles.outputdata.nbits;
     xlim(handles.IN_axes,[0 round(handles.dur+handles.addtime)])
     xlim(handles.OUT_axes,[0 round(handles.dur+handles.addtime)])
 else
@@ -635,8 +635,8 @@ else
     set(handles.IN_duration,'String',num2str(getappdata(hMain,'audio_recorder_duration')));
     set(handles.IN_fs,'Enable','on');
     set(handles.IN_fs,'String',num2str(getappdata(hMain,'audio_recorder_fs')));
-    set(handles.IN_nbits,'Enable','on');
-    set(handles.IN_nbits,'String',num2str(getappdata(hMain,'audio_recorder_nbits')));
+    %set(handles.IN_nbits,'Enable','on');
+    %set(handles.IN_nbits,'String',num2str(getappdata(hMain,'audio_recorder_nbits')));
     set(handles.IN_qdur,'String',num2str(getappdata(hMain,'audio_recorder_qdur')));
     set(handles.IN_buffer,'String',num2str(getappdata(hMain,'audio_recorder_buffer')));
     set(handles.audio_recorder,'Position',handles.position-[0 0 0 handles.OUT_axes_position(4)]);
@@ -646,7 +646,7 @@ else
     handles.numchs = str2double(get(handles.IN_numchs,'String'));
     handles.duration = str2double(get(handles.IN_duration,'String'));
     handles.fs = str2double(get(handles.IN_fs,'String'));
-    handles.nbits = str2double(get(handles.IN_nbits,'String'));
+    %handles.nbits = str2double(get(handles.IN_nbits,'String'));
     xlim(handles.IN_axes,[0 round(handles.duration)])
     xlim(handles.OUT_axes,[0 round(handles.duration)])
 end
