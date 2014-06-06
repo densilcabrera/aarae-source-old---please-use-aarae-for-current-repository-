@@ -8,16 +8,16 @@ function mySelectFcn(tree, ~)
     aarae_fig = findobj('Tag','aarae');
     mainHandles = guidata(aarae_fig);
     selectedNodes = tree.getSelectedNodes; % Get selected leaf
-    if ~isfield(selectedNodes(1).handle.UserData,'audio')
-        set(mainHandles.compare_btn,'Enable','off')
-    else
-        set(mainHandles.compare_btn,'Enable','on')
-    end
     if ~isempty(selectedNodes)
         % Call the 'desktop'
         hMain = getappdata(0,'hMain');
         selectedNodes = selectedNodes(1);
         audiodata = selectedNodes.handle.UserData;
+        if ~isfield(audiodata,'audio')
+            set(mainHandles.compare_btn,'Enable','off')
+        else
+            set(mainHandles.compare_btn,'Enable','on')
+        end
         if ~isempty(audiodata) && strcmp(audiodata.datatype,'syscal')
             mainHandles.syscalstats = audiodata;
             set(mainHandles.signaltypetext,'String',[selectedNodes.getName.char ' selected']);
