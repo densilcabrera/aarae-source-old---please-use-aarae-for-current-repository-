@@ -45,7 +45,7 @@ end
 
 
 % --- Executes just before preferences is made visible.
-function preferences_OpeningFcn(hObject, eventdata, handles, varargin)
+function preferences_OpeningFcn(hObject, ~, handles, varargin)
 % This function has no output args, see OutputFcn.
 % hObject    handle to figure
 % eventdata  reserved - to be defined in a future version of MATLAB
@@ -97,7 +97,7 @@ end
 
 
 % --- Outputs from this function are returned to the command line.
-function varargout = preferences_OutputFcn(hObject, eventdata, handles) 
+function varargout = preferences_OutputFcn(hObject, ~, handles) 
 % varargout  cell array for returning output args (see VARARGOUT);
 % hObject    handle to figure
 % eventdata  reserved - to be defined in a future version of MATLAB
@@ -109,7 +109,7 @@ delete(hObject)
 
 
 
-function maxtimetodisplay_IN_Callback(hObject, eventdata, handles)
+function maxtimetodisplay_IN_Callback(hObject, ~, handles) %#ok : Executed when maximum time to diaplay input changes
 % hObject    handle to maxtimetodisplay_IN (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
@@ -125,7 +125,7 @@ end
 guidata(hObject,handles)
 
 % --- Executes during object creation, after setting all properties.
-function maxtimetodisplay_IN_CreateFcn(hObject, eventdata, handles)
+function maxtimetodisplay_IN_CreateFcn(hObject, ~, ~) %#ok : Maximum time to display input box creation
 % hObject    handle to maxtimetodisplay_IN (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    empty - handles not created until after all CreateFcns called
@@ -138,7 +138,7 @@ end
 
 
 % --- Executes on button press in cal_chk.
-function cal_chk_Callback(hObject, eventdata, handles)
+function cal_chk_Callback(hObject, ~, handles) %#ok : Executed when apply calibration checkbox changes
 % hObject    handle to cal_chk (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
@@ -148,7 +148,7 @@ handles.output.calibrationtoggle = get(hObject,'Value');
 guidata(hObject,handles)
 
 % --- Executes on selection change in flim_popup.
-function flim_popup_Callback(hObject, eventdata, handles)
+function flim_popup_Callback(hObject, ~, handles) %#ok : Executed when frequency limits popup up menu changes
 % hObject    handle to flim_popup (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
@@ -188,7 +188,7 @@ end
 guidata(hObject,handles)
 
 % --- Executes during object creation, after setting all properties.
-function flim_popup_CreateFcn(hObject, eventdata, handles)
+function flim_popup_CreateFcn(hObject, ~, ~) %#ok : Frequency limits popup menu creation
 % hObject    handle to flim_popup (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    empty - handles not created until after all CreateFcns called
@@ -201,14 +201,14 @@ end
 
 
 % --- Executes on button press in ok_btn.
-function ok_btn_Callback(hObject, eventdata, handles)
+function ok_btn_Callback(~, ~, handles) %#ok : Executed when OK button is clicked
 % hObject    handle to ok_btn (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 uiresume(handles.preferences)
 
 % --- Executes on button press in cancel_btn.
-function cancel_btn_Callback(hObject, eventdata, handles)
+function cancel_btn_Callback(hObject, ~, handles) %#ok : Executed when Cancel button is clicked
 % hObject    handle to cancel_btn (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
@@ -218,7 +218,7 @@ guidata(hObject,handles)
 uiresume(handles.preferences)
 
 % --- Executes when user attempts to close preferences.
-function preferences_CloseRequestFcn(hObject, eventdata, handles)
+function preferences_CloseRequestFcn(hObject, ~, ~) %#ok : Executed when Preference window is closed
 % hObject    handle to preferences (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)

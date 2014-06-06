@@ -68,7 +68,7 @@ setappdata(hMain,'audio_recorder_output',1)
 setappdata(hMain,'audio_recorder_numchs',1)
 setappdata(hMain,'audio_recorder_duration',1)
 setappdata(hMain,'audio_recorder_fs',48000)
-setappdata(hMain,'audio_recorder_nbits',16)
+%setappdata(hMain,'audio_recorder_nbits',16)
 setappdata(hMain,'audio_recorder_qdur',1)
 setappdata(hMain,'audio_recorder_buffer',1024)
 
@@ -187,7 +187,7 @@ if ~isempty(getappdata(hMain,'testsignal'))
     if isfield(signaldata,'tag'), signaldata = rmfield(signaldata,'tag'); end
     signaldata.datatype = 'testsignals';
     if isfield(signaldata,'audio')
-        signaldata.nbits = 16;
+        %signaldata.nbits = 16;
         iconPath = fullfile(matlabroot,'/toolbox/fixedpoint/fixedpointtool/resources/plot.png');
     else
         iconPath = fullfile(matlabroot,'/toolbox/matlab/icons/notesicon.gif');
@@ -218,7 +218,7 @@ if ~isempty(getappdata(hMain,'testsignal'))
     handles.mytree.expand(handles.testsignals);
     handles.mytree.setSelectedNode(handles.(genvarname(newleaf)));
     set([handles.clrall_btn,handles.export_btn],'Enable','on')
-    fprintf(handles.fid, [' ' datestr(now,16) ' - Generated ' newleaf ': duration = ' num2str(length(signaldata.audio)/signaldata.fs) 's ; fs = ' num2str(signaldata.fs) 'Hz ; bit depth = ' num2str(signaldata.nbits) '\n']);
+    fprintf(handles.fid, [' ' datestr(now,16) ' - Generated ' newleaf ': duration = ' num2str(length(signaldata.audio)/signaldata.fs) 's ; fs = ' num2str(signaldata.fs) 'Hz \n']);
 end
 guidata(hObject, handles);
 
@@ -306,7 +306,7 @@ for nleafs = 1:length(selectedNodes)
             listing = dir([folder_name '/' name{1,1} ext]);
             if isempty(listing)
                 if strcmp(ext,'.mat'), save([folder_name '/' name{1,1} ext],'audiodata'); end
-                if strcmp(ext,'.wav'), audiowrite(audiodata.audio,audiodata.fs,[folder_name '/' name{1,1}]); end
+                if strcmp(ext,'.wav'), audiowrite([folder_name '/' name{1,1} ext],audiodata.audio,audiodata.fs); end
             else
                 index = 1;
                 % This while cycle is just to make sure no signals are
@@ -356,21 +356,21 @@ for i = 1:length(filename)
             if isstruct(file)
                 signaldata = file;
             else
-                specs = inputdlg({'Please specify the sampling frequency','Please specify the bit depth'},'Sampling frequency',1);
+                specs = inputdlg('Please specify the sampling frequency','Sampling frequency',1);
                 if (isempty(specs))
                     warndlg('Input field is blank, cannot load data!','AARAE info');
                     signaldata = [];
                 else
                     fs = str2double(specs{1,1});
-                    nbits = str2double(specs{2,1});
-                    if (isnan(fs) || fs<=0 || isnan(nbits) || nbits<=0)
+                    %nbits = str2double(specs{2,1});
+                    if isnan(fs) || fs<=0 % || isnan(nbits) || nbits<=0)
                         warndlg('Input MUST be a real positive number, cannot load data!','AARAE info');
                         signaldata = [];
                     else
                         signaldata = [];
                         signaldata.audio = file;
                         signaldata.fs = fs;
-                        signaldata.nbits = nbits;
+                        %signaldata.nbits = nbits;
                     end
                 end
             end
@@ -378,7 +378,7 @@ for i = 1:length(filename)
         if strcmp(ext,'.wav') || strcmp(ext,'.WAV')
             signaldata = [];
             [signaldata.audio,signaldata.fs] = audioread(fullfile(handles.defaultaudiopath,filename{i}));
-            signaldata.nbits = 16;
+            %signaldata.nbits = 16;
         end;
 
         % Generate new leaf and update the tree
@@ -830,7 +830,6 @@ if ~isempty(getappdata(hMain,'testsignal'))
     set([handles.clrall_btn,handles.export_btn],'Enable','on')
     fprintf(handles.fid, [' ' datestr(now,16) ' - Processed "' char(selectedNodes(1).getName) '" to generate an impulse response of ' num2str(IRlength) ' points\n']);
 end
-set(handles.IR_btn, 'Visible', 'off');
 
 guidata(hObject, handles);
 
