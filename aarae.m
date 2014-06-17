@@ -948,24 +948,25 @@ for nleafs = 1:length(selectedNodes)
                 handles.mytree.expand(handles.results);
                 %handles.mytree.setSelectedNode(handles.(genvarname(newleaf)));
                 set([handles.clrall_btn,handles.export_btn],'Enable','on')
-            end
-            fprintf(handles.fid, [' ' datestr(now,16) ' - Analyzed "' char(selectedNodes(1).getName) '" using ' funname ' in ' handles.funcat '\n']);% In what category???
-            
-            h = findobj('type','figure','-not','tag','aarae');
-            index = 1;
-            filename = dir([cd '/Utilities/Temp/' char(selectedNodes(nleafs).getName) funname num2str(index) '.fig']);
-            if ~isempty(filename)
-                while isempty(dir([cd '/Utilities/Temp/' char(selectedNodes(nleafs).getName) funname num2str(index) '.fig'])) == 0
+
+                fprintf(handles.fid, [' ' datestr(now,16) ' - Analyzed "' char(selectedNodes(1).getName) '" using ' funname ' in ' handles.funcat '\n']);% In what category???
+
+                h = findobj('type','figure','-not','tag','aarae');
+                index = 1;
+                filename = dir([cd '/Utilities/Temp/' char(selectedNodes(nleafs).getName) funname num2str(index) '.fig']);
+                if ~isempty(filename)
+                    while isempty(dir([cd '/Utilities/Temp/' char(selectedNodes(nleafs).getName) funname num2str(index) '.fig'])) == 0
+                        index = index + 1;
+                    end
+                end
+                for i = 1:length(h)
+                    saveas(h(i),[cd '/Utilities/Temp/' char(selectedNodes(nleafs).getName) funname num2str(index) '.fig']);
                     index = index + 1;
                 end
+                results = dir([cd '/Utilities/Temp']);
+                set(handles.result_box,'String',[' ';cellstr({results(3:length(results)).name}')]);
+                if length(selectedNodes) > 1 || size(file,1) > 1, delete(h); end
             end
-            for i = 1:length(h)
-                saveas(h(i),[cd '/Utilities/Temp/' char(selectedNodes(nleafs).getName) funname num2str(index) '.fig']);
-                index = index + 1;
-            end
-            results = dir([cd '/Utilities/Temp']);
-            set(handles.result_box,'String',[' ';cellstr({results(3:length(results)).name}')]);
-            if length(selectedNodes) > 1 || size(file,1) > 1, delete(h); end
         end
         set(hObject,'BackgroundColor',[0.94 0.94 0.94]);
         set(hObject,'Enable','on');
@@ -1827,7 +1828,8 @@ function result_box_Callback(hObject, ~, handles) %#ok
 % Hints: contents = cellstr(get(hObject,'String')) returns result_box contents as cell array
 %        contents{get(hObject,'Value')} returns selected item from result_box
 get(handles.aarae,'SelectionType');
-if strcmp(get(handles.aarae,'SelectionType'),'open')
+contents = cellstr(get(hObject,'String'));
+if strcmp(get(handles.aarae,'SelectionType'),'open') && ~isempty(contents{get(hObject,'Value')})
     contents = cellstr(get(hObject,'String'));
     file = contents{get(hObject,'Value')};
     [~,~,ext] = fileparts(file);
@@ -2126,6 +2128,7 @@ else
         rmdir([cd '/Utilities/Temp'],'s');
         mkdir([cd '/Utilities/Temp']);
         addpath([cd '/Utilities/Temp']);
+        set(handles.result_box,'Value',1);
         set(handles.result_box,'String',cell(1,1));
         fprintf(handles.fid, [' ' datestr(now,16) ' - Cleared workspace \n']);
         set(hObject,'BackgroundColor',[0.94 0.94 0.94]);
@@ -2456,69 +2459,6 @@ switch get(eventdata.NewValue,'Tag')
         set(handles.Xvalues_box,'String',data.tables(ntable).ColumnName,'Value',1)
 end
 Yvalues_box_Callback(hObject, eventdata, handles)
-
-
-% --- Executes on selection change in nchart_popup.
-function nchart_popup_Callback(hObject, ~, handles) %#ok
-% hObject    handle to nchart_popup (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
-
-% Hints: contents = cellstr(get(hObject,'String')) returns nchart_popup contents as cell array
-%        contents{get(hObject,'Value')} returns selected item from nchart_popup
-plot(handles.axesdata,0,0)
-selectedNodes = handles.mytree.getSelectedNodes;
-data = selectedNodes(1).handle.UserData;
-contents = cellstr(get(hObject,'String'));
-if ~strcmp(contents{get(hObject,'Value')},' ')
-    linedata = data.lines.(contents{get(hObject,'Value')}).data;
-    axis2 = handles.axesdata;
-    for j = 1:length(linedata)
-        l1 = [];
-        if strcmp(linedata{j,1}.Type,'line'), l1 = line; end
-        if strcmp(linedata{j,1}.Type,'surface'), l1 = surface; end
-        %if strcmp(linedata{j,1}.Type,'hggroup'), l1 = hggroup; end
-        if ~isempty(l1)
-            linedata{j,1}.Parent = axis2;
-            dif = intersect(fieldnames(linedata{j,1}),fieldnames(set(l1)));
-            for i = 1:size(dif,1)
-                set(l1,dif{i},linedata{j,1}.(dif{i,1}))
-            end
-        end
-    end
-    axesprop = data.lines.(contents{get(hObject,'Value')}).axisproperties;
-    xlabel(handles.axesdata,axesprop.xlabel)
-    ylabel(handles.axesdata,axesprop.ylabel)
-    zlabel(handles.axesdata,axesprop.zlabel)
-    propdif = intersect(fieldnames(set(gca)),fieldnames(axesprop));
-    propdif = propdif(~strcmp(propdif,'Children'));
-    propdif = propdif(~strcmp(propdif,'Parent'));
-    propdif = propdif(~strcmp(propdif,'OuterPosition'));
-    propdif = propdif(~strcmp(propdif,'Position'));
-    propdif = propdif(~strcmp(propdif,'Title'));
-    propdif = propdif(~strcmp(propdif,'XLabel'));
-    propdif = propdif(~strcmp(propdif,'YLabel'));
-    propdif = propdif(~strcmp(propdif,'ZLabel'));
-    for i = 1:size(propdif,1)
-        set(handles.axesdata,propdif{i},axesprop.(propdif{i,1}))
-    end
-    %set(handles.axesdata,'XScale',axesprop.xscale)
-    %set(handles.axesdata,'YScale',axesprop.yscale)
-    %set(handles.axesdata,'ZScale',axesprop.zscale)
-end
-
-
-% --- Executes during object creation, after setting all properties.
-function nchart_popup_CreateFcn(hObject, ~, ~) %#ok
-% hObject    handle to nchart_popup (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    empty - handles not created until after all CreateFcns called
-
-% Hint: popupmenu controls usually have a white background on Windows.
-%       See ISPC and COMPUTER.
-if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
-    set(hObject,'BackgroundColor','white');
-end
 
 
 % --- Executes on button press in wild_btn.
