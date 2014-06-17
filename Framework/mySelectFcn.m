@@ -110,10 +110,33 @@ function mySelectFcn(tree, ~)
             set(mainHandles.datatext,'Visible','on');
             set(mainHandles.datatext,'String',['Selected: ' selectedNodes.getName.char datatext]); % Output contents in textbox below the tree
             cla(mainHandles.axesdata)
-            if isfield(audiodata,'lines')
+            if isfield(audiodata,'data')
                 set(mainHandles.data_panel1,'Visible','on');
-                set(mainHandles.nchart_popup,'String',[' ';fieldnames(audiodata.lines)])
-                set(mainHandles.nchart_popup,'Value',1)
+                if ~ismatrix(audiodata.data)
+                    if ndims(audiodata.data) == 3, cmap = colormap(hsv(size(audiodata.data,3))); end
+                    if ndims(audiodata.data) >= 4, cmap = colormap(copper(size(audiodata.data,4))); end
+                    set(mainHandles.aarae,'DefaultAxesColorOrder',cmap)
+                else
+                    cmap = colormap(lines(size(audiodata.data,2)));
+                    set(mainHandles.aarae,'DefaultAxesColorOrder',cmap)
+                end
+                if length(audiodata.datainfo.dimensions) == 1
+                    filltable(audiodata,5,mainHandles)
+                    set(mainHandles.chartfunc_popup,'String',{'plot','semilogx','semilogy','loglog'},'Value',1)
+                    plot(mainHandles.axesdata,audiodata.(genvarname(audiodata.datainfo.dimensions{1,1}))(:,1),audiodata.data(:,1))
+                    xlabel(mainHandles.axesdata,[audiodata.datainfo.dimensions{1,1} ' [' audiodata.(genvarname([audiodata.datainfo.dimensions{1,1} 'info'])).units ']'])
+                elseif length(audiodata.datainfo.dimensions) == 2
+                    filltable(audiodata,7,mainHandles)
+                    set(mainHandles.chartfunc_popup,'String',{'mesh','pcolor','surf'},'Value',1)
+                    mesh(mainHandles.axesdata,audiodata.(genvarname(audiodata.datainfo.dimensions{1,1})),audiodata.(genvarname(audiodata.datainfo.dimensions{1,2})),audiodata.data(:,:,1))
+                    xlabel(mainHandles.axesdata,[audiodata.datainfo.dimensions{1,1} ' [' audiodata.(genvarname([audiodata.datainfo.dimensions{1,1} 'info'])).units ']'])
+                    ylabel(mainHandles.axesdata,[audiodata.datainfo.dimensions{1,2} ' [' audiodata.(genvarname([audiodata.datainfo.dimensions{1,2} 'info'])).units ']'])
+                end
+                mainHandles.tabledata = get(mainHandles.cattable,'Data');
+%            elseif isfield(audiodata,'lines')
+%                set(mainHandles.data_panel1,'Visible','on');
+%                set(mainHandles.nchart_popup,'String',[' ';fieldnames(audiodata.lines)])
+%                set(mainHandles.nchart_popup,'Value',1)
             else
                 set(mainHandles.data_panel1,'Visible','off');
             end

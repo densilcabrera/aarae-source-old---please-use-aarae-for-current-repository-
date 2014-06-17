@@ -23,7 +23,7 @@ function varargout = aarae(varargin)
 
 % Edit the above text to modify the response to help aarae
 
-% Last Modified by GUIDE v2.5 03-Jun-2014 16:59:16
+% Last Modified by GUIDE v2.5 13-Jun-2014 19:03:39
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -645,7 +645,6 @@ switch delete
     case 'Yes'
         % Deletes selected leaf from the tree
         setappdata(hMain,'testsignal',[]);
-        set(handles.IR_btn, 'Visible', 'off');
         selectedNodes = handles.mytree.getSelectedNodes;
         for nleafs = 1:length(selectedNodes)
             audiodata = selectedNodes(nleafs).handle.UserData;
@@ -889,6 +888,8 @@ function analyze_btn_Callback(hObject, ~, handles) %#ok
 selectedNodes = handles.mytree.getSelectedNodes;
 funcallback = [];
 for nleafs = 1:length(selectedNodes)
+    handles.nleafs = nleafs;
+    guidata(hObject,handles)
     audiodata = selectedNodes(nleafs).handle.UserData;
     % Evaluate selected function for the leaf selected from the tree
     if ~isempty(handles.funname) && ~isempty(audiodata)
@@ -917,7 +918,8 @@ for nleafs = 1:length(selectedNodes)
                 out = [];
                 feval(funname,audiodata);
             end
-
+            aarae_fig = findobj('Tag','aarae');
+            handles = guidata(aarae_fig);
             newleaf = cell(1,1);
             newleaf{1,1} = [char(selectedNodes(nleafs).getName) ' ' funname];
             if ~isempty(out)
@@ -2620,7 +2622,6 @@ To_time = str2double(get(hObject,'String'));
 selectedNodes = handles.mytree.getSelectedNodes;
 signaldata = selectedNodes(1).handle.UserData;
 if isnan(To_time) || To_time < 0 || To_time == length(signaldata.audio)/signaldata.fs
-    %warndlg('Invalid entry','AARAE info','modal')
     set(hObject,'String',num2str(handles.To_time_IN))
 elseif To_time >= str2double(get(handles.Tf_time,'String'))
     Tf_time = To_time + (handles.Tf_time_IN - handles.To_time_IN);
@@ -2703,4 +2704,91 @@ if ~isempty(Preferences)
     selectedNodes = handles.mytree.getSelectedNodes;
     handles.mytree.setSelectedNode(handles.root);
     handles.mytree.setSelectedNode(selectedNodes(1));
+end
+
+
+function doresultplot(handles)
+% hObject    handle to dimsel_IN (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: get(hObject,'String') returns contents of dimsel_IN as text
+%        str2double(get(hObject,'String')) returns contents of dimsel_IN as a double
+selectedNodes = handles.mytree.getSelectedNodes;
+audiodata = selectedNodes(1).handle.UserData;
+chartmenu = cellstr(get(handles.chartfunc_popup,'String'));
+chartfunc = chartmenu{get(handles.chartfunc_popup,'Value')};
+cattable = get(handles.cattable);
+sel = strjoin(cattable.Data(:,2).',',');
+if isempty(sel), sel = '[1]'; end
+try
+    if length(audiodata.datainfo.dimensions) == 1
+        Xdata = audiodata.(genvarname(audiodata.datainfo.dimensions{1,1}));
+        if ~isequal(size(Xdata),size(audiodata.data))
+            eval([chartfunc '(handles.axesdata,Xdata,squeeze(audiodata.data(:,' sel ')))'])
+        else
+            eval([chartfunc '(handles.axesdata,squeeze(Xdata(:,' sel ')),squeeze(audiodata.data(:,' sel ')))'])
+        end
+        xlabel(handles.axesdata,[audiodata.datainfo.dimensions{1,1} ' [' audiodata.(genvarname([audiodata.datainfo.dimensions{1,1} 'info'])).units ']'])
+    elseif length(audiodata.datainfo.dimensions) == 2
+        Xdata = audiodata.(genvarname(audiodata.datainfo.dimensions{1,1})); %#ok : Used in eval function below
+        Ydata = audiodata.(genvarname(audiodata.datainfo.dimensions{1,2})); %#ok : Used in eval function below
+        eval([chartfunc '(handles.axesdata,Xdata,Ydata,squeeze(audiodata.data(:,:,' sel ')))'])
+        xlabel(handles.axesdata,[audiodata.datainfo.dimensions{1,1} ' [' audiodata.(genvarname([audiodata.datainfo.dimensions{1,1} 'info'])).units ']'])
+        ylabel(handles.axesdata,[audiodata.datainfo.dimensions{1,2} ' [' audiodata.(genvarname([audiodata.datainfo.dimensions{1,2} 'info'])).units ']'])
+    end
+catch error
+    set(handles.cattable,'Data',handles.tabledata)
+    warndlg(error.message,'AARAE info','modal')
+end
+
+
+% --- Executes on selection change in chartfunc_popup.
+function chartfunc_popup_Callback(~, eventdata, handles) %#ok : Executed when selection changes in chart selection popup menu
+% hObject    handle to chartfunc_popup (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: contents = cellstr(get(hObject,'String')) returns chartfunc_popup contents as cell array
+%        contents{get(hObject,'Value')} returns selected item from chartfunc_popup
+doresultplot(handles)
+
+% --- Executes during object creation, after setting all properties.
+function chartfunc_popup_CreateFcn(hObject, ~, ~) %#ok : creation of chart selection type popup menu
+% hObject    handle to chartfunc_popup (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: popupmenu controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+
+% --- Executes when selected cell(s) is changed in cattable.
+function cattable_CellSelectionCallback(hObject, eventdata, handles) %#ok : opens listdlg for changing selection of categorical dimensions
+% hObject    handle to cattable (see GCBO)
+% eventdata  structure with the following fields (see UITABLE)
+%	Indices: row and column indices of the cell(s) currently selecteds
+% handles    structure with handles and user data (see GUIDATA)
+if size(eventdata.Indices,1) ~= 0 && eventdata.Indices(1,2) == 2
+    selectedNodes = handles.mytree.getSelectedNodes;
+    audiodata = selectedNodes(1).handle.UserData;
+    tabledata = get(hObject,'Data');
+    handles.tabledata = tabledata;
+    catname = tabledata{eventdata.Indices(1,1),1};
+    liststr = audiodata.(genvarname(catname));
+    if size(liststr,1) < size(liststr,2), liststr = liststr'; end
+    if ~iscellstr(liststr), liststr = cellstr(num2str(cell2mat(liststr))); end
+    [sel,ok] = listdlg('ListString',liststr,'InitialValue',str2num(tabledata{eventdata.Indices(1),eventdata.Indices(2)})); %#ok : necessary for getting selection vector
+    if ok == 1
+        logsel = ['[' num2str(sel) ']'];
+        tabledata{eventdata.Indices(1),eventdata.Indices(2)} = logsel(1:end);
+    else
+        set(hObject,'Data',{''})
+    end
+    set(hObject,'Data',tabledata)
+    guidata(handles.aarae,handles)
+    doresultplot(handles)
 end
