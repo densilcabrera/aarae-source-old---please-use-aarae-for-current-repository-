@@ -805,7 +805,6 @@ if ~isempty(signal) && ~isempty(fs)
             title('Time-varying loudness')
             legend('show','Location','NorthEast');
             hold off
-            OUT.lines.t_varying_loud = getplotdata;
             
             subplot(2,2,4)
             plot(ERBS,mean(SpecLoud_t,2),'r','DisplayName','Mean')
@@ -817,7 +816,6 @@ if ~isempty(signal) && ~isempty(fs)
             title('Specific loudness pattern')
             legend('show','Location','NorthEast');
             hold off
-            OUT.lines.specific_loud_pattern = getplotdata;
             
             subplot(2,2,3)
             imagesc(times(1:nwindows),ERBS,SpecLoud_t)
@@ -825,7 +823,7 @@ if ~isempty(signal) && ~isempty(fs)
             xlabel('Time (s)')
             ylabel('Instantaneous specific loudness (sones/erb)')
             title('Time-varying specific loudness pattern')
-        
+            
         case 2
             % just plot loudness
             figure('Name','Loudness')
@@ -838,7 +836,6 @@ if ~isempty(signal) && ~isempty(fs)
             title('Time-varying loudness')
             legend('show','Location','NorthEast');
             hold off
-            OUT.lines.t_varying_loud = getplotdata;
          
         case 3 | 4
             % plot of loudness level
@@ -893,11 +890,26 @@ if ~isempty(signal) && ~isempty(fs)
             ylabel('Loudness Level (phon)')
             legend('show','Location','EastOutside');
             hold off
-            OUT.lines.t_varying_loud_level = getplotdata;
             
     end; % switch doplot
     
-
+    % Time-varying loudness data results leaf
+    doresultleaf([InstantaneousLoudness,ShortTermLoudness,LongTermLoudness],'sone',{'time'},...
+                    'time',times','s',...
+                    'loudnesstype',{'Instantaneous','Short-term','Long-term'},'categorical',...
+                    'name','Time_varying_loudness');
+                
+    % Specific loudness pattern data results leaf
+    doresultleaf([mean(SpecLoud_t,2),prctile(SpecLoud_t,95,2),prctile(SpecLoud_t,90,2)],'sone/erb',{'Auditory_filter'},...
+                    'Auditory_filter',ERBS','erb',...
+                    'Percentile',{'Mean','95%','90%'},'categorical',...
+                    'name','Specific_loudness');
+                
+    % Time-varying specific loudness pattern data results leaf
+    doresultleaf(SpecLoud_t,'sone/erb',{'time','Auditory_filter'},...
+                    'time',times(1:nwindows+2),'s',...
+                    'Auditory_filter',ERBS','sone/erb',... %'Percentile',{'Mean','95%','90%'},'categorical',...
+                    'name','Time_var_Specific_loudness');
     
     % Loudness statistics
     Ncat = [InstantaneousLoudness, ShortTermLoudness, LongTermLoudness];

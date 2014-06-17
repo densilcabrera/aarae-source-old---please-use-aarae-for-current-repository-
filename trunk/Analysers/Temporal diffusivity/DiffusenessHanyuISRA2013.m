@@ -221,7 +221,14 @@ if ~isempty(data) && ~isempty(fs) && ~isempty(startindex) && ~isempty(endindex) 
     out.funcallback.name = 'DiffusenessHanyuISRA2013.m';
     out.funcallback.inarg = {fs,startindex,endindex,doplot,threshold};
 
-
+    if ~exist('chanID','var')
+        chanID = {1:chans};
+    end
+    if ~exist('bandID','var')
+        bandID = {1:bands};
+    else
+        bandID = num2cell(bandID);
+    end
 
     %**************************************************************
     % CHARTS
@@ -254,7 +261,18 @@ if ~isempty(data) && ~isempty(fs) && ~isempty(startindex) && ~isempty(endindex) 
         ylabel('h^2')
         
         hold off
-        out.lines.h2 = getplotdata;
+        if ~ismatrix(h2)
+            doresultleaf(h2,[],{'time'},...
+                            'time',t','s',...
+                            'channels',chanID,'categorical',...
+                            'bands',bandID,'Hz',...
+                            'name','h^2');
+        else
+            doresultleaf(h2,[],{'time'},...
+                            'time',t','s',...
+                            'channels',chanID,'categorical',...
+                            'name','h^2');
+        end
 
         %***********************
         subplot(2,1,2)
@@ -273,7 +291,8 @@ if ~isempty(data) && ~isempty(fs) && ~isempty(startindex) && ~isempty(endindex) 
             for dim3 = 1:bands
                 % plot running average of h^2 (using fftfilt, with the above
                 % coefficients)
-                plot(t,fadeincomp .* fftfilt(b,h2(:,dim2,dim3)), ...
+                rah2(:,dim2,dim3) = fadeincomp .* fftfilt(b,h2(:,dim2,dim3));
+                plot(t,rah2(:,dim2,dim3), ...
                     'Color',squeeze(M(dim3,dim2,:))')
             end
         end
@@ -292,7 +311,18 @@ if ~isempty(data) && ~isempty(fs) && ~isempty(startindex) && ~isempty(endindex) 
         ylabel('Running average of h(t)^2')
 
         hold off
-        out.lines.rah2 = getplotdata;
+        if ~ismatrix(h2)
+            doresultleaf(rah2,[],{'time'},...
+                            'time',t','s',...
+                            'channels',chanID,'categorical',...
+                            'bands',bandID,'Hz',...
+                            'name','rah^2');
+        else
+            doresultleaf(rah2,[],{'time'},...
+                            'time',t','s',...
+                            'channels',chanID,'categorical',...
+                            'name','rah^2');
+        end
 
         %***********************
         % Create a figure to follow Hanyu's Figure 4
@@ -335,19 +365,25 @@ if ~isempty(data) && ~isempty(fs) && ~isempty(startindex) && ~isempty(endindex) 
             'LineStyle','--','Color',[0.5 0.5 0.5])
 
         hold off
-        out.lines.z = getplotdata;
+        if ~ismatrix(h2)
+            doresultleaf(z,[],{'k'},...
+                            'k',h2_sort,[],...
+                            'channels',chanID,'categorical',...
+                            'bands',bandID,'Hz',...
+                            'name','z(k)');
+        else
+            doresultleaf(z,[],{'k'},...
+                            'k',h2_sort,[],...
+                            'channels',chanID,'categorical',...
+                            'name','z(k)');
+        end
+        
         % results table
         fig3 = figure('Name','Degree of time series fluctuation (Hanyu ISRA 2013)');
-        if exist('chanID','var')
-            RowName = chanID;
-        else
-            RowName = {1:chans};
-        end
-        if exist('bandID','var')
-            ColumnName = {bandID};
-        else
-            ColumnName = {1:bands};
-        end
+        
+        RowName = chanID;
+        ColumnName = bandID;
+        
         table1 = uitable('Data',permute(result,[2,3,1]),...
                 'ColumnName',ColumnName,...
                 'RowName',RowName);
