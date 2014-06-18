@@ -53,9 +53,29 @@ if isstruct(IN)
     end
     IR = IN.audio; % Extract the audio data
     fs = IN.fs;       % Extract the sampling frequency of the audio data
-    T=IN.properties.dur;% Extract the length of the sweep.
-    freqs=IN.properties.freq; %Extract the highest and lowest frequencies in the sweep
-    relgain=IN.properties.relgain; % Extract the relative gain of the sweeps
+    if isfield(IN,'properties')
+    if isfield(IN.properties,'relgain') ...
+            && isfield(IN.properties,'freq') ...
+            && isfield(IN.properties,'dur')
+        T=IN.properties.dur;% Extract the length of the sweep.
+        freqs=IN.properties.freq; %Extract the highest and lowest frequencies in the sweep
+        relgain=IN.properties.relgain; % Extract the relative gain of the sweeps
+    else
+        warndlg('The input audio structure is missing required ''properties'' fields (relgain, freq and dur) for THD analysis','AARAE info','modal');
+        %disp('The input audio structure is missing required fields for THD analysis')
+        OUT = [];
+        return
+    end
+    else
+        warndlg('The input audio structure is missing required ''properties'' fields (relgain, freq and dur) for THD analysis','AARAE info','modal');
+        %disp('The input audio structure is missing required fields for THD analysis')
+        OUT = [];
+        return
+    end
+else
+    disp('Currently this function requires an AARAE audio structure as input')
+    OUT = [];
+    return
 end
 
 
@@ -77,7 +97,8 @@ c = c / 255; % rescale to 0-1 range
 if ~isempty(IR) && ~isempty(fs) && ~isempty(T) && ~isempty(freqs)&& ~isempty(relgain)
     
     if relgain(1,1) ~= -inf
-        disp('Silent Sweep Too Noisy or Not Existent');
+        warndlg('The input audio does not include a silent cycle','AARAE info','modal');
+        %disp('Silent Sweep Too Noisy or Not Existent');
     end
     
     [irlen,~,~,nswps]=size(IR); %length of IR and number of sweeps
@@ -113,12 +134,14 @@ if ~isempty(IR) && ~isempty(fs) && ~isempty(T) && ~isempty(freqs)&& ~isempty(rel
         thissweep=IR(:,1,1,sn);
         [~,dirac]=max(abs(thissweep)); % the location of the Linear Impulse Response
         if dirac<(gd_lnr_wndwb) % if the maximum point in the full IR falls outside this range, there is most likely an error.
-            disp('Warning: Highly Distorting or Noisy System, Can Not Analyse');
+            warndlg('Highly Distorting or Noisy System, Can Not Analyse!','AARAE info','modal');
+            %disp('Warning: Highly Distorting or Noisy System, Can Not Analyse');
             OUT = [];
             return
         end
         if dirac>(gd_lnr_wndwe)
-            disp('Warning: Highly Distorting or Noisy System, Can Not Analyse');
+            warndlg('Highly Distorting or Noisy System, Can Not Analyse!','AARAE info','modal');
+            %disp('Warning: Highly Distorting or Noisy System, Can Not Analyse');
             OUT = [];
             return
         end
@@ -198,7 +221,8 @@ if ~isempty(IR) && ~isempty(fs) && ~isempty(T) && ~isempty(freqs)&& ~isempty(rel
             
             if p>1 %checking to see if any of the pseudo-IRs overlap
                 if stp(p,sn)>strt(p-1,sn)
-                    disp('Warning: Pseudo-IR Windows Overlap, result inaccurate due to noise or reverberation. Amplify Noise or decrease Noise Floor Comparison Window Size.');
+                    warndlg('Pseudo-IR Windows Overlap, result inaccurate due to noise or reverberation. Amplify Noise or decrease Noise Floor Comparison Window Size.','AARAE info','modal');
+                    %disp('Warning: Pseudo-IR Windows Overlap, result inaccurate due to noise or reverberation. Amplify Noise or decrease Noise Floor Comparison Window Size.');
                 end
             end
             
