@@ -1,8 +1,8 @@
 function OUT = THD_via_ESS(IN,nh,ave_or_reg,w,amp,mw,ir_plot,indv_harmonic,ampl_norm,plot_TF)
 
-% This function calculates total harmonic distortion (f) from a matrix 
-% of impulse responses generated in AARAE. For more information, please 
-% see the tutorial: Measuring Total Harmonic Distortion in AARAE Using 
+% This function calculates total harmonic distortion (f) from a matrix
+% of impulse responses generated in AARAE. For more information, please
+% see the tutorial: Measuring Total Harmonic Distortion in AARAE Using
 % an Impulse Response Generated from an Exponential Sinusoidal Sweep.
 %
 % Adam Opsata 2014
@@ -10,10 +10,10 @@ function OUT = THD_via_ESS(IN,nh,ave_or_reg,w,amp,mw,ir_plot,indv_harmonic,ampl_
 % to improve AARAE integration.
 
 
-if nargin ==1 
+if nargin ==1
     
     param = inputdlg({...
-        'Highest Harmonic Order to Evaluate';... % These are the input box titles in the
+        'Highest Harmonic Order to Evaluate';...
         'Average THD Over Frequency Bands? 1=Yes 0=No';...
         'Frequency Bands Per Octave (If THD is Averaged)';...
         'Amplify Noise by' ;...
@@ -21,24 +21,18 @@ if nargin ==1
         'Plot Each Trimmed Pseudo-IR?';...
         'Plot the Transfer Function of Each Harmonic? 1=Yes 0=No';...
         'Amplitude Normalisation? 1=Yes 0=No';...
-        'Plot Transfer Function of DUT? 1=Yes 0=No'},...% inputdlg window.
-        'User Input Parameters',... % This is the dialog window title.
-        [1 30],... % 
-        ...        % 
-        ...        % 
-        ...        % 
-        {'6';'0';'24';'1000'; '300'; '0';'0';'1';'0'}); % The preset answers for the dialog.
+        'Plot Transfer Function of DUT? 1=Yes 0=No'},...
+        'User Input Parameters',... % window title.
+        [1 60],... %
+        {'6';'0';'24';'1'; '300'; '0';'0';'1';'0'}); % Default values
     
-    param = str2num(char(param)); % Since inputs are usually numbers it's a
-    % good idea to turn strings into numbers.
+    param = str2num(char(param));
     
-    if length(param) < 9, param = []; end %Check that the user
-    % has input all the required
-    % fields.
+    if length(param) < 9, param = []; end
     if ~isempty(param) % Assign the dialog's inputs to your function's input parameters.
         nh = param(1); %Number of harmonics to be evaluated
-        ave_or_reg = param(2); % if==1 the THD will be calculated based on 
-                               % harmonics whose levels are averaged over the specified frequency band. If=0 the THD will be calculated directly
+        ave_or_reg = param(2); % if==1 the THD will be calculated based on
+        % harmonics whose levels are averaged over the specified frequency band. If=0 the THD will be calculated directly
         w = param(3); % Width of the frequency band that each harmonic's levels are averaged over.
         amp = param(4); % Adjusting the amplitude of the silent signal when comparing the IRs to the noise floor. Increasing amp truncates the psuedo IRs.
         mw = param(5);     %The size of the window used to evaluate the power of the signal compared to the noise floor.
@@ -51,35 +45,31 @@ if nargin ==1
     %param = [8;1;6;1;30;300;0;1;1];
 end
 
-if isstruct(IN) % Check that the function is being called within
-    % the AARAE environment, and can extract the
-    % information to run the anyliser.
+if isstruct(IN) 
+     % Apply scaling based on .cal field value (probably not necessary in
+     % this function)
+    if isfield(IN,'cal')
+        IN = cal_reset_aarae(IN,0,IN.cal);
+    end
     IR = IN.audio; % Extract the audio data
     fs = IN.fs;       % Extract the sampling frequency of the audio data
     T=IN.properties.dur;% Extract the length of the sweep.
     freqs=IN.properties.freq; %Extract the highest and lowest frequencies in the sweep
     relgain=IN.properties.relgain; % Extract the relative gain of the sweeps
-    
-    calcheck=isfield(IN,'cal');
-    if calcheck==1
-    calbrtion=IN.cal; %Extract the calibration 
-    IR=IR*calbrtion; %scaling the audio signal
-    end
-    
 end
- 
 
- %Colours
-    c = [127, 0, 255; % violet     
-        0, 0, 0; ... % black
-        255, 0, 0; ... % red
-        255, 128, 0; ... % orange
-        204, 204, 0; ... % dark yellow
-        0, 204, 0; ... % mid green
-        0, 204, 204; ... % dark cyan
-        0, 0, 255]; ... % blue
-        
-    c = c / 255; % rescale to 0-1 range
+
+%Colours
+c = [127, 0, 255; % violet
+    0, 0, 0; ... % black
+    255, 0, 0; ... % red
+    255, 128, 0; ... % orange
+    204, 204, 0; ... % dark yellow
+    0, 204, 0; ... % mid green
+    0, 204, 204; ... % dark cyan
+    0, 0, 255]; ... % blue
+    
+c = c / 255; % rescale to 0-1 range
 
 
 % To make your function work as standalone you can check that the user has
@@ -124,9 +114,13 @@ if ~isempty(IR) && ~isempty(fs) && ~isempty(T) && ~isempty(freqs)&& ~isempty(rel
         [~,dirac]=max(abs(thissweep)); % the location of the Linear Impulse Response
         if dirac<(gd_lnr_wndwb) % if the maximum point in the full IR falls outside this range, there is most likely an error.
             disp('Warning: Highly Distorting or Noisy System, Can Not Analyse');
+            OUT = [];
+            return
         end
         if dirac>(gd_lnr_wndwe)
             disp('Warning: Highly Distorting or Noisy System, Can Not Analyse');
+            OUT = [];
+            return
         end
         for p=1:nh; %Looking at all linear and pseudo IRs.
             
@@ -178,13 +172,16 @@ if ~isempty(IR) && ~isempty(fs) && ~isempty(T) && ~isempty(freqs)&& ~isempty(rel
             end
             
             if ir_plot==1 % PLOT EACH TRIMMED PSEUDO IRs
-     
+                
                 sseg=(IR(strt(p,sn):stp(p,sn),1,1,sn));
                 nseg=(IR(strt(p,sn):stp(p,sn),1,1,1));
                 
                 lll=length(sseg);
                 
-                chanstring = [',   Sweep no. ',num2str(sn-1)];
+                
+                %chanstring = [',   Sweep no. ',num2str(sn-1)];
+                chanstring = [',   Sweep no. ',num2str(sn-1),', ',...
+                    num2str(relgain(sn)),' dB'];
                 pstring=[',   Harmonic no. ',num2str(p)];
                 figure('Name', ['IR Windows, ', chanstring ,  pstring ]);
                 title(['Total Harmonic Distortion from ESS, Sweep Number ' ,num2str(sn-1)]);
@@ -234,11 +231,11 @@ if ~isempty(IR) && ~isempty(fs) && ~isempty(T) && ~isempty(freqs)&& ~isempty(rel
     max_Ir_len=max(max(matlens));
     if max_Ir_len>200000
         mid_mat=max_Ir_len+1000; % at least 1000 samples longer than the longest linear IR
-    else 
+    else
         mid_mat=200000; % or 200000 samples at minimum
     end
-      
-    mat_in=ceil((big_mat-mid_mat)/2); 
+    
+    mat_in=ceil((big_mat-mid_mat)/2);
     mat_out=big_mat-mat_in-1;
     
     Harmonic_Seg=Harmonic_Seg(mat_in:mat_out,:,:); %resizing the matrix
@@ -265,7 +262,7 @@ if ~isempty(IR) && ~isempty(fs) && ~isempty(T) && ~isempty(freqs)&& ~isempty(rel
     
     if ampl_norm==1 %Calculating the transfer function of each IR with amplitude normalisation
         for sn=2:nswps;
-            for p=1 
+            for p=1
                 
                 linear_TF(:,sn)=abs(fft(Harmonic_Seg(:,p,sn).*tukeywin(mid_mat))); %the non-normalised TF of the linear IR is used to normalise the harmonics
                 linear_TF_dB(:,sn)=20.* log10((linear_TF(:,sn))); % Used to plot the DUT's frequency response
@@ -312,7 +309,7 @@ if ~isempty(IR) && ~isempty(fs) && ~isempty(T) && ~isempty(freqs)&& ~isempty(rel
                     pd=p*d;
                     oheff=p*fft_frequencies_vector(d,1);
                     if oheff<(vone)
-                        amp_indv_h(d,p,sn)=harmonic_mags(pd,p,sn);                        
+                        amp_indv_h(d,p,sn)=harmonic_mags(pd,p,sn);
                     end
                 end
             end
@@ -329,7 +326,7 @@ if ~isempty(IR) && ~isempty(fs) && ~isempty(T) && ~isempty(freqs)&& ~isempty(rel
         Thdf_all_db(:,1)=0;
         
         if indv_harmonic==1 %Plotting the levels of each harmonic for each sweep. No averaging.
-
+            
             for sn=2:nswps;
                 figure
                 for p=1:nh
@@ -340,7 +337,8 @@ if ~isempty(IR) && ~isempty(fs) && ~isempty(T) && ~isempty(freqs)&& ~isempty(rel
                         'DisplayName',['Harmonic',num2str(p)]); %same as plotted Plot the TF of each IR on a dB scale
                     xlabel('Excitation Frequency (Hz)')
                     ylabel('Level (dB)')
-                    title(['Total Harmonic Distortion from ESS, Sweep Number ' ,num2str(sn-1)])
+                    title(['Total Harmonic Distortion from ESS, Sweep ' ,num2str(sn-1),', ',...
+                    num2str(relgain(sn)),' dB'])
                     xlim([vzero vone]);
                     hold on
                 end
@@ -352,11 +350,12 @@ if ~isempty(IR) && ~isempty(fs) && ~isempty(T) && ~isempty(freqs)&& ~isempty(rel
         %Plotting the THD of each sweep on the same plot. No averaging.
         figure
         for sn=2:nswps;
-                    
-            m=mod((sn-1)*3,8);                 
+            
+            m=mod((sn-1)*3,8);
             semilogx(fft_frequencies_vector(:,1),Thdf_all_db(:,sn), ...
                 'Color',c(m,:),...
-                'DisplayName',['Sweep ', num2str(sn-1)]); 
+                'DisplayName',['S', num2str(sn-1),' (',...
+                    num2str(relgain(sn)),' dB)']);
             xlabel('Excitation Frequency (Hz)')
             ylabel('Level (dB)')
             title(['Total Harmonic Distortion']);
@@ -369,10 +368,10 @@ if ~isempty(IR) && ~isempty(fs) && ~isempty(T) && ~isempty(freqs)&& ~isempty(rel
         hold off
         
     end
-
+    
     %Calculating THD based on mean levels in each frequency band.
     if ave_or_reg==1
-
+        
         %Defining the frequency band centre frequencies and upper and lower
         %limits
         nobs=20*w;% number of octave bands total
@@ -386,7 +385,7 @@ if ~isempty(IR) && ~isempty(fs) && ~isempty(T) && ~isempty(freqs)&& ~isempty(rel
             obfs(n,3)=obfs(n,1).*(2.^(1/(w*2))); % 1/3 octave band highest frequencies
         end
         
-        NY=vone; 
+        NY=vone;
         [ny,~,]=find(obfs(:,3)<NY); %find it in the matrix of 1/3 octave band highest frequencies
         nyi=max(ny); % the location of the nyquist in the 1/3 octave band matrix
         %go up to a stable octave band
@@ -405,7 +404,7 @@ if ~isempty(IR) && ~isempty(fs) && ~isempty(T) && ~isempty(freqs)&& ~isempty(rel
         % increases with higher harmonic orders and higher frequencies.
         
         % summing the means of all pseudo IRs at each 1/3 octave band
-
+        
         for sn=2:nswps;
             
             for p=1:nh
@@ -421,7 +420,7 @@ if ~isempty(IR) && ~isempty(fs) && ~isempty(T) && ~isempty(freqs)&& ~isempty(rel
                     else
                         mxthrd(b,p,sn)=max(thrds);% the location of the minimum and maximum frequency in a band
                         mnthrd(b,p,sn)=min(thrds);
-
+                        
                         mean_ampl(b,p,sn)=mean(harmonic_mags(mnthrd(b,p,sn):mxthrd(b,p,sn),p,sn)); % the mean amplitude in a band
                     end
                 end
@@ -431,18 +430,18 @@ if ~isempty(IR) && ~isempty(fs) && ~isempty(T) && ~isempty(freqs)&& ~isempty(rel
         mean_ampl_db=20*log10(mean_ampl); % the mean level in a band
         
         % calculating THDf at each frequency as per Shmilovitz
-
-        mthdf_db=zeros(nyi,nswps); 
+        
+        mthdf_db=zeros(nyi,nswps);
         for sn=2:nswps;
             for b=1:nyi
- 
+                
                 mthdf_db(b,sn)=20*log10(sqrt(sum((mean_ampl(b,2:nh,sn).^2)))./mean_ampl(b,1,sn)); %THD from frequency band means on a dB scale
                 
             end
         end
     end
     
-   
+    
     %%%%%%%%%%%%%%PLOTTING THE LEVELS OF THE INDIVIDUAL HARMONICS AVERAGED TO FREQUENCY BANDS%%%%%%%%%%%
     if ave_or_reg==1;
         if indv_harmonic==1
@@ -455,7 +454,9 @@ if ~isempty(IR) && ~isempty(fs) && ~isempty(T) && ~isempty(freqs)&& ~isempty(rel
                         'DisplayName',['Harmonic ',num2str(p)]); %same as plotted Plot the TF of each IR on a dB scale
                     xlabel('Excitation Frequency (Hz)')
                     ylabel('Level (dB)')
-                    title(['Individual Harmonics, Averaged Over 1/',num2str(w),' Octave Bands, Sweep Number ' , num2str(sn-1)])
+                    title(['Individual Harmonics, Averaged Over 1/',...
+                        num2str(w),' Octave Bands, Sweep ' , num2str(sn-1),', ',...
+                    num2str(relgain(sn)),' dB'])
                     xlim([vzero vone]);
                     hold on
                 end
@@ -474,7 +475,8 @@ if ~isempty(IR) && ~isempty(fs) && ~isempty(T) && ~isempty(freqs)&& ~isempty(rel
             m=mod((sn-1)*3,8);
             semilogx(fbfv,mthdf_db(:,sn),...
                 'Color',c(m,:),...
-                'DisplayName',['Sweep ', num2str(sn-1)]);
+                'DisplayName',['S', num2str(sn-1)],' (',...
+                    num2str(relgain(sn)),' dB)');
             xlabel('Excitation Frequency (Hz)')
             ylabel('THD (dB)')
             title(['THD Calculated from Harmonic Levels Averaged Over 1/',num2str(w),' Octave Bands '])
@@ -485,10 +487,10 @@ if ~isempty(IR) && ~isempty(fs) && ~isempty(T) && ~isempty(freqs)&& ~isempty(rel
         legend('Show','Location','EastOutside')
         hold off
     end
-
-
+    
+    
     %%%%PLOTTING THE TRANSFER FUNCTION OF THE DUT
- 
+    
     if plot_TF==1
         figure
         for sn=2:nswps
@@ -496,7 +498,8 @@ if ~isempty(IR) && ~isempty(fs) && ~isempty(T) && ~isempty(freqs)&& ~isempty(rel
             
             semilogx(fft_frequencies_vector(1:nyq,1),linear_TF_dB(1:nyq,sn),...);
                 'Color',c(m,:),...
-                'DisplayName',['Sweep', num2str(sn-1)]); 
+                'DisplayName',['S', num2str(sn-1),' (',...
+                    num2str(relgain(sn)),' dB)']);
             xlabel('Frequency (Hz)')
             ylabel('Level (dB)')
             title(['The Transfer Function of the DUT (Linear Response)'])
@@ -507,37 +510,26 @@ if ~isempty(IR) && ~isempty(fs) && ~isempty(T) && ~isempty(freqs)&& ~isempty(rel
         legend('Show','Location','EastOutside')
         hold off
     end
-
+    
     
     % The code below is a place holder for future version of the code that
     % output the data as a structure.
     
     if isstruct(IN)
-        %OUT = IN; % You can replicate the input structure for your output
-        %OUT.audio = IR; % And modify the fields you processed
-        % Or simply output the fields you consider necessary after
-        % processing the input audio data, AARAE will figure out what has
-        % changed and complete the structure. But remember, it HAS TO BE a
-        % structure if you're returning more than one field:
-        %   OUT = audio;  if you just want to return the audio,
-        %   or,
-        %   OUT.audio = audio; if you want to return two fields.
-        %   OUT.fs = fs;
+       
         OUT.funcallback.name = 'THD_via_ESS.m';
         OUT.funcallback.inarg = {nh,ave_or_reg,w,amp,mw,ir_plot,indv_harmonic,ampl_norm,plot_TF};
     else
-        % You may increase the functionality of your code by allowing the
-        % output to be used as standalone and returning individual
-        % arguments instead of a structure.
+        
         OUT = []; % no output
     end
-%     varargout{1} = 0;
-%     varargout{2} = 0;
-%     varargout{3} = 0;
+    %     varargout{1} = 0;
+    %     varargout{2} = 0;
+    %     varargout{3} = 0;
 else
-     OUT = [];
+    OUT = [];
 end
- 
+
 %**************************************************************************
 % Copyright (c) 2014, Adam Opsata
 % All rights reserved.
