@@ -1,4 +1,4 @@
-function [OUT,varargout] = octbandfilter_viaFFT(IN,fs,param,order,zeropad,minfftlenfactor,test,phasemode)
+function [OUT,varargout] = octbandfilter_viaFFT(IN,fs,param,order,zeropad,minfftlenfactor,test,phasemode,base)
 % This function does zero, linear, minimum and maximum phase filtering, 
 % using a single large fft.
 %
@@ -37,6 +37,11 @@ function [OUT,varargout] = octbandfilter_viaFFT(IN,fs,param,order,zeropad,minfft
 % an analysis of an impulse centred in time using a audio wave that has the
 % same number of samples as the analysed wave.
 %
+% base is only available at present by calling the function with it as an
+% input argument (it is not available in dialog box). This allows base 2 or
+% base 10 octave band filters to be used (slightly changing the bandwidth
+% and centre frequencies). Enter 2 or 10 (base 10 is default).
+%
 % Code by Densil Cabrera
 % Version 1.05 (7 February 2014)
 
@@ -54,6 +59,10 @@ if ~exist('minfftlenfactor','var')
     minfftlenfactor = 1000; % adjust this to get the required spectral resolution
 else
     minfftlenfactor = round(abs(minfftlenfactor));
+end
+
+if ~exist('base','var')
+    base = 10; % base 10 octave band frequencies by default
 end
 
 if ~exist('phasemode','var')
@@ -106,8 +115,13 @@ end
 % potential nominal centre frequencies
 nominalfreq = [16,31.5,63,125,250,500,1000, ...
     2000,4000,8000,16000,31500,63000,125000,250000,500000,1000000];
-
-exactfreq = 10.^((12:3:60)/10);
+if base == 10
+    exactfreq = 10.^((12:3:60)/10);
+elseif base == 2
+    exactfreq = 1000.* 2.^(-6:10);
+else
+    exactfreq = nominalfreq; % not a good idea, but included to demonstrate this!
+end
 % possible nominal frequencies
 nominalfreq = nominalfreq(exactfreq <= maxfrq);
 exactfreq = exactfreq(exactfreq <= maxfrq);
@@ -156,10 +170,13 @@ if ok == 1 && isstruct(IN) && nargin < 4
         orderin = param1(1);
         orderout = param1(2);
         zeropad = param1(3);
-        phasemode = param1(4);
         test = param1(5);
     end
 end
+
+
+
+
     
 % if the input is already multiband, then mixdown first
 if size(audio,3) > 1
@@ -202,11 +219,19 @@ if ok == 1
         f = ((1:fftlen)'-1) * fs / fftlen;
         
         % index of low cut-off
-        flo = exactfreq(b) / 10.^0.15;
+        if base == 10
+            flo = exactfreq(b) / 10.^0.15;
+        else
+            flo = exactfreq(b) / 2.^0.5;
+        end
         indlo = find(abs(f(1:end/2)-flo) == min(abs(f(1:end/2)-flo)),1,'first');
         
         % index of high cut-off
-        fhi = exactfreq(b) * 10.^0.15;
+        if base == 10
+            fhi = exactfreq(b) * 10.^0.15;
+        else
+            fhi = exactfreq(b) * 2.^0.5;
+        end
         indhi = find(abs(f(1:end/2)-fhi) == min(abs(f(1:end/2)-fhi)),1,'first');
         
         % centre frequency index
