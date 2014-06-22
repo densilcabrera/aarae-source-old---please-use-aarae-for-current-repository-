@@ -1,6 +1,6 @@
 function [out,leafname] = doresultleaf(varargin)
 % Save a copy of the input arguments
-input = varargin;
+input = varargin(4:end);
 % Assign first input argument to data variable
 out.data = varargin{1};
 out.datainfo.units = varargin{2};
@@ -9,9 +9,10 @@ out.datainfo.dimensions = varargin{3};
 hasleafname = find(strcmp(varargin,'name'));
 if ~isempty(hasleafname), leafname = varargin{hasleafname+1}; end
 
-for n = 1:ndims(out.data)
-    out.(genvarname(input{3*n+1})) = input{3*n+2};
-    out.(genvarname([input{3*n+1} 'info'])).units = input{3*n+3};
+for n = 1:4:4*ndims(out.data)
+    out.(genvarname(input{n})) = input{n+1};
+    out.(genvarname([input{n} 'info'])).units = input{n+2};
+    out.(genvarname([input{n} 'info'])).axistype = input{n+3};
 end
 out.datatype = 'results';
 aarae_fig = findobj('Tag','aarae');

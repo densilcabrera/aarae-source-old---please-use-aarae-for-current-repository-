@@ -23,7 +23,7 @@ function varargout = aarae(varargin)
 
 % Edit the above text to modify the response to help aarae
 
-% Last Modified by GUIDE v2.5 13-Jun-2014 19:03:39
+% Last Modified by GUIDE v2.5 18-Jun-2014 15:38:10
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -2647,42 +2647,6 @@ if ~isempty(Preferences)
 end
 
 
-function doresultplot(handles)
-% hObject    handle to dimsel_IN (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
-
-% Hints: get(hObject,'String') returns contents of dimsel_IN as text
-%        str2double(get(hObject,'String')) returns contents of dimsel_IN as a double
-selectedNodes = handles.mytree.getSelectedNodes;
-audiodata = selectedNodes(1).handle.UserData;
-chartmenu = cellstr(get(handles.chartfunc_popup,'String'));
-chartfunc = chartmenu{get(handles.chartfunc_popup,'Value')};
-cattable = get(handles.cattable);
-sel = strjoin(cattable.Data(:,2).',',');
-if isempty(sel), sel = '[1]'; end
-try
-    if length(audiodata.datainfo.dimensions) == 1
-        Xdata = audiodata.(genvarname(audiodata.datainfo.dimensions{1,1}));
-        if ~isequal(size(Xdata),size(audiodata.data))
-            eval([chartfunc '(handles.axesdata,Xdata,squeeze(audiodata.data(:,' sel ')))'])
-        else
-            eval([chartfunc '(handles.axesdata,squeeze(Xdata(:,' sel ')),squeeze(audiodata.data(:,' sel ')))'])
-        end
-        xlabel(handles.axesdata,[audiodata.datainfo.dimensions{1,1} ' [' audiodata.(genvarname([audiodata.datainfo.dimensions{1,1} 'info'])).units ']'])
-    elseif length(audiodata.datainfo.dimensions) == 2
-        Xdata = audiodata.(genvarname(audiodata.datainfo.dimensions{1,1})); %#ok : Used in eval function below
-        Ydata = audiodata.(genvarname(audiodata.datainfo.dimensions{1,2})); %#ok : Used in eval function below
-        eval([chartfunc '(handles.axesdata,Xdata,Ydata,squeeze(audiodata.data(:,:,' sel ')))'])
-        xlabel(handles.axesdata,[audiodata.datainfo.dimensions{1,1} ' [' audiodata.(genvarname([audiodata.datainfo.dimensions{1,1} 'info'])).units ']'])
-        ylabel(handles.axesdata,[audiodata.datainfo.dimensions{1,2} ' [' audiodata.(genvarname([audiodata.datainfo.dimensions{1,2} 'info'])).units ']'])
-    end
-catch error
-    set(handles.cattable,'Data',handles.tabledata)
-    warndlg(error.message,'AARAE info','modal')
-end
-
-
 % --- Executes on selection change in chartfunc_popup.
 function chartfunc_popup_Callback(~, eventdata, handles) %#ok : Executed when selection changes in chart selection popup menu
 % hObject    handle to chartfunc_popup (see GCBO)
@@ -2712,23 +2676,65 @@ function cattable_CellSelectionCallback(hObject, eventdata, handles) %#ok : open
 % eventdata  structure with the following fields (see UITABLE)
 %	Indices: row and column indices of the cell(s) currently selecteds
 % handles    structure with handles and user data (see GUIDATA)
+tabledata = get(hObject,'Data');
 if size(eventdata.Indices,1) ~= 0 && eventdata.Indices(1,2) == 2
-    selectedNodes = handles.mytree.getSelectedNodes;
-    audiodata = selectedNodes(1).handle.UserData;
-    tabledata = get(hObject,'Data');
-    handles.tabledata = tabledata;
-    catname = tabledata{eventdata.Indices(1,1),1};
-    liststr = audiodata.(genvarname(catname));
-    if size(liststr,1) < size(liststr,2), liststr = liststr'; end
-    if ~iscellstr(liststr), liststr = cellstr(num2str(cell2mat(liststr))); end
-    [sel,ok] = listdlg('ListString',liststr,'InitialValue',str2num(tabledata{eventdata.Indices(1),eventdata.Indices(2)})); %#ok : necessary for getting selection vector
-    if ok == 1
-        logsel = ['[' num2str(sel) ']'];
-        tabledata{eventdata.Indices(1),eventdata.Indices(2)} = logsel(1:end);
-    else
+    chkbox = tabledata{eventdata.Indices(1,1),4};
+    if isempty(chkbox), chkbox = false; end
+    if chkbox == false
+        selectedNodes = handles.mytree.getSelectedNodes;
+        audiodata = selectedNodes(1).handle.UserData;
+        handles.tabledata = tabledata;
+        catname = tabledata{eventdata.Indices(1,1),1};
+        liststr = audiodata.(genvarname(catname));
+        if size(liststr,1) < size(liststr,2), liststr = liststr'; end
+        if ~iscellstr(liststr) && ~isnumeric(liststr), liststr = cellstr(num2str(cell2mat(liststr)));
+        elseif isnumeric(liststr), liststr = cellstr(num2str(liststr)); end
+        [sel,ok] = listdlg('ListString',liststr,'InitialValue',str2num(tabledata{eventdata.Indices(1),eventdata.Indices(2)})); %#ok : necessary for getting selection vector
+        if ok == 1
+            logsel = ['[' num2str(sel) ']'];
+            tabledata{eventdata.Indices(1),eventdata.Indices(2)} = logsel(1:end);
+        end
         set(hObject,'Data',{''})
+        set(hObject,'Data',tabledata)
+        guidata(handles.aarae,handles)
+        doresultplot(handles)
+    else
+        
     end
-    set(hObject,'Data',tabledata)
-    guidata(handles.aarae,handles)
-    doresultplot(handles)
+end
+
+
+% --- Executes when entered data in editable cell(s) in cattable.
+function cattable_CellEditCallback(hObject, eventdata, handles) %#ok : Executed when cell information on the uitable changes
+% hObject    handle to cattable (see GCBO)
+% eventdata  structure with the following fields (see UITABLE)
+%	Indices: row and column indices of the cell(s) edited
+%	PreviousData: previous data for the cell(s) edited
+%	EditData: string(s) entered by the user
+%	NewData: EditData or its converted form set on the Data property. Empty if Data was not changed
+%	Error: error string when failed to convert EditData to appropriate value for Data
+% handles    structure with handles and user data (see GUIDATA)
+if size(eventdata.Indices,1) ~= 0 && eventdata.Indices(1,2) == 4
+    tabledata = get(handles.cattable,'Data');
+    catorcont = tabledata(:,4);
+    naxis = length(find([catorcont{:}] == true));
+    if naxis < 3
+        if islogical(catorcont{eventdata.Indices(1,1),1}) && catorcont{eventdata.Indices(1,1),1} == true
+            tabledata{eventdata.Indices(1,1),2} = ':';
+        else
+            tabledata{eventdata.Indices(1,1),2} = '[1]';
+        end
+        set(handles.cattable,'Data',tabledata);
+        switch naxis
+            case 0
+                set(handles.chartfunc_popup,'String',{'distributionPlot','boxplot'},'Value',1)
+            case 1
+                set(handles.chartfunc_popup,'String',{'plot','semilogx','semilogy','loglog','distributionPlot','boxplot'},'Value',1)
+            case 2
+                set(handles.chartfunc_popup,'String',{'mesh','surf','imagesc'},'Value',1)
+        end
+        doresultplot(handles)
+    else
+        doresultplot(handles)
+    end
 end

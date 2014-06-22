@@ -120,23 +120,9 @@ function mySelectFcn(tree, ~)
                     cmap = colormap(lines(size(audiodata.data,2)));
                     set(mainHandles.aarae,'DefaultAxesColorOrder',cmap)
                 end
-                if length(audiodata.datainfo.dimensions) == 1
-                    filltable(audiodata,5,mainHandles)
-                    set(mainHandles.chartfunc_popup,'String',{'plot','semilogx','semilogy','loglog'},'Value',1)
-                    plot(mainHandles.axesdata,audiodata.(genvarname(audiodata.datainfo.dimensions{1,1}))(:,1),audiodata.data(:,1))
-                    xlabel(mainHandles.axesdata,[audiodata.datainfo.dimensions{1,1} ' [' audiodata.(genvarname([audiodata.datainfo.dimensions{1,1} 'info'])).units ']'])
-                elseif length(audiodata.datainfo.dimensions) == 2
-                    filltable(audiodata,7,mainHandles)
-                    set(mainHandles.chartfunc_popup,'String',{'mesh','pcolor','surf'},'Value',1)
-                    mesh(mainHandles.axesdata,audiodata.(genvarname(audiodata.datainfo.dimensions{1,1})),audiodata.(genvarname(audiodata.datainfo.dimensions{1,2})),audiodata.data(:,:,1))
-                    xlabel(mainHandles.axesdata,[audiodata.datainfo.dimensions{1,1} ' [' audiodata.(genvarname([audiodata.datainfo.dimensions{1,1} 'info'])).units ']'])
-                    ylabel(mainHandles.axesdata,[audiodata.datainfo.dimensions{1,2} ' [' audiodata.(genvarname([audiodata.datainfo.dimensions{1,2} 'info'])).units ']'])
-                end
+                filltable(audiodata,mainHandles)
+                doresultplot(mainHandles)
                 mainHandles.tabledata = get(mainHandles.cattable,'Data');
-%            elseif isfield(audiodata,'lines')
-%                set(mainHandles.data_panel1,'Visible','on');
-%                set(mainHandles.nchart_popup,'String',[' ';fieldnames(audiodata.lines)])
-%                set(mainHandles.nchart_popup,'Value',1)
             else
                 set(mainHandles.data_panel1,'Visible','off');
             end
@@ -212,3 +198,34 @@ function mySelectFcn(tree, ~)
     pause off
     guidata(aarae_fig,mainHandles);
 end  % mySelectFcn
+
+function filltable(audiodata,handles)
+fields = fieldnames(audiodata);
+fields = fields(3:end-1);
+categories = fields(mod(1:length(fields),2) == 1);
+catdata = cell(size(categories));
+catunits = cell(size(categories));
+catorcont = cell(size(categories));
+for n = 1:length(categories)
+    catunits{n,1} = audiodata.(genvarname([categories{n,1} 'info'])).units;
+    catorcont{n,1} = audiodata.(genvarname([categories{n,1} 'info'])).axistype;
+    if islogical(catorcont{n,1}) && catorcont{n,1} == true
+        catdata{n,1} = ':';
+    else
+        catdata{n,1} = '[1]';
+    end
+end
+dat = [categories,catdata,catunits,catorcont];
+set(handles.cattable, 'Data', dat);
+naxis = length(find([catorcont{:}] == true));
+switch naxis
+    case 0
+        set(handles.chartfunc_popup,'String',{'distributionPlot','boxplot'},'Value',1)
+    case 1
+        set(handles.chartfunc_popup,'String',{'plot','semilogx','semilogy','loglog','distributionPlot','boxplot'},'Value',1)
+    case 2
+        set(handles.chartfunc_popup,'String',{'mesh','surf','imagesc'},'Value',1)
+    otherwise
+        set(handles.chartfunc_popup,'String',{[]},'Value',1)
+end
+end % End of function filltable
