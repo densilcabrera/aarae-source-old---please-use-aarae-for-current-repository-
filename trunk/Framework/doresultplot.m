@@ -83,6 +83,6 @@ catch error
         otherwise
             set(handles.chartfunc_popup,'String',{[]},'Value',1)
     end
-    %if ~ischar(Xdata) && ~ischar(Ydata), doresultplot(handles); end
+    doresultplot(handles);
     warndlg(error.message,'AARAE info','modal')
 end
