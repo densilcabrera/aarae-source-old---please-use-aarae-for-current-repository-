@@ -58,11 +58,14 @@ if ~isempty(IR) && ~isempty(fs) && ~isempty(startthresh) && ~isempty(highestband
     % Check the input data dimensions
     [len, chans, bands] = size(IR);
     if bands > 1
-        if isfield(in,'bandID')
-            flist = in.bandID;
+        if isfield(data,'bandID')
+            flist = data.bandID;
         else
             flist = 1:bands;
         end
+    end
+    if isfield(data,'chanID')
+        chanID = data.chanID;
     end
 
 
@@ -176,7 +179,6 @@ if ~isempty(IR) && ~isempty(fs) && ~isempty(startthresh) && ~isempty(highestband
             plot([0, tlim(end)], ...
                 [Ts(length(tlim),ch,b), Ts(length(tlim),ch,b)], ...
                 'Color',[0.8,0,0], 'LineStyle', ':')
-            out.lines.(genvarname(['Ch' num2str(ch) '_' num2str(flist(b)) 'Hz_ts_' num2str(round(Ts(length(tlim),ch,b))) 'ms'])) = getplotdata;
         end
 
         if doplot == 1
@@ -187,9 +189,21 @@ if ~isempty(IR) && ~isempty(fs) && ~isempty(startthresh) && ~isempty(highestband
                 'RowName',num2cell(tlim*1000));
             set(table1,'ColumnWidth',{60});
 
-            [~,tables] = disptables(fig1,table1 );
+            [~,datatable] = disptables(fig1,table1);
+            out.tables = [out.tables datatable];
         end
-        out.tables = [out.tables tables];
+    end
+    if ~ismatrix(Ts)
+        doresultleaf(Ts,[],{'Centre_time'},...
+                     'Centre_time', tlim,            'ms',          true,...
+                     'channels',    chanID,          'categorical', [],...
+                     'bands',       num2cell(flist), 'Hz',          false,...
+                     'name','Centre_time');
+    else
+        doresultleaf(Ts,[],{'Centre_time'},...
+                     'Centre_time', tlim,   'ms',          true,...
+                     'channels',    chanID, 'categorical', [],...
+                     'name','Centre_time');
     end
 else
     out = [];

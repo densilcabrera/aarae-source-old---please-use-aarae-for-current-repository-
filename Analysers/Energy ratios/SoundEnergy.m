@@ -110,8 +110,9 @@ if ~isempty(IR) && ~isempty(fs) && ~isempty(startthresh) && ~isempty(bpo) && ~is
             len = S(1); % number of samples in IR
             chans = S(2); % number of channels
         case 3
-            disp('Sound Energy input IR cannot be multiband');
-            out.error = 'Input IR cannot be multiband';
+            warndlg('Sound Energy input IR cannot be multiband','AARAE info','modal');
+            %out.error = 'Input IR cannot be multiband';
+            out = [];
             return
     end
 

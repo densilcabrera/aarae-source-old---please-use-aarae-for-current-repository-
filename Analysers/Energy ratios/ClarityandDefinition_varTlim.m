@@ -83,7 +83,12 @@ if ~isempty(IR) && ~isempty(fs) && ~isempty(startthresh) && ~isempty(highestband
     % Check the input data dimensions
     [len, chans, bands] = size(IR);
     if bands > 1
-        error('Input IR cannot be multiband');
+        warndlg('Input IR cannot be multiband','AARAE info','modal');
+        out = [];
+        return
+    end
+    if isfield(data,'chanID')
+        chanID = data.chanID;
     end
 
 
@@ -206,24 +211,28 @@ if ~isempty(IR) && ~isempty(fs) && ~isempty(startthresh) && ~isempty(highestband
                 text(10,ClarityIndex(index80,ch,b),...
                     [num2str(round(ClarityIndex(index80,ch,b)*10)/10), ' dB'])
                 hold off
-                out.lines.(genvarname(['Ch' num2str(ch) '_' num2str(flist(b)) '_Hz'])) = getplotdata;
             end
 
-                % Table
-        fig1 = figure('Name',['Clarity Index & Definition, channel ', num2str(ch)]);
-        table1 = uitable('Data',permute(ClarityIndex(:,ch,:),[1,3,2]),...
-                    'ColumnName',num2cell(flist),...
-                    'RowName',num2cell(tlim*1000));
-                set(table1,'ColumnWidth',{60});
+            % Table
+            fig1 = figure('Name',['Clarity Index & Definition, channel ', num2str(ch)]);
+            table1 = uitable('Data',permute(ClarityIndex(:,ch,:),[1,3,2]),...
+                        'ColumnName',num2cell(flist),...
+                        'RowName',num2cell(tlim*1000));
+                    set(table1,'ColumnWidth',{60});
 
-                table2 = uitable('Data',permute(Definition(:,ch,:),[1,3,2]),...
-                    'ColumnName',num2cell(flist),...
-                    'RowName',num2cell(tlim*1000));
-                set(table2,'ColumnWidth',{60});
+            table2 = uitable('Data',permute(Definition(:,ch,:),[1,3,2]),...
+                'ColumnName',num2cell(flist),...
+                'RowName',num2cell(tlim*1000));
+            set(table2,'ColumnWidth',{60});
 
-        [~,tables] = disptables(fig1,[table1 table2]);
-        out.tables = [out.tables tables];
+            [~,tables] = disptables(fig1,[table1 table2]);
+            out.tables = [out.tables tables];
         end
+        doresultleaf(ClarityIndex,[],{'Integration_limit'},...
+                     'Integration_limit', tlim*1000,       'ms',          true,...
+                     'channels',          chanID,          'categorical', [],...
+                     'bands',             num2cell(flist), 'Hz',          false,...
+                     'name','Clarity_index');
         if chans == 1
             figure('Name', 'Clarity Index')
         else
