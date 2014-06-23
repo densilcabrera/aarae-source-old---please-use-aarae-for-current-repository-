@@ -26,13 +26,13 @@ if ~isempty(audio) && ~isempty(fs)
     
     if chans ~= 2
         OUT = [];
-        disp('IACC_smusic is only suitable for 2-channel audio input')
+        warndlg('IACC_smusic is only suitable for 2-channel audio input','AARAE info','modal')
         return
     end
     
     if bands > 1
         OUT = [];
-        disp('IACC_smusic is only suitable for single band audio input')
+        warndlg('IACC_smusic is only suitable for single band audio input','AARAE info','modal')
         return
     end
     
@@ -171,8 +171,12 @@ if ~isempty(audio) && ~isempty(fs)
     hleg = legend('IACCmax','IACCmean');
     set(hleg,'Location','SouthWest');
     
-    print -dpng -r140 IACC1-1octave.png
-    OUT.lines.octave = getplotdata;
+    %print -dpng -r140 IACC1-1octave.png
+    IACC_oct = cat(2,IACC_max(1,1:10)',IACC_mean(1,1:10)');
+    doresultleaf(IACC_oct,[],{'Frequency'},...
+                 'Frequency', num2cell(freqs),    'Hz',          true,...
+                 'IACC',      {'Maximum','Mean'}, 'categorical', [],...
+                 'name','IACC_oct');
     
     %%%%%Plot IACC amx and mean response for 1/3 octave bandwidth
     
@@ -201,9 +205,12 @@ if ~isempty(audio) && ~isempty(fs)
     hleg = legend('IACCmax','IACCmean');
     set(hleg,'Location','SouthWest');
     
-    print -dpng -r140 IACC1-3octave.png
-    
-    OUT.lines.thirdoctave = getplotdata;
+    %print -dpng -r140 IACC1-3octave.png
+    IACC_thirdoct = cat(2,IACC_maxT(1,1:30)',IACC_meanT(1,1:30)');
+    doresultleaf(IACC_thirdoct,[],{'Frequency'},...
+                 'Frequency', num2cell(freqsThird), 'Hz',          true,...
+                 'IACC',      {'Maximum','Mean'},   'categorical', [],...
+                 'name','IACC_thirdoct');
     
     if isstruct(IN)
         
