@@ -30,7 +30,7 @@ try
             singdim = [];
             catdim = find(cellfun(@isempty,tabledata(:,4)),1);
             if isempty(catdim), catdim = 1; end
-            eval(['singdim = min(find(size(audiodata.data(' sel ')) == 1));'])
+            eval(['catdim = length(size(audiodata.data(' sel ')));'])
             if isempty(singdim), singdim = 1; end
             if strcmp(chartfunc,'distributionPlot')
                 eval([chartfunc '(handles.axesdata,squeeze(audiodata.data(' sel ')),''xNames'',audiodata.(genvarname(cattable.Data{catdim,1}))(' cattable.Data{catdim,2} '))'])
