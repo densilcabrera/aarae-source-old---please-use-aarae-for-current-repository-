@@ -183,7 +183,7 @@ if ~isempty(audio) && ~isempty(fs)
             if bands == 1
                 legend('Show','Location','EastOutside')
             end
-            OUT.lines.(genvarname(['Soundloggertime_ch' num2str(ch) '_' num2str(bandID(b)) 'Hz'])) = getplotdata;
+            %OUT.lines.(genvarname(['Soundloggertime_ch' num2str(ch) '_' num2str(bandID(b)) 'Hz'])) = getplotdata;
         end
     end
     
@@ -207,7 +207,23 @@ if ~isempty(audio) && ~isempty(fs)
         end
         % OUT.lines.(genvarname(['Soundloggerdist_'  num2str(bandID(b)) 'Hz'])) = getplotdata;
     end
-    
+    Log = cat(4,Lmin,L90,L50,L10,L5,Lmax,Leq);
+    Log = permute(Log,[1,4,2,3]);
+    dist = {'Lmin';'L90';'L50';'L10';'L5';'Lmax';'Leq'};
+    if bands > 1
+        doresultleaf(Log,[],{'time'},...
+                     'time',         t,      's',           true,...
+                     'distribution', dist,   'categorical', [],...
+                     'channels',     chanID, 'categorical', [],...
+                     'bands',        bandID, 'Hz',          false,...
+                     'name','Sound_log');
+    else
+        doresultleaf(Log,[],{'time'},...
+                     'time',         t,      's',           true,...
+                     'distribution', dist,   'categorical', [],...
+                     'channels',     chanID, 'categorical', [],...
+                     'name','Sound_log');
+    end
     
     fig1 = figure('Name',['Sound Logger Summary ',weighting,'-weighted']);
     data = [windowtime;windowhop;tau];
