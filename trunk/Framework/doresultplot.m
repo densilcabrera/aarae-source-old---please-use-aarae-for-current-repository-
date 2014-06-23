@@ -28,15 +28,17 @@ try
         else
             cla(handles.axesdata,'reset')
             singdim = [];
+            catdim = find(cellfun(@isempty,tabledata(:,4)),1);
+            if isempty(catdim), catdim = 1; end
             eval(['singdim = min(find(size(audiodata.data(' sel ')) == 1));'])
             if isempty(singdim), singdim = 1; end
             if strcmp(chartfunc,'distributionPlot')
-                eval([chartfunc '(handles.axesdata,squeeze(audiodata.data(' sel ')),''xNames'',audiodata.(genvarname(cattable.Data{singdim,1}))(' cattable.Data{singdim,2} '))'])
+                eval([chartfunc '(handles.axesdata,squeeze(audiodata.data(' sel ')),''xNames'',audiodata.(genvarname(cattable.Data{catdim,1}))(' cattable.Data{catdim,2} '))'])
             end
             if strcmp(chartfunc,'boxplot')
-                eval([chartfunc '(handles.axesdata,squeeze(audiodata.data(' sel ')),''labels'',audiodata.(genvarname(cattable.Data{singdim,1}))(' cattable.Data{singdim,2} '))'])
+                eval([chartfunc '(handles.axesdata,squeeze(audiodata.data(' sel ')),''labels'',audiodata.(genvarname(cattable.Data{catdim,1}))(' cattable.Data{catdim,2} '))'])
             end
-            xlabel(handles.axesdata,[cattable.Data{singdim,1} ' [' audiodata.(genvarname([cattable.Data{singdim,1} 'info'])).units ']'])
+            xlabel(handles.axesdata,[cattable.Data{catdim,1} ' [' audiodata.(genvarname([cattable.Data{catdim,1} 'info'])).units ']'])
         end
         handles.tabledata = tabledata;
         guidata(handles.aarae,handles)

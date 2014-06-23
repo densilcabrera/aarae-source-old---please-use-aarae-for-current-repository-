@@ -276,7 +276,12 @@ if ~isempty(audio) && ~isempty(fs)
             OUT.lines.(genvarname([num2str(flist(bnd)) 'Hz'])) = getplotdata;
         end
     end
-    
+    IACC = cat(3,cE,cL,cA);
+    doresultleaf(IACC,[],{'Lag'},...
+                 'Lag',       t,                      'ms',          true,...
+                 'Frequency', num2cell(flist),        'Hz',          false,...
+                 'IACC',      {'Early','Late','All'}, 'categorical', [],...
+                 'name','IACC');
 else
     
     OUT = [];

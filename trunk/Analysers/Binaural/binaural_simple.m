@@ -233,7 +233,10 @@ if ~isempty(wave) && ~isempty(fs) && ~isempty(f_low) && ~isempty(f_high) && ~ise
     ylim([-1 1])
     grid on
     hold off
-    out.lines.IACF = getplotdata;
+    doresultleaf(IACF(timerange),[],{'Lag'},...
+                 'Lag',      (timerange-round(len/2))./fs*1000, 'ms',           true,...
+                 'Function', {'Unique'},                        'categorical',  [],...
+                 'name','IACF');
 
     % Group delay
     GD = diff(unwrap(angle(((spectrum(1:round(len/2),1)).*conj(spectrum(1:round(len/2),2))) ...
@@ -248,7 +251,10 @@ if ~isempty(wave) && ~isempty(fs) && ~isempty(f_low) && ~isempty(f_high) && ~ise
     ylabel('Group Delay (ms)')
     grid on
     %median(GD)
-    out.lines.group_delay = getplotdata;
+    doresultleaf(GD(2:end),'ms',{'Frequency'},...
+                 'Frequency', frequencies(3:end), 'Hz',           true,...
+                 'Function',  {'Unique'},         'categorical',  [],...
+                 'name','Group_delay');
 
     % organise output structure
     out.IACC = IACC;
