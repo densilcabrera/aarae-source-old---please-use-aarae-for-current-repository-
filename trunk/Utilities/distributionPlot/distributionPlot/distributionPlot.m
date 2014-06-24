@@ -850,7 +850,7 @@ switch opt.xyOri
         switch opt.xMode
             case 'manual'
                 if newAx == false
-                    warning('DISTRIBUTIONPLOT:ERASINGLABELS','Plotting into an existing axes and specifying labels will erase previous labels')
+                    %warning('DISTRIBUTIONPLOT:ERASINGLABELS','Plotting into an existing axes and specifying labels will erase previous labels')
                 end
                 set(ah,'XTick',opt.xValues);
                 if ~isempty(opt.xNames)

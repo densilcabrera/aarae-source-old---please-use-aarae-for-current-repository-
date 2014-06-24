@@ -122,6 +122,8 @@ if isstruct(IN)
     end
     if isfield(IN, 'chanID')
         chanID = IN.chanID;
+    else
+        chanID = cellstr([repmat('Chan',size(IN.audio,2),1) num2str((1:size(IN.audio,2))')]);
     end
 elseif ~isempty(param) || nargin > 1
     audio = IN;
@@ -360,7 +362,12 @@ if ~isempty(audio) && ~isempty(fs) && ~isempty(bpo) && ~isempty(highestband) && 
             end
         end
     end
-
+    doresultleaf(T,'s',{'End_truncation','End_eval_range'},...
+                 'End_truncation', IRend/fs,        's',           true,...
+                 'End_eval_range', ERendL,          'dB',          true,...
+                 'channels',       chanID,          'categorical', [],...
+                 'bands',          num2cell(flist), 'Hz',          false,...
+                 'name','Reverb_time_TEC');
     OUT.T = T;
     OUT.funcallback.name = 'ReverbTime_TruncEvalRange.m';
     OUT.funcallback.inarg = {fs,bpo,highestband,lowestband,truncstep,evalrangestep,startlevel};

@@ -88,11 +88,6 @@ if ~isempty(audio) && ~isempty(fs)
         
         rt_est_median(ch) = median(rt_est(ch,:));
         
-        
-        
-        
-        
-        
         %--------------------------------------------------------------------------
         % Plot estimated RT and 'true' RT obtained by Schroeder method
         %--------------------------------------------------------------------------
@@ -113,10 +108,13 @@ if ~isempty(audio) && ~isempty(fs)
         xlabel('Time [s]'),ylabel('RT [s]');
         legend('Estimated T60',['Mean Estimate ',num2str(rt_est_mean(ch)), ' s'], ...
             ['Median Estimate ',num2str(rt_est_median(ch)), ' s'],'location','southeast');
-        OUT.lines.RT = getplotdata;
         %--------------------------------------------------------------------------
         
     end
+    doresultleaf(rt_est',[],{'Time'},...
+                 'Time',     fr2sec_idx, 's',           true,...
+                 'channels', chanID,     'categorical', [],...
+                 'name','Blind_reverb_time');
     
     % output table
     f = figure;
