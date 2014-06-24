@@ -131,6 +131,11 @@ if isstruct(data)
         f_low = 125;
         f_hi = 8000;
     end
+    if isfield(data,'chanID')
+        chanID = data.chanID;
+    else
+        chanID = cellstr([repmat('Chan',size(data.audio,2),1) num2str((1:size(data.audio,2))')]);
+    end
 else
     ir = data;
     if nargin < 2
@@ -191,7 +196,6 @@ if ~isempty(ir) && ~isempty(fs) && ~isempty(startthresh) && ~isempty(bpo) && ~is
     else
         multibandIR = 0;
     end
-
 
     % Get last 10 % for Chu noise compensation if set (before the circular
     % shift is done as part of startpoint detection/allignment)
@@ -1219,7 +1223,12 @@ if ~isempty(ir) && ~isempty(fs) && ~isempty(startthresh) && ~isempty(bpo) && ~is
                     'XTick',zeros(1,0))
             end        
             hold off        
-        end    
+        end
+        doresultleaf(levdecay,'dB',{'Time'},...
+                     'Time',      ((1:len)-1)./fs,  's',           true,...
+                     'channels',  chanID,           'categorical', [],...
+                     'Frequency', num2cell(bandfc), 'Hz',          false,...
+                     'name','Reverb_time');
     end
     out.funcallback.name = 'ReverberationTime_IR1.m';
     out.funcallback.inarg = {fs,startthresh,bpo,doplot,filterstrength,phasemode,noisecomp,autotrunc,f_low,f_hi};

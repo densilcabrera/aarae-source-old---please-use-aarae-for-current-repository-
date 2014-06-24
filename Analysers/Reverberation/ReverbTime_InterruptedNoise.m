@@ -63,6 +63,8 @@ if isstruct(IN)
     end
     if isfield(IN,'chanID')
         chanID = IN.chanID;
+    else
+        chanID = cellstr([repmat('Chan',size(IN.audio,2),1) num2str((1:size(IN.audio,2))')]);
     end
 elseif ~isempty(param) || nargin > 1
     audio = IN;
@@ -493,6 +495,11 @@ if ~isempty(audio) && ~isempty(fs) && ~isempty(filteriterations) && ~isempty(avm
             ylim([-60 0])
         end
     end
+    doresultleaf(levdecaymix,'dB',{'Time'},...
+                 'Time',     t,               's',           true,...
+                 'channels', chanID,          'categorical', [],...
+                 'bands',    num2cell(flist), 'Hz',          false,...
+                 'name','Reverb_time_IN');
 else
     OUT = [];
 end

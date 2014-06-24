@@ -276,7 +276,6 @@ ylabel('Loudness (sone)', 'fontsize', 15);
 ymax = 10.^ceil(log10(max([max(LoudnessDecay) max(BestFitLineEDTN)])));
 ylim([ymax/1000 ymax])
 %axis([0 3 1 4]);
-output.lines.EDTN = getplotdata;
 
 if isfield(output, 'TN_User')
     subplot(1,3,2)
@@ -292,7 +291,6 @@ ylabel('Loudness (sone)', 'fontsize', 15);
 ymax = 10.^ceil(log10(max([max(LoudnessDecay) max(BestFitLineTN)])));
 ylim([ymax/1000 ymax])
 %axis([0 3 1 4]);
-output.lines.TN = getplotdata;
 
 if isfield(output, 'TN_User')
     subplot(1,3,3)
@@ -304,8 +302,11 @@ if isfield(output, 'TN_User')
     %axis([0 3 1 4]);
     ymax = 10.^ceil(log10(max([max(LoudnessDecay) max(BestFitLineTNU)])));
     ylim([ymax/1000 ymax])
-    output.lines.TN_user = getplotdata;
 end
+doresultleaf(LoudnessDecay,'sone',{'Time'},...
+             'Time',     time,       's',           true,...
+             'Function', {'Unique'}, 'categorical', [],...
+             'name','Loudness');
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%% LOUDNESS DECAY CALCULATION %%%%%%%%%%%%%%%%%%%%%
