@@ -269,6 +269,12 @@ if ~isempty(audio) && ~isempty(fs) && ~isempty(calgain) && ~isempty(ReferenceCha
     varargout{1} = M_STI;
     varargout{2} = F_STI;
 
+    
+    mf = [0.63,0.8,1,1.25,1.6,2,2.5,3.15,4,5,6.3,8,10,12.5];
+    doresultleaf(MTF,[],{'Modulation_frequency'},...
+                 'Modulation_frequency', num2cell(mf),                                'Hz', true,...
+                 'Frequency',            num2cell([125,250,500,1000,2000,4000,8000]), 'Hz', false,...
+                 'name','Modulation_TF_coef');
     %***************************************************************
     % Plotting
 
@@ -309,8 +315,6 @@ if ~isempty(audio) && ~isempty(fs) && ~isempty(calgain) && ~isempty(ReferenceCha
         plot(MTF(:,2),'Color',colors(2,:),'DisplayName','250 Hz');
         plot(MTF(:,1),'Color',colors(1,:),'DisplayName','125 Hz');
 
-
-
         % legend
         legend('show','Location','EastOutside');
 
@@ -330,7 +334,6 @@ if ~isempty(audio) && ~isempty(fs) && ~isempty(calgain) && ~isempty(ReferenceCha
                 '  (AM=', num2str(AuditoryMasking),')'])
 
         hold off
-        Verbose.lines.MTF = getplotdata;
 
         subplot(3,1,2)
         % Bar plot of modulation transfer indices
@@ -403,11 +406,13 @@ if ~isempty(audio) && ~isempty(fs) && ~isempty(calgain) && ~isempty(ReferenceCha
             plot(10*log10(Isum), 'r', ...
                 'LineWidth',1,'LineStyle','--', ...
                 'Marker','+', 'DisplayName','Total S+N')
-
+            doresultleaf([Level,10*log10(Iam'),10*log10(Irt'),10*log10(Isum')],'dB',{'Frequency'},...
+                         'Frequency',            num2cell([125,250,500,1000,2000,4000,8000]), 'Hz', true,...
+                         'Level',     {'Received SPL','Masking','Threshold','Total S+N'}, 'categorical', [],...
+                         'name','Band_SPL');
         end
         legend('show','Location','EastOutside');
         hold off
-        Verbose.lines.SPL = getplotdata;
     end % if doplot
 end
 % eof

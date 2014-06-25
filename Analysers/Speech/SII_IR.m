@@ -536,7 +536,17 @@ if ~isempty(data) && ~isempty(fs) && ~isempty(P) && ~isempty(BG) && ~isempty(T) 
         varargout{3} = E;
         varargout{4} = N;
     end
-
+    
+    doresultleaf(MTF,[],{'Modulation_frequency'},...
+                 'Modulation_frequency', num2cell(mf),                            'Hz', true,...
+                 'Frequency',            num2cell([250,500,1000,2000,4000,8000]), 'Hz', false,...
+                 'name','Modulation_TF');
+             
+    doresultleaf([P',E',N',BG'],'dB',{'Frequency'},...
+                 'Frequency', num2cell(fc),                                              'Hz',          true,...
+                 'Level',     {'Received SPL','Eq Spch Lvl','Eq Noise Lvl','Noise Lvl'}, 'categorical', [],...
+                 'name','Band_SPL');
+                 
     % PLOTTING
     if doplot
         figure('Name', ['Speech Intelligibility Index: ', num2str(S)])
@@ -578,7 +588,6 @@ if ~isempty(data) && ~isempty(fs) && ~isempty(P) && ~isempty(BG) && ~isempty(T) 
             title('Modulation Transfer Function');
             grid on
             hold off
-            OUT.lines.MTF = getplotdata;
         end
 
         if length(P) == 6
@@ -608,7 +617,6 @@ if ~isempty(data) && ~isempty(fs) && ~isempty(P) && ~isempty(BG) && ~isempty(T) 
         title('Band Sound Pressure Level')
         grid on
         hold off
-        OUT.lines.BandSPL = getplotdata;
 
         if length(P) == 6
 

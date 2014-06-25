@@ -499,11 +499,11 @@ if ~validate
         end
     end
     
-    
-    
-    
-    
-    
+    if isfield(IR,'chanID')
+        chanID = IR.chanID;
+    else
+        chanID = cellstr([repmat('Chan',size(data,2),1) num2str((1:size(data,2))')]);
+    end
     
     % *************************************************************************
     % SET CONSTANTS AND PRE-ALLOCATE MATRICES
@@ -813,7 +813,7 @@ for ch = 1:chans
                 '; NC=', num2str(NoiseCorrection),')'])
         end
         hold off
-        Verbose.lines.(genvarname(['MTF_ch' num2str(ch)])) = getplotdata;
+
         subplot(3,1,2)
         % Bar plot of modulation transfer indices
         
@@ -866,31 +866,30 @@ for ch = 1:chans
         
         % Sound pressure level of the speech signal
         plot(Lsignal(ch,:),'b','Marker','o','DisplayName','Signal')
-        
+        Levels(:,1,ch) = Lsignal(ch,:);
         % Sound pressure level of physical background noise
         plot(Lnoise(ch,:),'Color', [0.6 0.2 0], ...
             'Marker','o','DisplayName','Physical Noise')
-        
+        Levels(:,2,ch) = Lnoise(ch,:);
         if AuditoryMasking > 0
             
             % Sound pressure level of masking from the band below
             plot(10*log10(Iam),'Color',[0 0.5 0], ...
                 'Marker','x','DisplayName','Masking')
-            
+            Levels(:,3,ch) = 10*log10(Iam);
             % Sound pressure level of the auditory reception threshold
             plot(10*log10(Irt),'k','LineStyle',':', ...
                 'DisplayName','Threshold')
-            
+            Levels(:,4,ch) = 10*log10(Irt);
             % Sum of all sources of noise
             Inoise_sum = In + Irt + Iam;
             plot(10*log10(Inoise_sum), 'r', ...
                 'LineWidth',1,'LineStyle','--', ...
                 'Marker','+', 'DisplayName','Total Noise')
-            
+            Levels(:,5,ch) = 10*log10(Inoise_sum);
         end
         legend('show','Location','EastOutside');
         hold off
-        Verbose.lines.(genvarname(['SPL_ch' num2str(ch)])) = getplotdata;
         
         if isstruct(IR)
             f = figure('Name',['STI_IR Channel ',num2str(ch),': STI, MTI & MTF'], ...
@@ -924,6 +923,26 @@ for ch = 1:chans
     
 end % channel loop
 
+mf = [0.63,0.8,1,1.25,1.6,2,2.5,3.15,4,5,6.3,8,10,12.5];
+doresultleaf(MTF,[],{'Modulation_frequency'},...
+             'Modulation_frequency', num2cell(mf),                                'Hz',          true,...
+             'Frequency',            num2cell([125,250,500,1000,2000,4000,8000]), 'Hz',          false,...
+             'Channel',              chanID,                                      'categorical', [],...
+             'name','Modulation_TF_STI');
+
+if AuditoryMasking > 0
+    doresultleaf(Levels,'dB',{'Frequency'},...
+                 'Frequency', num2cell([125,250,500,1000,2000,4000,8000]),                   'Hz',          true,...
+                 'Level',     {'Signal','Physical noise','Masking','Threshold','Total S+N'}, 'categorical', [],...
+                 'Channel',   chanID,                                                        'categorical', [],...
+                 'name','Band_SPL_STI');
+else
+    doresultleaf(Levels,'dB',{'Frequency'},...
+                 'Frequency', num2cell([125,250,500,1000,2000,4000,8000]), 'Hz',          true,...
+                 'Level',     {'Signal','Physical noise'},                 'categorical', [],...
+                 'Channel',   chanID,                                      'categorical', [],...
+                 'name','Band_SPL_STI');
+end
 
 %***************************************************************
 % In the case of single channel analysis, remove the singleton dimension
