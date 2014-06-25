@@ -16,6 +16,11 @@ if isstruct(speech)
         cal = zeros(1,size(signal,2));
     end
     gain = 10.^(cal/20);
+    if isfield(speech,'chanID')
+        chanID = speech.chanID;
+    else
+        chanID = cellstr([repmat('Chan',size(signal,2),1) num2str((1:size(signal,2))')]);
+    end
 else
     signal = speech;
     if nargin < 3
@@ -263,6 +268,11 @@ end
     varargout{1} = L;
     varargout{2} = LL;
 
+    doresultleaf(10*log10(I),'dB',{'Time'},...
+                 'Time',    num2cell(((1:nwin)-1) * step / fs), 'Hz',          true,...
+                 'Channel', chanID,                             'categorical', [],...
+                 'name','Speech_level');
+    
     if doplot
         times = ((1:nwin)-1) * step / fs;
         ymin = floor(min(LL.sort(end,:))/10) *10;

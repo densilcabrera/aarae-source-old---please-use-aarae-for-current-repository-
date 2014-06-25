@@ -84,6 +84,11 @@ if ~isempty(audio) && ~isempty(fs) && ~isempty(cal) && ~isempty(AuditoryMasking)
     audio = mean(audio,3); % mixdown 3rd dimension if it exists
     chans = size(audio,2);
     audio = audio .* calgain; % apply calibration
+    if isfield(in,'chanID')
+        chanID = in.chanID;
+    else
+        chanID = cellstr([repmat('Chan',size(audio,2),1) num2str((1:size(audio,2))')]);
+    end
 
     % Define the octave band filter parameters
     %bandnumber=21:3:39; % filter band numbers
@@ -246,7 +251,7 @@ if ~isempty(audio) && ~isempty(fs) && ~isempty(cal) && ~isempty(AuditoryMasking)
 
             pcolor(MTF_all);
             colormap('hot')
-
+            MTF_out(1:7,1:14,ch) = MTF_all(1:7,1:14);
             % x-axis
             set(gca,'XTickLabel',{'0.63', '0.8', '1', '1.25', '1.6', '2',...
                 '2.5', '3.15','4','5','6.3','8','10','12.5'}, ...
@@ -262,8 +267,6 @@ if ~isempty(audio) && ~isempty(fs) && ~isempty(cal) && ~isempty(AuditoryMasking)
 
             colorbar('peer',subplot1);
             title('Sparse modulation transfer function')
-
-
 
 
             subplot(3,1,2)
@@ -312,29 +315,51 @@ if ~isempty(audio) && ~isempty(fs) && ~isempty(cal) && ~isempty(AuditoryMasking)
 
             % Sound pressure level of the received
             plot(squeeze(Level(1,ch,:)),'b','Marker','o','DisplayName','Received')
-
+            Levels(:,1,ch) = Level(1,ch,:);
 
             if AuditoryMasking
 
                 % Sound pressure level of masking from the band below
                 plot(10*log10(squeeze(Iam(1,ch,:))),'Color',[0 0.5 0], ...
                     'Marker','x','DisplayName','Masking')
-
+                Levels(:,2,ch) = 10*log10(Iam(1,ch,:));
                 % Sound pressure level of the auditory reception threshold
                 plot(10*log10(Irt),'k','LineStyle',':', ...
                     'DisplayName','Threshold')
-
+                Levels(:,3,ch) = 10*log10(Irt);
                 % Sum of all sources of noise
                 Isum = permute(I(1,ch,:),[2,3,1]) + Irt + permute(Iam(1,ch,:),[2,3,1]);
                 plot(10*log10(squeeze(Isum)), 'r', ...
                     'LineWidth',1,'LineStyle','--', ...
                     'Marker','+', 'DisplayName','Total S+N')
-
+                Levels(:,4,ch) = 10*log10(squeeze(Isum));
             end
             legend('show','Location','EastOutside');
             hold off
             out.lines.SPL = getplotdata;
         end
+        
+        mf = [0.63,0.8,1,1.25,1.6,2,2.5,3.15,4,5,6.3,8,10,12.5];
+        doresultleaf(MTF_out(1:7,1:14,:),[],{'Modulation_frequency'},...
+                     'Frequency',            num2cell([125,250,500,1000,2000,4000,8000]), 'Hz',          true,...
+                     'Modulation_frequency', num2cell(mf),                                'Hz',          true,...
+                     'Channel',              chanID,                                      'categorical', [],...
+                     'name','Modulation_TF_STI');
+        
+        if AuditoryMasking > 0
+            doresultleaf(Levels,'dB',{'Frequency'},...
+                         'Frequency', num2cell([125,250,500,1000,2000,4000,8000]),                       'Hz',          true,...
+                         'Level',     {'Received SPL','Masking','Threshold','Total S+N'}, 'categorical', [],...
+                         'Channel',   chanID,                                                            'categorical', [],...
+                         'name','Band_SPL_STI');
+        else
+            doresultleaf(Levels,'dB',{'Frequency'},...
+                         'Frequency', num2cell([125,250,500,1000,2000,4000,8000]), 'Hz',          true,...
+                         'Level',     {'Received SPL'},                            'categorical', [],...
+                         'Channel',   chanID,                                      'categorical', [],...
+                         'name','Band_SPL_STI');
+        end
+
     end
 else
     out = [];
