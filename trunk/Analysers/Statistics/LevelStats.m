@@ -13,6 +13,8 @@ if isstruct(inputwave)
     end
     if isfield(inputwave,'chanID')
         chanID = inputwave.chanID;
+    else
+        chanID = cellstr([repmat('Chan',size(audio,2),1) num2str((1:size(audio,2))')]);
     end
     if isfield(inputwave,'cal')
         cal = inputwave.cal;
@@ -103,6 +105,20 @@ out.funcallback.name = 'LevelStats.m';
 out.funcallback.inarg = {tau,cal,weight};
 
 t = ((1:len)'-1)./fs; % time vector
+
+if ~ismatrix(10*log10(sort(audio)))
+    doresultleaf(10*log10(sort(audio)),[],{'Duration'},...
+                 'Duration', t,                's',           true,...
+                 'channels', chanID,           'categorical', [],...
+                 'bands',    num2cell(bandID), 'Hz',          false,...
+                 'name','cumulative_distrib_level');
+else
+    doresultleaf(10*log10(sort(audio)),[],{'Duration'},...
+                 'Duartion', t,      's',           true,...
+                 'channels', chanID, 'categorical', [],...
+                 'name','cumulative_distrib_level');
+end
+
 for ch = 1:chans
     if exist('chanID','var')
         chanstring = char(chanID(ch));
