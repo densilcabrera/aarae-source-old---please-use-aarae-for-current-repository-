@@ -121,7 +121,7 @@ function mySelectFcn(tree, ~)
                     set(mainHandles.aarae,'DefaultAxesColorOrder',cmap)
                 end
                 filltable(audiodata,mainHandles)
-                doresultplot(mainHandles)
+                doresultplot(mainHandles,mainHandles.axesdata)
                 mainHandles.tabledata = get(mainHandles.cattable,'Data');
             else
                 set(mainHandles.data_panel1,'Visible','off');

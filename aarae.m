@@ -1540,6 +1540,11 @@ if (click == handles.axesfreq) || (get(click,'Parent') == handles.axesfreq)
     selectedNodes = selectedNodes(1);
     title(selectedNodes.getName.char)
 end
+if (click == handles.axesdata) || (get(click,'Parent') == handles.axesdata)
+    figure;
+    haxes = axes;
+    doresultplot(handles,haxes)
+end
 guidata(hObject,handles)
 
 
@@ -2655,7 +2660,7 @@ function chartfunc_popup_Callback(~, eventdata, handles) %#ok : Executed when se
 
 % Hints: contents = cellstr(get(hObject,'String')) returns chartfunc_popup contents as cell array
 %        contents{get(hObject,'Value')} returns selected item from chartfunc_popup
-doresultplot(handles)
+doresultplot(handles,handles.axesdata)
 
 % --- Executes during object creation, after setting all properties.
 function chartfunc_popup_CreateFcn(hObject, ~, ~) %#ok : creation of chart selection type popup menu
@@ -2697,7 +2702,7 @@ if size(eventdata.Indices,1) ~= 0 && eventdata.Indices(1,2) == 2
         set(hObject,'Data',{''})
         set(hObject,'Data',tabledata)
         guidata(handles.aarae,handles)
-        doresultplot(handles)
+        doresultplot(handles,handles.axesdata)
     else
         
     end
@@ -2733,8 +2738,8 @@ if size(eventdata.Indices,1) ~= 0 && eventdata.Indices(1,2) == 4
             case 2
                 set(handles.chartfunc_popup,'String',{'mesh','surf','imagesc'},'Value',1)
         end
-        doresultplot(handles)
+        doresultplot(handles,handles.axesdata)
     else
-        doresultplot(handles)
+        doresultplot(handles,handles.axesdata)
     end
 end
