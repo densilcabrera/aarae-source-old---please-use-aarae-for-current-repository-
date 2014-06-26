@@ -41,6 +41,8 @@ if isstruct(IN)
     end
     if isfield(IN,'chanID')
         chanID = IN.chanID;
+    else
+        chanID = cellstr([repmat('Chan',size(data,2),1) num2str((1:size(data,2))')]);
     end
 else
     data = IN;
@@ -201,6 +203,22 @@ if ~isempty(data) && ~isempty(fs) %&& ~isempty(WindowTime) && ~isempty(OffsetTim
     
     if isstruct(IN)
         
+        if bands > 1
+            All = cat(4,ED,eta_kurt);
+            doresultleaf(All,[],{'Time'},...
+                         'Time',     IRt_vec,                     's',           true,...
+                         'channels', chanID,                      'categorical', [],...
+                         'bands',    num2cell(bandID),            'Hz',          false,...
+                         'Method',   {'Echo density','Kurtosis'}, 'categorical', [],...
+                         'name','Echo_density');
+        else
+            All = cat(3,ED,eta_kurt);
+            doresultleaf(All,[],{'Time'},...
+                         'Time',     IRt_vec,                     's',           true,...
+                         'channels', chanID,                      'categorical', [],...
+                         'Method',   {'Echo density','Kurtosis'}, 'categorical', [],...
+                         'name','Echo_density');
+        end
         OUT.ED = ED;
         OUT.eta_kurt = eta_kurt;
         OUT.transition = transition;

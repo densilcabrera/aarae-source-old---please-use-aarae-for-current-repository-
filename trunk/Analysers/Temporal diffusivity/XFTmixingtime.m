@@ -33,6 +33,8 @@ if isstruct(IN)
 
     if isfield(IN,'chanID')
         chanID = IN.chanID;
+    else
+        chanID = cellstr([repmat('Chan',size(audio,2),1) num2str((1:size(audio,2))')]);
     end
 
     
@@ -116,29 +118,15 @@ if ~isempty(audio) && ~isempty(fs)
         hold off
         OUT.lines.(genvarname(['XFT_ch' num2str(ch)])) = getplotdata;
     end
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-% GENERIC TABLE CODE
-%     fig1 = figure('Name','My results table');
-%     table1 = uitable('Data',[duration maximum minimum],...
-%                 'ColumnName',{'Duration','Maximum','Minimum'},...
-%                 'RowName',{'Results'});
-%     disptables(fig1,table1);
-    % If you have multiple tables to combine in the figure, you can
-    % concatenate them:
-    % disptables(fig1,[table1 table2 table3])
-    
 
 
     if isstruct(IN)
+        All = cat(3,D./repmat(max(D),length(D),1),Dsmooth./repmat(max(D),length(D),1));
+        doresultleaf(All,'normalized',{'Time'},...
+                     'Time',     (1:nwin)'*hoptime,       's',           true,...
+                     'channels', chanID,                  'categorical', [],...
+                     'Mode',     {'Detailed','Smoothed'}, 'categorical', [],...
+                     'name','Modal_density');
         %OUT = D; % This should be formatted to AARAE's generic data output
         % when the format has been defined.
         OUT.funcallback.name = 'XFTmixingtime.m';
