@@ -30,7 +30,8 @@ if leafnameexist == 1
     end
     leafname = [leafname,'_',num2str(index)];
 end
-handles.(genvarname(leafname)) = uitreenode('v0', leafname,  leafname, [], true);
+iconPath = fullfile(matlabroot,'/toolbox/matlab/icons/help_fx.png');
+handles.(genvarname(leafname)) = uitreenode('v0', leafname,  leafname, iconPath, true);
 handles.(genvarname(leafname)).UserData = out;
 handles.results.add(handles.(genvarname(leafname)));
 handles.mytree.reloadNode(handles.results);

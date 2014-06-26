@@ -1,4 +1,4 @@
-function doresultplot(handles)
+function doresultplot(handles,haxes)
 
 selectedNodes = handles.mytree.getSelectedNodes;
 audiodata = selectedNodes(1).handle.UserData;
@@ -20,25 +20,27 @@ try
                 if iscell(Xdata), Xdata = cell2mat(Xdata); end
             end
             if ~isequal(size(Xdata),size(audiodata.data))
-                eval([chartfunc '(handles.axesdata,Xdata,squeeze(audiodata.data(' sel ')))'])
+                eval([chartfunc '(haxes,Xdata,squeeze(audiodata.data(' sel ')))'])
             else
-                eval([chartfunc '(handles.axesdata,squeeze(Xdata(' sel ')),squeeze(audiodata.data(' sel ')))'])
+                eval([chartfunc '(haxes,squeeze(Xdata(' sel ')),squeeze(audiodata.data(' sel ')))'])
             end
-            xlabel(handles.axesdata,[tabledata{axis(1,1),1} ' [' audiodata.(genvarname([tabledata{axis(1,1),1} 'info'])).units ']'])
+            xlabel(haxes,strrep([tabledata{axis(1,1),1} ' [' audiodata.(genvarname([tabledata{axis(1,1),1} 'info'])).units ']'],'_',' '))
+            ylabel(haxes,strrep(audiodata.datainfo.units,'_',' '))
         else
-            cla(handles.axesdata,'reset')
+            cla(haxes,'reset')
             singdim = [];
             catdim = find(cellfun(@isempty,tabledata(:,4)),1);
             if isempty(catdim), catdim = 1; end
             eval(['catdim = length(size(audiodata.data(' sel ')));'])
             if isempty(singdim), singdim = 1; end
             if strcmp(chartfunc,'distributionPlot')
-                eval([chartfunc '(handles.axesdata,squeeze(audiodata.data(' sel ')),''xNames'',audiodata.(genvarname(cattable.Data{catdim,1}))(' cattable.Data{catdim,2} '))'])
+                eval([chartfunc '(haxes,squeeze(audiodata.data(' sel ')),''xNames'',audiodata.(genvarname(cattable.Data{catdim,1}))(' cattable.Data{catdim,2} '))'])
             end
             if strcmp(chartfunc,'boxplot')
-                eval([chartfunc '(handles.axesdata,squeeze(audiodata.data(' sel ')),''labels'',audiodata.(genvarname(cattable.Data{catdim,1}))(' cattable.Data{catdim,2} '))'])
+                eval([chartfunc '(haxes,squeeze(audiodata.data(' sel ')),''labels'',audiodata.(genvarname(cattable.Data{catdim,1}))(' cattable.Data{catdim,2} '))'])
             end
-            xlabel(handles.axesdata,[cattable.Data{catdim,1} ' [' audiodata.(genvarname([cattable.Data{catdim,1} 'info'])).units ']'])
+            xlabel(haxes,strrep([cattable.Data{catdim,1} ' [' audiodata.(genvarname([cattable.Data{catdim,1} 'info'])).units ']'],'_',' '))
+            ylabel(haxes,strrep(audiodata.datainfo.units,'_',' '))
         end
         handles.tabledata = tabledata;
         guidata(handles.aarae,handles)
@@ -55,14 +57,14 @@ try
         if ~strcmp(chartfunc,'imagesc')
             eval(['data = squeeze(audiodata.data(' sel '));'])
             if ~isequal([length(Ydata),length(Xdata)],size(data)), data = data'; end %#ok : Used in line above
-            eval([chartfunc '(handles.axesdata,Xdata,Ydata,data)'])
+            eval([chartfunc '(haxes,Xdata,Ydata,data)'])
         else
-            eval([chartfunc '(Xdata,Ydata,squeeze(audiodata.data(' sel ')),''Parent'',handles.axesdata)'])
-            eval(['figure;' chartfunc '(Xdata,Ydata,squeeze(audiodata.data(' sel ')),''Clipping'',''off'')'])
-            set(handles.axesdata,'YDir','normal')
+            eval([chartfunc '(Xdata,Ydata,squeeze(audiodata.data(' sel ')),''Parent'',haxes)'])
+            set(haxes,'YDir','normal')
         end
-        xlabel(handles.axesdata,[tabledata{axis(1,1),1} ' [' audiodata.(genvarname([tabledata{axis(1,1),1} 'info'])).units ']'])
-        ylabel(handles.axesdata,[tabledata{axis(1,2),1} ' [' audiodata.(genvarname([tabledata{axis(1,2),1} 'info'])).units ']'])
+        xlabel(haxes,strrep([tabledata{axis(1,1),1} ' [' audiodata.(genvarname([tabledata{axis(1,1),1} 'info'])).units ']'],'_',' '))
+        ylabel(haxes,strrep([tabledata{axis(1,2),1} ' [' audiodata.(genvarname([tabledata{axis(1,2),1} 'info'])).units ']'],'_',' '))
+        zlabel(haxes,strrep(audiodata.datainfo.units,'_',' '))
         colormap('Jet')
         handles.tabledata = tabledata;
         guidata(handles.aarae,handles)
@@ -85,6 +87,6 @@ catch error
         otherwise
             set(handles.chartfunc_popup,'String',{[]},'Value',1)
     end
-    doresultplot(handles);
+    doresultplot(handles,haxes);
     warndlg(error.message,'AARAE info','modal')
 end
