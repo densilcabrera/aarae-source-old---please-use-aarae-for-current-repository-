@@ -112,14 +112,14 @@ function mySelectFcn(tree, ~)
             cla(mainHandles.axesdata)
             if isfield(audiodata,'data')
                 set(mainHandles.data_panel1,'Visible','on');
-                if ~ismatrix(audiodata.data)
-                    if ndims(audiodata.data) == 3, cmap = colormap(hsv(size(audiodata.data,3))); end
-                    if ndims(audiodata.data) >= 4, cmap = colormap(copper(size(audiodata.data,4))); end
-                    set(mainHandles.aarae,'DefaultAxesColorOrder',cmap)
-                else
-                    cmap = colormap(lines(size(audiodata.data,2)));
-                    set(mainHandles.aarae,'DefaultAxesColorOrder',cmap)
-                end
+%                if ~ismatrix(audiodata.data)
+%                    if ndims(audiodata.data) == 3, cmap = colormap(hsv(size(audiodata.data,3))); end
+%                    if ndims(audiodata.data) >= 4, cmap = colormap(copper(size(audiodata.data,4))); end
+%                    set(mainHandles.aarae,'DefaultAxesColorOrder',cmap)
+%                else
+%                    cmap = colormap(lines(size(audiodata.data,2)));
+%                    set(mainHandles.aarae,'DefaultAxesColorOrder',cmap)
+%                end
                 filltable(audiodata,mainHandles)
                 doresultplot(mainHandles,mainHandles.axesdata)
                 mainHandles.tabledata = get(mainHandles.cattable,'Data');
