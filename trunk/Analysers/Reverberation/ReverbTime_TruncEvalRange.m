@@ -282,7 +282,6 @@ if ~isempty(audio) && ~isempty(fs) && ~isempty(bpo) && ~isempty(highestband) && 
             if bands > 1
                 title([num2str(flist(bnd)), ' Hz'])
             end
-            OUT.lines.(genvarname([num2str(flist(bnd)), '_Hz'])) = getplotdata;
         end
         
         if (startlevel == -5)
@@ -318,7 +317,6 @@ if ~isempty(audio) && ~isempty(fs) && ~isempty(bpo) && ~isempty(highestband) && 
                 xlabel('Impulse response truncation point (s)')
                 title('T20')
                 hold off
-                OUT.lines.T20 = getplotdata;
                 
                 subplot(2,1,2)
                 for bnd = 1:bands
@@ -339,7 +337,6 @@ if ~isempty(audio) && ~isempty(fs) && ~isempty(bpo) && ~isempty(highestband) && 
                 xlabel('Impulse response truncation point (s)')
                 title('T30')
                 hold off
-                OUT.lines.T30 = getplotdata;
             end
         end
         if maketables == 1
