@@ -15,7 +15,7 @@ try
     eval(['data = squeeze(audiodata.data(' sel '));'])
     if naxis < 2
         cmap = colormap(hsv(size(data,2)));
-        set(handles.aarae,'DefaultAxesColorOrder',cmap)
+        set(get(haxes,'Parent'),'DefaultAxesColorOrder',cmap)
         if ~strcmp(chartfunc,'distributionPlot') && ~strcmp(chartfunc,'boxplot')
             cla(haxes,'reset')
             axis = find([catorcont{:}] == true);
