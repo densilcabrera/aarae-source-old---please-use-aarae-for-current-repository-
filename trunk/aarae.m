@@ -927,6 +927,8 @@ for nleafs = 1:length(selectedNodes)
                 signaldata.datatype = 'results';
                 if isfield(signaldata,'audio')
                     iconPath = fullfile(matlabroot,'/toolbox/fixedpoint/fixedpointtool/resources/plot.png');
+                elseif isfield(signaldata,'tables')
+                    iconPath = fullfile(matlabroot,'/toolbox/matlab/icons/HDF_grid.gif');
                 else
                     iconPath = fullfile(matlabroot,'/toolbox/matlab/icons/notesicon.gif');
                 end
@@ -1541,9 +1543,28 @@ if (click == handles.axesfreq) || (get(click,'Parent') == handles.axesfreq)
     title(selectedNodes.getName.char)
 end
 if (click == handles.axesdata) || (get(click,'Parent') == handles.axesdata)
-    figure;
-    haxes = axes;
-    doresultplot(handles,haxes)
+    selectedNodes = handles.mytree.getSelectedNodes;
+    data = selectedNodes(1).handle.UserData;
+    if ~isfield(data,'tables')
+        figure;
+        haxes = axes;
+        doresultplot(handles,haxes)
+    else
+        figure;
+        ntable = get(handles.ntable_popup,'Value');
+        Xvalues = get(handles.Xvalues_sel,'SelectedObject');
+        Xvalues = get(Xvalues,'tag');
+        switch Xvalues
+            case 'radiobutton1'
+                bar(data.tables(ntable).Data(:,get(handles.Yvalues_box,'Value')),'FaceColor',[0 0.5 0.5])
+                set(gca,'Xtick',1:length(data.tables(ntable).RowName),'XTickLabel',data.tables(ntable).RowName)
+            case 'radiobutton2'
+                bar(data.tables(ntable).Data(get(handles.Yvalues_box,'Value'),:),'FaceColor',[0 0.5 0.5])
+                set(gca,'Xtick',1:length(data.tables(ntable).ColumnName),'XTickLabel',data.tables(ntable).ColumnName)
+        end
+        ycontents = cellstr(get(handles.Yvalues_box,'String'));
+        ylabel(gca,ycontents{get(handles.Yvalues_box,'Value')})
+    end
 end
 guidata(hObject,handles)
 
@@ -2430,6 +2451,8 @@ switch Xvalues
         bar(handles.axesdata,data.tables(ntable).Data(get(handles.Yvalues_box,'Value'),:),'FaceColor',[0 0.5 0.5])
         set(handles.axesdata,'Xtick',1:length(data.tables(ntable).ColumnName),'XTickLabel',data.tables(ntable).ColumnName)
 end
+ycontents = cellstr(get(handles.Yvalues_box,'String'));
+ylabel(handles.axesdata,ycontents{get(handles.Yvalues_box,'Value')})
 
 % --- Executes during object creation, after setting all properties.
 function Yvalues_box_CreateFcn(hObject, ~, ~) %#ok

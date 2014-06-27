@@ -104,7 +104,11 @@ function mySelectFcn(tree, ~)
             set(mainHandles.axestime,'Visible','off');
             set(mainHandles.axesfreq,'Visible','off');
             set([mainHandles.text16,mainHandles.text17,mainHandles.text18,mainHandles.text19,mainHandles.text20,mainHandles.text21],'Visible','off')
-            set(mainHandles.axesdata,'Visible','on');
+            if isfield(audiodata,'data') || isfield(audiodata,'tables')
+                set(mainHandles.axesdata,'Visible','on');
+            else
+                set(mainHandles.axesdata,'Visible','off');
+            end
             set(mainHandles.audiodatatext,'String',[]);
             datatext = evalc('audiodata');
             set(mainHandles.datatext,'Visible','on');
@@ -112,14 +116,6 @@ function mySelectFcn(tree, ~)
             cla(mainHandles.axesdata)
             if isfield(audiodata,'data')
                 set(mainHandles.data_panel1,'Visible','on');
-%                if ~ismatrix(audiodata.data)
-%                    if ndims(audiodata.data) == 3, cmap = colormap(hsv(size(audiodata.data,3))); end
-%                    if ndims(audiodata.data) >= 4, cmap = colormap(copper(size(audiodata.data,4))); end
-%                    set(mainHandles.aarae,'DefaultAxesColorOrder',cmap)
-%                else
-%                    cmap = colormap(lines(size(audiodata.data,2)));
-%                    set(mainHandles.aarae,'DefaultAxesColorOrder',cmap)
-%                end
                 filltable(audiodata,mainHandles)
                 doresultplot(mainHandles,mainHandles.axesdata)
                 mainHandles.tabledata = get(mainHandles.cattable,'Data');
@@ -128,9 +124,7 @@ function mySelectFcn(tree, ~)
             end
             if isfield(audiodata,'tables')
                 set(mainHandles.data_panel2,'Visible','on');
-                %set(mainHandles.Xvalues_sel,'SelectedObject',mainHandles.radiobutton1);
                 set(mainHandles.ntable_popup,'String',cellstr(num2str((1:length(audiodata.tables))')));
-                %set(mainHandles.ntable_popup,'Value',1);
                 ntable = get(mainHandles.ntable_popup,'Value');
                 Xvalues = get(mainHandles.Xvalues_sel,'SelectedObject');
                 Xvalues = get(Xvalues,'tag');
@@ -148,6 +142,8 @@ function mySelectFcn(tree, ~)
                         set(mainHandles.Xvalues_box,'String',audiodata.tables(ntable).ColumnName,'Value',1)
                         set(mainHandles.Yvalues_box,'String',audiodata.tables(ntable).RowName)
                 end
+                ycontents = cellstr(get(mainHandles.Yvalues_box,'String'));
+                ylabel(mainHandles.axesdata,ycontents{get(mainHandles.Yvalues_box,'Value')})
                 %set(mainHandles.axesdata,'XTickLabel',audiodata.tables(1).RowName)
             else
                 set(mainHandles.data_panel2,'Visible','off');
