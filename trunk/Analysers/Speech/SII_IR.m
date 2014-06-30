@@ -636,7 +636,7 @@ if ~isempty(data) && ~isempty(fs) && ~isempty(P) && ~isempty(BG) && ~isempty(T) 
             t2 =uitable('Data',dat2,'ColumnName',cnames2,'RowName',rnames2);
             %set(t,'ColumnWidth',{60});
 
-            [~,tables] = disptables(f,[t2 t1]);
+            [~,tables] = disptables(f,[t2 t1],{'Sound levels','SII'});
             OUT.tables = tables;
         end
     end

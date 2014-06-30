@@ -915,7 +915,7 @@ for ch = 1:chans
             t3 =uitable('Data',dat3,'ColumnName',cnames3,'RowName',rnames3);
             %set(t,'ColumnWidth',{100});
             
-            [~,tables] = disptables(f,[t3 t2 t1]);
+            [~,tables] = disptables(f,[t3 t2 t1],{['Chan ' num2str(ch) ' - STI'],['Chan ' num2str(ch) ' - MTI'],['Chan ' num2str(ch) ' - MTF']});
             Verbose.tables = [Verbose.tables tables];
         end
     end % if doplot
