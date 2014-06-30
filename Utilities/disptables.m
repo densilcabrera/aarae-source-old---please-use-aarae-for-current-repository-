@@ -1,4 +1,4 @@
-function varargout = disptables(fig,tables)
+function varargout = disptables(fig,tables,names)
 
 % disptables    Adjust figure to fit MATLAB generated uitables.
 %   fighandle = disptables(fig,tables) helps resize figures in order to
@@ -33,6 +33,9 @@ if length(fig) ~= length(tables), window = 'single'; end
 if length(fig) == length(tables), window = 'multi'; end
 figpos = get(fig,'Position');
 ntables = length(tables);
+if nargin < 3
+    names = cellstr([repmat('Table',length(tables),1) num2str((1:length(tables))')]);
+end
 if ntables == 1
     window = 'multi';
     temp = figpos;
@@ -52,6 +55,8 @@ switch window
         s = get(tables,'Extent');
         s = flipud(s);
         tables = fliplr(tables);
+        if size(names,1) > size(names,2), names = names'; end
+        names = fliplr(names);
         set(tables(1),'Position',s{1,1})
         y = s{1,1}(1,4);
         x = s{1,1}(1,3);
@@ -66,6 +71,7 @@ for n = 1:length(tables)
     outtables(n).RowName = get(tables(n),'RowName');
     outtables(n).ColumnName = get(tables(n),'ColumnName');
     outtables(n).Data = get(tables(n),'Data');
+    outtables(n).Name = names{1,n};
 end
 varargout{1} = fig;
 varargout{2} = outtables;

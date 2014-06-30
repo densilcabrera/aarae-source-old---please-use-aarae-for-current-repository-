@@ -68,7 +68,7 @@ if ~isempty(IR) && ~isempty(fs) && ~isempty(startthresh) && ~isempty(bpo) && ~is
 
     if chans > 2
         IR = IR(:,1:2);
-        warning('Only the first two channels are analysed')
+        warndlg('Only the first two channels are analysed')
         chans = 2;
     end
 
@@ -196,7 +196,7 @@ if ~isempty(IR) && ~isempty(fs) && ~isempty(startthresh) && ~isempty(bpo) && ~is
                 'ST Late (dB)'};
             t2 =uitable('Data',dat2,'ColumnName',cnames2,'RowName',rnames2);
 
-            [~,tables] = disptables(f,[t2 t1]);
+            [~,tables] = disptables(f,[t2 t1],{['Chan' num2str(ch) ' - Spectral average'],['Chan' num2str(ch) ' - Stage support']});
             out.tables = [out.tables tables];
         end
     end

@@ -322,7 +322,7 @@ if ~isempty(audio) && ~isempty(fs)
             'RowName', rowname)];
     end
     
-    [~,tables] = disptables(fig1,[table1 table2]);
+    [~,tables] = disptables(fig1,[table1 table2],{'Analysis details','Sound logger summary'});
     OUT.tables = tables;
     
     %     table1 = uitable('Data',[duration maximum minimum],...

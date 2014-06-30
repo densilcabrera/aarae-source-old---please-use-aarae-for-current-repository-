@@ -219,7 +219,7 @@ if ~isempty(IR) && ~isempty(fs) && ~isempty(startthresh) && ~isempty(bpo) && ~is
             table1 = uitable('Data',[C50;C80;D50;D80;Ts],...
                              'ColumnName',num2cell(bandfc),...
                              'RowName',{'C50','C80','D50','D80','Ts'});
-            [~,tables] = disptables(fig1,table1);
+            [~,tables] = disptables(fig1,table1,{'Chan1 - Sound energy'});
             out.tables = tables;
         elseif chans == 2
             fig1 = figure('Name','Sound Energy');
@@ -229,7 +229,7 @@ if ~isempty(IR) && ~isempty(fs) && ~isempty(startthresh) && ~isempty(bpo) && ~is
             table2 = uitable('Data',[C50(:,2)';C80(:,2)';D50(:,2)';D80(:,2)';Ts(:,2)'],...
                              'ColumnName',num2cell(bandfc),...
                              'RowName',{'C50','C80','D50','D80','Ts'});
-            [~,tables] = disptables(fig1,[table1 table2]);
+            [~,tables] = disptables(fig1,[table1 table2],{'Chan1 - Sound energy','Chan2 - Sound energy'});
             out.tables = tables;
         end
     end
@@ -266,8 +266,8 @@ if ~isempty(IR) && ~isempty(fs) && ~isempty(startthresh) && ~isempty(bpo) && ~is
         out.funcallback.name = 'SoundEnergy.m';
         out.funcallback.inarg = {fs,startthresh,bpo,doplot};
     else
+        out = [];
         warndlg('Function calcuates for mono or stereo audio only','AARAE info');
-
     end % if chans
 else
     out = [];

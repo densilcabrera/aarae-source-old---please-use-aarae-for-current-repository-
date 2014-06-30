@@ -187,7 +187,7 @@ if ~isempty(audio) && ~isempty(fs) && ~isempty(cal) && ~isempty(showpercentiles)
             table1 = uitable('Data',[out.Leq(:,ch),out.Lmax(:,ch),out.L5(:,ch),out.L10(:,ch),out.L50(:,ch),out.L90(:,ch)],...
                              'ColumnName',{'Leq','Lmax','L5','L10','L50','L90'},...
                              'RowName',num2cell(frequencies));
-            [fig,tables] = disptables(fig,table1);
+            [fig,tables] = disptables(fig,table1,{['Chan' num2str(ch) ' - Octave band spectrum']});
             delete(fig)
             out.tables = [out.tables tables];
         end
