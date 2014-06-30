@@ -916,73 +916,73 @@ if ~isempty(ir) && ~isempty(fs) && ~isempty(startthresh) && ~isempty(bpo) && ~is
     % if chans == 1
     %     disp(out)
     % else
-    disp(['bandfc:' ,num2str(out.bandfc), ' Hz'])
-    disp('Early Decay Time (s):')
-    disp(out.EDT)
-    disp('Reverberation Time T20 (s):')
-    disp(out.T20)
-    disp('Reverberation Time T30 (s):')
-    disp(out.T30)
+    %disp(['bandfc:' ,num2str(out.bandfc), ' Hz'])
+    %disp('Early Decay Time (s):')
+    %disp(out.EDT)
+    %disp('Reverberation Time T20 (s):')
+    %disp(out.T20)
+    %disp('Reverberation Time T30 (s):')
+    %disp(out.T30)
 
-    disp('Clarity Index C50 (dB):')
-    disp(out.C50)
-    disp('Clarity Index C80 (dB):')
-    disp(out.C80)
-    disp('Definition D50:')
-    disp(out.D50)
-    disp('Definition D80:')
-    disp(out.D80)
-    disp('Centre Time (s):')
-    disp(out.Ts)
+    %disp('Clarity Index C50 (dB):')
+    %disp(out.C50)
+    %disp('Clarity Index C80 (dB):')
+    %disp(out.C80)
+    %disp('Definition D50:')
+    %disp(out.D50)
+    %disp('Definition D80:')
+    %disp(out.D80)
+    %disp('Centre Time (s):')
+    %disp(out.Ts)
 
-    disp('EDT squared correlation coefficient:')
-    disp(out.EDTr2)
-    disp('T20 squared correlation coefficient:')
-    disp(out.T20r2)
-    disp('T30 squared correlation coefficient:')
-    disp(out.T30r2)
-    disp('Ratio of T20 to T30 (%):')
-    disp(out.T20T30ratio)
-    if exist('T20low','var')
-        disp('Low-frequency EDT (s):')
-        disp(out.EDTlow)
-        disp('Low-frequency T20 (s):')
-        disp(out.T20low)
-        disp('Low-frequency T30 (s):')
-        disp(out.T30low)
-    end
-    if exist('T20mid','var')
-        disp('Mid-frequency EDT (s):')
-        disp(out.EDTmid)
-        disp('Mid-frequency T20 (s):')
-        disp(out.T20mid)
-        disp('Mid-frequency T30 (s):')
-        disp(out.T30mid)
-    end
-    if exist('T20high','var')
-        disp('High-frequency EDT (s):')
-        disp(out.EDThigh)
-        disp('High-frequency T20 (s):')
-        disp(out.T20high)
-        disp('High-frequency T30 (s):')
-        disp(out.T30high)
-    end
-    if exist('BR_T20','var')
-        disp('Bass ratio EDT:')
-        disp(out.BR_EDT)
-        disp('Bass ratio T20:')
-        disp(out.BR_T20)
-        disp('Bass ratio T30:')
-        disp(out.BR_T30)
-    end
-    if exist('TR_T20','var')
-        disp('Treble ratio EDT:')
-        disp(out.TR_EDT)
-        disp('Treble ratio T20:')
-        disp(out.TR_T20)
-        disp('Treble ratio T30:')
-        disp(out.TR_T30)
-    end
+    %disp('EDT squared correlation coefficient:')
+    %disp(out.EDTr2)
+    %disp('T20 squared correlation coefficient:')
+    %disp(out.T20r2)
+    %disp('T30 squared correlation coefficient:')
+    %disp(out.T30r2)
+    %disp('Ratio of T20 to T30 (%):')
+    %disp(out.T20T30ratio)
+    %if exist('T20low','var')
+    %    disp('Low-frequency EDT (s):')
+    %    disp(out.EDTlow)
+    %    disp('Low-frequency T20 (s):')
+    %    disp(out.T20low)
+    %    disp('Low-frequency T30 (s):')
+    %    disp(out.T30low)
+    %end
+    %if exist('T20mid','var')
+    %    disp('Mid-frequency EDT (s):')
+    %    disp(out.EDTmid)
+    %    disp('Mid-frequency T20 (s):')
+    %    disp(out.T20mid)
+    %    disp('Mid-frequency T30 (s):')
+    %    disp(out.T30mid)
+    %end
+    %if exist('T20high','var')
+    %    disp('High-frequency EDT (s):')
+    %    disp(out.EDThigh)
+    %    disp('High-frequency T20 (s):')
+    %    disp(out.T20high)
+    %    disp('High-frequency T30 (s):')
+    %    disp(out.T30high)
+    %end
+    %if exist('BR_T20','var')
+    %    disp('Bass ratio EDT:')
+    %    disp(out.BR_EDT)
+    %    disp('Bass ratio T20:')
+    %    disp(out.BR_T20)
+    %    disp('Bass ratio T30:')
+    %    disp(out.BR_T30)
+    %end
+    %if exist('TR_T20','var')
+    %    disp('Treble ratio EDT:')
+    %    disp(out.TR_EDT)
+    %    disp('Treble ratio T20:')
+    %    disp(out.TR_T20)
+    %    disp('Treble ratio T30:')
+    %    disp(out.TR_T30)
+    %end
     % end
 
     %--------------------------------------------------------------------------
@@ -1024,9 +1024,9 @@ if ~isempty(ir) && ~isempty(fs) && ~isempty(startthresh) && ~isempty(bpo) && ~is
                 rnames2 = {'EDT', 'T20', 'T30'};
                 t2 =uitable('Data',dat2,'ColumnName',cnames2,'RowName',rnames2);
                 set(t2,'ColumnWidth',{90});
-                [~,tables] = disptables(f,[t1 t2]);
+                [~,tables] = disptables(f,[t1 t2],{['Ch' num2str(ch) ' - Reverb parameters'],['Ch' num2str(ch) ' - Reverb parameters summary']});
             else
-                [~,tables] = disptables(f,t1);
+                [~,tables] = disptables(f,t1,{['Ch' num2str(ch) ' - Reverb parameters']});
             end
             %out = [];
             out.tables = [out.tables tables];

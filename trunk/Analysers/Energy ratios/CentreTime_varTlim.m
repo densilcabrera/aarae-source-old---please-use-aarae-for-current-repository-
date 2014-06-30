@@ -162,7 +162,7 @@ if ~isempty(IR) && ~isempty(fs) && ~isempty(startthresh) && ~isempty(highestband
 
 
     [r, c] = subplotpositions(bands, 0.5);
-    out.tables = [];
+    if doplot == 1, out.tables = []; end
     for ch = 1:chans
 
         figure('Name',['Centre time vs end truncation, channel ', num2str(ch)]);
@@ -189,7 +189,7 @@ if ~isempty(IR) && ~isempty(fs) && ~isempty(startthresh) && ~isempty(highestband
                 'RowName',num2cell(tlim*1000));
             set(table1,'ColumnWidth',{60});
 
-            [~,datatable] = disptables(fig1,table1);
+            [~,datatable] = disptables(fig1,table1,{['Chan' num2str(ch) ' - Centre time']});
             out.tables = [out.tables datatable];
         end
     end

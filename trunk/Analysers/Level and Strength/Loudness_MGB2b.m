@@ -942,7 +942,7 @@ if ~isempty(signal) && ~isempty(fs)
         'N1','N2','N3','N4',...
         'N5','N10','N20','N30','N40','N50 (median)','N60',...
         'N70','N80','N90','Minimum'});
-    [~,tables] = disptables(fig1,table1); % AARAE function
+    [~,tables] = disptables(fig1,table1,{'Time-varying loudness stats'}); % AARAE function
     OUT.tables = tables;
     
     if isstruct(IN)

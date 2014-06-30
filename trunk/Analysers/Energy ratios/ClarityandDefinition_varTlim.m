@@ -225,7 +225,7 @@ if ~isempty(IR) && ~isempty(fs) && ~isempty(startthresh) && ~isempty(highestband
                 'RowName',num2cell(tlim*1000));
             set(table2,'ColumnWidth',{60});
 
-            [~,tables] = disptables(fig1,[table1 table2]);
+            [~,tables] = disptables(fig1,[table1 table2],{['Chan' num2str(ch) ' - Clarity index'],['Chan' num2str(ch) ' - Definition']});
             out.tables = [out.tables tables];
         end
         doresultleaf(ClarityIndex,'Clarity Index [dB]',{'Integration_limit'},...
@@ -258,7 +258,6 @@ if ~isempty(IR) && ~isempty(fs) && ~isempty(startthresh) && ~isempty(highestband
         title('Clarity index, 10-100 ms time limits (o C35; + C50; x C80)')
         %legend('show','Location','EastOutside');
         hold off
-        out.lines.clarity_index = getplotdata;
     end
 else
     out = [];

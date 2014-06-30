@@ -238,10 +238,10 @@ if ~isempty(audio) && ~isempty(fs)
                 'ColumnName',{'Result'},...
                 'RowName',{'IACC E3'; 'IACC L3'; 'Binaural Quality Index'});
             
-            [~,tables] = disptables(fig1,[table1 table2]);
+            [~,tables] = disptables(fig1,[table1 table2],{'IACC of an IR','IACC summary'});
             
         else
-            [~,tables] = disptables(fig1,table1);
+            [~,tables] = disptables(fig1,table1,{'IACC of an IR'});
         end
         OUT.tables = tables;
         % ---------------------------------------------------------------------

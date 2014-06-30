@@ -124,7 +124,7 @@ function mySelectFcn(tree, ~)
             end
             if isfield(audiodata,'tables')
                 set(mainHandles.data_panel2,'Visible','on');
-                set(mainHandles.ntable_popup,'String',cellstr(num2str((1:length(audiodata.tables))')));
+                set(mainHandles.ntable_popup,'String',{audiodata.tables(:).Name})%cellstr(num2str((1:length(audiodata.tables))')));
                 ntable = get(mainHandles.ntable_popup,'Value');
                 Xvalues = get(mainHandles.Xvalues_sel,'SelectedObject');
                 Xvalues = get(Xvalues,'tag');
