@@ -266,6 +266,7 @@ if ~isempty(audio) && ~isempty(fs) && ~isempty(bpo) && ~isempty(highestband) && 
     % Plot
     % -------------------------------------------------------------------------
     T(isnan(T)) = 0;
+    if maketables == 1, OUT.tables = []; end
     for ch =  1:chans
         for bnd = 1:bands
             if exist('chanID', 'var')
@@ -353,9 +354,9 @@ if ~isempty(audio) && ~isempty(fs) && ~isempty(bpo) && ~isempty(highestband) && 
                         'RowName',num2cell(IRend/fs));
                     tables = cat(2,tables,table1);
                 end
-                
-                [~,tables] = disptables(fig1,tables);
-                OUT.tables = tables;
+                tablenames = cellstr([repmat(['Chan' num2str(ch) ' - '],length(flist),1) num2str(flist') repmat(' Hz',length(flist),1)]);
+                [~,tables] = disptables(fig1,tables,tablenames);
+                OUT.tables = [OUT.tables tables];
             end
         end
     end
