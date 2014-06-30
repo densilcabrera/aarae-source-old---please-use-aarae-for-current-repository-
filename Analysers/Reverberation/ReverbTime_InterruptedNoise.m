@@ -439,7 +439,7 @@ if ~isempty(audio) && ~isempty(fs) && ~isempty(filteriterations) && ~isempty(avm
     set(table3,'ColumnWidth',{60});
     
     
-    [~,tables] = disptables(fig1,[table1 table2 table3]);
+    [~,tables] = disptables(fig1,[table1 table2 table3],{'T30','T20','EDT'});
     OUT.tables = tables;
     
     
