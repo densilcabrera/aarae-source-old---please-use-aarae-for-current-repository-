@@ -58,8 +58,8 @@ try
             if iscell(Ydata), Ydata = cell2mat(Ydata); end
         end
         aaraecmap = importdata([cd '/Utilities/aaraecmap.mat']);
+        if ~isequal([length(Ydata),length(Xdata)],size(data)), data = data'; end %#ok : Used in line above
         if ~strcmp(chartfunc,'imagesc')
-            if ~isequal([length(Ydata),length(Xdata)],size(data)), data = data'; end %#ok : Used in line above
             eval([chartfunc '(haxes,Xdata,Ydata,data)'])
             colormap(aaraecmap)
             %cmap = colormap(cool(size(data,1)));
