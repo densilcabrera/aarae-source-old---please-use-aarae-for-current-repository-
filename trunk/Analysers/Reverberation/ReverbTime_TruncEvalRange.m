@@ -1,4 +1,4 @@
-function OUT = ReverbTime_TruncEvalRange(IN, fs, bpo, highestband, lowestband, truncstep, evalrangestep, startlevel, startthresh, maketables)
+function OUT = ReverbTime_TruncEvalRange(IN, fs, bpo, highestband, lowestband, truncstep, evalrangestep, startlevel, startthresh, maketables, doplot)
 % This function calculates apparent reverberation time as a function of
 % end truncation time and evaluation range, using an impulse
 % response as input.
@@ -74,6 +74,7 @@ function OUT = ReverbTime_TruncEvalRange(IN, fs, bpo, highestband, lowestband, t
 % a spreadsheet for further analysis. Tables are in order from lowest to
 % highest frequency band.
 
+if nargin < 11, doplot = 0; end
 if nargin < 10, maketables = 0; end
 if nargin < 9, startthresh = -20; end
 if nargin < 8, startlevel = -5; end
@@ -90,14 +91,15 @@ if nargin < 3,
         'Evaluation range step (dB)';...
         'Evaluation range start level (dB)';...
         'Impulse response start detection threshold (dB)'; ...
-        'Generate tables (0 | 1)'},...
+        'Generate tables (0 | 1)';...
+        'Generate plots (0 | 1)'},...
         'Settings',...
         [1 30],...
-        {'1';'8000';'125';'50';'1';'-5';'-20';'0'});
+        {'1';'8000';'125';'50';'1';'-5';'-20';'0';'0'});
     
     param = str2num(char(param));
     
-    if length(param) < 8, param = []; end
+    if length(param) < 9, param = []; end
     if ~isempty(param)
         bpo = param(1);
         highestband = param(2);
@@ -107,6 +109,7 @@ if nargin < 3,
         startlevel = param(6);
         startthresh = param(7);
         maketables = param(8);
+        doplot = param(9);
     else
         OUT = [];
         return
@@ -268,76 +271,78 @@ if ~isempty(audio) && ~isempty(fs) && ~isempty(bpo) && ~isempty(highestband) && 
     T(isnan(T)) = 0;
     if maketables == 1, OUT.tables = []; end
     for ch =  1:chans
-        for bnd = 1:bands
-            if exist('chanID', 'var')
-                figure('Name',['Apparent Reverberation time, ', num2str(chanID{ch,1})])
-            else
-                figure('Name',['Apparent Reverberation time, channel ', num2str(ch)])
-            end
-            surfl(ERendL,IRend/fs,T(:,:,ch,bnd))
-            xlabel('End of evaluation range (dB)')
-            ylabel('Impulse response end truncation (s)')
-            zlabel('Reverberation time (s)')
-            
-            
-            if bands > 1
-                title([num2str(flist(bnd)), ' Hz'])
-            end
-        end
-        
-        if (startlevel == -5)
-            T20index = find(ERendL == -25, 1, 'first');
-            T30index = find(ERendL == -35, 1, 'first');
-            if ~isempty(T20index) && ~isempty(T30index)
+        if doplot == 1
+            for bnd = 1:bands
                 if exist('chanID', 'var')
-                    figure('Name',['T20 & T30, channel ', num2str(chanID{ch,1})])
+                    figure('Name',['Apparent Reverberation time, ', num2str(chanID{ch,1})])
                 else
-                    figure('Name',['T20 & T30, channel ', num2str(ch)])
+                    figure('Name',['Apparent Reverberation time, channel ', num2str(ch)])
                 end
-                subplot(2,1,1)
-                
+                surfl(ERendL,IRend/fs,T(:,:,ch,bnd))
+                xlabel('End of evaluation range (dB)')
+                ylabel('Impulse response end truncation (s)')
+                zlabel('Reverberation time (s)')
+
+
                 if bands > 1
-                    c = selectcolormap('rainbow256');
-                
+                    title([num2str(flist(bnd)), ' Hz'])
                 end
-                for bnd = 1:bands
-                    if bands > 1
-                        cc = c(round(1+ 255 * (bnd-1)/(bands-1)),:);
-                        else
-                    cc = [1,0,0];
+            end
+        
+            if (startlevel == -5)
+                T20index = find(ERendL == -25, 1, 'first');
+                T30index = find(ERendL == -35, 1, 'first');
+                if ~isempty(T20index) && ~isempty(T30index)
+                    if exist('chanID', 'var')
+                        figure('Name',['T20 & T30, channel ', num2str(chanID{ch,1})])
+                    else
+                        figure('Name',['T20 & T30, channel ', num2str(ch)])
                     end
-                    plot(IRend/fs,T(:,T20index,ch,bnd),...
-                        'Color',cc,...
-                        'DisplayName', [num2str(flist(bnd)), ' Hz'])
-                    hold on
-                end
-                if bands > 1
-                    legend('show','Location','EastOutside');
-                end
-                ylabel('Reverberation time (s)')
-                xlabel('Impulse response truncation point (s)')
-                title('T20')
-                hold off
-                
-                subplot(2,1,2)
-                for bnd = 1:bands
+                    subplot(2,1,1)
+
                     if bands > 1
-                        cc = c(round(1+ 255 * (bnd-1)/(bands-1)),:);
-                        else
-                    cc = [1,0,0];
+                        c = selectcolormap('rainbow256');
+
                     end
-                    plot(IRend/fs,T(:,T30index,ch,bnd),...
-                        'Color',cc,...
-                        'DisplayName', [num2str(flist(bnd)), ' Hz'])
-                    hold on
+                    for bnd = 1:bands
+                        if bands > 1
+                            cc = c(round(1+ 255 * (bnd-1)/(bands-1)),:);
+                            else
+                        cc = [1,0,0];
+                        end
+                        plot(IRend/fs,T(:,T20index,ch,bnd),...
+                            'Color',cc,...
+                            'DisplayName', [num2str(flist(bnd)), ' Hz'])
+                        hold on
+                    end
+                    if bands > 1
+                        legend('show','Location','EastOutside');
+                    end
+                    ylabel('Reverberation time (s)')
+                    xlabel('Impulse response truncation point (s)')
+                    title('T20')
+                    hold off
+
+                    subplot(2,1,2)
+                    for bnd = 1:bands
+                        if bands > 1
+                            cc = c(round(1+ 255 * (bnd-1)/(bands-1)),:);
+                            else
+                        cc = [1,0,0];
+                        end
+                        plot(IRend/fs,T(:,T30index,ch,bnd),...
+                            'Color',cc,...
+                            'DisplayName', [num2str(flist(bnd)), ' Hz'])
+                        hold on
+                    end
+                    if bands>1
+                        legend('show','Location','EastOutside');
+                    end
+                    ylabel('Reverberation time (s)')
+                    xlabel('Impulse response truncation point (s)')
+                    title('T30')
+                    hold off
                 end
-                if bands>1
-                    legend('show','Location','EastOutside');
-                end
-                ylabel('Reverberation time (s)')
-                xlabel('Impulse response truncation point (s)')
-                title('T30')
-                hold off
             end
         end
         if maketables == 1
