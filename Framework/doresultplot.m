@@ -62,8 +62,6 @@ try
         if ~strcmp(chartfunc,'imagesc')
             eval([chartfunc '(haxes,Xdata,Ydata,data)'])
             colormap(aaraecmap)
-            %cmap = colormap(cool(size(data,1)));
-            %set(haxes,'ColorOrder',cmap)
         else
             eval([chartfunc '(Xdata,1:length(Ydata),data,''Parent'',haxes)'])
             set(haxes,'YTickLabel',num2str(Ydata'))
@@ -160,6 +158,64 @@ catch error
                     end
                 end
             case ''
+                set(handles.cattable,'Data',handles.tabledata)
+                catorcont = handles.tabledata(:,4);
+                if any(cellfun(@isempty,catorcont)), catorcont(cellfun(@isempty,catorcont)) = {false}; end
+                naxis = length(find([catorcont{:}] == true));
+                switch naxis
+                    case 0
+                        set(handles.chartfunc_popup,'String',{'distributionPlot','boxplot'},'Value',1)
+                    case 1
+                        set(handles.chartfunc_popup,'String',{'plot','semilogx','semilogy','loglog','distributionPlot','boxplot'},'Value',1)
+                    case 2
+                        set(handles.chartfunc_popup,'String',{'mesh','surf','imagesc'},'Value',1)
+                    otherwise
+                        set(handles.chartfunc_popup,'String',{[]},'Value',1)
+                end
+                warndlg(error.message,'AARAE info','modal')
+        end
+    elseif length(find(cellfun(@length,cellfun(@str2num,tabledata(cell2mat(catorcont) == 0,2),'UniformOutput',false)) ~= 1)) == 1 && (strcmp(chartfunc,'mesh') || strcmp(chartfunc,'surf') || strcmp(chartfunc,'imagesc'))
+        selections = cellfun(@str2num,tabledata(:,2),'UniformOutput',false);
+        if any(cellfun(@isempty,selections)), selections(cellfun(@isempty,selections)) = {1}; end
+        cats = tabledata(cellfun(@length,selections) ~= 1,1);
+        choice = questdlg('Would you like to display data subplots?',...
+                          'AARAE subplots',...
+                          'Yes','No',...
+                          'Yes');
+        switch choice
+            case 'Yes'
+                dims = cellfun(@str2num,tabledata(cellfun(@length,selections) ~= 1,2),'UniformOutput',false);
+                indexes = find(cellfun(@length,selections) ~= 1);
+                dim2 = dims{1,1};
+                figure;
+                k = 1;
+                [r,c] = subplotpositions(length(dim2), 0.5);
+                for i = 1:length(dim2)
+                    hsub = subplot(r,c,k);
+                    newsel = strsplit(sel,',');
+                    newsel{1,indexes(1,1)} = num2str(i);
+                    newsel = strjoin(newsel,',');
+                    eval(['data = squeeze(audiodata.data(' newsel '));'])
+                    if ~isequal([length(Ydata),length(Xdata)],size(data)), data = data'; end
+                    if ~strcmp(chartfunc,'imagesc')
+                        eval([chartfunc '(hsub,Xdata,Ydata,data)'])
+                        colormap(aaraecmap)
+                    else
+                        eval([chartfunc '(Xdata,1:length(Ydata),data,''Parent'',hsub)'])
+                        set(haxes,'YTickLabel',num2str(Ydata'))
+                        set(haxes,'YDir','normal')
+                        colormap(aaraecmap)
+                    end
+                    xlabel(hsub,strrep([tabledata{axis(1,1),1} ' [' audiodata.(genvarname([tabledata{axis(1,1),1} 'info'])).units ']'],'_',' '))
+                    ylabel(hsub,strrep([tabledata{axis(1,2),1} ' [' audiodata.(genvarname([tabledata{axis(1,2),1} 'info'])).units ']'],'_',' '))
+                    zlabel(hsub,strrep(audiodata.datainfo.units,'_',' '))
+                    if isnumeric(audiodata.(genvarname(cats{1,1}))), audiodata.(genvarname(cats{1,1})) = num2cell(audiodata.(genvarname(cats{1,1}))); end
+                    dim2str = audiodata.(genvarname(cats{1,1})){dim2(i)};
+                    if isnumeric(dim2str), dim2str = num2str(dim2str); end
+                    title(hsub,dim2str)
+                    k = k + 1;
+                end
+            otherwise
                 set(handles.cattable,'Data',handles.tabledata)
                 catorcont = handles.tabledata(:,4);
                 if any(cellfun(@isempty,catorcont)), catorcont(cellfun(@isempty,catorcont)) = {false}; end
