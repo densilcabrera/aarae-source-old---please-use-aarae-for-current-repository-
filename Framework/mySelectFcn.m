@@ -61,10 +61,6 @@ function mySelectFcn(tree, ~)
                 mainHandles.Tf_freq_IN = mainHandles.Preferences.maxtimetodisplay;
             end
             set([mainHandles.text20,mainHandles.text21],'String',[num2str(length(audiodata.audio)/audiodata.fs) ' s'])
-            %set(mainHandles.smoothtime_popup,'Visible','on');
-            %set(mainHandles.smoothfreq_popup,'Visible','on');
-            %set(mainHandles.logtime_chk,'Visible','on');
-            %set(mainHandles.logfreq_chk,'Visible','on');
             set(mainHandles.process_panel,'Visible','on');
             set(mainHandles.playback_panel,'Visible','on');
             set(mainHandles.channel_panel,'Visible','off');

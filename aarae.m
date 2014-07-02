@@ -396,6 +396,10 @@ for i = 1:length(filename)
                 iconPath = fullfile(matlabroot,'/toolbox/fixedpoint/fixedpointtool/resources/plot.png');
             elseif strcmp(signaldata.datatype,'syscal')
                 iconPath = fullfile(matlabroot,'/toolbox/matlab/icons/boardicon.gif');
+            elseif isfield(signaldata,'data')
+                iconPath = fullfile(matlabroot,'/toolbox/matlab/icons/help_fx.png');
+            elseif isfield(signaldata,'tables')
+                iconPath = fullfile(matlabroot,'/toolbox/matlab/icons/HDF_grid.gif');
             else
                 iconPath = fullfile(matlabroot,'/toolbox/matlab/icons/notesicon.gif');
             end
@@ -895,16 +899,11 @@ for nleafs = 1:length(selectedNodes)
     if ~isempty(handles.funname) && ~isempty(audiodata)
         set(hObject,'BackgroundColor','red');
         set(hObject,'Enable','off');
-        % Processes the selected leaf using the selected process from proc_box
-        %contents = cellstr(get(handles.funcat_box,'String'));
-        %category = contents{get(handles.funcat_box,'Value')};
         contents = cellstr(get(handles.fun_box,'String'));
         file = contents(get(handles.fun_box,'Value'));
-        %name = selectedNodes(nleafs).getName.char;
         for multi = 1:size(file,1)
             [~,funname] = fileparts(char(file(multi,:)));
             if nargout(funname) == 1 || nargout(funname) == -2
-                %out = feval(handles.funname,audiodata);
                 if ~isempty(funcallback) && strcmp(funname,funcallback.name)
                     out = feval(funname,audiodata,funcallback.inarg{:});
                 else
