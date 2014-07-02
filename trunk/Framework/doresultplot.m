@@ -202,8 +202,8 @@ catch error
                         colormap(aaraecmap)
                     else
                         eval([chartfunc '(Xdata,1:length(Ydata),data,''Parent'',hsub)'])
-                        set(haxes,'YTickLabel',num2str(Ydata'))
-                        set(haxes,'YDir','normal')
+                        set(hsub,'YTickLabel',num2str(Ydata'))
+                        set(hsub,'YDir','normal')
                         colormap(aaraecmap)
                     end
                     xlabel(hsub,strrep([tabledata{axis(1,1),1} ' [' audiodata.(genvarname([tabledata{axis(1,1),1} 'info'])).units ']'],'_',' '))
