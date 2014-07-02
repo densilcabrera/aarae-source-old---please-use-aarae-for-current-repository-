@@ -14,7 +14,7 @@ try
     naxis = length(find([catorcont{:}] == true));
     eval(['data = squeeze(audiodata.data(' sel '));'])
     if naxis < 2
-        cmap = colormap(hsv(size(data,2)));
+        cmap = colormap(hsv(size(data,2))); %#ok : data defined in line 15
         set(get(haxes,'Parent'),'DefaultAxesColorOrder',cmap)
         if ~strcmp(chartfunc,'distributionPlot') && ~strcmp(chartfunc,'boxplot')
             cla(haxes,'reset')
@@ -80,20 +80,118 @@ try
         warndlg('Cannot display plots with more than 2 main axis defined!','AARAE info','modal')
     end
 catch error
-    set(handles.cattable,'Data',handles.tabledata)
-    catorcont = handles.tabledata(:,4);
-    if any(cellfun(@isempty,catorcont)), catorcont(cellfun(@isempty,catorcont)) = {false}; end
-    naxis = length(find([catorcont{:}] == true));
-    switch naxis
-        case 0
-            set(handles.chartfunc_popup,'String',{'distributionPlot','boxplot'},'Value',1)
-        case 1
-            set(handles.chartfunc_popup,'String',{'plot','semilogx','semilogy','loglog','distributionPlot','boxplot'},'Value',1)
-        case 2
-            set(handles.chartfunc_popup,'String',{'mesh','surf','imagesc'},'Value',1)
-        otherwise
-            set(handles.chartfunc_popup,'String',{[]},'Value',1)
+    if length(find(cellfun(@length,cellfun(@str2num,tabledata(cell2mat(catorcont) == 0,2),'UniformOutput',false)) ~= 1)) == 2 && (strcmp(chartfunc,'plot') || strcmp(chartfunc,'semilogx') || strcmp(chartfunc,'semilogy') || strcmp(chartfunc,'loglog'))
+        selections = cellfun(@str2num,tabledata(:,2),'UniformOutput',false);
+        if any(cellfun(@isempty,selections)), selections(cellfun(@isempty,selections)) = {1}; end
+        cats = tabledata(cellfun(@length,selections) ~= 1,1);
+        choice = questdlg('Would you like to display data subplots?',...
+                          'AARAE subplots',...
+                          cats{:},'Both',...
+                          cats{1,1});
+        switch choice
+            case cats{1,1}
+                dims = cellfun(@str2num,tabledata(cellfun(@length,selections) ~= 1,2),'UniformOutput',false);
+                indexes = find(cellfun(@length,selections) ~= 1);
+                dim2 = dims{1,1};
+                figure;
+                k = 1;
+                [r,c] = subplotpositions(size(data,2), 0.5);
+                for i = 1:size(data,2)
+                    hsub = subplot(r,c,k);
+                    newsel = strsplit(sel,',');
+                    newsel{1,indexes(1,1)} = num2str(i);
+                    newsel = strjoin(newsel,',');
+                    eval([chartfunc '(hsub,Xdata,squeeze(audiodata.data(' newsel ')))'])
+                    xlabel(hsub,strrep([tabledata{axis(1,1),1} ' [' audiodata.(genvarname([tabledata{axis(1,1),1} 'info'])).units ']'],'_',' '))
+                    ylabel(hsub,strrep(audiodata.datainfo.units,'_',' '))
+                    if isnumeric(audiodata.(genvarname(cats{1,1}))), audiodata.(genvarname(cats{1,1})) = num2cell(audiodata.(genvarname(cats{1,1}))); end
+                    dim2str = audiodata.(genvarname(cats{1,1})){dim2(i)};
+                    if isnumeric(dim2str), dim2str = num2str(dim2str); end
+                    title(hsub,dim2str)
+                    k = k + 1;
+                end
+            case cats{2,1}
+                dims = cellfun(@str2num,tabledata(cellfun(@length,selections) ~= 1,2),'UniformOutput',false);
+                indexes = find(cellfun(@length,selections) ~= 1);
+                dim3 = dims{2,1};
+                figure;
+                k = 1;
+                [r,c] = subplotpositions(size(data,3), 0.5);
+                for i = 1:size(data,3)
+                    hsub = subplot(r,c,k);
+                    newsel = strsplit(sel,',');
+                    newsel{1,indexes(2,1)} = num2str(i);
+                    newsel = strjoin(newsel,',');
+                    eval([chartfunc '(hsub,Xdata,squeeze(audiodata.data(' newsel ')))'])
+                    xlabel(hsub,strrep([tabledata{axis(1,1),1} ' [' audiodata.(genvarname([tabledata{axis(1,1),1} 'info'])).units ']'],'_',' '))
+                    ylabel(hsub,strrep(audiodata.datainfo.units,'_',' '))
+                    if isnumeric(audiodata.(genvarname(cats{2,1}))), audiodata.(genvarname(cats{2,1})) = num2cell(audiodata.(genvarname(cats{2,1}))); end
+                    dim3str = audiodata.(genvarname(cats{2,1})){dim3(i)};
+                    if isnumeric(dim3str), dim3str = num2str(dim3str); end
+                    title(hsub,dim3str)
+                    k = k + 1;
+                end
+            case 'Both'
+                dims = cellfun(@str2num,tabledata(cellfun(@length,selections) ~= 1,2),'UniformOutput',false);
+                indexes = find(cellfun(@length,selections) ~= 1);
+                dim2 = dims{1,1};
+                dim3 = dims{2,1};
+                figure;
+                k = 1;
+                [r,c] = subplotpositions(size(data,2)*size(data,3), 0.5);
+                for i = 1:size(data,2)
+                    for j = 1:size(data,3)
+                        hsub = subplot(r,c,k);
+                        newsel = strsplit(sel,',');
+                        newsel{1,indexes(1,1)} = num2str(i);
+                        newsel{1,indexes(2,1)} = num2str(j);
+                        newsel = strjoin(newsel,',');
+                        eval([chartfunc '(hsub,Xdata,squeeze(audiodata.data(' newsel ')))'])
+                        xlabel(hsub,strrep([tabledata{axis(1,1),1} ' [' audiodata.(genvarname([tabledata{axis(1,1),1} 'info'])).units ']'],'_',' '))
+                        ylabel(hsub,strrep(audiodata.datainfo.units,'_',' '))
+                        if isnumeric(audiodata.(genvarname(cats{1,1}))), audiodata.(genvarname(cats{1,1})) = num2cell(audiodata.(genvarname(cats{1,1}))); end
+                        dim2str = audiodata.(genvarname(cats{1,1})){dim2(i)};
+                        if isnumeric(dim2str), dim2str = num2str(dim2str); end
+                        if isnumeric(audiodata.(genvarname(cats{2,1}))), audiodata.(genvarname(cats{2,1})) = num2cell(audiodata.(genvarname(cats{2,1}))); end
+                        dim3str = audiodata.(genvarname(cats{2,1})){dim3(j)};
+                        if isnumeric(dim3str), dim3str = num2str(dim3str); end
+                        title(hsub,[dim2str ',' dim3str])
+                        k = k + 1;
+                    end
+                end
+            case ''
+                set(handles.cattable,'Data',handles.tabledata)
+                catorcont = handles.tabledata(:,4);
+                if any(cellfun(@isempty,catorcont)), catorcont(cellfun(@isempty,catorcont)) = {false}; end
+                naxis = length(find([catorcont{:}] == true));
+                switch naxis
+                    case 0
+                        set(handles.chartfunc_popup,'String',{'distributionPlot','boxplot'},'Value',1)
+                    case 1
+                        set(handles.chartfunc_popup,'String',{'plot','semilogx','semilogy','loglog','distributionPlot','boxplot'},'Value',1)
+                    case 2
+                        set(handles.chartfunc_popup,'String',{'mesh','surf','imagesc'},'Value',1)
+                    otherwise
+                        set(handles.chartfunc_popup,'String',{[]},'Value',1)
+                end
+                warndlg(error.message,'AARAE info','modal')
+        end
+    else
+        set(handles.cattable,'Data',handles.tabledata)
+        catorcont = handles.tabledata(:,4);
+        if any(cellfun(@isempty,catorcont)), catorcont(cellfun(@isempty,catorcont)) = {false}; end
+        naxis = length(find([catorcont{:}] == true));
+        switch naxis
+            case 0
+                set(handles.chartfunc_popup,'String',{'distributionPlot','boxplot'},'Value',1)
+            case 1
+                set(handles.chartfunc_popup,'String',{'plot','semilogx','semilogy','loglog','distributionPlot','boxplot'},'Value',1)
+            case 2
+                set(handles.chartfunc_popup,'String',{'mesh','surf','imagesc'},'Value',1)
+            otherwise
+                set(handles.chartfunc_popup,'String',{[]},'Value',1)
+        end
+        doresultplot(handles,haxes);
+        warndlg(error.message,'AARAE info','modal')
     end
-    doresultplot(handles,haxes);
-    warndlg(error.message,'AARAE info','modal')
 end
