@@ -13,9 +13,10 @@ try
     if any(cellfun(@isempty,catorcont)), catorcont(cellfun(@isempty,catorcont)) = {false}; end
     naxis = length(find([catorcont{:}] == true));
     eval(['data = squeeze(audiodata.data(' sel '));'])
-    if naxis < 2
+    if naxis < 2 % Visualization of 2D data
         cmap = colormap(hsv(size(data,2))); %#ok : data defined in line 15
         set(get(haxes,'Parent'),'DefaultAxesColorOrder',cmap)
+        % Line plotting (plot, semilogx, semilogy, loglog)
         if ~strcmp(chartfunc,'distributionPlot') && ~strcmp(chartfunc,'boxplot')
             cla(haxes,'reset')
             axis = find([catorcont{:}] == true);
@@ -30,7 +31,7 @@ try
             end
             xlabel(haxes,strrep([tabledata{axis(1,1),1} ' [' audiodata.(genvarname([tabledata{axis(1,1),1} 'info'])).units ']'],'_',' '))
             ylabel(haxes,strrep(audiodata.datainfo.units,'_',' '))
-        else
+        else % Distribution and box plotting
             cla(haxes,'reset')
             catdim = find(cellfun(@isempty,tabledata(:,4)),1);
             if isempty(catdim), catdim = 1; end
@@ -46,7 +47,7 @@ try
         end
         handles.tabledata = tabledata;
         guidata(handles.aarae,handles)
-    elseif naxis == 2
+    elseif naxis == 2 % Visualization of 3D data
         cla(haxes,'reset')
         axis = find([catorcont{:}] == true);
         Xdata = audiodata.(genvarname(tabledata{axis(1,1),1})); 
@@ -59,10 +60,12 @@ try
         end
         aaraecmap = importdata([cd '/Utilities/aaraecmap.mat']);
         if ~isequal([length(Ydata),length(Xdata)],size(data)), data = data'; end %#ok : Used in line above
+        % Mesh and surf plotting
         if ~strcmp(chartfunc,'imagesc')
             eval([chartfunc '(haxes,Xdata,Ydata,data)'])
             colormap(aaraecmap)
         else
+        % Imagesc plotting
             eval([chartfunc '(Xdata,1:length(Ydata),data,''Parent'',haxes)'])
             set(haxes,'YTickLabel',num2str(Ydata'))
             set(haxes,'YDir','normal')
@@ -79,6 +82,7 @@ try
     end
 catch error
     if length(find(cellfun(@length,cellfun(@str2num,tabledata(cell2mat(catorcont) == 0,2),'UniformOutput',false)) ~= 1)) == 2 && (strcmp(chartfunc,'plot') || strcmp(chartfunc,'semilogx') || strcmp(chartfunc,'semilogy') || strcmp(chartfunc,'loglog'))
+    % 2D data subplotting
         selections = cellfun(@str2num,tabledata(:,2),'UniformOutput',false);
         if any(cellfun(@isempty,selections)), selections(cellfun(@isempty,selections)) = {1}; end
         cats = tabledata(cellfun(@length,selections) ~= 1,1);
@@ -99,7 +103,12 @@ catch error
                     newsel = strsplit(sel,',');
                     newsel{1,indexes(1,1)} = num2str(i);
                     newsel = strjoin(newsel,',');
-                    eval([chartfunc '(hsub,Xdata,squeeze(audiodata.data(' newsel ')))'])
+                    if ~isequal(size(Xdata),size(audiodata.data))
+                        eval([chartfunc '(hsub,Xdata,squeeze(audiodata.data(' newsel ')))'])
+                    else
+                        eval([chartfunc '(hsub,squeeze(Xdata(' newsel ')),squeeze(audiodata.data(' newsel ')))'])
+                    end
+                    %eval([chartfunc '(hsub,Xdata,squeeze(audiodata.data(' newsel ')))'])
                     xlabel(hsub,strrep([tabledata{axis(1,1),1} ' [' audiodata.(genvarname([tabledata{axis(1,1),1} 'info'])).units ']'],'_',' '))
                     ylabel(hsub,strrep(audiodata.datainfo.units,'_',' '))
                     if isnumeric(audiodata.(genvarname(cats{1,1}))), audiodata.(genvarname(cats{1,1})) = num2cell(audiodata.(genvarname(cats{1,1}))); end
@@ -120,7 +129,12 @@ catch error
                     newsel = strsplit(sel,',');
                     newsel{1,indexes(2,1)} = num2str(i);
                     newsel = strjoin(newsel,',');
-                    eval([chartfunc '(hsub,Xdata,squeeze(audiodata.data(' newsel ')))'])
+                    if ~isequal(size(Xdata),size(audiodata.data))
+                        eval([chartfunc '(hsub,Xdata,squeeze(audiodata.data(' newsel ')))'])
+                    else
+                        eval([chartfunc '(hsub,squeeze(Xdata(' newsel ')),squeeze(audiodata.data(' newsel ')))'])
+                    end
+                    %eval([chartfunc '(hsub,Xdata,squeeze(audiodata.data(' newsel ')))'])
                     xlabel(hsub,strrep([tabledata{axis(1,1),1} ' [' audiodata.(genvarname([tabledata{axis(1,1),1} 'info'])).units ']'],'_',' '))
                     ylabel(hsub,strrep(audiodata.datainfo.units,'_',' '))
                     if isnumeric(audiodata.(genvarname(cats{2,1}))), audiodata.(genvarname(cats{2,1})) = num2cell(audiodata.(genvarname(cats{2,1}))); end
@@ -144,7 +158,12 @@ catch error
                         newsel{1,indexes(1,1)} = num2str(i);
                         newsel{1,indexes(2,1)} = num2str(j);
                         newsel = strjoin(newsel,',');
-                        eval([chartfunc '(hsub,Xdata,squeeze(audiodata.data(' newsel ')))'])
+                        if ~isequal(size(Xdata),size(audiodata.data))
+                            eval([chartfunc '(hsub,Xdata,squeeze(audiodata.data(' newsel ')))'])
+                        else
+                            eval([chartfunc '(hsub,squeeze(Xdata(' newsel ')),squeeze(audiodata.data(' newsel ')))'])
+                        end
+                        %eval([chartfunc '(hsub,Xdata,squeeze(audiodata.data(' newsel ')))'])
                         xlabel(hsub,strrep([tabledata{axis(1,1),1} ' [' audiodata.(genvarname([tabledata{axis(1,1),1} 'info'])).units ']'],'_',' '))
                         ylabel(hsub,strrep(audiodata.datainfo.units,'_',' '))
                         if isnumeric(audiodata.(genvarname(cats{1,1}))), audiodata.(genvarname(cats{1,1})) = num2cell(audiodata.(genvarname(cats{1,1}))); end
@@ -175,6 +194,7 @@ catch error
                 warndlg(error.message,'AARAE info','modal')
         end
     elseif length(find(cellfun(@length,cellfun(@str2num,tabledata(cell2mat(catorcont) == 0,2),'UniformOutput',false)) ~= 1)) == 1 && (strcmp(chartfunc,'mesh') || strcmp(chartfunc,'surf') || strcmp(chartfunc,'imagesc'))
+    % 3D data subplotting
         selections = cellfun(@str2num,tabledata(:,2),'UniformOutput',false);
         if any(cellfun(@isempty,selections)), selections(cellfun(@isempty,selections)) = {1}; end
         cats = tabledata(cellfun(@length,selections) ~= 1,1);
