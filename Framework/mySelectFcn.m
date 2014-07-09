@@ -11,18 +11,26 @@ function mySelectFcn(tree, ~)
     if ~isempty(selectedNodes)
         % Call the 'desktop'
         hMain = getappdata(0,'hMain');
+        contents = cell(length(selectedNodes),1);
+        for n = 1:length(selectedNodes)
+            contents{n,1} = selectedNodes(n).handle.Userdata;
+        end
+        selaudio = cellfun(@isfield,contents,repmat({'audio'},length(selectedNodes),1));
+        seldata = cellfun(@isfield,contents,repmat({'data'},length(selectedNodes),1));
+        if all(selaudio) || (length(seldata) == 2 && all(seldata))
+            set(mainHandles.compare_btn,'Enable','on')
+            if all(selaudio), mainHandles.compareaudio = 1; end
+            if all(seldata), mainHandles.compareaudio = 0; end
+        else
+            set(mainHandles.compare_btn,'Enable','off')
+        end 
         selectedNodes = selectedNodes(1);
         audiodata = selectedNodes.handle.UserData;
-        if ~isfield(audiodata,'audio')
-            set(mainHandles.compare_btn,'Enable','off')
-        else
-            set(mainHandles.compare_btn,'Enable','on')
-        end
         if ~isempty(audiodata) && strcmp(audiodata.datatype,'syscal')
             mainHandles.syscalstats = audiodata;
             set(mainHandles.signaltypetext,'String',[selectedNodes.getName.char ' selected']);
         end
-        if ~isempty(audiodata) && isfield(audiodata,'audio')% If there's data saved in the leaf...
+        if ~isempty(audiodata) && isfield(audiodata,'audio')% If there's audio data saved in the leaf...
             Details = audiodata;
             if isfield(Details,'datatype'), Details = rmfield(Details,'datatype'); end
             if isfield(Details,'funcallback'), Details = rmfield(Details,'funcallback'); end
@@ -110,6 +118,7 @@ function mySelectFcn(tree, ~)
             set(mainHandles.datatext,'Visible','on');
             set(mainHandles.datatext,'String',['Selected: ' selectedNodes.getName.char datatext]); % Output contents in textbox below the tree
             cla(mainHandles.axesdata)
+        % Enable chart data visualization
             if isfield(audiodata,'data')
                 set(mainHandles.data_panel1,'Visible','on');
                 filltable(audiodata,mainHandles)
@@ -118,6 +127,7 @@ function mySelectFcn(tree, ~)
             else
                 set(mainHandles.data_panel1,'Visible','off');
             end
+        % Enable table data visualization
             if isfield(audiodata,'tables')
                 set(mainHandles.data_panel2,'Visible','on');
                 set(mainHandles.ntable_popup,'String',{audiodata.tables(:).Name})%cellstr(num2str((1:length(audiodata.tables))')));
@@ -140,7 +150,6 @@ function mySelectFcn(tree, ~)
                 end
                 ycontents = cellstr(get(mainHandles.Yvalues_box,'String'));
                 ylabel(mainHandles.axesdata,ycontents{get(mainHandles.Yvalues_box,'Value')})
-                %set(mainHandles.axesdata,'XTickLabel',audiodata.tables(1).RowName)
             else
                 set(mainHandles.data_panel2,'Visible','off');
             end

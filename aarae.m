@@ -2252,80 +2252,108 @@ function compare_btn_Callback(~, ~, handles) %#ok
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 selectedNodes = handles.mytree.getSelectedNodes;
-compplot = figure;
-for i = 1:length(selectedNodes)
-    linea = [];
-    axes = 'time';
-    signaldata = selectedNodes(i).handle.UserData;
-    if ~isempty(signaldata) && isfield(signaldata,'audio')
-        plottype = get(handles.(genvarname([axes '_popup'])),'Value');
-        t = linspace(0,length(signaldata.audio),length(signaldata.audio))./signaldata.fs;
-        f = signaldata.fs .* ((1:length(signaldata.audio))-1) ./ length(signaldata.audio);
-        if ~ismatrix(signaldata.audio)
-            if ndims(signaldata.audio) == 3, cmap = colormap(hsv(size(signaldata.audio,3))); end
-            if ndims(signaldata.audio) >= 4, cmap = colormap(copper(size(signaldata.audio,4))); end
-            try 
-                linea(:,:) = signaldata.audio(:,str2double(get(handles.IN_nchannel,'String')),:);
-            catch
-                linea = zeros(size(t));
+if handles.compareaudio == 1
+    compplot = figure;
+    for i = 1:length(selectedNodes)
+        linea = [];
+        axes = 'time';
+        signaldata = selectedNodes(i).handle.UserData;
+        if ~isempty(signaldata) && isfield(signaldata,'audio')
+            plottype = get(handles.(genvarname([axes '_popup'])),'Value');
+            t = linspace(0,length(signaldata.audio),length(signaldata.audio))./signaldata.fs;
+            f = signaldata.fs .* ((1:length(signaldata.audio))-1) ./ length(signaldata.audio);
+            if ~ismatrix(signaldata.audio)
+                if ndims(signaldata.audio) == 3, cmap = colormap(hsv(size(signaldata.audio,3))); end
+                if ndims(signaldata.audio) >= 4, cmap = colormap(copper(size(signaldata.audio,4))); end
+                try 
+                    linea(:,:) = signaldata.audio(:,str2double(get(handles.IN_nchannel,'String')),:);
+                catch
+                    linea = zeros(size(t));
+                end
+            else
+                cmap = colormap(lines(size(signaldata.audio,2)));
+                linea = signaldata.audio;
             end
-        else
-            cmap = colormap(lines(size(signaldata.audio,2)));
-            linea = signaldata.audio;
-        end
-        if isfield(signaldata,'cal') && handles.Preferences.calibrationtoggle == 1
-            if size(linea,2) == length(signaldata.cal)
-                signaldata.cal(isnan(signaldata.cal)) = 0;
-                linea = linea.*repmat(10.^(signaldata.cal./20),length(linea),1);
-            elseif ~ismatrix(signaldata.audio) && size(signaldata.audio,2) == length(signaldata.cal)
-                signaldata.cal(isnan(signaldata.cal)) = 0;
-                cal = repmat(signaldata.cal(str2double(get(handles.IN_nchannel,'String'))),1,size(linea,2));
-                linea = linea.*repmat(10.^(cal./20),length(linea),1);
+            if isfield(signaldata,'cal') && handles.Preferences.calibrationtoggle == 1
+                if size(linea,2) == length(signaldata.cal)
+                    signaldata.cal(isnan(signaldata.cal)) = 0;
+                    linea = linea.*repmat(10.^(signaldata.cal./20),length(linea),1);
+                elseif ~ismatrix(signaldata.audio) && size(signaldata.audio,2) == length(signaldata.cal)
+                    signaldata.cal(isnan(signaldata.cal)) = 0;
+                    cal = repmat(signaldata.cal(str2double(get(handles.IN_nchannel,'String'))),1,size(linea,2));
+                    linea = linea.*repmat(10.^(cal./20),length(linea),1);
+                end
             end
-        end
-        if plottype == 1, linea = real(linea); end
-        if plottype == 2, linea = linea.^2; end
-        if plottype == 3, linea = 10.*log10(linea.^2); end
-        if plottype == 4, linea = abs(hilbert(real(linea))); end
-        if plottype == 5, linea = medfilt1(diff([angle(hilbert(real(linea))); zeros(1,size(linea,2))])*signaldata.fs/2/pi, 5); end
-        if plottype == 6, linea = abs(linea); end
-        if plottype == 7, linea = imag(linea); end
-        if plottype == 8, linea = 10*log10(abs(fft(linea)).^2); end %freq
-        if plottype == 9, linea = abs(fft(linea)).^2; end
-        if plottype == 10, linea = abs(fft(linea)); end
-        if plottype == 11, linea = real(fft(linea)); end
-        if plottype == 12, linea = imag(fft(linea)); end
-        if plottype == 13, linea = angle(fft(linea)); end
-        if plottype == 14, linea = unwrap(angle(fft(linea))); end
-        if plottype == 15, linea = angle(fft(linea)) .* 180/pi; end
-        if plottype == 16, linea = unwrap(angle(fft(linea))) ./(2*pi); end
-        if plottype == 17, linea = -diff(unwrap(angle(fft(linea)))).*length(fft(linea))/(signaldata.fs*2*pi).*1000; end
-        if strcmp(get(handles.(genvarname(['smooth' axes '_popup'])),'Visible'),'on')
-            smoothfactor = get(handles.(genvarname(['smooth' axes '_popup'])),'Value');
-            if smoothfactor == 2, octsmooth = 1; end
-            if smoothfactor == 3, octsmooth = 3; end
-            if smoothfactor == 4, octsmooth = 6; end
-            if smoothfactor == 5, octsmooth = 12; end
-            if smoothfactor == 6, octsmooth = 24; end
-            if smoothfactor ~= 1, linea = octavesmoothing(linea, octsmooth, signaldata.fs); end
-        end
-        if length(selectedNodes) == 1
-            [r, c] = subplotpositions(size(linea,2), 0.5);
-            for j = 1:size(linea,2)
+            if plottype == 1, linea = real(linea); end
+            if plottype == 2, linea = linea.^2; end
+            if plottype == 3, linea = 10.*log10(linea.^2); end
+            if plottype == 4, linea = abs(hilbert(real(linea))); end
+            if plottype == 5, linea = medfilt1(diff([angle(hilbert(real(linea))); zeros(1,size(linea,2))])*signaldata.fs/2/pi, 5); end
+            if plottype == 6, linea = abs(linea); end
+            if plottype == 7, linea = imag(linea); end
+            if plottype == 8, linea = 10*log10(abs(fft(linea)).^2); end %freq
+            if plottype == 9, linea = abs(fft(linea)).^2; end
+            if plottype == 10, linea = abs(fft(linea)); end
+            if plottype == 11, linea = real(fft(linea)); end
+            if plottype == 12, linea = imag(fft(linea)); end
+            if plottype == 13, linea = angle(fft(linea)); end
+            if plottype == 14, linea = unwrap(angle(fft(linea))); end
+            if plottype == 15, linea = angle(fft(linea)) .* 180/pi; end
+            if plottype == 16, linea = unwrap(angle(fft(linea))) ./(2*pi); end
+            if plottype == 17, linea = -diff(unwrap(angle(fft(linea)))).*length(fft(linea))/(signaldata.fs*2*pi).*1000; end
+            if strcmp(get(handles.(genvarname(['smooth' axes '_popup'])),'Visible'),'on')
+                smoothfactor = get(handles.(genvarname(['smooth' axes '_popup'])),'Value');
+                if smoothfactor == 2, octsmooth = 1; end
+                if smoothfactor == 3, octsmooth = 3; end
+                if smoothfactor == 4, octsmooth = 6; end
+                if smoothfactor == 5, octsmooth = 12; end
+                if smoothfactor == 6, octsmooth = 24; end
+                if smoothfactor ~= 1, linea = octavesmoothing(linea, octsmooth, signaldata.fs); end
+            end
+            if length(selectedNodes) == 1
+                [r, c] = subplotpositions(size(linea,2), 0.5);
+                for j = 1:size(linea,2)
+                    if plottype <= 7
+                        subplot(r,c,j);
+                        set(gca,'NextPlot','replacechildren','ColorOrder',cmap(j,:))
+                        plot(t,real(linea(:,j))) % Plot signal in time domain
+                        if ismatrix(signaldata.audio) && isfield(signaldata,'chanID'), title(signaldata.chanID{j,1}); end
+                        if ~ismatrix(signaldata.audio) && isfield(signaldata,'bandID'), title(num2str(signaldata.bandID(1,j))); end
+                        xlabel('Time [s]');
+                    end
+                    if plottype >= 8
+                        h = subplot(r,c,j);
+                        set(gca,'NextPlot','replacechildren','ColorOrder',cmap(j,:))
+                        plot(f(1:length(linea(:,j))),linea(:,j));% Plot signal in frequency domain
+                        if ismatrix(signaldata.audio) && isfield(signaldata,'chanID'), title(signaldata.chanID{j,1}); end
+                        if ~ismatrix(signaldata.audio) && isfield(signaldata,'bandID'), title(num2str(signaldata.bandID(1,j))); end
+                        xlabel('Frequency [Hz]');
+                        if ischar(handles.Preferences.frequencylimits)
+                            xlim([f(2) signaldata.fs/2])
+                        else
+                            xlim(handles.Preferences.frequencylimits)
+                        end
+                        log_check = get(handles.(genvarname(['log' axes '_chk'])),'Value');
+                        if log_check == 1
+                            set(h,'XScale','log')
+                        else
+                            set(h,'XScale','linear','XTickLabelMode','auto')
+                        end
+                    end
+                end
+            else
                 if plottype <= 7
-                    subplot(r,c,j);
-                    set(gca,'NextPlot','replacechildren','ColorOrder',cmap(j,:))
-                    plot(t,real(linea(:,j))) % Plot signal in time domain
-                    if ismatrix(signaldata.audio) && isfield(signaldata,'chanID'), title(signaldata.chanID{j,1}); end
-                    if ~ismatrix(signaldata.audio) && isfield(signaldata,'bandID'), title(num2str(signaldata.bandID(1,j))); end
+                    subplot(length(selectedNodes),1,i);
+                    set(gca,'NextPlot','replacechildren','ColorOrder',cmap)
+                    plot(t,real(linea)) % Plot signal in time domain
+                    title(selectedNodes(i).getName.char)
                     xlabel('Time [s]');
                 end
                 if plottype >= 8
-                    h = subplot(r,c,j);
-                    set(gca,'NextPlot','replacechildren','ColorOrder',cmap(j,:))
-                    plot(f(1:length(linea(:,j))),linea(:,j));% Plot signal in frequency domain
-                    if ismatrix(signaldata.audio) && isfield(signaldata,'chanID'), title(signaldata.chanID{j,1}); end
-                    if ~ismatrix(signaldata.audio) && isfield(signaldata,'bandID'), title(num2str(signaldata.bandID(1,j))); end
+                    h = subplot(length(selectedNodes),1,i);
+                    set(gca,'NextPlot','replacechildren','ColorOrder',cmap)
+                    plot(f(1:length(linea)),linea);% Plot signal in frequency domain
+                    title(selectedNodes(i).getName.char)
                     xlabel('Frequency [Hz]');
                     if ischar(handles.Preferences.frequencylimits)
                         xlim([f(2) signaldata.fs/2])
@@ -2340,44 +2368,20 @@ for i = 1:length(selectedNodes)
                     end
                 end
             end
-        else
-            if plottype <= 7
-                subplot(length(selectedNodes),1,i);
-                set(gca,'NextPlot','replacechildren','ColorOrder',cmap)
-                plot(t,real(linea)) % Plot signal in time domain
-                title(selectedNodes(i).getName.char)
-                xlabel('Time [s]');
-            end
-            if plottype >= 8
-                h = subplot(length(selectedNodes),1,i);
-                set(gca,'NextPlot','replacechildren','ColorOrder',cmap)
-                plot(f(1:length(linea)),linea);% Plot signal in frequency domain
-                title(selectedNodes(i).getName.char)
-                xlabel('Frequency [Hz]');
-                if ischar(handles.Preferences.frequencylimits)
-                    xlim([f(2) signaldata.fs/2])
-                else
-                    xlim(handles.Preferences.frequencylimits)
-                end
-                log_check = get(handles.(genvarname(['log' axes '_chk'])),'Value');
-                if log_check == 1
-                    set(h,'XScale','log')
-                else
-                    set(h,'XScale','linear','XTickLabelMode','auto')
-                end
-            end
         end
     end
-end
-iplots = get(compplot,'Children');
-if length(iplots) > 1
-    xlims = cell2mat(get(iplots,'Xlim'));
-    set(iplots,'Xlim',[min(xlims(:,1)) max(xlims(:,2))])
-    ylims = cell2mat(get(iplots,'Ylim'));
-    set(iplots,'Ylim',[min(ylims(:,1)) max(ylims(:,2))])
-    uicontrol('Style', 'pushbutton', 'String', 'Axes limits',...
-            'Position', [0 0 65 30],...
-            'Callback', 'setaxeslimits');
+    iplots = get(compplot,'Children');
+    if length(iplots) > 1
+        xlims = cell2mat(get(iplots,'Xlim'));
+        set(iplots,'Xlim',[min(xlims(:,1)) max(xlims(:,2))])
+        ylims = cell2mat(get(iplots,'Ylim'));
+        set(iplots,'Ylim',[min(ylims(:,1)) max(ylims(:,2))])
+        uicontrol('Style', 'pushbutton', 'String', 'Axes limits',...
+                'Position', [0 0 65 30],...
+                'Callback', 'setaxeslimits');
+    end
+else
+    comparedata('main_stage1', handles.aarae);
 end
 
 
@@ -2719,14 +2723,14 @@ if size(eventdata.Indices,1) ~= 0 && eventdata.Indices(1,2) == 2
         [sel,ok] = listdlg('ListString',liststr,'InitialValue',str2num(tabledata{eventdata.Indices(1),eventdata.Indices(2)})); %#ok : necessary for getting selection vector
         if ok == 1
             logsel = ['[' num2str(sel) ']'];
-            tabledata{eventdata.Indices(1),eventdata.Indices(2)} = logsel(1:end);
+            tabledata{eventdata.Indices(1),eventdata.Indices(2)} = logsel;
         end
         set(hObject,'Data',{''})
         set(hObject,'Data',tabledata)
         guidata(handles.aarae,handles)
         doresultplot(handles,handles.axesdata)
     else
-        
+        % Possible code to truncate 'continuous' selection
     end
 end
 
