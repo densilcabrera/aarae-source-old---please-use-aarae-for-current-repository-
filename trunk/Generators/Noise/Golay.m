@@ -1,6 +1,7 @@
 function [OUT, varargout] = Golay(fs,N,silence)
 % This function generates Golay complementary sequences for impulse response
-% measurement. 
+% measurement. see 
+% Golay MJ. Complementary series. IRE Trans. Inf. Theory. 1961, 7:82-87.
 %
 % IMPORTANT:
 % To analyse the recorded signal, use the function "Golay_process", which
