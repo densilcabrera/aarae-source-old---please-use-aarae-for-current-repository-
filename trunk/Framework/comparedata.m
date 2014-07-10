@@ -22,7 +22,7 @@ function varargout = comparedata(varargin)
 
 % Edit the above text to modify the response to help comparedata
 
-% Last Modified by GUIDE v2.5 09-Jul-2014 13:31:44
+% Last Modified by GUIDE v2.5 10-Jul-2014 10:03:44
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -205,8 +205,8 @@ try
     if isequal(size(x2),size(nodeB.data)), eval(['x2 = squeeze(x2(' selB '));']); end
     switch chartfunc
         case 'Double axis'
-            line(x1,y1,'Color','r','Parent',handles.compaxes)
-            set(handles.compaxes,'XColor','r','YColor','r')
+            line(x1,y1,'Parent',handles.compaxes)
+            set(handles.compaxes,'XColor','b','YColor','b')
             compaxes_pos = get(handles.compaxes,'Position');
             handles.compaxes2 = axes(...
                 'Units','characters',...
@@ -214,21 +214,30 @@ try
                 'XAxisLocation','top',...
                 'YAxisLocation','right',...
                 'Color','none',...
+                'XColor','r',...
+                'YColor','r',...
+                'ColorOrder',colormap(hsv(size(y2,2))),...
                 'Parent',handles.comparedata);
-            line(x2,y2,'Parent',handles.compaxes2,'Color','k')
+            line(x2,y2,'Parent',handles.compaxes2)
             xlabel(handles.compaxes,strrep([cattable1.Data{mainaxA(1,1),1} ' [' nodeA.(genvarname([cattable1.Data{mainaxA(1,1),1} 'info'])).units ']'],'_',' '))
             xlabel(handles.compaxes2,strrep([cattable2.Data{mainaxB(1,1),1} ' [' nodeB.(genvarname([cattable2.Data{mainaxB(1,1),1} 'info'])).units ']'],'_',' '))
             ylabel(handles.compaxes,strrep(nodeA.datainfo.units,'_',' '))
             ylabel(handles.compaxes2,strrep(nodeB.datainfo.units,'_',' '))
+            set(handles.name1txt,'ForegroundColor','b')
+            set(handles.name2txt,'ForegroundColor','r')
         case 'Two Y axis'
             ax = plotyy(x1,y1,x2,y2);
             xlabel(handles.compaxes,strrep(['Units: [' nodeA.(genvarname([cattable1.Data{mainaxA(1,1),1} 'info'])).units ']'],'_',' '))
             ylabel(ax(1),strrep(nodeA.datainfo.units,'_',' '))
             ylabel(ax(2),strrep(nodeB.datainfo.units,'_',' '))
+            set(handles.name1txt,'ForegroundColor',get(ax(1),'YColor'))
+            set(handles.name2txt,'ForegroundColor',get(ax(2),'YColor'))
         case 'X-Y'
             plot(handles.compaxes,y1,y2,'ro')
             xlabel(handles.compaxes,strrep(nodeA.datainfo.units,'_',' '))
             ylabel(handles.compaxes,strrep(nodeB.datainfo.units,'_',' '))
+            set(handles.name1txt,'ForegroundColor','k')
+            set(handles.name2txt,'ForegroundColor','k')
     end
     guidata(handles.comparedata,handles)
 catch error
