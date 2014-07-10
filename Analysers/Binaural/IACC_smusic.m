@@ -172,12 +172,13 @@ if ~isempty(audio) && ~isempty(fs)
     set(hleg,'Location','SouthWest');
     
     %print -dpng -r140 IACC1-1octave.png
-    IACC_oct = cat(2,IACC_max(1,1:10)',IACC_mean(1,1:10)');
-    doresultleaf(IACC_oct,'Coefficient',{'Frequency'},...
-                 'Frequency', num2cell(freqs),    'Hz',          true,...
-                 'IACC',      {'Maximum','Mean'}, 'categorical', [],...
-                 'name','IACC_oct');
-    
+    if isstruct(IN)
+        IACC_oct = cat(2,IACC_max(1,1:10)',IACC_mean(1,1:10)');
+        doresultleaf(IACC_oct,'Coefficient',{'Frequency'},...
+                     'Frequency', num2cell(freqs),    'Hz',          true,...
+                     'IACC',      {'Maximum','Mean'}, 'categorical', [],...
+                     'name','IACC_oct');
+    end
     %%%%%Plot IACC amx and mean response for 1/3 octave bandwidth
     
     figure (2), clf;
@@ -206,12 +207,13 @@ if ~isempty(audio) && ~isempty(fs)
     set(hleg,'Location','SouthWest');
     
     %print -dpng -r140 IACC1-3octave.png
-    IACC_thirdoct = cat(2,IACC_maxT(1,1:30)',IACC_meanT(1,1:30)');
-    doresultleaf(IACC_thirdoct,'Coefficient',{'Frequency'},...
-                 'Frequency', num2cell(freqsThird), 'Hz',          true,...
-                 'IACC',      {'Maximum','Mean'},   'categorical', [],...
-                 'name','IACC_thirdoct');
-    
+    if isstruct(IN)
+        IACC_thirdoct = cat(2,IACC_maxT(1,1:30)',IACC_meanT(1,1:30)');
+        doresultleaf(IACC_thirdoct,'Coefficient',{'Frequency'},...
+                     'Frequency', num2cell(freqsThird), 'Hz',          true,...
+                     'IACC',      {'Maximum','Mean'},   'categorical', [],...
+                     'name','IACC_thirdoct');
+    end
     if isstruct(IN)
         
         OUT.IACC_max_val = IACC_max_val;
