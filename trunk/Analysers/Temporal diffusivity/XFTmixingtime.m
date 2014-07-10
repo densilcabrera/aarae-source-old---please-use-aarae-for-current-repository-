@@ -9,7 +9,7 @@ function [OUT] = XFTmixingtime(IN, hoptime, maxtime, fs)
 % code by Densil Cabrera
 % version 0 - beta (5 April 2014)
 
-if nargin ==1 
+if nargin ==1
 
     param = inputdlg({'Hop size (s)';... 
                       'End duration (s)'},...
@@ -27,7 +27,7 @@ if nargin ==1
 else
     param = [];
 end
-if isstruct(IN) 
+if isstruct(IN)
     audio = IN.audio; 
     fs = IN.fs;       
 
