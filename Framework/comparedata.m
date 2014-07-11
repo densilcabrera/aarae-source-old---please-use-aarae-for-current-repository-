@@ -22,7 +22,7 @@ function varargout = comparedata(varargin)
 
 % Edit the above text to modify the response to help comparedata
 
-% Last Modified by GUIDE v2.5 10-Jul-2014 10:03:44
+% Last Modified by GUIDE v2.5 11-Jul-2014 09:37:30
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -90,7 +90,7 @@ else
     filltable(handles.nodeA,handles.cattable1)
     filltable(handles.nodeB,handles.cattable2)
     setplottingoptions(handles)
-    doresultplot(handles)
+    doresultplot(handles,handles.compaxes)
     guidata(hObject,guidata(hObject));
     uiwait(hObject);
 end
@@ -116,7 +116,7 @@ function compfunc_popup_Callback(~, ~, handles) %#ok : Executed when selection c
 
 % Hints: contents = cellstr(get(hObject,'String')) returns compfunc_popup contents as cell array
 %        contents{get(hObject,'Value')} returns selected item from compfunc_popup
-doresultplot(handles)
+doresultplot(handles,handles.compaxes)
 
 % --- Executes during object creation, after setting all properties.
 function compfunc_popup_CreateFcn(hObject, ~, ~) %#ok : Creation of plotting options popup menu
@@ -161,11 +161,13 @@ function filltable(audiodata,cattable)
 % End of function filltable
 
 
-function doresultplot(handles)
-cla(handles.compaxes,'reset')
-if isfield(handles,'compaxes2')
-    delete(handles.compaxes2);
-    handles = rmfield(handles,'compaxes2');
+function doresultplot(handles,haxes)
+if strcmp(get(get(haxes,'Parent'),'tag'),'comparedata')
+    cla(haxes,'reset')
+    if isfield(handles,'compaxes2')
+        delete(handles.compaxes2);
+        handles = rmfield(handles,'compaxes2');
+    end
 end
 handles.tabledata1 = get(handles.cattable1,'Data');
 handles.tabledata2 = get(handles.cattable2,'Data');
@@ -205,43 +207,59 @@ try
     if isequal(size(x2),size(nodeB.data)), eval(['x2 = squeeze(x2(' selB '));']); end
     switch chartfunc
         case 'Double axis'
-            line(x1,y1,'Parent',handles.compaxes)
-            set(handles.compaxes,'XColor','b','YColor','b')
-            compaxes_pos = get(handles.compaxes,'Position');
-            handles.compaxes2 = axes(...
-                'Units','characters',...
-                'Position',compaxes_pos,...
-                'XAxisLocation','top',...
-                'YAxisLocation','right',...
-                'Color','none',...
-                'XColor','r',...
-                'YColor','r',...
-                'ColorOrder',colormap(hsv(size(y2,2))),...
-                'Parent',handles.comparedata);
-            line(x2,y2,'Parent',handles.compaxes2)
-            xlabel(handles.compaxes,strrep([cattable1.Data{mainaxA(1,1),1} ' [' nodeA.(genvarname([cattable1.Data{mainaxA(1,1),1} 'info'])).units ']'],'_',' '))
-            xlabel(handles.compaxes2,strrep([cattable2.Data{mainaxB(1,1),1} ' [' nodeB.(genvarname([cattable2.Data{mainaxB(1,1),1} 'info'])).units ']'],'_',' '))
-            ylabel(handles.compaxes,strrep(nodeA.datainfo.units,'_',' '))
-            ylabel(handles.compaxes2,strrep(nodeB.datainfo.units,'_',' '))
+            line(x1,y1,'Parent',haxes)
+            set(haxes,'XColor','b','YColor','b')
+            xlabel(haxes,strrep([cattable1.Data{mainaxA(1,1),1} ' [' nodeA.(genvarname([cattable1.Data{mainaxA(1,1),1} 'info'])).units ']'],'_',' '))
+            ylabel(haxes,strrep(nodeA.datainfo.units,'_',' '))
+            compaxes_pos = get(haxes,'Position');
+            if strcmp(get(get(haxes,'Parent'),'tag'),'comparedata')
+                handles.compaxes2 = axes(...
+                    'Units','characters',...
+                    'Position',compaxes_pos,...
+                    'XAxisLocation','top',...
+                    'YAxisLocation','right',...
+                    'Color','none',...
+                    'XColor','r',...
+                    'YColor','r',...
+                    'ColorOrder',colormap(hsv(size(y2,2))),...
+                    'Parent',get(haxes,'Parent'));
+                line(x2,y2,'Parent',handles.compaxes2)
+                xlabel(handles.compaxes2,strrep([cattable2.Data{mainaxB(1,1),1} ' [' nodeB.(genvarname([cattable2.Data{mainaxB(1,1),1} 'info'])).units ']'],'_',' '))
+                ylabel(handles.compaxes2,strrep(nodeB.datainfo.units,'_',' '))
+            else
+                compaxes2 = axes(...
+                    'Units','normalized',...
+                    'Position',compaxes_pos,...
+                    'XAxisLocation','top',...
+                    'YAxisLocation','right',...
+                    'Color','none',...
+                    'XColor','r',...
+                    'YColor','r',...
+                    'ColorOrder',colormap(hsv(size(y2,2))),...
+                    'Parent',get(haxes,'Parent'));
+                line(x2,y2,'Parent',compaxes2)
+                xlabel(compaxes2,strrep([cattable2.Data{mainaxB(1,1),1} ' [' nodeB.(genvarname([cattable2.Data{mainaxB(1,1),1} 'info'])).units ']'],'_',' '))
+                ylabel(compaxes2,strrep(nodeB.datainfo.units,'_',' '))
+            end
             set(handles.name1txt,'ForegroundColor','b')
             set(handles.name2txt,'ForegroundColor','r')
         case 'Two Y axis'
             ax = plotyy(x1,y1,x2,y2);
-            xlabel(handles.compaxes,strrep(['Units: [' nodeA.(genvarname([cattable1.Data{mainaxA(1,1),1} 'info'])).units ']'],'_',' '))
+            xlabel(haxes,strrep(['Units: [' nodeA.(genvarname([cattable1.Data{mainaxA(1,1),1} 'info'])).units ']'],'_',' '))
             ylabel(ax(1),strrep(nodeA.datainfo.units,'_',' '))
             ylabel(ax(2),strrep(nodeB.datainfo.units,'_',' '))
             set(handles.name1txt,'ForegroundColor',get(ax(1),'YColor'))
             set(handles.name2txt,'ForegroundColor',get(ax(2),'YColor'))
         case 'X-Y'
-            plot(handles.compaxes,y1,y2,'ro')
-            xlabel(handles.compaxes,strrep(nodeA.datainfo.units,'_',' '))
-            ylabel(handles.compaxes,strrep(nodeB.datainfo.units,'_',' '))
+            plot(haxes,y1,y2,'ro')
+            xlabel(haxes,strrep(nodeA.datainfo.units,'_',' '))
+            ylabel(haxes,strrep(nodeB.datainfo.units,'_',' '))
             set(handles.name1txt,'ForegroundColor','k')
             set(handles.name2txt,'ForegroundColor','k')
     end
     guidata(handles.comparedata,handles)
 catch error
-    cla(handles.compaxes,'reset')
+    cla(haxes,'reset')
     if isfield(handles,'compaxes2')
         delete(handles.compaxes2);
     end
@@ -273,7 +291,7 @@ if size(eventdata.Indices,1) ~= 0 && eventdata.Indices(1,2) == 2
         set(hObject,'Data',{''})
         set(hObject,'Data',tabledata)
         guidata(handles.comparedata,handles)
-        doresultplot(handles)
+        doresultplot(handles,handles.compaxes)
     else
         % Possible code to truncate 'continuous' selection
     end
@@ -304,7 +322,7 @@ if size(eventdata.Indices,1) ~= 0 && eventdata.Indices(1,2) == 2
         set(hObject,'Data',{''})
         set(hObject,'Data',tabledata)
         guidata(handles.comparedata,handles)
-        doresultplot(handles)
+        doresultplot(handles,handles.compaxes)
     else
         % Possible code to truncate 'continuous' selection
     end
@@ -333,10 +351,10 @@ if size(eventdata.Indices,1) ~= 0 && eventdata.Indices(1,2) == 4
         end
         set(hObject,'Data',tabledata);
         setplottingoptions(handles)
-        doresultplot(handles)
+        doresultplot(handles,handles.compaxes)
     else
         set(hObject,'Data',handles.tabledata1);
-        doresultplot(handles)
+        doresultplot(handles,handles.compaxes)
     end
 end
 
@@ -363,10 +381,10 @@ if size(eventdata.Indices,1) ~= 0 && eventdata.Indices(1,2) == 4
         end
         set(hObject,'Data',tabledata);
         setplottingoptions(handles)
-        doresultplot(handles)
+        doresultplot(handles,handles.compaxes)
     else
         set(hObject,'Data',handles.tabledata2);
-        doresultplot(handles)
+        doresultplot(handles,handles.compaxes)
     end
 end
 
@@ -388,3 +406,17 @@ function setplottingoptions(handles)
     else
         set(handles.compfunc_popup,'String',{'Double axis'},'Value',1)
     end
+
+
+% --- Executes on mouse press over figure background, over a disabled or
+% --- inactive control, or over an axes background.
+function comparedata_WindowButtonDownFcn(hObject, eventdata, handles)
+% hObject    handle to comparedata (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+click = get(hObject,'CurrentObject');
+if ~isempty(click) && ((click == handles.compaxes) || (get(click,'Parent') == handles.compaxes) || (click == handles.compaxes2) || (get(click,'Parent') == handles.compaxes2))
+    figure;
+    haxes = axes;
+    doresultplot(handles,haxes)
+end

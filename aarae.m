@@ -1317,7 +1317,7 @@ function aarae_WindowButtonDownFcn(hObject, ~, handles) %#ok
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 click = get(hObject,'CurrentObject');
-if (click == handles.axestime) || (get(click,'Parent') == handles.axestime)
+if ~isempty(click) && ((click == handles.axestime) || (get(click,'Parent') == handles.axestime))
     hMain = getappdata(0,'hMain');
     signaldata = getappdata(hMain,'testsignal');
     if ~isempty(signaldata)
@@ -1429,7 +1429,7 @@ if (click == handles.axestime) || (get(click,'Parent') == handles.axestime)
     selectedNodes = selectedNodes(1);
     title(selectedNodes.getName.char)
 end
-if (click == handles.axesfreq) || (get(click,'Parent') == handles.axesfreq)
+if ~isempty(click) && ((click == handles.axesfreq) || (get(click,'Parent') == handles.axesfreq))
     hMain = getappdata(0,'hMain');
     signaldata = getappdata(hMain,'testsignal');
     if ~isempty(signaldata)
@@ -1541,7 +1541,7 @@ if (click == handles.axesfreq) || (get(click,'Parent') == handles.axesfreq)
     selectedNodes = selectedNodes(1);
     title(selectedNodes.getName.char)
 end
-if (click == handles.axesdata) || (get(click,'Parent') == handles.axesdata)
+if ~isempty(click) && ((click == handles.axesdata) || (get(click,'Parent') == handles.axesdata))
     selectedNodes = handles.mytree.getSelectedNodes;
     data = selectedNodes(1).handle.UserData;
     if ~isfield(data,'tables')
