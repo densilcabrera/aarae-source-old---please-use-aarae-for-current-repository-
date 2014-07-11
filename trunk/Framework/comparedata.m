@@ -410,7 +410,7 @@ function setplottingoptions(handles)
 
 % --- Executes on mouse press over figure background, over a disabled or
 % --- inactive control, or over an axes background.
-function comparedata_WindowButtonDownFcn(hObject, eventdata, handles)
+function comparedata_WindowButtonDownFcn(hObject, ~, handles) %#ok : Executed when clicking on axis
 % hObject    handle to comparedata (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
