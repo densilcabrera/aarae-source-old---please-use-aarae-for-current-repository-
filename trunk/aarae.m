@@ -1541,7 +1541,7 @@ if ~isempty(click) && ((click == handles.axesfreq) || (get(click,'Parent') == ha
     selectedNodes = selectedNodes(1);
     title(selectedNodes.getName.char)
 end
-if ~isempty(click) && ((click == handles.axesdata) || (get(click,'Parent') == handles.axesdata))
+if ~isempty(click) && ((click == handles.axesdata) || (get(click,'Parent') == handles.axesdata)) && ~strcmp(get(click,'Type'),'text')
     selectedNodes = handles.mytree.getSelectedNodes;
     data = selectedNodes(1).handle.UserData;
     if ~isfield(data,'tables')
@@ -1563,6 +1563,29 @@ if ~isempty(click) && ((click == handles.axesdata) || (get(click,'Parent') == ha
         end
         ycontents = cellstr(get(handles.Yvalues_box,'String'));
         ylabel(gca,ycontents{get(handles.Yvalues_box,'Value')})
+    end
+end
+if ~isempty(click) && strcmp(get(click,'Type'),'text')
+    if click == get(get(click,'Parent'),'Xlabel')
+        if strcmp(get(get(click,'Parent'),'XScale'),'linear')
+            set(get(click,'Parent'),'XScale','log')
+        else
+            set(get(click,'Parent'),'XScale','linear')
+        end
+    end
+    if click == get(get(click,'Parent'),'Ylabel')
+        if strcmp(get(get(click,'Parent'),'YScale'),'linear')
+            set(get(click,'Parent'),'YScale','log')
+        else
+            set(get(click,'Parent'),'YScale','linear')
+        end
+    end
+    if click == get(get(click,'Parent'),'Zlabel')
+        if strcmp(get(get(click,'Parent'),'ZScale'),'linear')
+            set(get(click,'Parent'),'ZScale','log')
+        else
+            set(get(click,'Parent'),'ZScale','linear')
+        end
     end
 end
 guidata(hObject,handles)
