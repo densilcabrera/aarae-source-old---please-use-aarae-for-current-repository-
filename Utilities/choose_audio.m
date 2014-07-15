@@ -53,6 +53,7 @@ switch method
             end
         end
         if nleaves ~=0
+            leaves = leaves(~cellfun(@isempty,leaves));
             %leafnames = char(leafnames);
             [s,ok] = listdlg('PromptString','Select a file:',...
                     'SelectionMode','single',...
