@@ -29,8 +29,8 @@ try
             else
                 eval([chartfunc '(haxes,squeeze(Xdata(' sel ')),data)'])
             end
-            xlabel(haxes,strrep([tabledata{axis(1,1),1} ' [' audiodata.(genvarname([tabledata{axis(1,1),1} 'info'])).units ']'],'_',' '))
-            ylabel(haxes,strrep(audiodata.datainfo.units,'_',' '))
+            xlabel(haxes,strrep([tabledata{axis(1,1),1} ' [' audiodata.(genvarname([tabledata{axis(1,1),1} 'info'])).units ']'],'_',' '),'HandleVisibility','on')
+            ylabel(haxes,strrep(audiodata.datainfo.units,'_',' '),'HandleVisibility','on')
         else % Distribution and box plotting
             cla(haxes,'reset')
             catdim = find(cellfun(@isempty,tabledata(:,4)),1);
@@ -64,16 +64,18 @@ try
         if ~strcmp(chartfunc,'imagesc')
             eval([chartfunc '(haxes,Xdata,Ydata,data)'])
             colormap(aaraecmap)
+            xlabel(haxes,strrep([tabledata{axis(1,1),1} ' [' audiodata.(genvarname([tabledata{axis(1,1),1} 'info'])).units ']'],'_',' '),'HandleVisibility','on')
+            ylabel(haxes,strrep([tabledata{axis(1,2),1} ' [' audiodata.(genvarname([tabledata{axis(1,2),1} 'info'])).units ']'],'_',' '),'HandleVisibility','on')
+            zlabel(haxes,strrep(audiodata.datainfo.units,'_',' '),'HandleVisibility','on')
         else
         % Imagesc plotting
             eval([chartfunc '(Xdata,1:length(Ydata),data,''Parent'',haxes)'])
             set(haxes,'YTickLabel',num2str(Ydata'))
             set(haxes,'YDir','normal')
             colormap(aaraecmap)
+            xlabel(haxes,strrep([tabledata{axis(1,1),1} ' [' audiodata.(genvarname([tabledata{axis(1,1),1} 'info'])).units ']'],'_',' '))
+            ylabel(haxes,strrep([tabledata{axis(1,2),1} ' [' audiodata.(genvarname([tabledata{axis(1,2),1} 'info'])).units ']'],'_',' '))
         end
-        xlabel(haxes,strrep([tabledata{axis(1,1),1} ' [' audiodata.(genvarname([tabledata{axis(1,1),1} 'info'])).units ']'],'_',' '))
-        ylabel(haxes,strrep([tabledata{axis(1,2),1} ' [' audiodata.(genvarname([tabledata{axis(1,2),1} 'info'])).units ']'],'_',' '))
-        zlabel(haxes,strrep(audiodata.datainfo.units,'_',' '))
         handles.tabledata = tabledata;
         guidata(handles.aarae,handles)
     else

@@ -209,8 +209,8 @@ try
         case 'Double axis'
             line(x1,y1,'Parent',haxes)
             set(haxes,'XColor','b','YColor','b')
-            xlabel(haxes,strrep([cattable1.Data{mainaxA(1,1),1} ' [' nodeA.(genvarname([cattable1.Data{mainaxA(1,1),1} 'info'])).units ']'],'_',' '))
-            ylabel(haxes,strrep(nodeA.datainfo.units,'_',' '))
+            xlabel(haxes,strrep([cattable1.Data{mainaxA(1,1),1} ' [' nodeA.(genvarname([cattable1.Data{mainaxA(1,1),1} 'info'])).units ']'],'_',' '),'HandleVisibility','on')
+            ylabel(haxes,strrep(nodeA.datainfo.units,'_',' '),'HandleVisibility','on')
             compaxes_pos = get(haxes,'Position');
             if strcmp(get(get(haxes,'Parent'),'tag'),'comparedata')
                 handles.compaxes2 = axes(...
@@ -224,8 +224,8 @@ try
                     'ColorOrder',colormap(hsv(size(y2,2))),...
                     'Parent',get(haxes,'Parent'));
                 line(x2,y2,'Parent',handles.compaxes2)
-                xlabel(handles.compaxes2,strrep([cattable2.Data{mainaxB(1,1),1} ' [' nodeB.(genvarname([cattable2.Data{mainaxB(1,1),1} 'info'])).units ']'],'_',' '))
-                ylabel(handles.compaxes2,strrep(nodeB.datainfo.units,'_',' '))
+                xlabel(handles.compaxes2,strrep([cattable2.Data{mainaxB(1,1),1} ' [' nodeB.(genvarname([cattable2.Data{mainaxB(1,1),1} 'info'])).units ']'],'_',' '),'HandleVisibility','on')
+                ylabel(handles.compaxes2,strrep(nodeB.datainfo.units,'_',' '),'HandleVisibility','on')
             else
                 compaxes2 = axes(...
                     'Units','normalized',...
@@ -252,8 +252,8 @@ try
             set(handles.name2txt,'ForegroundColor',get(ax(2),'YColor'))
         case 'X-Y'
             plot(haxes,y1,y2,'ro')
-            xlabel(haxes,strrep(nodeA.datainfo.units,'_',' '))
-            ylabel(haxes,strrep(nodeB.datainfo.units,'_',' '))
+            xlabel(haxes,strrep(nodeA.datainfo.units,'_',' '),'HandleVisibility','on')
+            ylabel(haxes,strrep(nodeB.datainfo.units,'_',' '),'HandleVisibility','on')
             set(handles.name1txt,'ForegroundColor','k')
             set(handles.name2txt,'ForegroundColor','k')
     end
@@ -415,8 +415,24 @@ function comparedata_WindowButtonDownFcn(hObject, ~, handles) %#ok : Executed wh
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 click = get(hObject,'CurrentObject');
-if ~isempty(click) && ((click == handles.compaxes) || (get(click,'Parent') == handles.compaxes) || (click == handles.compaxes2) || (get(click,'Parent') == handles.compaxes2))
+if ~isempty(click) && ((click == handles.compaxes) || (get(click,'Parent') == handles.compaxes) || (click == handles.compaxes2) || (get(click,'Parent') == handles.compaxes2)) && ~strcmp(get(click,'Type'),'text')
     figure;
     haxes = axes;
     doresultplot(handles,haxes)
+end
+if strcmp(get(click,'Type'),'text')
+    if click == get(get(click,'Parent'),'Xlabel')
+        if strcmp(get(get(click,'Parent'),'XScale'),'linear')
+            set(get(click,'Parent'),'XScale','log')
+        else
+            set(get(click,'Parent'),'XScale','linear')
+        end
+    end
+    if click == get(get(click,'Parent'),'Ylabel')
+        if strcmp(get(get(click,'Parent'),'YScale'),'linear')
+            set(get(click,'Parent'),'YScale','log')
+        else
+            set(get(click,'Parent'),'YScale','linear')
+        end
+    end
 end
