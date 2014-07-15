@@ -1,21 +1,40 @@
-function OUT = STIdirect_signal(duration, fs, octavebandlevel)
+function OUT = STIdirect_signal(duration, fs, octavebandlevel, silenceduration, STImethod)
 % Generates a signal for STI direct measurement (direct method) based to IEC
-% 60268-16 (2011). The approach taken here is to generate a sequence of
-% seven STIPA-like signals that populate the entire 98-value MTF matrix for
-% full STI measurement. Since each signal in the sequence should be at
-% least 20 seconds long (but longer is better), this is a relatively
-% time-consuming measuremnt. 1 second of silence is included between the
-% seven signals in the sequence.
+% 60268-16 (2011). 
+% Either of two approaches can be taken:
+% * generate seven STIPA-like signals that populate the entire 98-value MTF
+%   matrix. This is the faster method.
+% * generate fourteen moduated signals that populter the entire 98-value
+%   MTF matrix one modulation frequency at a time. This is the slower
+%   method, but it is easier to understand, and probably closer to the
+%   intention of IEC 60268-16.
+%
+% The duration of each signal should normally be 20 s or longer (longer
+% durations normally yield more accurate results), and the default duration
+% is 30 s. 
+%
+% The seven or 14 signals are separated by a gap of 1 s by default, but a
+% longer gap may be helpful in reverberant conditions.
 %
 % Equalization and calibration is required to use this properly (in the same
 % way as for STIPA measurements).
 %
+% Analysis of the generated and re-recorded signals should be done using
+% AARAE's STI_direct analyser (in the Speech folder). This analyser
+% automatically detects which type of signal was generated (from the
+% 'properties' data) and analyses it accordingly. Note that you may use the
+% original signal as a reference signal as part of the analysis, and this
+% should reduce (or ideally remove) the random influence of the noise in
+% the analysis (although it is does not strictly follow IEC 60268-16)
+%
 % Code by Densil Cabrera
-% version 0 (9 July 2014)
+% version 1.00 (15 July 2014)
 
-if nargin < 3
+if nargin < 5
     
-    param = inputdlg({'Duration of each of the seven signals [s]';...
+    param = inputdlg({'Dual modulation method [0] (faster) or Single modulation method (slower) [1]';...
+        'Duration of each of signal in the sequence [s]';...
+        'Duration of gap between each signal [s]';...
         '125 Hz octave band level (dB)';...
         '250 Hz octave band level (dB)';...
         '500 Hz octave band level (dB)';...
@@ -25,22 +44,24 @@ if nargin < 3
         '8000 Hz octave band level (dB)';...
         'Broadband gain (dB)'; ...
         'Sampling frequency [samples/s]'}, ...
-        'Noise input parameters',1,{'30'; ...
+        'Noise input parameters',1,{'0';'30'; '1'; ...
         '2.9';'2.9';'-0.8';'-6.8';'-12.8';'-18.8';'-24.8'; ...
         '0';'48000'});
     param = str2num(char(param));
-    if length(param) < 3, param = []; end
+    if length(param) < 12, param = []; end
     if ~isempty(param)
-        duration = param(1);
-        octavebandlevel(1) = param(2);
-        octavebandlevel(2) = param(3);
-        octavebandlevel(3) = param(4);
-        octavebandlevel(4) = param(5);
-        octavebandlevel(5) = param(6);
-        octavebandlevel(6) = param(7);
-        octavebandlevel(7) = param(8);
-        Lgain = param(9);
-        fs = param(10);
+        STImethod = param(1);
+        duration = param(2);
+        silenceduration = param(3);
+        octavebandlevel(1) = param(4);
+        octavebandlevel(2) = param(5);
+        octavebandlevel(3) = param(6);
+        octavebandlevel(4) = param(7);
+        octavebandlevel(5) = param(8);
+        octavebandlevel(6) = param(9);
+        octavebandlevel(7) = param(10);
+        Lgain = param(11);
+        fs = param(12);
     end
 else
     param = [];
@@ -49,10 +70,15 @@ end
 if exist('fs','var') && fs<44100, fs = 44100; end
 
 if ~isempty(param) || nargin ~= 0
+    gaplen = round(silenceduration * fs);
+    if duration < 2
+        duration = 2;
+        warndlg('STIdirect_signal minimum duration is 2 s, but 20 s or longer is recommended!')
+    end
     
     % Generate pink noise
     % number of samples of the output wave
-    nsamples = duration * fs;
+    nsamples = round(duration * fs);
     % even number of samples
     if rem(nsamples,2) == 1, nsamples = nsamples + 1; end
     
@@ -90,7 +116,25 @@ if ~isempty(param) || nargin ~= 0
         clear noisyslope;
     end
     
-
+    if STImethod == 1
+        Fm = [0.63,0.8,1,1.25,1.6,2,2.5,3.15,4,5,6.3,8,10,12.5];
+        %m = 1; % modulation depth for simple STI
+        t = ((1:nsamples)'-1)./fs;
+        y = zeros(ceil(14*nsamples + 13*gaplen),1);
+        startindex = zeros(14,1);
+        
+        for section = 1:14
+            envelope = (1 + cos(2 * pi * Fm(section) .* t)).^0.5;
+            noisebands1 = noisebands .* repmat(envelope,[1,7]);
+            % adjust octave band level
+            gainchange = 10.^(octavebandlevel./20) ./ mean(noisebands1.^2).^0.5;
+            noisebands1 = noisebands1 .* repmat(gainchange,[nsamples,1]);
+            y1 = sum(noisebands1,2) * 10^(Lgain/20) / 20;
+            startindex(section) = 1+nsamples*(section-1)+gaplen*(section-1);
+            y(startindex(section):startindex(section)+nsamples-1) = y1;
+        end
+    
+    else
 % PART 1 is the same as a STIPA signal
     Fm = [1.6, 8;...
         1, 5;...
@@ -108,7 +152,7 @@ if ~isempty(param) || nargin ~= 0
     
     noisebands1 = zeros(size(noisebands));
     t = ((1:nsamples)'-1)./fs;
-    y = zeros(7*nsamples+6*fs,1);
+    y = zeros(ceil(7*nsamples+6*gaplen),1);
     startindex = zeros(7,1);
     for section = 1:7
         for k = 1:7
@@ -122,10 +166,10 @@ if ~isempty(param) || nargin ~= 0
         % dividing by 20 provides a reasonable level signal (prior to Lgain
         % adjustment)
         y1 = sum(noisebands1,2) * 10^(Lgain/20) / 20;
-        startindex(section) = 1+nsamples*(section-1)+fs*(section-1);
+        startindex(section) = 1+nsamples*(section-1)+gaplen*(section-1);
         y(startindex(section):startindex(section)+nsamples-1) = y1;
     end
-    
+    end
     
     tag = ['STIdirect' num2str(duration)];
     
@@ -133,9 +177,10 @@ if ~isempty(param) || nargin ~= 0
     OUT.fs = fs;
     OUT.tag = tag;
     OUT.funcallback.name = 'STIdirect_signal.m';
-    OUT.funcallback.inarg = {duration, fs, octavebandlevel};
+    OUT.funcallback.inarg = {duration, fs, octavebandlevel, silenceduration, STImethod};
     OUT.properties.startindex=startindex;
     OUT.properties.Fm = Fm;
+    OUT.properties.gap = gaplen;
 else
     OUT = [];
 end
