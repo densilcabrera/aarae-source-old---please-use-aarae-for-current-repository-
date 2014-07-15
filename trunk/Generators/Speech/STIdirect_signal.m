@@ -186,7 +186,7 @@ if ~isempty(param) || nargin ~= 0
     end
     end
     
-    tag = ['STIdirect' num2str(duration)];
+    tag = ['STIdirect' num2str(duration) 's' num2str(STImethod)];
     
     OUT.audio = y;
     OUT.fs = fs;
