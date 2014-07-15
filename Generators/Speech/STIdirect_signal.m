@@ -1,13 +1,22 @@
 function OUT = STIdirect_signal(duration, fs, octavebandlevel, silenceduration, STImethod)
 % Generates a signal for STI direct measurement (direct method) based to IEC
 % 60268-16 (2011). 
-% Either of two approaches can be taken:
-% * generate seven STIPA-like signals that populate the entire 98-value MTF
-%   matrix. This is the faster method.
-% * generate fourteen moduated signals that populter the entire 98-value
+% Either of three approaches can be taken:
+% STImethod = 0:
+%   generate seven STIPA-like signals that populate the entire 98-value MTF
+%   matrix. This is a faster method.
+% STImethod = 1:
+%   generate seven pairs of synchronously double-modulated signals - like
+%   STIPA, but with the same modulation frequency pairs in each octave band.
+%   This takes the same amount of time as the first method, but is probably
+%   easier to understand and provides a direct experience of what is meant
+%   by modulation transfer function.
+% STImethod = 2:
+%   generate fourteen moduated signals that populate the entire 98-value
 %   MTF matrix one modulation frequency at a time. This is the slower
 %   method, but it is easier to understand, and probably closer to the
-%   intention of IEC 60268-16.
+%   intention of IEC 60268-16. It provides a direct experience of what is
+%   meant by modulation transfer function.
 %
 % The duration of each signal should normally be 20 s or longer (longer
 % durations normally yield more accurate results), and the default duration
@@ -32,7 +41,7 @@ function OUT = STIdirect_signal(duration, fs, octavebandlevel, silenceduration, 
 
 if nargin < 5
     
-    param = inputdlg({'Dual modulation method [0] (faster) or Single modulation method (slower) [1]';...
+    param = inputdlg({'STIPA-like dual modulation method [0], Synchronous dual modulation method [1], or Single modulation method (slower) [2]';...
         'Duration of each of signal in the sequence [s]';...
         'Duration of gap between each signal [s]';...
         '125 Hz octave band level (dB)';...
@@ -116,7 +125,7 @@ if ~isempty(param) || nargin ~= 0
         clear noisyslope;
     end
     
-    if STImethod == 1
+    if STImethod == 2
         Fm = [0.63,0.8,1,1.25,1.6,2,2.5,3.15,4,5,6.3,8,10,12.5];
         %m = 1; % modulation depth for simple STI
         t = ((1:nsamples)'-1)./fs;
@@ -135,18 +144,24 @@ if ~isempty(param) || nargin ~= 0
         end
     
     else
-% PART 1 is the same as a STIPA signal
-    Fm = [1.6, 8;...
-        1, 5;...
-        0.63, 3.15;...
-        2, 10;...
-        1.25, 6.25;...
-        0.8, 4;...
-        2.5, 12.5];
-    Fm = repmat(Fm,[1,1,7]);
-    for section = 2:7
-        Fm(:,:,section) = circshift(Fm(:,:,section-1),1);
-    end
+        if STImethod == 0
+            % PART 1 is the same as a STIPA signal
+            Fm = [1.6, 8;...
+                1, 5;...
+                0.63, 3.15;...
+                2, 10;...
+                1.25, 6.25;...
+                0.8, 4;...
+                2.5, 12.5];
+            Fm = repmat(Fm,[1,1,7]);
+            for section = 2:7
+                Fm(:,:,section) = circshift(Fm(:,:,section-1),1);
+            end
+        else % STImethod = 1
+            Fm = cat(3,[0.63, 3.15],[0.8, 4],[1, 5],...
+                [1.25, 6.25],[1.6, 8],[2, 10],[2.5, 12.5]);
+            Fm = repmat(Fm,[7,1,1]);
+        end
      
     m = 0.55; % Modulation depth for STIPA signal
     
