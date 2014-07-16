@@ -58,12 +58,12 @@ try
         if ~isnumeric(Ydata)
             if iscell(Ydata), Ydata = cell2mat(Ydata); end
         end
-        aaraecmap = importdata([cd '/Utilities/aaraecmap.mat']);
+        %aaraecmap = importdata([cd '/Utilities/aaraecmap.mat']);
         if ~isequal([length(Ydata),length(Xdata)],size(data)), data = data'; end %#ok : Used in line above
         % Mesh and surf plotting
         if ~strcmp(chartfunc,'imagesc')
             eval([chartfunc '(haxes,Xdata,Ydata,data)'])
-            colormap(aaraecmap)
+            colormap(handles.Preferences.colormap)
             xlabel(haxes,strrep([tabledata{axis(1,1),1} ' [' audiodata.(genvarname([tabledata{axis(1,1),1} 'info'])).units ']'],'_',' '),'HandleVisibility','on')
             ylabel(haxes,strrep([tabledata{axis(1,2),1} ' [' audiodata.(genvarname([tabledata{axis(1,2),1} 'info'])).units ']'],'_',' '),'HandleVisibility','on')
             zlabel(haxes,strrep(audiodata.datainfo.units,'_',' '),'HandleVisibility','on')
@@ -72,7 +72,7 @@ try
             eval([chartfunc '(Xdata,1:length(Ydata),data,''Parent'',haxes)'])
             set(haxes,'YTickLabel',num2str(Ydata'))
             set(haxes,'YDir','normal')
-            colormap(aaraecmap)
+            colormap(handles.Preferences.colormap)
             xlabel(haxes,strrep([tabledata{axis(1,1),1} ' [' audiodata.(genvarname([tabledata{axis(1,1),1} 'info'])).units ']'],'_',' '))
             ylabel(haxes,strrep([tabledata{axis(1,2),1} ' [' audiodata.(genvarname([tabledata{axis(1,2),1} 'info'])).units ']'],'_',' '))
         end

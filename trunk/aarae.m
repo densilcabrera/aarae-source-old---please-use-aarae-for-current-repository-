@@ -81,6 +81,7 @@ else
     Preferences.maxtimetodisplay = 10;
     Preferences.frequencylimits = 'Default';
     Preferences.calibrationtoggle = 1;
+    Preferences.colormap = 'Default';
     handles.Preferences = Preferences;
     save([cd '/Preferences.mat'],'Preferences')
 end
