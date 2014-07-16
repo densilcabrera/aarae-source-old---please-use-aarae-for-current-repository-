@@ -22,7 +22,7 @@ function varargout = preferences(varargin)
 
 % Edit the above text to modify the response to help preferences
 
-% Last Modified by GUIDE v2.5 05-Jun-2014 11:14:13
+% Last Modified by GUIDE v2.5 16-Jul-2014 10:23:02
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -90,6 +90,12 @@ else
         set(handles.flimtext,'String',['[' num2str(mainHandles.Preferences.frequencylimits) ']'])
     end
     set(handles.cal_chk,'Value',mainHandles.Preferences.calibrationtoggle)
+    colormaps = cellstr(get(handles.colormap_popup,'String'));
+    if ischar(mainHandles.Preferences.colormap)
+        set(handles.colormap_popup,'Value',find(cellfun(@strcmp,colormaps,repmat(cellstr(mainHandles.Preferences.colormap),length(colormaps),1))))
+    else
+        set(handles.colormap_popup,'Value',1)
+    end
     handles.output = mainHandles.Preferences;
     guidata(hObject, handles);
     uiwait(hObject);
@@ -225,3 +231,35 @@ function preferences_CloseRequestFcn(hObject, ~, ~) %#ok : Executed when Prefere
 
 % Hint: delete(hObject) closes the figure
 uiresume(hObject);
+
+
+% --- Executes on selection change in colormap_popup.
+function colormap_popup_Callback(hObject, eventdata, handles)
+% hObject    handle to colormap_popup (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: contents = cellstr(get(hObject,'String')) returns colormap_popup contents as cell array
+%        contents{get(hObject,'Value')} returns selected item from colormap_popup
+contents = cellstr(get(hObject,'String'));
+selection = contents{get(hObject,'Value')};
+switch selection
+    case 'Default'
+        aaraecmap = importdata([cd '/Utilities/aaraecmap.mat']);
+        handles.output.colormap = aaraecmap;
+    otherwise
+        handles.output.colormap = selection;
+end
+guidata(hObject,handles)
+
+% --- Executes during object creation, after setting all properties.
+function colormap_popup_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to colormap_popup (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: popupmenu controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
