@@ -82,6 +82,7 @@ else
     % Do some stuff
     handles.main_stage1 = varargin{mainGuiInput+1};
     mainHandles = guidata(handles.main_stage1);
+    handles.axesposition = get(handles.compaxes,'Position');
     selectedNodes = mainHandles.mytree.getSelectedNodes;
     handles.nodeA = selectedNodes(1).handle.UserData;
     handles.nodeB = selectedNodes(2).handle.UserData;
@@ -163,6 +164,8 @@ function filltable(audiodata,cattable)
 
 function doresultplot(handles,haxes)
 if strcmp(get(get(haxes,'Parent'),'tag'),'comparedata')
+    colorbar('off')
+    set(haxes,'Position',handles.axesposition)
     cla(haxes,'reset')
     if isfield(handles,'compaxes2')
         delete(handles.compaxes2);
@@ -256,6 +259,18 @@ try
             ylabel(haxes,strrep(nodeB.datainfo.units,'_',' '),'HandleVisibility','on')
             set(handles.name1txt,'ForegroundColor','k')
             set(handles.name2txt,'ForegroundColor','k')
+        case '3D-difference'
+            z1 = nodeA.(genvarname(cattable1.Data{mainaxA(1,2),1}));
+            if ~isnumeric(z1)
+                if iscell(z1), z1 = cell2mat(z1); end
+            end
+            ydif = real(log10(y2)-log10(y1));
+            imagesc(1:length(z1),x1,ydif,'Parent',haxes)
+            set(haxes,'XTickLabel',num2str(z1'))
+            set(haxes,'YDir','normal')
+            cmap = obb_cmap(min(min(ydif(isfinite(ydif)))),max(max(ydif(isfinite(ydif)))));
+            colormap(cmap)
+            colorbar
     end
     guidata(handles.comparedata,handles)
 catch error
@@ -406,6 +421,16 @@ function setplottingoptions(handles)
     else
         set(handles.compfunc_popup,'String',{'Double axis'},'Value',1)
     end
+    if length(mainaxA) == 2 && length(mainaxB) == 2
+        iunitsA2 = handles.nodeA.(genvarname([cattable1{mainaxA(1,2),1} 'info'])).units;
+        iunitsB2 = handles.nodeB.(genvarname([cattable2{mainaxB(1,2),1} 'info'])).units;
+        
+        if strcmp(iunitsA,iunitsB) && strcmp(iunitsA2,iunitsB2) &&...
+                isequal(handles.nodeA.(genvarname(cattable1{mainaxA(1,1),1})),handles.nodeB.(genvarname(cattable1{mainaxB(1,1),1}))) &&...
+                isequal(handles.nodeA.(genvarname(cattable1{mainaxA(1,2),1})),handles.nodeB.(genvarname(cattable1{mainaxB(1,2),1})))
+            set(handles.compfunc_popup,'String',cat(1,get(handles.compfunc_popup,'String'),{'3D-difference'}))
+        end
+    end
 
 
 % --- Executes on mouse press over figure background, over a disabled or
@@ -436,3 +461,24 @@ if strcmp(get(click,'Type'),'text')
         end
     end
 end
+
+function cmap = obb_cmap(cmin,cmax)
+if isinf(cmax), cmax = 10^10; end
+if isinf(cmin), cmin = -10^10; end
+x = linspace(cmin,cmax,64);
+r1 = zeros(1,length(x(x<0)));
+r2 = 1.7/cmax.*x(x>0 & x<cmax/2);
+r3 = 0.3/cmax.*x(x>cmax/2)+0.7;
+R = [r1,r2,r3];
+
+g1 = 1.32/cmin.*x(x<cmin/2)-0.52;
+g2 = 0.28/cmin.*x(x<0 & x>cmin/2);
+g3 = 0.28/cmax.*x(x>0 & x<cmax/2);
+g4 = 1.32/cmax.*x(x>cmax/2)-0.52;
+G = [g1,g2,g3,g4];
+
+b1 = 0.8/cmin.*x(x<0);
+b2 = zeros(1,length(x(x>0)));
+B = [b1,b2];
+
+cmap = [R',G',B'];
