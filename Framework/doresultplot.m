@@ -49,6 +49,14 @@ try
         guidata(handles.aarae,handles)
     elseif naxis == 2 % Visualization of 3D data
         cla(haxes,'reset')
+        [~,~,ext] = fileparts(handles.Settings.colormap);
+        if isempty(ext)
+            eval(['cmap = colormap(' lower(handles.Settings.colormap) '(128));']);
+        else
+            custom_colormap = importdata([cd '/Utilities/Custom_colormaps/' handles.Settings.colormap]);
+            cmap = colormap(custom_colormap);
+        end
+        set(get(haxes,'Parent'),'DefaultAxesColorOrder',cmap)
         axis = find([catorcont{:}] == true);
         Xdata = audiodata.(genvarname(tabledata{axis(1,1),1})); 
         Ydata = audiodata.(genvarname(tabledata{axis(1,2),1}));
@@ -63,7 +71,7 @@ try
         % Mesh and surf plotting
         if ~strcmp(chartfunc,'imagesc')
             eval([chartfunc '(haxes,Xdata,Ydata,data)'])
-            colormap(handles.Preferences.colormap)
+            %colormap(handles.Settings.colormap)
             xlabel(haxes,strrep([tabledata{axis(1,1),1} ' [' audiodata.(genvarname([tabledata{axis(1,1),1} 'info'])).units ']'],'_',' '),'HandleVisibility','on')
             ylabel(haxes,strrep([tabledata{axis(1,2),1} ' [' audiodata.(genvarname([tabledata{axis(1,2),1} 'info'])).units ']'],'_',' '),'HandleVisibility','on')
             zlabel(haxes,strrep(audiodata.datainfo.units,'_',' '),'HandleVisibility','on')
@@ -72,7 +80,7 @@ try
             eval([chartfunc '(Xdata,1:length(Ydata),data,''Parent'',haxes)'])
             set(haxes,'YTickLabel',num2str(Ydata'))
             set(haxes,'YDir','normal')
-            colormap(handles.Preferences.colormap)
+            %colormap(handles.Settings.colormap)
             xlabel(haxes,strrep([tabledata{axis(1,1),1} ' [' audiodata.(genvarname([tabledata{axis(1,1),1} 'info'])).units ']'],'_',' '))
             ylabel(haxes,strrep([tabledata{axis(1,2),1} ' [' audiodata.(genvarname([tabledata{axis(1,2),1} 'info'])).units ']'],'_',' '))
         end
