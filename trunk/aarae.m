@@ -23,7 +23,7 @@ function varargout = aarae(varargin)
 
 % Edit the above text to modify the response to help aarae
 
-% Last Modified by GUIDE v2.5 18-Jun-2014 15:38:10
+% Last Modified by GUIDE v2.5 18-Jul-2014 09:15:38
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -72,18 +72,18 @@ setappdata(hMain,'audio_recorder_fs',48000)
 setappdata(hMain,'audio_recorder_qdur',1)
 setappdata(hMain,'audio_recorder_buffer',1024)
 
-% Read preferences file
-Preferences = [];
-if ~isempty(dir([cd '/Preferences.mat']))
-    load([cd '/Preferences.mat']);
-    handles.Preferences = Preferences;
+% Read settings file
+Settings = [];
+if ~isempty(dir([cd '/Settings.mat']))
+    load([cd '/Settings.mat']);
+    handles.Settings = Settings;
 else
-    Preferences.maxtimetodisplay = 10;
-    Preferences.frequencylimits = 'Default';
-    Preferences.calibrationtoggle = 1;
-    Preferences.colormap = 'Default';
-    handles.Preferences = Preferences;
-    save([cd '/Preferences.mat'],'Preferences')
+    Settings.maxtimetodisplay = 10;
+    Settings.frequencylimits = 'Default';
+    Settings.calibrationtoggle = 1;
+    Settings.colormap = 'Default';
+    handles.Settings = Settings;
+    save([cd '/Settings.mat'],'Settings')
 end
 
 if ~isdir([cd '/Log']), mkdir([cd '/Log']); end
@@ -1343,7 +1343,7 @@ if ~isempty(click) && ((click == handles.axestime) || (get(click,'Parent') == ha
             linea = data(To:Tf,:);
             cmap = colormap(lines(size(data,2)));
         end
-        if isfield(signaldata,'cal') && handles.Preferences.calibrationtoggle == 1
+        if isfield(signaldata,'cal') && handles.Settings.calibrationtoggle == 1
             if size(linea,2) == length(signaldata.cal)
                 signaldata.cal(isnan(signaldata.cal)) = 0;
                 linea = linea.*repmat(10.^(signaldata.cal./20),length(linea),1);
@@ -1400,10 +1400,10 @@ if ~isempty(click) && ((click == handles.axestime) || (get(click,'Parent') == ha
             yl = cellstr(get(handles.time_popup,'String'));
             yl = yl{get(handles.time_popup,'Value')};
             ylabel(yl(9:end));
-            if ischar(handles.Preferences.frequencylimits)
+            if ischar(handles.Settings.frequencylimits)
                 xlim([f(2) signaldata.fs/2])
             else
-                xlim(handles.Preferences.frequencylimits)
+                xlim(handles.Settings.frequencylimits)
             end
             if log_check == 1
                 set(gca,'XScale','log')
@@ -1455,7 +1455,7 @@ if ~isempty(click) && ((click == handles.axesfreq) || (get(click,'Parent') == ha
             linea = data(To:Tf,:);
             cmap = colormap(lines(size(data,2)));
         end
-        if isfield(signaldata,'cal') && handles.Preferences.calibrationtoggle == 1
+        if isfield(signaldata,'cal') && handles.Settings.calibrationtoggle == 1
             if size(linea,2) == length(signaldata.cal)
                 signaldata.cal(isnan(signaldata.cal)) = 0;
                 linea = linea.*repmat(10.^(signaldata.cal./20),length(linea),1);
@@ -1511,10 +1511,10 @@ if ~isempty(click) && ((click == handles.axesfreq) || (get(click,'Parent') == ha
             yl = cellstr(get(handles.freq_popup,'String'));
             yl = yl{get(handles.freq_popup,'Value')};
             ylabel(yl(9:end));
-            if ischar(handles.Preferences.frequencylimits)
+            if ischar(handles.Settings.frequencylimits)
                 xlim([f(2) signaldata.fs/2])
             else
-                xlim(handles.Preferences.frequencylimits)
+                xlim(handles.Settings.frequencylimits)
             end
             log_check = get(handles.logfreq_chk,'Value');
             if log_check == 1
@@ -2298,7 +2298,7 @@ if handles.compareaudio == 1
                 cmap = colormap(lines(size(signaldata.audio,2)));
                 linea = signaldata.audio;
             end
-            if isfield(signaldata,'cal') && handles.Preferences.calibrationtoggle == 1
+            if isfield(signaldata,'cal') && handles.Settings.calibrationtoggle == 1
                 if size(linea,2) == length(signaldata.cal)
                     signaldata.cal(isnan(signaldata.cal)) = 0;
                     linea = linea.*repmat(10.^(signaldata.cal./20),length(linea),1);
@@ -2352,10 +2352,10 @@ if handles.compareaudio == 1
                         if ismatrix(signaldata.audio) && isfield(signaldata,'chanID'), title(signaldata.chanID{j,1}); end
                         if ~ismatrix(signaldata.audio) && isfield(signaldata,'bandID'), title(num2str(signaldata.bandID(1,j))); end
                         xlabel('Frequency [Hz]');
-                        if ischar(handles.Preferences.frequencylimits)
+                        if ischar(handles.Settings.frequencylimits)
                             xlim([f(2) signaldata.fs/2])
                         else
-                            xlim(handles.Preferences.frequencylimits)
+                            xlim(handles.Settings.frequencylimits)
                         end
                         log_check = get(handles.(genvarname(['log' axes '_chk'])),'Value');
                         if log_check == 1
@@ -2379,10 +2379,10 @@ if handles.compareaudio == 1
                     plot(f(1:length(linea)),linea);% Plot signal in frequency domain
                     title(selectedNodes(i).getName.char)
                     xlabel('Frequency [Hz]');
-                    if ischar(handles.Preferences.frequencylimits)
+                    if ischar(handles.Settings.frequencylimits)
                         xlim([f(2) signaldata.fs/2])
                     else
-                        xlim(handles.Preferences.frequencylimits)
+                        xlim(handles.Settings.frequencylimits)
                     end
                     log_check = get(handles.(genvarname(['log' axes '_chk'])),'Value');
                     if log_check == 1
@@ -2684,17 +2684,17 @@ if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgr
 end
 
 
-% --- Executes on button press in preferences_btn.
-function preferences_btn_Callback(hObject, ~, handles) %#ok : Executed when Preferences button is clicked
-% hObject    handle to preferences_btn (see GCBO)
+% --- Executes on button press in settings_btn.
+function settings_btn_Callback(hObject, ~, handles) %#ok : Executed when Settings button is clicked
+% hObject    handle to settings_btn (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-Preferences = preferences('main_stage1', handles.aarae);%inputdlg('Maximum time period to display','AARAE preferences',[1 50],{num2str(handles.preferences.maxtimetodisplay)});
-if ~isempty(Preferences)
+Settings = settings('main_stage1', handles.aarae);%inputdlg('Maximum time period to display','AARAE settings',[1 50],{num2str(handles.Settings.maxtimetodisplay)});
+if ~isempty(Settings)
     %newpref = cell2struct(newpref,{'maxtimetodisplay'});
     %newpref.maxtimetodisplay = str2double(newpref.maxtimetodisplay);
-    handles.Preferences = Preferences;
-    save([cd '/Preferences.mat'],'Preferences')
+    handles.Settings = Settings;
+    save([cd '/Settings.mat'],'Settings')
     guidata(hObject,handles)
     selectedNodes = handles.mytree.getSelectedNodes;
     handles.mytree.setSelectedNode(handles.root);
