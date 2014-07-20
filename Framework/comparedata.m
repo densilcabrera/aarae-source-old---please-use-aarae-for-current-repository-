@@ -22,7 +22,7 @@ function varargout = comparedata(varargin)
 
 % Edit the above text to modify the response to help comparedata
 
-% Last Modified by GUIDE v2.5 11-Jul-2014 09:37:30
+% Last Modified by GUIDE v2.5 18-Jul-2014 10:21:52
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -259,13 +259,43 @@ try
             ylabel(haxes,strrep(nodeB.datainfo.units,'_',' '),'HandleVisibility','on')
             set(handles.name1txt,'ForegroundColor','k')
             set(handles.name2txt,'ForegroundColor','k')
-        case '3D-difference'
+        case 'difference - log10'
             z1 = nodeA.(genvarname(cattable1.Data{mainaxA(1,2),1}));
             if ~isnumeric(z1)
                 if iscell(z1), z1 = cell2mat(z1); end
             end
             ydif = real(log10(y2)-log10(y1));
             imagesc(1:length(z1),x1,ydif,'Parent',haxes)
+            xlabel(haxes,strrep([cattable1.Data{mainaxA(1,2),1} ' [' nodeA.(genvarname([cattable1.Data{mainaxA(1,2),1} 'info'])).units ']'],'_',' '))
+            ylabel(haxes,strrep([cattable1.Data{mainaxA(1,1),1} ' [' nodeA.(genvarname([cattable1.Data{mainaxA(1,1),1} 'info'])).units ']'],'_',' '))
+            set(haxes,'XTickLabel',num2str(z1'))
+            set(haxes,'YDir','normal')
+            cmap = obb_cmap(min(min(ydif(isfinite(ydif)))),max(max(ydif(isfinite(ydif)))));
+            colormap(cmap)
+            colorbar
+        case 'difference - log2'
+            z1 = nodeA.(genvarname(cattable1.Data{mainaxA(1,2),1}));
+            if ~isnumeric(z1)
+                if iscell(z1), z1 = cell2mat(z1); end
+            end
+            ydif = real(log2(y2)-log2(y1));
+            imagesc(1:length(z1),x1,ydif,'Parent',haxes)
+            xlabel(haxes,strrep([cattable1.Data{mainaxA(1,2),1} ' [' nodeA.(genvarname([cattable1.Data{mainaxA(1,2),1} 'info'])).units ']'],'_',' '))
+            ylabel(haxes,strrep([cattable1.Data{mainaxA(1,1),1} ' [' nodeA.(genvarname([cattable1.Data{mainaxA(1,1),1} 'info'])).units ']'],'_',' '))
+            set(haxes,'XTickLabel',num2str(z1'))
+            set(haxes,'YDir','normal')
+            cmap = obb_cmap(min(min(ydif(isfinite(ydif)))),max(max(ydif(isfinite(ydif)))));
+            colormap(cmap)
+            colorbar
+        case 'difference - 10*log10'
+            z1 = nodeA.(genvarname(cattable1.Data{mainaxA(1,2),1}));
+            if ~isnumeric(z1)
+                if iscell(z1), z1 = cell2mat(z1); end
+            end
+            ydif = real(10.*log10(y2)-10.*log10(y1));
+            imagesc(1:length(z1),x1,ydif,'Parent',haxes)
+            xlabel(haxes,strrep([cattable1.Data{mainaxA(1,2),1} ' [' nodeA.(genvarname([cattable1.Data{mainaxA(1,2),1} 'info'])).units ']'],'_',' '))
+            ylabel(haxes,strrep([cattable1.Data{mainaxA(1,1),1} ' [' nodeA.(genvarname([cattable1.Data{mainaxA(1,1),1} 'info'])).units ']'],'_',' '))
             set(haxes,'XTickLabel',num2str(z1'))
             set(haxes,'YDir','normal')
             cmap = obb_cmap(min(min(ydif(isfinite(ydif)))),max(max(ydif(isfinite(ydif)))));
@@ -428,7 +458,7 @@ function setplottingoptions(handles)
         if strcmp(iunitsA,iunitsB) && strcmp(iunitsA2,iunitsB2) &&...
                 isequal(handles.nodeA.(genvarname(cattable1{mainaxA(1,1),1})),handles.nodeB.(genvarname(cattable1{mainaxB(1,1),1}))) &&...
                 isequal(handles.nodeA.(genvarname(cattable1{mainaxA(1,2),1})),handles.nodeB.(genvarname(cattable1{mainaxB(1,2),1})))
-            set(handles.compfunc_popup,'String',cat(1,get(handles.compfunc_popup,'String'),{'3D-difference'}))
+            set(handles.compfunc_popup,'String',cat(1,get(handles.compfunc_popup,'String'),{'difference - log10';'difference - log2';'difference - 10*log10'}))
         end
     end
 
