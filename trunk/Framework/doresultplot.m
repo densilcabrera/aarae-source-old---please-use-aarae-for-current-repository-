@@ -218,6 +218,14 @@ catch error
                 indexes = find(cellfun(@length,selections) ~= 1);
                 dim2 = dims{1,1};
                 figure;
+                [~,~,ext] = fileparts(handles.Settings.colormap);
+                if isempty(ext)
+                    eval(['cmap = colormap(' lower(handles.Settings.colormap) '(128));']);
+                else
+                    custom_colormap = importdata([cd '/Utilities/Custom_colormaps/' handles.Settings.colormap]);
+                    cmap = colormap(custom_colormap);
+                end
+                set(get(haxes,'Parent'),'DefaultAxesColorOrder',cmap)
                 k = 1;
                 [r,c] = subplotpositions(length(dim2), 0.5);
                 for i = 1:length(dim2)
@@ -229,12 +237,12 @@ catch error
                     if ~isequal([length(Ydata),length(Xdata)],size(data)), data = data'; end
                     if ~strcmp(chartfunc,'imagesc')
                         eval([chartfunc '(hsub,Xdata,Ydata,data)'])
-                        colormap(aaraecmap)
+                        %colormap(aaraecmap)
                     else
                         eval([chartfunc '(Xdata,1:length(Ydata),data,''Parent'',hsub)'])
                         set(hsub,'YTickLabel',num2str(Ydata'))
                         set(hsub,'YDir','normal')
-                        colormap(aaraecmap)
+                        %colormap(aaraecmap)
                     end
                     xlabel(hsub,strrep([tabledata{axis(1,1),1} ' [' audiodata.(genvarname([tabledata{axis(1,1),1} 'info'])).units ']'],'_',' '))
                     ylabel(hsub,strrep([tabledata{axis(1,2),1} ' [' audiodata.(genvarname([tabledata{axis(1,2),1} 'info'])).units ']'],'_',' '))
