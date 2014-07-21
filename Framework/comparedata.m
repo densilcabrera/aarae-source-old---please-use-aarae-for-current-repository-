@@ -255,8 +255,8 @@ try
             set(handles.name2txt,'ForegroundColor',get(ax(2),'YColor'))
         case 'X-Y'
             plot(haxes,y1,y2,'ro')
-            xlabel(haxes,strrep(nodeA.datainfo.units,'_',' '),'HandleVisibility','on')
-            ylabel(haxes,strrep(nodeB.datainfo.units,'_',' '),'HandleVisibility','on')
+            xlabel(haxes,['Data 1: ' strrep(nodeA.datainfo.units,'_',' ')],'HandleVisibility','on')
+            ylabel(haxes,['Data 2: ' strrep(nodeB.datainfo.units,'_',' ')],'HandleVisibility','on')
             set(handles.name1txt,'ForegroundColor','k')
             set(handles.name2txt,'ForegroundColor','k')
         case 'difference - log10'
