@@ -1,4 +1,4 @@
-function [Verbose,varargout]=STI_IR(IR, fs, Lsignal, Lnoise, AuditoryMasking, NoiseCorrection, doplot, FilterVersion)
+function [Verbose,varargout]=STI_IR(IR, fs, Lsignal, Lnoise, AuditoryMasking, NoiseCorrection, doplot, FilterVersion,FilterStrength,FilterComp)
 % This function calculates the speech transmission index (STI)
 % in accordance with IEC 60268-16 (2011-06).
 % It implements the 'indirect method of measuring STI using the impulse
@@ -15,8 +15,12 @@ function [Verbose,varargout]=STI_IR(IR, fs, Lsignal, Lnoise, AuditoryMasking, No
 % determined as described in IEC 60268-16 (2011),
 % unless it is assumed that noise is negligible.
 %
+% Reference: D. Cabrera, D. Lee, G. Leembruggen & D. Jimenez (in press
+% 2014), "Increasing robustness in the calculation of the speech transmission
+% index from impulse responses", Building Acoustics 21(3).
+%
 % Code by Doheon Lee and Densil Cabrera
-% version 1.09 (30 January 2014)
+% version 1.10 (22 July 2014)
 %
 % * For further information type 'doc STI_IR' in the MATLAB command line and
 %   click on 'View code for STI_IR'.
@@ -98,6 +102,26 @@ function [Verbose,varargout]=STI_IR(IR, fs, Lsignal, Lnoise, AuditoryMasking, No
 %   deviations in the MTF values, but they are unlikely to affect
 %   calculated STI values.
 %
+% FilterStrength
+%   Applies factor to the filter order (or pseudo-order) - i.e. a value of
+%   1 yields the filter orders described above, 2 doubles the filter order.
+%   Using the current settings in the code, a value of 1 yields the
+%   equivalent of 12th order filterbank response (72 dB/octave), a value of
+%   2 yields 24th order (144 dB/octave), etc.
+%   THIS ONLY APPLIES TO FilterVersion = 2
+%
+% FilterComp
+%   0: no filter compensation
+%   1: calculates the MTF of the filterbank itself using a delta function
+%   within silence of the same period as the impulse response being tested.
+%   (The delta function is in the middle of the silent period).
+%   Then the MTF of the impulse response is divided by the MTF of the
+%   filterbank, so that the filterbank's own MTF is removed from the
+%   result. This probably will not significantly affect the STI values, but
+%   it may improve the accuracy of the MTF itself (if high precision is
+%   required). Filter compensation is most useful if high order filters are
+%   used.
+%   THIS ONLY APPLIES TO FilterVersion = 2
 %
 % OUTPUT ARGUMENTS
 % M_STI is the male speech transmission index. Values are in order of the
@@ -259,10 +283,12 @@ if (isstruct(IR) || dialogmode) && nargin < 2
     % auralization settings
     prompt = {'Auditory Masking (0 | 1 | 2):', ...
         'Noise correction (0 | 1):', ...
+        'Filter Strength Factor:', ...
+        'Compensate for filterbank''s own MTF (0 | 1):', ...
         'Auralization (0 | 1):'};
     dlg_title = 'Settings';
     num_lines = 1;
-    def = {'1','1','0'};
+    def = {'1','1','1','0','0'};
     answer = inputdlg(prompt,dlg_title,num_lines,def);
     
     if isempty(answer)
@@ -273,7 +299,9 @@ if (isstruct(IR) || dialogmode) && nargin < 2
     else
         AuditoryMasking = str2num(answer{1,1});
         NoiseCorrection = str2num(answer{2,1});
-        doAuralization = str2num(answer{3,1});
+        FilterStrength = str2num(answer{3,1});
+        FilterComp = str2num(answer{4,1});
+        doAuralization = str2num(answer{5,1});
     end
     
     
@@ -604,6 +632,7 @@ for ch = 1:chans
         % Modulation Transfer Function (MTF) calculations
         P_octave=zeros(length(data(:,ch)), length(length(fc)));
         MTF_ch=zeros(length(mf), length(fc));
+        %MTFfilt_ch=zeros(length(mf), length(fc));
         if FilterVersion == 1
             P_octave = octavebandfilters(data(:,ch), fs);
         elseif FilterVersion == 2
@@ -611,12 +640,24 @@ for ch = 1:chans
             % pseudo-Butterworth response
             orderin = 12; % in-band filter pseudo-order
             orderout = 12; % out-of-band filter pseudo-order
+            if exist('FilterStrength','var')
+                orderin = orderin * FilterStrength;
+                orderout = orderout * FilterStrength;
+            end
             P_octave = octbandfilter_viaFFT(data(:,ch),fs,...
                 [125,250,500,1000,2000,4000,8000],[orderin,orderout],0,...
                 1000,0,0,2);
             %octbandfilter_viaFFT(IN,fs,...
             %param,order,zeropad,...
             %minfftlenfactor,test,phasemode,base)
+            if exist('FilterComp','var')
+                if FilterComp == 1
+                    deltatest = fftshift([1; zeros(size(data,1)-1,1)]);
+                    deltatest_octave = octbandfilter_viaFFT(deltatest,fs,...
+                [125,250,500,1000,2000,4000,8000],[orderin,orderout],0,...
+                1000,0,0,2); 
+                end
+            end
         end
         for k=1:length(fc);
             if FilterVersion == 0
@@ -639,6 +680,16 @@ for ch = 1:chans
                     MTF_den=sum(P_octave(1:1:Fm_len,k).^2);
                     
                     MTF_ch(j,k)=MTF_num/MTF_den;
+                    
+                    if exist('FilterComp','var')
+                        if FilterComp == 1
+                            MTFfilt_num=abs(sum(deltatest_octave(1:Fm_len,k).^2.*exp(-2i*pi*mf(j).*time(1:Fm_len))));
+                            MTFfilt_den=sum(deltatest_octave(1:1:Fm_len,k).^2);
+                            %MTFfilt_ch(j,k)=MTFfilt_num/MTFfilt_den;
+                            % Apply filter compensation here
+                            MTF_ch(j,k) = MTF_ch(j,k) ./ (MTFfilt_num/MTFfilt_den);
+                        end
+                    end
                 end
             else
                 % FFT-derived modulation transfer function
@@ -995,7 +1046,7 @@ Verbose.txt = [datestr(now), '  ', inputstring, '  fs:', num2str(fs), ...
     '  Filterbank:', num2str(FilterVersion)];
 
 Verbose.funcallback.name = 'STI_IR.m';
-Verbose.funcallback.inarg = {fs,Lsignal,Lnoise,AuditoryMasking,NoiseCorrection,doplot,FilterVersion};
+Verbose.funcallback.inarg = {fs,Lsignal,Lnoise,AuditoryMasking,NoiseCorrection,doplot,FilterVersion,FilterStrength,FilterComp};
 
 varargout{1} = M_STI;
 varargout{2} = F_STI;
