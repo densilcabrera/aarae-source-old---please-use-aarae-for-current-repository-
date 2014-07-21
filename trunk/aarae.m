@@ -81,7 +81,7 @@ else
     Settings.maxtimetodisplay = 10;
     Settings.frequencylimits = 'Default';
     Settings.calibrationtoggle = 1;
-    Settings.colormap = 'Default';
+    Settings.colormap = 'Jet';
     handles.Settings = Settings;
     save([cd '/Settings.mat'],'Settings')
 end
