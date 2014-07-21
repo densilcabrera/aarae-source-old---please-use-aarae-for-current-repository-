@@ -22,7 +22,7 @@ function varargout = comparedata(varargin)
 
 % Edit the above text to modify the response to help comparedata
 
-% Last Modified by GUIDE v2.5 18-Jul-2014 10:21:52
+% Last Modified by GUIDE v2.5 21-Jul-2014 10:59:09
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -301,6 +301,20 @@ try
             cmap = obb_cmap(min(min(ydif(isfinite(ydif)))),max(max(ydif(isfinite(ydif)))));
             colormap(cmap)
             colorbar
+        case 'difference'
+            z1 = nodeA.(genvarname(cattable1.Data{mainaxA(1,2),1}));
+            if ~isnumeric(z1)
+                if iscell(z1), z1 = cell2mat(z1); end
+            end
+            ydif = real(y2-y1);
+            imagesc(1:length(z1),x1,ydif,'Parent',haxes)
+            xlabel(haxes,strrep([cattable1.Data{mainaxA(1,2),1} ' [' nodeA.(genvarname([cattable1.Data{mainaxA(1,2),1} 'info'])).units ']'],'_',' '))
+            ylabel(haxes,strrep([cattable1.Data{mainaxA(1,1),1} ' [' nodeA.(genvarname([cattable1.Data{mainaxA(1,1),1} 'info'])).units ']'],'_',' '))
+            set(haxes,'XTickLabel',num2str(z1'))
+            set(haxes,'YDir','normal')
+            cmap = obb_cmap(min(min(ydif(isfinite(ydif)))),max(max(ydif(isfinite(ydif)))));
+            colormap(cmap)
+            colorbar
     end
     guidata(handles.comparedata,handles)
 catch error
@@ -454,11 +468,22 @@ function setplottingoptions(handles)
     if length(mainaxA) == 2 && length(mainaxB) == 2
         iunitsA2 = handles.nodeA.(genvarname([cattable1{mainaxA(1,2),1} 'info'])).units;
         iunitsB2 = handles.nodeB.(genvarname([cattable2{mainaxB(1,2),1} 'info'])).units;
-        
+        hasunitsA = strfind(handles.nodeA.datainfo.units,'[');
+        if ~isempty(hasunitsA)
+            dataunitsA = handles.nodeA.datainfo.units(strfind(handles.nodeA.datainfo.units,'[')+1:strfind(handles.nodeA.datainfo.units,']')-1);
+        end
+        hasunitsB = strfind(handles.nodeB.datainfo.units,'[');
+        if ~isempty(hasunitsB)
+            dataunitsB = handles.nodeB.datainfo.units(strfind(handles.nodeB.datainfo.units,'[')+1:strfind(handles.nodeB.datainfo.units,']')-1);
+        end
         if strcmp(iunitsA,iunitsB) && strcmp(iunitsA2,iunitsB2) &&...
                 isequal(handles.nodeA.(genvarname(cattable1{mainaxA(1,1),1})),handles.nodeB.(genvarname(cattable1{mainaxB(1,1),1}))) &&...
                 isequal(handles.nodeA.(genvarname(cattable1{mainaxA(1,2),1})),handles.nodeB.(genvarname(cattable1{mainaxB(1,2),1})))
-            set(handles.compfunc_popup,'String',cat(1,get(handles.compfunc_popup,'String'),{'difference - log10';'difference - log2';'difference - 10*log10'}))
+            if ~isempty(hasunitsA) && ~isempty(hasunitsB) && strcmp(dataunitsA,'dB') && strcmp(dataunitsB,'dB')
+                set(handles.compfunc_popup,'String',cat(1,get(handles.compfunc_popup,'String'),{'difference'}))
+            else
+                set(handles.compfunc_popup,'String',cat(1,get(handles.compfunc_popup,'String'),{'difference - log10';'difference - log2';'difference - 10*log10'}))
+            end
         end
     end
 
@@ -512,3 +537,50 @@ b2 = zeros(1,length(x(x>0)));
 B = [b1,b2];
 
 cmap = [R',G',B'];
+
+
+% --- Executes on button press in compare_btn.
+function compare_btn_Callback(~, ~, handles) %#ok : Executed when compare Compare stats button is clicked
+% hObject    handle to compare_btn (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+nodeA = handles.nodeA; %#ok : Used in eval function below
+cattable1 = get(handles.cattable1);
+selA = strjoin(cattable1.Data(:,2).',',');
+if isempty(selA), selA = '[1]'; end
+eval(['y1 = squeeze(nodeA.data(' selA '));'])
+
+nodeB = handles.nodeB; %#ok : Used in eval function below
+cattable2 = get(handles.cattable2);
+selB = strjoin(cattable2.Data(:,2).',',');
+if isempty(selB), selB = '[1]'; end
+eval(['y2 = squeeze(nodeB.data(' selB '));'])
+
+maxdif = [max(max(y1)),max(max(y2))];
+mindif = [min(min(y1)),min(min(y2))];
+meandif = [mean(mean(y1)),mean(mean(y2))];
+mediandif = [median(median(y1)),median(median(y2))];
+stddevdif = [std(std(y1)),std(std(y2))];
+skewnessdif = [skewness(skewness(y1)),skewness(skewness(y2))];
+kurtosisdif = [kurtosis(kurtosis(y1)),kurtosis(kurtosis(y2))];
+statsdif = [maxdif;...
+            mindif;...
+            meandif;...
+            mediandif;...
+            stddevdif;...
+            skewnessdif;...
+            kurtosisdif];
+figure;bar(statsdif)
+for k = 1:7
+    % black number above the bar
+    text(k-0.15,statsdif(k,1)+0.2, ...
+        num2str(round(statsdif(k,1)*1000)/1000),'Color','k','HorizontalAlignment','center')
+end
+for k = 1:7
+    % black number above the bar
+    text(k+0.15,statsdif(k,2)+0.2, ...
+        num2str(round(statsdif(k,2)*1000)/1000),'Color','k','HorizontalAlignment','center')
+end
+set(gca,'XTickLabel',{'Maximum','Minimum','Mean','Median','Standard Deviation','Skewness','Kurtosis'})
+legend(strrep(get(handles.name1txt,'String'),'_',' '),strrep(get(handles.name2txt,'String'),'_',' '))
