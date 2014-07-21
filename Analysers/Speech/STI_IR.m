@@ -447,7 +447,7 @@ if ~validate
     [len,chans]=size(data);
     % Check length
     if len < fs*1.6
-        warning('For STI calculation, the impulse response should be at least 1.6 s in duration.')
+        disp('For STI calculation, the impulse response should be at least 1.6 s in duration.')
         disp('Zero padding has been applied, but the result should be interpreted with caution.')
         % zero padding is applied to the start of the IR
         data = [zeros(ceil(fs*1.6 - len),chans); data];
