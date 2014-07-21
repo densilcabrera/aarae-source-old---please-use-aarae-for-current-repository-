@@ -127,9 +127,11 @@ if isstruct(data)
         f_low = 0;
         f_hi = 0;
     else
-        bpo=1;
-        f_low = 125;
-        f_hi = 8000;
+        if ~exist('bpo','var')
+            bpo=1;
+            f_low = 125;
+            f_hi = 8000;
+        end
     end
     if isfield(data,'chanID')
         chanID = data.chanID;
