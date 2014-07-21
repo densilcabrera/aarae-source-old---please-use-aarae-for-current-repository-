@@ -215,7 +215,7 @@ if ~isempty(audio) && ~isempty(fs)
     
     if ~isempty(ind500) && ~isempty(ind1000) && ~isempty(ind2000) && (ind2000 - ind500 == 2)
         OUT.IACC_E3 = mean(IACC_E(ind500:ind2000));
-        OUT.IACC_L3 = mean(IACC_E(ind500:ind2000));
+        OUT.IACC_L3 = mean(IACC_L(ind500:ind2000));
         OUT.BQI = 1-OUT.IACC_E3;
     end
     
