@@ -240,6 +240,7 @@ if ~isempty(audio) && ~isempty(fs)
         '90th prctile';'10th prctile';'90-10% range'};
     rowname = {'Leq';'Lmax';'L5';'L10';'L50';'L90';'Lmin'};
     table2 = [];
+    if bands == 1, table2name = 'Soundlogger summary'; else table2name = cell(length(bands),1); end
     
     for b = 1:bands
         if bands > 1
@@ -250,6 +251,7 @@ if ~isempty(audio) && ~isempty(fs)
                 ['L50 ' num2str(bandID(b)) ' Hz'];...
                 ['L90 ' num2str(bandID(b)) ' Hz'];...
                 ['Lmin ' num2str(bandID(b)) ' Hz']};
+            table2name{b,1} = ['Soundlogger summary - ' num2str(bandID(b)) 'Hz band'];
         end
         data = [10*log10(mean(reshape(10.^(Leq(:,:,b)./10),[nwin*chans,1]))),...
             mean(reshape(Leq(:,:,b),[nwin*chans,1])),...
@@ -325,7 +327,7 @@ if ~isempty(audio) && ~isempty(fs)
             'RowName', rowname)];
     end
     
-    [~,tables] = disptables(fig1,[table1 table2],{'Analysis details','Sound logger summary'});
+    [~,tables] = disptables(fig1,[table1 table2],cat(1,{'Analysis details'},table2name));
     OUT.tables = tables;
     
     %     table1 = uitable('Data',[duration maximum minimum],...
