@@ -84,6 +84,7 @@ else
     mainHandles = guidata(handles.main_stage1);
     handles.axesposition = get(handles.compaxes,'Position');
     selectedNodes = mainHandles.mytree.getSelectedNodes;
+    if length(selectedNodes) == 1, selectedNodes(2) = selectedNodes(1); end
     handles.nodeA = selectedNodes(1).handle.UserData;
     handles.nodeB = selectedNodes(2).handle.UserData;
     set(handles.name1txt,'String',selectedNodes(1).getName.char)

@@ -17,7 +17,7 @@ function mySelectFcn(tree, ~)
         end
         selaudio = cellfun(@isfield,contents,repmat({'audio'},length(selectedNodes),1));
         seldata = cellfun(@isfield,contents,repmat({'data'},length(selectedNodes),1));
-        if all(selaudio) || (length(seldata) == 2 && all(seldata))
+        if all(selaudio) || (length(seldata) <= 2 && all(seldata))
             set(mainHandles.compare_btn,'Enable','on')
             if all(selaudio), mainHandles.compareaudio = 1; end
             if all(seldata), mainHandles.compareaudio = 0; end
