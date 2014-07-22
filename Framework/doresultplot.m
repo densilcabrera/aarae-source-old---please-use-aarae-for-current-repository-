@@ -78,7 +78,7 @@ try
         else
         % Imagesc plotting
             eval([chartfunc '(Xdata,1:length(Ydata),data,''Parent'',haxes)'])
-            set(haxes,'YTickLabel',num2str(Ydata'))
+            set(haxes,'YTickLabel',num2str(Ydata(get(haxes,'Ytick')).'))
             set(haxes,'YDir','normal')
             %colormap(handles.Settings.colormap)
             xlabel(haxes,strrep([tabledata{axis(1,1),1} ' [' audiodata.(genvarname([tabledata{axis(1,1),1} 'info'])).units ']'],'_',' '))
