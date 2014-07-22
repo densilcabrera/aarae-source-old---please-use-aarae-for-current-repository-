@@ -269,7 +269,7 @@ try
             imagesc(1:length(z1),x1,ydif,'Parent',haxes)
             xlabel(haxes,strrep([cattable1.Data{mainaxA(1,2),1} ' [' nodeA.(genvarname([cattable1.Data{mainaxA(1,2),1} 'info'])).units ']'],'_',' '))
             ylabel(haxes,strrep([cattable1.Data{mainaxA(1,1),1} ' [' nodeA.(genvarname([cattable1.Data{mainaxA(1,1),1} 'info'])).units ']'],'_',' '))
-            set(haxes,'XTickLabel',num2str(z1'))
+            set(haxes,'XTickLabel',num2str(z1(get(haxes,'XTick')).'))
             set(haxes,'YDir','normal')
             cmap = obb_cmap(min(min(ydif(isfinite(ydif)))),max(max(ydif(isfinite(ydif)))));
             colormap(cmap)
@@ -283,7 +283,7 @@ try
             imagesc(1:length(z1),x1,ydif,'Parent',haxes)
             xlabel(haxes,strrep([cattable1.Data{mainaxA(1,2),1} ' [' nodeA.(genvarname([cattable1.Data{mainaxA(1,2),1} 'info'])).units ']'],'_',' '))
             ylabel(haxes,strrep([cattable1.Data{mainaxA(1,1),1} ' [' nodeA.(genvarname([cattable1.Data{mainaxA(1,1),1} 'info'])).units ']'],'_',' '))
-            set(haxes,'XTickLabel',num2str(z1'))
+            set(haxes,'XTickLabel',num2str(z1(get(haxes,'XTick')).'))
             set(haxes,'YDir','normal')
             cmap = obb_cmap(min(min(ydif(isfinite(ydif)))),max(max(ydif(isfinite(ydif)))));
             colormap(cmap)
@@ -297,7 +297,21 @@ try
             imagesc(1:length(z1),x1,ydif,'Parent',haxes)
             xlabel(haxes,strrep([cattable1.Data{mainaxA(1,2),1} ' [' nodeA.(genvarname([cattable1.Data{mainaxA(1,2),1} 'info'])).units ']'],'_',' '))
             ylabel(haxes,strrep([cattable1.Data{mainaxA(1,1),1} ' [' nodeA.(genvarname([cattable1.Data{mainaxA(1,1),1} 'info'])).units ']'],'_',' '))
-            set(haxes,'XTickLabel',num2str(z1'))
+            set(haxes,'XTickLabel',num2str(z1(get(haxes,'XTick')).'))
+            set(haxes,'YDir','normal')
+            cmap = obb_cmap(min(min(ydif(isfinite(ydif)))),max(max(ydif(isfinite(ydif)))));
+            colormap(cmap)
+            colorbar
+        case 'difference - 20*log10'
+            z1 = nodeA.(genvarname(cattable1.Data{mainaxA(1,2),1}));
+            if ~isnumeric(z1)
+                if iscell(z1), z1 = cell2mat(z1); end
+            end
+            ydif = real(10.*log10(abs(y2).^2)-10.*log10(abs(y1).^2));
+            imagesc(1:length(z1),x1,ydif,'Parent',haxes)
+            xlabel(haxes,strrep([cattable1.Data{mainaxA(1,2),1} ' [' nodeA.(genvarname([cattable1.Data{mainaxA(1,2),1} 'info'])).units ']'],'_',' '))
+            ylabel(haxes,strrep([cattable1.Data{mainaxA(1,1),1} ' [' nodeA.(genvarname([cattable1.Data{mainaxA(1,1),1} 'info'])).units ']'],'_',' '))
+            set(haxes,'XTickLabel',num2str(z1(get(haxes,'XTick')).'))
             set(haxes,'YDir','normal')
             cmap = obb_cmap(min(min(ydif(isfinite(ydif)))),max(max(ydif(isfinite(ydif)))));
             colormap(cmap)
@@ -311,10 +325,9 @@ try
             imagesc(1:length(z1),x1,ydif,'Parent',haxes)
             xlabel(haxes,strrep([cattable1.Data{mainaxA(1,2),1} ' [' nodeA.(genvarname([cattable1.Data{mainaxA(1,2),1} 'info'])).units ']'],'_',' '))
             ylabel(haxes,strrep([cattable1.Data{mainaxA(1,1),1} ' [' nodeA.(genvarname([cattable1.Data{mainaxA(1,1),1} 'info'])).units ']'],'_',' '))
-            set(haxes,'XTickLabel',num2str(z1'))
+            set(haxes,'XTickLabel',num2str(z1(get(haxes,'XTick')).'))
             set(haxes,'YDir','normal')
-            cmap = obb_cmap(min(min(ydif(isfinite(ydif)))),max(max(ydif(isfinite(ydif)))));
-            colormap(cmap)
+            cmap = obb_cmap(min(min(ydif(isfinite(ydif)))),max(max(ydif(isfinite(ydif)))));            colormap(cmap)
             colorbar
     end
     guidata(handles.comparedata,handles)
@@ -483,7 +496,7 @@ function setplottingoptions(handles)
             if ~isempty(hasunitsA) && ~isempty(hasunitsB) && strcmp(dataunitsA,'dB') && strcmp(dataunitsB,'dB')
                 set(handles.compfunc_popup,'String',cat(1,get(handles.compfunc_popup,'String'),{'difference'}))
             else
-                set(handles.compfunc_popup,'String',cat(1,get(handles.compfunc_popup,'String'),{'difference - log10';'difference - log2';'difference - 10*log10'}))
+                set(handles.compfunc_popup,'String',cat(1,get(handles.compfunc_popup,'String'),{'difference';'difference - log10';'difference - log2';'difference - 10*log10';'difference - 20*log10'}))
             end
         end
     end
