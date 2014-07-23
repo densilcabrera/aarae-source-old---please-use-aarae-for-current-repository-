@@ -20,20 +20,20 @@ end
 if isstruct(in)
     wave1 = squeeze(sum(in.audio(:,:,:),3)); % sum the 3rd dimension if it exists
     fs = in.fs;
-    [len1, chans1] = size(wave1);
 else
     if nargin < 2
         fs = inputdlg({'Sampling frequency [samples/s]'},...
                            'Fs',1,{'48000'});
         fs = str2num(char(fs));
     end
+    wave1 = in;
 end
 
 if ~isempty(wave1) && ~isempty(fs) && ~isempty(wave2) && ~isempty(fs2)
     if ~(fs2 == fs)
         wave2 = resample(wave2,fs,fs2);
     end
-
+    [len1, chans1] = size(wave1);
     [len2, chans2] = size(wave2);
 
     outputlength = len1 + len2 - 1;
@@ -96,7 +96,9 @@ if ~isempty(wave1) && ~isempty(fs) && ~isempty(wave2) && ~isempty(fs2)
             end
         end
     end
-    OUT = in; % replicate input structure, to preserve fields
+    if isstruct(in)
+        OUT = in; % replicate input structure, to preserve fields
+    end
     OUT.audio = y;
     OUT.funcallback.name = 'convolve_wav.m';
     OUT.funcallback.inarg = {fs,wave2,fs2,more_options};

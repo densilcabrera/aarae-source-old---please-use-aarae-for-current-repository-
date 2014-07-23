@@ -80,6 +80,7 @@ if dontOpen
    disp('-----------------------------------------------------');
 else
     % Do some stuff
+    handles.colormap = 'O2B';
     handles.main_stage1 = varargin{mainGuiInput+1};
     mainHandles = guidata(handles.main_stage1);
     handles.axesposition = get(handles.compaxes,'Position');
@@ -197,8 +198,9 @@ if any(cellfun(@isempty,catorcontB)), catorcontB(cellfun(@isempty,catorcontB)) =
 mainaxB = find([catorcontB{:}] == true);
 
 try
-    eval(['y1 = squeeze(nodeA.data(' selA '));'])
-    eval(['y2 = squeeze(nodeB.data(' selB '));'])
+    eval(['yA = squeeze(nodeA.data(' selA '));'])
+    eval(['yB = squeeze(nodeB.data(' selB '));'])
+    y1 = yA; y2 = yB; clear('yA','yB')
     x1 = nodeA.(genvarname(cattable1.Data{mainaxA,1}));
     if ~isnumeric(x1)
         if iscell(x1), x1 = cell2mat(x1); end
@@ -271,9 +273,11 @@ try
             ylabel(haxes,strrep([cattable1.Data{mainaxA(1,1),1} ' [' nodeA.(genvarname([cattable1.Data{mainaxA(1,1),1} 'info'])).units ']'],'_',' '))
             set(haxes,'XTickLabel',num2str(z1(get(haxes,'XTick')).'))
             set(haxes,'YDir','normal')
-            cmap = obb_cmap(min(min(ydif(isfinite(ydif)))),max(max(ydif(isfinite(ydif)))));
-            colormap(cmap)
-            colorbar
+            cmaplim = max(max(ydif(isfinite(abs(ydif)))));
+            set(haxes,'CLim',[-cmaplim cmaplim])
+            eval(['colormap(haxes,' handles.colormap ')'])
+            cbar = colorbar;
+            set(get(cbar,'YLabel'),'String','log10(Data2) - log10(Data1)','Tag','ColorbarLabel','HandleVisibility','on')
         case 'difference - log2'
             z1 = nodeA.(genvarname(cattable1.Data{mainaxA(1,2),1}));
             if ~isnumeric(z1)
@@ -285,9 +289,11 @@ try
             ylabel(haxes,strrep([cattable1.Data{mainaxA(1,1),1} ' [' nodeA.(genvarname([cattable1.Data{mainaxA(1,1),1} 'info'])).units ']'],'_',' '))
             set(haxes,'XTickLabel',num2str(z1(get(haxes,'XTick')).'))
             set(haxes,'YDir','normal')
-            cmap = obb_cmap(min(min(ydif(isfinite(ydif)))),max(max(ydif(isfinite(ydif)))));
-            colormap(cmap)
-            colorbar
+            cmaplim = max(max(ydif(isfinite(abs(ydif)))));
+            set(haxes,'CLim',[-cmaplim cmaplim])
+            eval(['colormap(haxes,' handles.colormap ')'])
+            cbar = colorbar;
+            set(get(cbar,'YLabel'),'String','log2(Data2) - log2(Data1)','Tag','ColorbarLabel','HandleVisibility','on')
         case 'difference - 10*log10'
             z1 = nodeA.(genvarname(cattable1.Data{mainaxA(1,2),1}));
             if ~isnumeric(z1)
@@ -299,9 +305,11 @@ try
             ylabel(haxes,strrep([cattable1.Data{mainaxA(1,1),1} ' [' nodeA.(genvarname([cattable1.Data{mainaxA(1,1),1} 'info'])).units ']'],'_',' '))
             set(haxes,'XTickLabel',num2str(z1(get(haxes,'XTick')).'))
             set(haxes,'YDir','normal')
-            cmap = obb_cmap(min(min(ydif(isfinite(ydif)))),max(max(ydif(isfinite(ydif)))));
-            colormap(cmap)
-            colorbar
+            cmaplim = max(max(ydif(isfinite(abs(ydif)))));
+            set(haxes,'CLim',[-cmaplim cmaplim])
+            eval(['colormap(haxes,' handles.colormap ')'])
+            cbar = colorbar;
+            set(get(cbar,'YLabel'),'String','10*log10(Data2) - 10*log10(Data1)','Tag','ColorbarLabel','HandleVisibility','on')
         case 'difference - 20*log10'
             z1 = nodeA.(genvarname(cattable1.Data{mainaxA(1,2),1}));
             if ~isnumeric(z1)
@@ -313,9 +321,11 @@ try
             ylabel(haxes,strrep([cattable1.Data{mainaxA(1,1),1} ' [' nodeA.(genvarname([cattable1.Data{mainaxA(1,1),1} 'info'])).units ']'],'_',' '))
             set(haxes,'XTickLabel',num2str(z1(get(haxes,'XTick')).'))
             set(haxes,'YDir','normal')
-            cmap = obb_cmap(min(min(ydif(isfinite(ydif)))),max(max(ydif(isfinite(ydif)))));
-            colormap(cmap)
-            colorbar
+            cmaplim = max(max(ydif(isfinite(abs(ydif)))));
+            set(haxes,'CLim',[-cmaplim cmaplim])
+            eval(['colormap(haxes,' handles.colormap ')'])
+            cbar = colorbar;
+            set(get(cbar,'YLabel'),'String','20*log10(Data2) - 20*log10(Data1)','Tag','ColorbarLabel','HandleVisibility','on')
         case 'difference'
             z1 = nodeA.(genvarname(cattable1.Data{mainaxA(1,2),1}));
             if ~isnumeric(z1)
@@ -327,8 +337,36 @@ try
             ylabel(haxes,strrep([cattable1.Data{mainaxA(1,1),1} ' [' nodeA.(genvarname([cattable1.Data{mainaxA(1,1),1} 'info'])).units ']'],'_',' '))
             set(haxes,'XTickLabel',num2str(z1(get(haxes,'XTick')).'))
             set(haxes,'YDir','normal')
-            cmap = obb_cmap(min(min(ydif(isfinite(ydif)))),max(max(ydif(isfinite(ydif)))));            colormap(cmap)
-            colorbar
+            cmaplim = max(max(ydif(isfinite(abs(ydif)))));
+            set(haxes,'CLim',[-cmaplim cmaplim])
+            eval(['colormap(haxes,' handles.colormap ')'])
+            cbar = colorbar;
+            set(get(cbar,'YLabel'),'String','Data2 - Data1','Tag','ColorbarLabel','HandleVisibility','on')
+        case 'correlation - XCorr'
+            [c,d] = xcorr(y1,y2,'coeff');
+            plot(haxes,d,c)
+            xlabel('Lag indices')
+            ylabel('Normalized cross-correlation sequence')
+        case 'correlation - XCorrX'
+            OUT = convolve_wav(y1,1,flipud(y2),1,0);
+            [~,d] = xcorr(y1(:,1),y2(:,1));
+            scale = (sum(abs(y1).^2).*sum(abs(y2).^2)).^0.5;
+            c = OUT.audio./repmat(scale,length(OUT.audio),1);
+            mesh(haxes,1:size(c,2),d,c)
+            cmap = obb_cmap(min(min(c(isfinite(c)))),max(max(c(isfinite(c)))));
+            colormap(cmap)
+            ylabel('Lag indices')
+            zlabel('Normalized cross-correlation sequence')
+        case 'correlation - XCorrY'
+            OUT = convolve_wav(y1',1,flipud(y2'),1,0);
+            [~,d] = xcorr(y1(1,:),y2(1,:));
+            scale = (sum(abs(y1').^2).*sum(abs(y2').^2)).^0.5;
+            c = OUT.audio./repmat(scale,size(OUT.audio,1),1);
+            mesh(haxes,1:size(c,2),d,c)
+            cmap = obb_cmap(min(min(c(isfinite(c)))),max(max(c(isfinite(c)))));
+            colormap(cmap)
+            ylabel('Lag indices')
+            zlabel('Normalized cross-correlation sequence')
     end
     guidata(handles.comparedata,handles)
 catch error
@@ -364,6 +402,7 @@ if size(eventdata.Indices,1) ~= 0 && eventdata.Indices(1,2) == 2
         set(hObject,'Data',{''})
         set(hObject,'Data',tabledata)
         guidata(handles.comparedata,handles)
+        setplottingoptions(handles)
         doresultplot(handles,handles.compaxes)
     else
         % Possible code to truncate 'continuous' selection
@@ -395,6 +434,7 @@ if size(eventdata.Indices,1) ~= 0 && eventdata.Indices(1,2) == 2
         set(hObject,'Data',{''})
         set(hObject,'Data',tabledata)
         guidata(handles.comparedata,handles)
+        setplottingoptions(handles)
         doresultplot(handles,handles.compaxes)
     else
         % Possible code to truncate 'continuous' selection
@@ -462,6 +502,18 @@ if size(eventdata.Indices,1) ~= 0 && eventdata.Indices(1,2) == 4
 end
 
 function setplottingoptions(handles)
+    nodeA = handles.nodeA; %#ok : Used in eval function below
+    cattable1 = get(handles.cattable1);
+    selA = strjoin(cattable1.Data(:,2).',',');
+    if isempty(selA), selA = '[1]'; end
+    eval(['y1 = squeeze(nodeA.data(' selA '));'])
+
+    nodeB = handles.nodeB; %#ok : Used in eval function below
+    cattable2 = get(handles.cattable2);
+    selB = strjoin(cattable2.Data(:,2).',',');
+    if isempty(selB), selB = '[1]'; end
+    eval(['y2 = squeeze(nodeB.data(' selB '));'])
+
     cattable1 = get(handles.cattable1,'Data');
     cattable2 = get(handles.cattable2,'Data');
     catorcontA = cattable1(:,4);
@@ -474,12 +526,14 @@ function setplottingoptions(handles)
     iunitsB = handles.nodeB.(genvarname([cattable2{mainaxB(1,1),1} 'info'])).units;
     if strcmp(iunitsA,iunitsB) && length(handles.nodeA.(genvarname(cattable1{mainaxA(1,1),1}))) == length(handles.nodeB.(genvarname(cattable2{mainaxB(1,1),1})))
         set(handles.compfunc_popup,'String',{'Double axis','Two Y axis','X-Y'},'Value',1)
+        if isvector(y1) && isvector(y2), set(handles.compfunc_popup,'String',cat(1,get(handles.compfunc_popup,'String'),{'correlation - XCorr'})); end
     elseif strcmp(iunitsA,iunitsB)
         set(handles.compfunc_popup,'String',{'Double axis','Two Y axis'},'Value',1)
+        if isvector(y1) && isvector(y2), set(handles.compfunc_popup,'String',cat(1,get(handles.compfunc_popup,'String'),{'correlation - XCorr'})); end
     else
         set(handles.compfunc_popup,'String',{'Double axis'},'Value',1)
     end
-    if length(mainaxA) == 2 && length(mainaxB) == 2
+    if (length(mainaxA) == 2 && length(mainaxB) == 2)
         iunitsA2 = handles.nodeA.(genvarname([cattable1{mainaxA(1,2),1} 'info'])).units;
         iunitsB2 = handles.nodeB.(genvarname([cattable2{mainaxB(1,2),1} 'info'])).units;
         hasunitsA = strfind(handles.nodeA.datainfo.units,'[');
@@ -500,6 +554,9 @@ function setplottingoptions(handles)
             end
         end
     end
+    if ~isvector(y1) && ~isvector(y2) && isequal(size(y1),size(y2))
+        set(handles.compfunc_popup,'String',cat(1,get(handles.compfunc_popup,'String'),{'correlation - XCorrX';'correlation - XCorrY'}))
+    end
 
 
 % --- Executes on mouse press over figure background, over a disabled or
@@ -509,12 +566,12 @@ function comparedata_WindowButtonDownFcn(hObject, ~, handles) %#ok : Executed wh
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 click = get(hObject,'CurrentObject');
-if ~isempty(click) && ((click == handles.compaxes) || (get(click,'Parent') == handles.compaxes) || (click == handles.compaxes2) || (get(click,'Parent') == handles.compaxes2)) && ~strcmp(get(click,'Type'),'text')
+if ~isempty(click) && ~strcmp(get(click,'Tag'),'Colorbar') && ~strcmp(get(click,'Tag'),'ColorbarLabel') && ((click == handles.compaxes) || (get(click,'Parent') == handles.compaxes) || (click == handles.compaxes2) || (get(click,'Parent') == handles.compaxes2)) && ~strcmp(get(click,'Type'),'text')
     figure;
     haxes = axes;
     doresultplot(handles,haxes)
 end
-if strcmp(get(click,'Type'),'text')
+if ~isempty(click) && strcmp(get(click,'Type'),'text') && ~strcmp(get(click,'Tag'),'ColorbarLabel')
     if click == get(get(click,'Parent'),'Xlabel')
         if strcmp(get(get(click,'Parent'),'XScale'),'linear')
             set(get(click,'Parent'),'XScale','log')
@@ -530,6 +587,25 @@ if strcmp(get(click,'Type'),'text')
         end
     end
 end
+if ~isempty(click) && strcmp(get(click,'Tag'),'ColorbarLabel')
+    climit = max(abs(get(handles.compaxes,'CLim')));
+    newclimit = inputdlg('Set new simmetrical colormap limit','AARAE settings',1,{num2str(climit)});
+    if ~isempty(newclimit)
+        ncl = str2double(newclimit{1,1});
+        if ~isnan(ncl)
+            set(handles.compaxes,'CLim',[-ncl ncl])
+        end
+    end
+end
+if ~isempty(click) && strcmp(get(click,'Tag'),'Colorbar')
+    if strcmp(handles.colormap,'O2B'), handles.colormap = 'FireIce';
+    elseif strcmp(handles.colormap,'FireIce'), handles.colormap = 'Temp256';
+    elseif strcmp(handles.colormap,'Temp256'), handles.colormap = 'O2B';
+    end
+    eval(['colormap(handles.compaxes,' handles.colormap ')'])
+    guidata(hObject,handles)
+end
+
 
 function cmap = obb_cmap(cmin,cmax)
 if isinf(cmax), cmax = 10^10; end
@@ -552,6 +628,14 @@ B = [b1,b2];
 
 cmap = [R',G',B'];
 
+function cmap = FireIce
+cmap = importdata([cd '/Utilities/Custom_colormaps/FireIce256.mat']);
+
+function cmap = Temp256
+cmap = importdata([cd '/Utilities/Custom_colormaps/temp256.mat']);
+
+function cmap = O2B
+cmap = importdata([cd '/Utilities/Custom_colormaps/o2b_bipolar.mat']);
 
 % --- Executes on button press in compare_btn.
 function compare_btn_Callback(~, ~, handles) %#ok : Executed when compare Compare stats button is clicked
