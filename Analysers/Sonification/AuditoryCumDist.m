@@ -1,10 +1,9 @@
 function OUT = AuditoryCumDist(IN, windowtime, timefactor, method, weight, order, doplay, fs)
 % This function creates an auditory cumulative distribution graph, loosely
-%  based on one of the concepts in
-%
-% S. Ferguson and D. Cabrera, "Exploratory sound analysis: Sonifying data
-% about sound," Proceedings of the 14th International Conference on
-% Auditory Display, Paris, France, June 24-27, 2008.
+% based on one of the concepts in
+%   S. Ferguson and D. Cabrera, "Exploratory sound analysis: Sonifying data
+%   about sound," Proceedings of the 14th International Conference on
+%   Auditory Display, Paris, France, June 24-27, 2008.
 %
 % This function breaks the audio into windows, then each window is analysed
 % to derive a parameter value, then the windows are sorted in order of the
@@ -23,7 +22,7 @@ if nargin ==1
 
     param = inputdlg({'Window duration (s)';... 
                       'Duration compression/expansion factor (s)';
-                      'Parameter: Rms (1), Centroid (2), Spectral peak ratio (3)';...
+                      'Parameter: Rms (1), Centroid (2), Spectral peak ratio (3), F0 from Cepstrum (4)';...
                       'A-weighting of parameter [0 | 1]';...
                       'Ascending [0] or Descending order [1]';...
                       'Play audio [0 | 1]'},...
@@ -108,10 +107,7 @@ if ~isempty(audio) && ~isempty(fs) && ~isempty(windowtime) ...
         audiowindows(:,:,:,n) = audio(startindex:endindex,:,:);
     end
     
-    % apply window function
-    winfun = hann(winlen); % Hann window
-    % winfun = winfun ./ rms(winfun); % no energy lost
-    audiowindows = audiowindows .* repmat(winfun,[1,chans,bands,nwin]);
+    
     
     if weight == 1
         audiowindows2 = Aweight(audiowindows,fs);
@@ -119,29 +115,66 @@ if ~isempty(audio) && ~isempty(fs) && ~isempty(windowtime) ...
         audiowindows2 = audiowindows;
     end
     
+    % apply window function
+    winfun = hann(winlen); % Hann window
+    % winfun = winfun ./ rms(winfun); % no energy lost
+    audiowindows = audiowindows .* repmat(winfun,[1,chans,bands,nwin]);
+    
     % Measure chosen parameter
     switch method
         case 0 % retain original order
             value = permute(1:nwin,[1,4,3,2]);
             value = repmat(value,[1,chans,bands,1]);
             axislabel = 'Original order [index]';
+            valname = 'Order';
+            valunits = 'index';
         case 1 % rms level
             value = 10*log10(mean(audiowindows2.^2));
             axislabel = 'Level [dB]';
+            valname = 'Level';
+            valunits = 'dB';
         case 2 % power spectral centroid 
-            powspec = abs(fft(audiowindows2)).^2;
+            powspec = abs(fft(audiowindows2.*repmat(winfun,[1,chans,bands,nwin]))).^2;
             f = fs*((1:winlen)-1)';
             span = floor(winlen/2);
             value = sum(powspec(1:span,:,:,:)...
                 .* repmat(f(1:span),[1,chans,bands,nwin])) ...
                 ./ sum(powspec(1:span,:,:,:));
             axislabel = 'Power spectral centroid [Hz]';
+            valname = 'Centroid';
+            valunits = 'Hz';
         case 3 % spectral peakiness: max/mean, excluding DC
-            % (a quick way of estimating steady state pitch strength)
-            powspec = abs(fft(audiowindows2)).^2; 
+            % (a quick way of estimating steady state pitch strength, except
+            % that harmonic spectra have lower values than pure tone spectra)
+            powspec = abs(fft(audiowindows2.*repmat(winfun,[1,chans,bands,nwin]))).^2; 
             span = floor(winlen/2);
             value = 10*log10(max(powspec(2:span,:,:,:)) ./ mean(powspec(2:span,:,:,:)));
             axislabel = 'Spectral peak ratio [dB]';
+            valname = 'Peak';
+            valunits = 'ratio';
+        case 4 % f0 pitch from cepstrum
+            cepst = ifft(log(abs(fft(audiowindows2.*repmat(winfun,[1,chans,bands,nwin]))+1e-99)));
+            w = 0.5; % cepstrum weighting exponent, 1 weights to low freq 6 dB/oct
+            cepst = cepst .* repmat((1:winlen)'.^w,[1,chans,bands,nwin]); % cepstrum weighting towards low freq
+            lim1 = floor(fs*0.0002); % Quefrency of 0.2 ms is 5 kHz
+            lim2 = floor(fs*0.02); % Quefrency of 20 ms is 50 Hz           
+            [~,indx] = max(abs(cepst(lim1:lim2,:,:,:)));
+            value = fs/(lim1 + indx-1);
+            axislabel = 'Fundamental frequency [Hz]';
+            valname = 'F0';
+            valunits = 'Hz';
+        
+        case 100 % pitch strength of f0 from cepstrum - does not seem to work
+            cepst = ifft(log(abs(fft(audiowindows2.*repmat(winfun,[1,chans,bands,nwin]))+1e-99)));
+            w = 0.5; % cepstrum weighting exponent, 1 weights to low freq 6 dB/oct
+            cepst = cepst .* repmat((1:winlen)'.^w,[1,chans,bands,nwin]);
+            lim1 = floor(fs*0.0002); % Quefrency of 0.2 ms is 5 kHz
+            lim2 = floor(fs*0.02); % Quefrency of 20 ms is 50 Hz
+            value = 20*log10(max(abs(cepst(lim1:lim2,:,:,:)))) ...
+                -20*log10(mean(abs(cepst(lim1:lim2,:,:,:))));
+            axislabel = 'Cepstral pitch strength [dB]';
+            valname = 'PitchStrength';
+            valunits = 'dB';
             
         % ADD MORE METHODS HERE!
         
@@ -149,10 +182,14 @@ if ~isempty(audio) && ~isempty(fs) && ~isempty(windowtime) ...
             % random values
             value = rand(1,chans,bands,nwin);
             axislabel = 'Random order [index]';
+            valname = 'Random';
+            valunits = 'index';
     end
     value = permute(value,[4,2,3,1]);
     
-    % return indices of values in ascending order
+    % Return indices of values in ascending or descending order.
+    % The values themselves are not used for the sonification, but are
+    % output for visualisation.
     if order == 1
         [sortedvalues,IX] = sort(value,1,'descend');
     else
@@ -186,21 +223,21 @@ if ~isempty(audio) && ~isempty(fs) && ~isempty(windowtime) ...
 %         play(p);
     end
    
-    %generate a visualisation of value
-     t = (((1:nwin)-1)*offset + 0.5*winlen) ./ fs;
-     % Generate the RGB values of colours to be used in the plots
-        M = plotcolours(chans, bands);
-        figure('Name','Values used for sonification');
-        for ch = 1:chans
-            for b = 1:bands
-                plot(t,sortedvalues(:,ch,b),'Color',squeeze(M(b,ch,:))',...
-                    'DisplayName',[char(chanID(ch)),' bnd ',num2str(bandID(b))])
-                hold on
-            end
+    %generate a visualisation of values
+    t = (((1:nwin)-1)*offset + 0.5*winlen) ./ fs;
+    % Generate the RGB values of colours to be used in the plots
+    M = plotcolours(chans, bands);
+    figure('Name','Values used for sonification');
+    for ch = 1:chans
+        for b = 1:bands
+            plot(t,sortedvalues(:,ch,b),'Color',squeeze(M(b,ch,:))',...
+                'DisplayName',[char(chanID(ch)),' bnd ',num2str(bandID(b))])
+            hold on
         end
-        xlabel('Window centre time [s]');
-        ylabel(axislabel);
-        title('Sonification has been added to Results')
+    end
+    xlabel('Window centre time [s]');
+    ylabel(axislabel);
+    title('Sonification has been added to Results')
     
 
     if isstruct(IN)
