@@ -23,13 +23,13 @@ if nargin ==1
 
     param = inputdlg({'Window duration (s)';... 
                       'Duration compression/expansion factor (s)';
-                      'Parameter: Rms (0), Centroid (1)';...
+                      'Parameter: Rms (1), Centroid (2), Spectral peak ratio (3)';...
                       'A-weighting of parameter [0 | 1]';...
                       'Ascending [0] or Descending order [1]';...
                       'Play audio [0 | 1]'},...
                       'Settings',... 
                       [1 60],... 
-                      {'0.1';'1';'0';'0';'0';'0'}); % preset answers
+                      {'0.1';'1';'1';'0';'0';'0'}); % preset answers
 
     param = str2num(char(param)); 
 
@@ -54,29 +54,21 @@ if isstruct(IN)
     
     
     
-%     if isfield(IN,'cal') % Get the calibration offset if it exists
-%         cal = IN.cal;
-%     else
-%         % Here is an example of how to exit the function with a warning
-%         % message
-%         h=warndlg('Calibration data missing - please calibrate prior to calling this function.','AARAE info','modal');
-%         uiwait(h)
-%         OUT = []; % you need to return an empty output
-%         return % get out of here!
-%     end
-    
-    % chanID is a cell array of strings describing each channel
-    if isfield(IN,'chanID') % Get the channel ID if it exists
-        chanID = IN.chanID;
+    if isfield(IN,'cal') % Apply the calibration offset if it exists
+        audio = cal_reset_aarae(audio,0,IN.cal);
     end
     
-    % bandID is a vector, usually listing the centre frequencies of the
-    % bands
+    
+    if isfield(IN,'chanID') % Get the channel ID if it exists
+        chanID = IN.chanID;
+    else
+        chanID = cellstr([repmat('Chan',size(data,2),1) num2str((1:size(data,2))')]);
+    end
+    
+   
     if isfield(IN,'bandID') % Get the band ID if it exists
         bandID = IN.bandID;
     else
-        % asssign ordinal band numbers if bandID does not exist (as an
-        % example of how to deal with missing data)
         bandID = 1:size(audio,3);
     end
     
@@ -87,8 +79,8 @@ if isstruct(IN)
 elseif ~isempty(param) || nargin > 1
                        
     audio = IN;
-    
-    
+    chanID = cellstr([repmat('Chan',size(data,2),1) num2str((1:size(data,2))')]);
+    bandID = 1:size(audio,3);
 end
 % *************************************************************************
 
@@ -101,16 +93,7 @@ if ~isempty(audio) && ~isempty(fs) && ~isempty(windowtime) ...
         && ~isempty(timefactor) && ~isempty(method) && ~isempty(doplay)
     
     [len,chans,bands] = size(audio);
-    
-%     if bands > 1
-%         audio = sum(audio,3); % mixdown bands if multiband
-%     end
-%     
-%     if chans > 1
-%         audio = mean(audio,2); % mixdown channels
-%     end
-    
-    
+        
     winlen = round(windowtime*fs);
     offset = floor(0.5 * winlen / timefactor); % hop in samples
     if offset < 1, offset = 1; end
@@ -138,26 +121,42 @@ if ~isempty(audio) && ~isempty(fs) && ~isempty(windowtime) ...
     
     % Measure chosen parameter
     switch method
-        case 0 % rms
-            value = rms(audiowindows2);
-        case 1 % power spectral centroid 
+        case 0 % retain original order
+            value = permute(1:nwin,[1,4,3,2]);
+            value = repmat(value,[1,chans,bands,1]);
+            axislabel = 'Original order [index]';
+        case 1 % rms level
+            value = 10*log10(mean(audiowindows2.^2));
+            axislabel = 'Level [dB]';
+        case 2 % power spectral centroid 
             powspec = abs(fft(audiowindows2)).^2;
             f = fs*((1:winlen)-1)';
             span = floor(winlen/2);
             value = sum(powspec(1:span,:,:,:)...
                 .* repmat(f(1:span),[1,chans,bands,nwin])) ...
                 ./ sum(powspec(1:span,:,:,:));
+            axislabel = 'Power spectral centroid [Hz]';
+        case 3 % spectral peakiness: max/mean, excluding DC
+            % (a quick way of estimating steady state pitch strength)
+            powspec = abs(fft(audiowindows2)).^2; 
+            span = floor(winlen/2);
+            value = 10*log10(max(powspec(2:span,:,:,:)) ./ mean(powspec(2:span,:,:,:)));
+            axislabel = 'Spectral peak ratio [dB]';
+            
+        % ADD MORE METHODS HERE!
         
         otherwise
-            value = repmat(1:nwin,[1,chans,bands]);
+            % random values
+            value = rand(1,chans,bands,nwin);
+            axislabel = 'Random order [index]';
     end
     value = permute(value,[4,2,3,1]);
     
     % return indices of values in ascending order
     if order == 1
-        [~,IX] = sort(value,1,'descend');
+        [sortedvalues,IX] = sort(value,1,'descend');
     else
-        [~,IX] = sort(value,1,'ascend');
+        [sortedvalues,IX] = sort(value,1,'ascend');
     end
     
     
@@ -188,80 +187,76 @@ if ~isempty(audio) && ~isempty(fs) && ~isempty(windowtime) ...
     end
    
     %generate a visualisation of value
-%      t = ((1:nwin)-1)*offset + 0.5*winlen;
-% for ch = 1:chans
-%     for b = 1:bands
-%       plot(t,value)  
-%     end
-% end
+     t = (((1:nwin)-1)*offset + 0.5*winlen) ./ fs;
+     % Generate the RGB values of colours to be used in the plots
+        M = plotcolours(chans, bands);
+        figure('Name','Values used for sonification');
+        for ch = 1:chans
+            for b = 1:bands
+                plot(t,sortedvalues(:,ch,b),'Color',squeeze(M(b,ch,:))',...
+                    'DisplayName',[char(chanID(ch)),' bnd ',num2str(bandID(b))])
+                hold on
+            end
+        end
+        xlabel('Window centre time [s]');
+        ylabel(axislabel);
+        title('Sonification has been added to Results')
     
-    
-    % You may also include figures to display your results as plots.
-%     t = linspace(0,duration,length(audio));
-%     figure;
-%     plot(t,audio);
-    % All figures created by your function are stored in the AARAE
-    % environment under the results box. If your function outputs a
-    % structure in OUT this saved under the 'Results' branch in AARAE and
-    % it's treated as an audio signal if it has both .audio and .fs fields,
-    % otherwise it's displayed as data.
-    % You may want to include your plots as part of the data variable
-    % generated by AARAE, in order to do this use the getplotdata function
-    % as follows:
-    %       OUT.lines.myplot = getplotdata;
-    % Use this function for as many charts as you want to include as output
-    % from your function. Remember to call the getplotdata function after
-    % you have designed your chart. Currently this function only supports
-    % barplots and lines. E.g.:
-    % 
-    %       plot(t,audio)
-    %       OUT.lines.thischart = getplotdata;
-    
-    % And once you have your result, you should set it up in an output form
-    % that AARAE can understand.
+
     if isstruct(IN)
-        OUT = IN; % You can replicate the input structure for your output
-        OUT.audio = outaudio; % And modify the fields you processed
-        % However, for an analyser, you might not wish to output audio (in
-        % which case the two lines above might not be wanted.
-        %
-        % Or simply output the fields you consider necessary after
-        % processing the input audio data, AARAE will figure out what has
-        % changed and complete the structure. But remember, it HAS TO BE a
-        % structure if you're returning more than one field:
+        OUT = IN; 
+        OUT.audio = outaudio; 
         
-        
-        % (Note that the above outputs might be considered to be redundant
-        % if OUT.tables is used, as described above).
-        
-        % The following outputs are needed so that AARAE can repeat the
-        % analysis without user interaction (e.g. for batch processing).
-        OUT.funcallback.name = 'AuditoryCumDist.m'; % Provide AARAE
-        % with the name of your function 
+        OUT.funcallback.name = 'AuditoryCumDist.m'; 
         OUT.funcallback.inarg = {windowtime, timefactor, method, weight, order, doplay, fs}; 
-        % assign all of the 
-        % input parameters that could be used to call the function 
-        % without dialog box to the output field param (as a cell
-        % array) in order to allow batch analysing.
+        
     else
-        % You may increase the functionality of your code by allowing the
-        % output to be used as standalone and returning individual
-        % arguments instead of a structure.
+        
         OUT = outaudio;
     end
     
-% The processed audio data will be automatically displayed in AARAE's main
-% window as long as your output contains audio stored either as a single
-% variable: OUT = audio;, or it's stored in a structure along with any other
-% parameters: OUT.audio = audio;
+
 else
-    % AARAE requires that in case that the user doesn't input enough
-    % arguments to generate audio to output an empty variable.
+    
     OUT = [];
 end
+end
+
+%**************************************************************
+
+function M = plotcolours(chans, bands)
+% define plot colours in HSV colour-space
+% use Value for channel
+% use Hue for band
+
+% Saturation = 1
+S = ones(bands,chans);
+
+% Value
+maxV = 1;
+minV = 0.4;
+if chans == 1
+    V = minV;
+else
+    V = minV:(maxV-minV)/(chans-1):maxV;
+end
+V = repmat(V,[bands,1]);
+
+% Hue
+if bands == 1
+    H = 0;
+else
+    H = 0:1/(bands):(1-1/bands);
+end
+H = repmat(H',[1,chans]);
+
+% convert HSV to RGB
+M = hsv2rgb(cat(3,H,S,V));
+
+end % eof
 
 %**************************************************************************
-% Copyright (c) <YEAR>, <OWNER>
+% Copyright (c) 2014, Densil Cabrera & Sam Ferguson
 % All rights reserved.
 %
 % Redistribution and use in source and binary forms, with or without 
@@ -273,7 +268,7 @@ end
 %  * Redistributions in binary form must reproduce the above copyright 
 %    notice, this list of conditions and the following disclaimer in the 
 %    documentation and/or other materials provided with the distribution.
-%  * Neither the name of the <ORGANISATION> nor the names of its contributors
+%  * Neither the name of the University of Sydney nor the names of its contributors
 %    may be used to endorse or promote products derived from this software 
 %    without specific prior written permission.
 %
