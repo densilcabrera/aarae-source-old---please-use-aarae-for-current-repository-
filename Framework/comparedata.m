@@ -351,11 +351,47 @@ try
             OUT = convolve_wav(y1,1,flipud(y2),1,0);
             [~,d] = xcorr(y1(:,1),y2(:,1));
             scale = (sum(abs(y1).^2).*sum(abs(y2).^2)).^0.5;
-            c = OUT.audio./repmat(scale,length(OUT.audio),1);
+            c = OUT.audio./repmat(scale,size(OUT.audio,1),1);
             mesh(haxes,1:size(c,2),d,c)
             cmap = obb_cmap(min(min(c(isfinite(c)))),max(max(c(isfinite(c)))));
             colormap(cmap)
-            ylabel('Lag indices')
+            if length(mainaxA) == 2 && length(mainaxB) == 2
+                dochartlabels = true;
+            else
+                splitselA = strsplit(selA,',');
+                mainaxA = [];
+                for i = 1:length(splitselA)
+                    if ~isempty(find(size(y2) == eval(['length(nodeA.(genvarname(cattable1.Data{i,1}))(' splitselA{1,i} '))']),1))
+                        mainaxA = [mainaxA i];
+                    end
+                end
+                splitselB = strsplit(selB,',');
+                mainaxB = [];
+                for i = 1:length(splitselB)
+                    if ~isempty(find(size(y2) == eval(['length(nodeB.(genvarname(cattable2.Data{i,1}))(' splitselB{1,i} '))']),1))
+                        mainaxB = [mainaxB i];
+                    end
+                end
+                if length(mainaxA) == 2 && length(mainaxB) == 2
+                    dochartlabels = true;
+                else
+                    dochartlabels = false;
+                end
+            end
+            if dochartlabels
+                if strcmp(cattable1.Data{mainaxA(1,1),1},cattable2.Data{mainaxB(1,1),1})
+                    ylabel(['Lag indices of ' strrep(cattable1.Data{mainaxA(1,1),1},'_',' ')])
+                else
+                    ylabel(['Lag indices of ' strrep(cattable1.Data{mainaxA(1,1),1},'_',' ') '/' strrep(cattable2.Data{mainaxB(1,1),1},'_',' ')])
+                end
+                if strcmp(cattable1.Data{mainaxA(1,2),1},cattable2.Data{mainaxB(1,2),1})
+                    xlabel([strrep(cattable1.Data{mainaxA(1,2),1},'_',' ') ' selection index'])
+                else
+                    xlabel([strrep(cattable1.Data{mainaxA(1,2),1},'_',' ') '/' strrep(cattable2.Data{mainaxB(1,2),1},'_',' ') ' selection index'])
+                end
+            else
+                ylabel('Lag index')
+            end
             zlabel('Normalized cross-correlation sequence')
         case 'correlation - XCorrY'
             OUT = convolve_wav(y1',1,flipud(y2'),1,0);
@@ -365,7 +401,43 @@ try
             mesh(haxes,1:size(c,2),d,c)
             cmap = obb_cmap(min(min(c(isfinite(c)))),max(max(c(isfinite(c)))));
             colormap(cmap)
-            ylabel('Lag indices')
+            if length(mainaxA) == 2 && length(mainaxB) == 2
+                dochartlabels = true;
+            else
+                splitselA = strsplit(selA,',');
+                mainaxA = [];
+                for i = 1:length(splitselA)
+                    if ~isempty(find(size(y2) == eval(['length(nodeA.(genvarname(cattable1.Data{i,1}))(' splitselA{1,i} '))']),1))
+                        mainaxA = [mainaxA i];
+                    end
+                end
+                splitselB = strsplit(selB,',');
+                mainaxB = [];
+                for i = 1:length(splitselB)
+                    if ~isempty(find(size(y2) == eval(['length(nodeB.(genvarname(cattable2.Data{i,1}))(' splitselB{1,i} '))']),1))
+                        mainaxB = [mainaxB i];
+                    end
+                end
+                if length(mainaxA) == 2 && length(mainaxB) == 2
+                    dochartlabels = true;
+                else
+                    dochartlabels = false;
+                end
+            end
+            if dochartlabels
+                if strcmp(cattable1.Data{mainaxA(1,2),1},cattable2.Data{mainaxB(1,2),1})
+                    ylabel(['Lag indices of ' strrep(cattable1.Data{mainaxA(1,2),1},'_',' ')])
+                else
+                    ylabel(['Lag indices of ' strrep(cattable1.Data{mainaxA(1,2),1},'_',' ') '/' strrep(cattable2.Data{mainaxB(1,2),1},'_',' ')])
+                end
+                if strcmp(cattable1.Data{mainaxA(1,1),1},cattable2.Data{mainaxB(1,1),1})
+                    xlabel([strrep(cattable1.Data{mainaxA(1,1),1},'_',' ') ' selection'])
+                else
+                    xlabel([strrep(cattable1.Data{mainaxA(1,1),1},'_',' ') '/' strrep(cattable2.Data{mainaxB(1,1),1},'_',' ') ' selection'])
+                end
+            else
+                ylabel('Lag index')
+            end
             zlabel('Normalized cross-correlation sequence')
     end
     guidata(handles.comparedata,handles)
