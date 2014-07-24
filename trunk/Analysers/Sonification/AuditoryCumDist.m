@@ -32,7 +32,7 @@ if nargin ==1
     
     param = str2num(char(param));
     
-    if length(param) < 5, param = []; end
+    if length(param) < 6, param = []; end
     if ~isempty(param)
         windowtime = param(1);
         timefactor = param(2);
@@ -40,6 +40,9 @@ if nargin ==1
         weight = param(4);
         order = param(5);
         doplay = param(6);
+    else
+        OUT = [];
+        return
     end
 else
     param = [];
