@@ -1,4 +1,4 @@
-function out = spectrogram_simple(in, fs, transposesubplots, winlen, NOVERLAP, dBrange, maxfreq, downsamp, wfchoice, waterfall)
+function out = spectrogram_simple(in, fs, transposesubplots, winlen, NOVERLAP, dBrange, maxfreq, downsamp, wfchoice, waterfall,doresultsleaf)
 % Creates a spectrogram of a waveform, or a matrix of waveforms, as a
 % function of time. Matlab's spectrogram function is used, with its default
 % Hamming window function.
@@ -54,10 +54,11 @@ if nargin < 3
         'Highest frequency to display (Hz)', ...
         'Downsample factor', ...
         'Rectangular, Hann, Blackman-Harris window (r|h|b)',...
-        'Waterfall (0 | 1)'};
+        'Waterfall (0 | 1)',...
+        'Output results leaf (0 | 1)'};
     dlg_title = 'Settings';
     num_lines = 1;
-    def = {'0','2048','1024','90',num2str(Nyquist), '1','h','0'};
+    def = {'0','2048','1024','90',num2str(Nyquist), '1','h','0','0'};
     answer = inputdlg(prompt,dlg_title,num_lines,def);
 
     if ~isempty(answer)
@@ -69,25 +70,16 @@ if nargin < 3
         downsamp = str2num(answer{6,1});
         wfchoice = answer{7,1};
         waterfall = str2num(answer{8,1});
+        doresultsleaf = str2num(answer{9,1});
+    else
+        out = [];
+        return
     end
 end
 
-S = size(audio); % size of the audio
-ndim = length(S); % number of dimensions
-switch ndim
-    case 1
-        len = S(1); % number of samples in audio
-        chans = 1; % number of channels
-        bands = 1; % number of bands
-    case 2
-        len = S(1); % number of samples in audio
-        chans = S(2); % number of channels
-        bands = 1; % number of bands
-    case 3
-        len = S(1); % number of samples in audio
-        chans = S(2); % number of channels
-        bands = S(3); % number of bands
-end
+[len,chans,bands] = size(audio); % size of the audio
+
+
 
 % apply calibration factor if it has been provided
 if exist('cal','var')
@@ -113,6 +105,18 @@ if maxfreq > Nyquist, maxfreq = Nyquist; end
 
 titletext = 'Spectrogram';
 
+if isfield(in,'chanID') % Get the channel ID if it exists
+    chanID = in.chanID;
+else
+    chanID = cellstr([repmat('Chan',size(data,2),1) num2str((1:size(data,2))')]);
+end
+if isfield(in,'bandID') % Get the band ID if it exists
+    bandID = in.bandID;
+else
+    bandID = 1:size(audio,3);
+end
+
+
 figure('Name', titletext)
 
 k = 1; % subplot counter
@@ -123,6 +127,12 @@ if ~transposesubplots
             subplot(chans,bands,k)
             [~,F,T,P] = spectrogram(audio(:,ch,b),wf,NOVERLAP,[],fs);
             L = 10*log10(abs(P));
+            if doresultsleaf==1
+            if ~exist('L_all','var')
+                L_all = zeros(size(L,1),size(L,2),chans,bands);
+            end
+            L_all(:,:,ch,b) = L;
+            end
             m =max(max(L));
             minrange = m - abs(dBrange);
             if waterfall
@@ -155,6 +165,12 @@ else
             subplot(bands,chans,k)
             [~,F,T,P] = spectrogram(audio(:,ch,b),wf,NOVERLAP,[],fs);
             L = 10*log10(abs(P));
+            if doresultsleaf==1
+            if ~exist('L_all','var')
+                L_all = zeros(size(L,1),size(L,2),chans,bands);
+            end
+            L_all(:,:,ch,b) = L;
+            end
             if waterfall
                 mesh(T,F,L)
                 zlim([minrange m])
@@ -182,13 +198,22 @@ else
     end
 end
 
-out.transposesubplots = transposesubplots;
-out.window = winlen;
-out.noverlap = NOVERLAP;
-out.dBrange = dBrange;
-out.maxfreq = maxfreq;
-out.downsamp = downsamp;
-out.wfchoice = wfchoice;
-out.waterfall = waterfall;
+if doresultsleaf==1
+   % L_all(isinf(L_all))=min(min(min(min(L_all(~isinf(L_all))))));
+doresultleaf(L_all,['Spectrogram' '[dB]'],{'time'},...
+                 'time',        T,      's',           true,...
+                 'frequency',   F,      'Hz',          true,...
+                 'channels',    chanID, 'categorical', [],...
+                 'bands',       bandID, 'Hz',          false,...
+                 'name',        'Spectrogram');
+end
+% out.transposesubplots = transposesubplots;
+% out.window = winlen;
+% out.noverlap = NOVERLAP;
+% out.dBrange = dBrange;
+% out.maxfreq = maxfreq;
+% out.downsamp = downsamp;
+% out.wfchoice = wfchoice;
+% out.waterfall = waterfall;
 out.funcallback.name = 'spectrogram_simple.m';
-out.funcallback.inarg = {fs,transposesubplots,winlen,NOVERLAP,dBrange,maxfreq,downsamp,wfchoice,waterfall};
+out.funcallback.inarg = {fs,transposesubplots,winlen,NOVERLAP,dBrange,maxfreq,downsamp,wfchoice,waterfall,doresultsleaf};
