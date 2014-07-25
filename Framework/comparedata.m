@@ -204,20 +204,20 @@ try
     eval(['yB = squeeze(nodeB.data(' selB '));'])
     y1 = yA; y2 = yB; clear('yA','yB')
     
-    x1 = nodeA.(genvarname(cattable1.Data{mainaxA,1}));
-    if ~isnumeric(x1)
-        if iscell(x1), x1 = cell2mat(x1); end
-    end
-    if isequal(size(x1),size(nodeA.data)), eval(['x1 = squeeze(x1(' selA '));']); end
-    x2 = nodeB.(genvarname(cattable2.Data{mainaxB,1}));
-    if ~isnumeric(x2)
-        if iscell(x2), x2 = cell2mat(x2); end
-    end
-    if isequal(size(x2),size(nodeB.data)), eval(['x2 = squeeze(x2(' selB '));']); end
-    
     if length(mainaxA) == 2 && length(mainaxB) == 2
         dochartlabels = true;
     elseif ~isvector(y1) && ~isvector(y2)
+        swappedA = false;
+        swappedB = false;
+        if isequal(size(y1),size(y2'))
+            if size(y1,1) == eval(['length(nodeA.(genvarname(cattable1.Data{mainaxA,1}))(' cattable1.Data{mainaxA,2} '))'])
+                y2 = y2';
+                swappedB = true;
+            else
+                y1 = y1';
+                swappedA = true;
+            end
+        end
         splitselA = strsplit(selA,',');
         mainaxA = [];
         for i = 1:length(splitselA)
@@ -225,6 +225,7 @@ try
                 mainaxA = [mainaxA i];
             end
         end
+        if swappedA, mainaxA = fliplr(mainaxA); end
         splitselB = strsplit(selB,',');
         mainaxB = [];
         for i = 1:length(splitselB)
@@ -232,12 +233,14 @@ try
                 mainaxB = [mainaxB i];
             end
         end
+        if swappedB, mainaxB = fliplr(mainaxB); end
         if length(mainaxA) == 2 && length(mainaxB) == 2
             dochartlabels = true;
         else
             dochartlabels = false;
         end
     end
+    
     if dochartlabels
         eval(['z1 = nodeA.(genvarname(cattable1.Data{mainaxA(1,2),1}))(' cattable1.Data{mainaxA(1,2),2} ');'])
         if ~isnumeric(z1)
@@ -250,6 +253,18 @@ try
             if size(z2,1) < size(z2,2), z2 = z2'; end
         end
     end
+    
+    eval(['x1 = nodeA.(genvarname(cattable1.Data{mainaxA(1,1),1}))(' cattable1.Data{mainaxA(1,1),2} ');'])
+    if ~isnumeric(x1)
+        if iscell(x1), x1 = cell2mat(x1); end
+    end
+    if isequal(size(x1),size(nodeA.data)), eval(['x1 = squeeze(x1(' selA '));']); end
+    
+    eval(['x2 = nodeB.(genvarname(cattable2.Data{mainaxB(1,1),1}))(' cattable2.Data{mainaxB(1,1),2} ');'])
+    if ~isnumeric(x2)
+        if iscell(x2), x2 = cell2mat(x2); end
+    end
+    if isequal(size(x2),size(nodeB.data)), eval(['x2 = squeeze(x2(' selB '));']); end
     
     switch chartfunc
         case 'Double axis'
@@ -305,7 +320,7 @@ try
         case 'difference - log10'
             ydif = real(log10(y2)-log10(y1));
             imagesc(1:length(z1),x1,ydif,'Parent',haxes)
-            set(haxes,'Xtick',1:length(z1))
+            if length(z1) < 6, set(haxes,'Xtick',1:length(z1)); end
             if isequal(z1,z2)
                 set(haxes,'XTickLabel',num2str(z1(get(haxes,'XTick'))));
                 xlabel(haxes,strrep([cattable1.Data{mainaxA(1,2),1} ' [' nodeA.(genvarname([cattable1.Data{mainaxA(1,2),1} 'info'])).units ']'],'_',' '))
@@ -315,14 +330,14 @@ try
             ylabel(haxes,strrep([cattable1.Data{mainaxA(1,1),1} ' [' nodeA.(genvarname([cattable1.Data{mainaxA(1,1),1} 'info'])).units ']'],'_',' '))
             set(haxes,'YDir','normal')
             cmaplim = max(max(ydif(isfinite(abs(ydif)))));
-            set(haxes,'CLim',[-cmaplim cmaplim])
+            if cmaplim ~= 0, set(haxes,'CLim',[-cmaplim cmaplim]); end
             eval(['colormap(haxes,' handles.colormap ')'])
             cbar = colorbar;
             set(get(cbar,'YLabel'),'String','log10(Data2) - log10(Data1)','Tag','ColorbarLabel','HandleVisibility','on')
         case 'difference - log2'
             ydif = real(log2(y2)-log2(y1));
             imagesc(1:length(z1),x1,ydif,'Parent',haxes)
-            set(haxes,'Xtick',1:length(z1))
+            if length(z1) < 6, set(haxes,'Xtick',1:length(z1)); end
             if isequal(z1,z2)
                 set(haxes,'XTickLabel',num2str(z1(get(haxes,'XTick'))));
                 xlabel(haxes,strrep([cattable1.Data{mainaxA(1,2),1} ' [' nodeA.(genvarname([cattable1.Data{mainaxA(1,2),1} 'info'])).units ']'],'_',' '))
@@ -332,14 +347,14 @@ try
             ylabel(haxes,strrep([cattable1.Data{mainaxA(1,1),1} ' [' nodeA.(genvarname([cattable1.Data{mainaxA(1,1),1} 'info'])).units ']'],'_',' '))
             set(haxes,'YDir','normal')
             cmaplim = max(max(ydif(isfinite(abs(ydif)))));
-            set(haxes,'CLim',[-cmaplim cmaplim])
+            if cmaplim ~= 0, set(haxes,'CLim',[-cmaplim cmaplim]); end
             eval(['colormap(haxes,' handles.colormap ')'])
             cbar = colorbar;
             set(get(cbar,'YLabel'),'String','log2(Data2) - log2(Data1)','Tag','ColorbarLabel','HandleVisibility','on')
         case 'difference - 10*log10'
             ydif = real(10.*log10(y2)-10.*log10(y1));
             imagesc(1:length(z1),x1,ydif,'Parent',haxes)
-            set(haxes,'Xtick',1:length(z1))
+            if length(z1) < 6, set(haxes,'Xtick',1:length(z1)); end
             if isequal(z1,z2)
                 set(haxes,'XTickLabel',num2str(z1(get(haxes,'XTick'))));
                 xlabel(haxes,strrep([cattable1.Data{mainaxA(1,2),1} ' [' nodeA.(genvarname([cattable1.Data{mainaxA(1,2),1} 'info'])).units ']'],'_',' '))
@@ -349,14 +364,14 @@ try
             ylabel(haxes,strrep([cattable1.Data{mainaxA(1,1),1} ' [' nodeA.(genvarname([cattable1.Data{mainaxA(1,1),1} 'info'])).units ']'],'_',' '))
             set(haxes,'YDir','normal')
             cmaplim = max(max(ydif(isfinite(abs(ydif)))));
-            set(haxes,'CLim',[-cmaplim cmaplim])
+            if cmaplim ~= 0, set(haxes,'CLim',[-cmaplim cmaplim]); end
             eval(['colormap(haxes,' handles.colormap ')'])
             cbar = colorbar;
             set(get(cbar,'YLabel'),'String','10*log10(Data2) - 10*log10(Data1)','Tag','ColorbarLabel','HandleVisibility','on')
         case 'difference - 20*log10'
             ydif = real(10.*log10(abs(y2).^2)-10.*log10(abs(y1).^2));
             imagesc(1:length(z1),x1,ydif,'Parent',haxes)
-            set(haxes,'Xtick',1:length(z1))
+            if length(z1) < 6, set(haxes,'Xtick',1:length(z1)); end
             if isequal(z1,z2)
                 set(haxes,'XTickLabel',num2str(z1(get(haxes,'XTick'))));
                 xlabel(haxes,strrep([cattable1.Data{mainaxA(1,2),1} ' [' nodeA.(genvarname([cattable1.Data{mainaxA(1,2),1} 'info'])).units ']'],'_',' '))
@@ -366,14 +381,14 @@ try
             ylabel(haxes,strrep([cattable1.Data{mainaxA(1,1),1} ' [' nodeA.(genvarname([cattable1.Data{mainaxA(1,1),1} 'info'])).units ']'],'_',' '))
             set(haxes,'YDir','normal')
             cmaplim = max(max(ydif(isfinite(abs(ydif)))));
-            set(haxes,'CLim',[-cmaplim cmaplim])
+            if cmaplim ~= 0, set(haxes,'CLim',[-cmaplim cmaplim]); end
             eval(['colormap(haxes,' handles.colormap ')'])
             cbar = colorbar;
             set(get(cbar,'YLabel'),'String','20*log10(Data2) - 20*log10(Data1)','Tag','ColorbarLabel','HandleVisibility','on')
         case 'difference'
             ydif = real(y2-y1);
             imagesc(1:length(z1),x1,ydif,'Parent',haxes)
-            set(haxes,'Xtick',1:length(z1))
+            if length(z1) < 6, set(haxes,'Xtick',1:length(z1)); end
             if isequal(z1,z2)
                 set(haxes,'XTickLabel',num2str(z1(get(haxes,'XTick'))));
                 xlabel(haxes,strrep([cattable1.Data{mainaxA(1,2),1} ' [' nodeA.(genvarname([cattable1.Data{mainaxA(1,2),1} 'info'])).units ']'],'_',' '))
@@ -383,7 +398,7 @@ try
             ylabel(haxes,strrep([cattable1.Data{mainaxA(1,1),1} ' [' nodeA.(genvarname([cattable1.Data{mainaxA(1,1),1} 'info'])).units ']'],'_',' '))
             set(haxes,'YDir','normal')
             cmaplim = max(max(ydif(isfinite(abs(ydif)))));
-            set(haxes,'CLim',[-cmaplim cmaplim])
+            if cmaplim ~= 0, set(haxes,'CLim',[-cmaplim cmaplim]); end
             eval(['colormap(haxes,' handles.colormap ')'])
             cbar = colorbar;
             set(get(cbar,'YLabel'),'String','Data2 - Data1','Tag','ColorbarLabel','HandleVisibility','on')
@@ -398,6 +413,8 @@ try
             scale = (sum(abs(y1).^2).*sum(abs(y2).^2)).^0.5;
             c = OUT.audio./repmat(scale,size(OUT.audio,1),1);
             mesh(haxes,1:size(c,2),d,c)
+            xlim([1 size(c,2)])
+            if length(z1) < 6, set(haxes,'Xtick',1:length(z1)); end
             cmap = obb_cmap(min(min(c(isfinite(c)))),max(max(c(isfinite(c)))));
             colormap(cmap)
             if dochartlabels
@@ -407,7 +424,12 @@ try
                     ylabel(['Lag index of ' strrep(cattable1.Data{mainaxA(1,1),1},'_',' ') '/' strrep(cattable2.Data{mainaxB(1,1),1},'_',' ')])
                 end
                 if strcmp(cattable1.Data{mainaxA(1,2),1},cattable2.Data{mainaxB(1,2),1})
-                    xlabel([strrep(cattable1.Data{mainaxA(1,2),1},'_',' ') ' selection index'])
+                    if isequal(z1,z2)
+                        set(haxes,'XTickLabel',num2str(z1(get(haxes,'XTick'))));
+                        xlabel(haxes,strrep([cattable1.Data{mainaxA(1,2),1} ' [' nodeA.(genvarname([cattable1.Data{mainaxA(1,2),1} 'info'])).units ']'],'_',' '))
+                    else
+                        xlabel(haxes,strrep([cattable1.Data{mainaxA(1,2),1} ' selection index'],'_',' '))
+                    end
                 else
                     xlabel([strrep(cattable1.Data{mainaxA(1,2),1},'_',' ') '/' strrep(cattable2.Data{mainaxB(1,2),1},'_',' ') ' selection index'])
                 end
@@ -421,6 +443,8 @@ try
             scale = (sum(abs(y1').^2).*sum(abs(y2').^2)).^0.5;
             c = OUT.audio./repmat(scale,size(OUT.audio,1),1);
             mesh(haxes,1:size(c,2),d,c)
+            xlim([1 size(c,2)])
+            if length(x1) < 6, set(haxes,'Xtick',1:length(x1)); end
             cmap = obb_cmap(min(min(c(isfinite(c)))),max(max(c(isfinite(c)))));
             colormap(cmap)
             if dochartlabels
@@ -430,7 +454,12 @@ try
                     ylabel(['Lag index of ' strrep(cattable1.Data{mainaxA(1,2),1},'_',' ') '/' strrep(cattable2.Data{mainaxB(1,2),1},'_',' ')])
                 end
                 if strcmp(cattable1.Data{mainaxA(1,1),1},cattable2.Data{mainaxB(1,1),1})
-                    xlabel([strrep(cattable1.Data{mainaxA(1,1),1},'_',' ') ' selection'])
+                    if isequal(x1,x2)
+                        set(haxes,'XTickLabel',num2str(x1(get(haxes,'XTick'))));
+                        xlabel(haxes,strrep([cattable1.Data{mainaxA(1,1),1} ' [' nodeA.(genvarname([cattable1.Data{mainaxA(1,1),1} 'info'])).units ']'],'_',' '))
+                    else
+                        xlabel(haxes,strrep([cattable1.Data{mainaxA(1,1),1} ' selection index'],'_',' '))
+                    end
                 else
                     xlabel([strrep(cattable1.Data{mainaxA(1,1),1},'_',' ') '/' strrep(cattable2.Data{mainaxB(1,1),1},'_',' ') ' selection'])
                 end
@@ -584,7 +613,7 @@ function setplottingoptions(handles)
     selB = strjoin(cattable2.Data(:,2).',',');
     if isempty(selB), selB = '[1]'; end
     eval(['y2 = squeeze(nodeB.data(' selB '));'])
-
+    
     cattable1 = get(handles.cattable1,'Data');
     cattable2 = get(handles.cattable2,'Data');
     catorcontA = cattable1(:,4);
@@ -594,6 +623,7 @@ function setplottingoptions(handles)
     if any(cellfun(@isempty,catorcontB)), catorcontB(cellfun(@isempty,catorcontB)) = {false}; end
     mainaxB = find([catorcontB{:}] == true);
     if ~isvector(y1) && ~isvector(y2)
+        if isequal(size(y1),size(y2')), y2 = y2'; end
         splitselA = strsplit(selA,',');
         mainaxA = [];
         for i = 1:length(splitselA)
