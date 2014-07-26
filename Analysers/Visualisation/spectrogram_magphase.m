@@ -1,6 +1,17 @@
-function out = spectrogram_simple(in, fs, transposesubplots, winlen, NOVERLAP, dBrange, maxfreq, downsamp, wfchoice, waterfall,doresultsleaf)
+function out = spectrogram_magphase(in, fs, transposesubplots, winlen, NOVERLAP, dBrange, maxfreq, downsamp, wfchoice, phasemode,doresultsleaf)
 % Creates a spectrogram of a waveform, or a matrix of waveforms, as a
-% function of time. Matlab's spectrogram function is used.
+% function of time. Matlab's spectrogram function is used. The display
+% shows a combination of magnitude and phase: using HSV colours, Value and
+% Saturation are both used for magnitude, while Hue is used for phase.
+% Hence the resulting image does not have an editable colormap.
+%
+% Phase can be represented in the following ways:
+% * the raw phase of the spectrum components in each window
+% * the phase, adjusted against time zero
+% * differenced phase
+% * 2nd order differenced phase (probably the most useful), which shows the
+%   rate of phase change
+% These phase methods will be improved in future versions of this function.
 %
 % Usually a spectrogram would be used to visualise audio in 1 or more
 % channels, but probably not with multiple bands. However multiband display
@@ -31,8 +42,8 @@ function out = spectrogram_simple(in, fs, transposesubplots, winlen, NOVERLAP, d
 %   Hann (sometimes called Hanning);
 %   Blackman-Harris.
 %
-% Either a conventional spectrogram display or a waterfall display can be
-% generated.
+% code by Densil Cabrera
+% version 0 (work in progress!) 26 July 2014
 
 if isstruct(in)
     audio = in.audio;
@@ -53,11 +64,11 @@ if nargin < 3
         'Highest frequency to display (Hz)', ...
         'Downsample factor', ...
         'Rectangular, Hann, Blackman-Harris window (r|h|b)',...
-        'Waterfall (0 | 1)',...
+        'Phase Mode: Raw phase (0), Time-referenced phase (1), Rate of time-referenced differenced phase (2), Second order differenced phase (3)',...
         'Output results leaf (0 | 1)'};
     dlg_title = 'Settings';
     num_lines = 1;
-    def = {'0','2048','1024','90',num2str(Nyquist), '1','h','0','0'};
+    def = {'0','2048','1024','90',num2str(Nyquist), '1','h','3','0'};
     answer = inputdlg(prompt,dlg_title,num_lines,def);
 
     if ~isempty(answer)
@@ -68,7 +79,7 @@ if nargin < 3
         maxfreq = str2num(answer{5,1});
         downsamp = str2num(answer{6,1});
         wfchoice = answer{7,1};
-        waterfall = str2num(answer{8,1});
+        phasemode = str2num(answer{8,1});
         doresultsleaf = str2num(answer{9,1});
     else
         out = [];
@@ -124,7 +135,27 @@ if ~transposesubplots
     for ch = 1:chans
         for b = 1:bands
             subplot(chans,bands,k)
-            [~,F,T,P] = spectrogram(audio(:,ch,b),wf,NOVERLAP,[],fs);
+            [S,F,T,P] = spectrogram(audio(:,ch,b),wf,NOVERLAP,[],fs);
+            
+            % phase
+            phi = angle(S) + pi; % raw phase shifted to 0 - 2pi
+            if phasemode > 0
+                numberofcycles = mod(repmat(T,[length(F),1]).*repmat(F,[1,length(T)]),1);
+                % time-referenced phase
+                phi = mod(phi -2*pi*numberofcycles,2*pi); 
+                if phasemode == 2
+                    % differenced phase
+                    phi = mod((pi+[zeros(length(F),1),diff(phi,1,2)]),2*pi);
+                        
+                       % ./((T(2)-T(1)).*repmat(F,[1,length(T)])),2*pi);
+                elseif phasemode == 3
+                    % second order differenced phase
+                    phi = mod((pi+[zeros(length(F),2),diff(phi,2,2)]),2*pi); 
+                        
+                end
+            end
+            
+            
             L = 10*log10(abs(P));
             if doresultsleaf==1
             if ~exist('L_all','var')
@@ -133,17 +164,16 @@ if ~transposesubplots
             L_all(:,:,ch,b) = L;
             end
             m =max(max(L));
-            minrange = m - abs(dBrange);
-            if waterfall
-                mesh(T,F,L)
-                zlim([minrange m])
-            else
-                imagesc(T,F,L)
-                set(gca,'YDir','normal');
-            end
-            box('on')
             
-            set(gca, 'Clim', [minrange m]);
+            Hue = phi./(2*pi);
+            Val = (L-max(max(L))+dBrange) ./ dBrange;
+            Val(Val<0)=0;
+            %Sat = ones(size(L));
+            Sat = Val;
+            RGBimage = hsv2rgb(cat(3,Hue,Sat,Val));
+            image(T,F,RGBimage);
+            set(gca,'YDir','normal');
+            box('on')
             ylim([0 maxfreq]);
             
             if ch == chans
@@ -162,7 +192,27 @@ else
     for b = 1:bands
         for ch = 1:chans
             subplot(bands,chans,k)
-            [~,F,T,P] = spectrogram(audio(:,ch,b),wf,NOVERLAP,[],fs);
+            [S,F,T,P] = spectrogram(audio(:,ch,b),wf,NOVERLAP,[],fs);
+            
+            % phase
+            phi = angle(S) + pi; % raw phase shifted to 0 - 2pi
+            if phasemode > 0
+                numberofcycles = mod(repmat(T,[length(F),1]).*repmat(F,[1,length(T)]),1);
+                % time-referenced phase
+                phi = mod(phi -2*pi*numberofcycles,2*pi); 
+                if phasemode == 2
+                    % differenced phase
+                    phi = mod((pi+[zeros(length(F),1),diff(phi,1,2)]),2*pi);
+                        
+                       % ./((T(2)-T(1)).*repmat(F,[1,length(T)])),2*pi);
+                elseif phasemode == 3
+                    % second order differenced phase
+                    phi = mod((pi+[zeros(length(F),2),diff(phi,2,2)]),2*pi); 
+                        
+                end
+            end
+            
+            
             L = 10*log10(abs(P));
             if doresultsleaf==1
             if ~exist('L_all','var')
@@ -170,17 +220,17 @@ else
             end
             L_all(:,:,ch,b) = L;
             end
-            if waterfall
-                mesh(T,F,L)
-                zlim([minrange m])
-            else
-                imagesc(T,F,L)
-                set(gca,'YDir','normal');
-            end
-            box('on')
             m =max(max(L));
-            minrange = m - abs(dBrange);
-            set(gca, 'Clim', [minrange m]);
+            
+            Hue = phi./(2*pi);
+            Val = (L-max(max(L))+dBrange) ./ dBrange;
+            Val(Val<0)=0;
+            %Sat = ones(size(L));
+            Sat = Val;
+            RGBimage = hsv2rgb(cat(3,Hue,Sat,Val));
+            image(T,F,RGBimage);
+            set(gca,'YDir','normal');
+            box('on')
             ylim([0 maxfreq]);
             
             if b == bands
@@ -214,8 +264,8 @@ end
 % out.downsamp = downsamp;
 % out.wfchoice = wfchoice;
 % out.waterfall = waterfall;
-out.funcallback.name = 'spectrogram_simple.m';
-out.funcallback.inarg = {fs,transposesubplots,winlen,NOVERLAP,dBrange,maxfreq,downsamp,wfchoice,waterfall,doresultsleaf};
+out.funcallback.name = 'spectrogram_magphase.m';
+out.funcallback.inarg = {fs,transposesubplots,winlen,NOVERLAP,dBrange,maxfreq,downsamp,wfchoice,phasemode,doresultsleaf};
 
 %**************************************************************************
 % Copyright (c) 2014, Densil Cabrera
