@@ -7,7 +7,7 @@ function out = thiroct_band_level_barplot(in, fs, cal, showpercentiles, flo, fhi
 % applied.
 %
 % Code by Densil Cabrera and Daniel Jimenez
-% version 1.00 (21 May 2014)
+% version 1.01 (28 July 2014)
 
 if isstruct(in)
     audio = in.audio;
@@ -35,7 +35,7 @@ end
 if nargin < 8, dosubplots = 0; end % default setting for multichannel plotting
 if nargin < 7, tau = 0.125; end % default temporal integration constant in seconds
 if nargin < 6, fhi = 20000; end % default highest centre frequency
-if nargin < 5, flo = 25; end % default lowest centre frequency
+if nargin < 5, flo = 12.5; end % default lowest centre frequency
 if nargin < 4
     showpercentiles = 1;
     param = inputdlg({'Individual plots [0] or subplots [1] for multiple channels';...
@@ -57,6 +57,9 @@ if nargin < 4
         flo = param(5);
         showpercentiles = param(6);
         %dotables = param(7);
+    else
+        out = [];
+        return
     end
 end
 
@@ -79,7 +82,7 @@ if ~isempty(audio) && ~isempty(fs)...
         hiband = round(10*log10(fhi));
         if hiband > 43, hiband = 42; end
         loband = round(10*log10(flo));
-        if loband <13, loband = 13; end
+        if loband <11, loband = 11; end
         if hiband > loband
             flist = 10.^((loband:1:hiband)./10);
         else
@@ -121,6 +124,9 @@ if ~isempty(audio) && ~isempty(fs)...
 
     out.Lmax = 10*log10(max(Itemp));
     out.Lmax = permute(out.Lmax,[3,2,1]);
+    
+    out.L1 = 10*log10(prctile(Itemp,99));
+    out.L1 = permute(out.L1,[3,2,1]);
 
     out.L5 = 10*log10(prctile(Itemp,95));
     out.L5 = permute(out.L5,[3,2,1]);
@@ -254,8 +260,8 @@ if ~isempty(audio) && ~isempty(fs)...
     %             text(k-0.25,ymax-(ymax-ymin)*0.025, ...
     %                 num2str(round(out.Leq(k,ch)*10)/10),'Color',[1,0.3,0.3])
     %         end
-    table1 = uitable('Data',[out.Leq(:,ch),out.Lmax(:,ch),out.L5(:,ch),out.L10(:,ch),out.L50(:,ch),out.L90(:,ch)],...
-        'ColumnName',{'Leq','Lmax','L5','L10','L50','L90'},...
+    table1 = uitable('Data',[out.Leq(:,ch),out.Lmax(:,ch),out.L1(:,ch),out.L5(:,ch),out.L10(:,ch),out.L50(:,ch),out.L90(:,ch)],...
+        'ColumnName',{'Leq','Lmax','L1','L5','L10','L50','L90'},...
         'RowName',num2cell(frequencies));
 
         fig = figure('Visible','off');
