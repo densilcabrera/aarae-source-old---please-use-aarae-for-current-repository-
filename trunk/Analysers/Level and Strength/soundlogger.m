@@ -44,6 +44,9 @@ if nargin ==1
         windowhop = str2num(char(param(2)));
         tau = str2num(char(param(3)));
         weighting = char(param(4));
+    else
+        OUT = [];
+        return
     end
 else
     param = [];

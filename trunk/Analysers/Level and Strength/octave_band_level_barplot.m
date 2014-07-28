@@ -7,7 +7,7 @@ function out = octave_band_level_barplot(in, fs, cal, showpercentiles, flo, fhi,
 % applied.
 %
 % Code by Densil Cabrera and Daniel Jimenez
-% version 1.00 (21 May 2014)
+% version 1.01 (28 July 2014)
 
 if isstruct(in)
     audio = in.audio;
@@ -34,7 +34,7 @@ end
 if nargin < 8, dosubplots = 0; end % default setting for multichannel plotting
 if nargin < 7, tau = 0.125; end % default temporal integration constant in seconds
 if nargin < 6, fhi = 16000; end % default highest centre frequency
-if nargin < 5, flo = 31.5; end % default lowest centre frequency
+if nargin < 5, flo = 16; end % default lowest centre frequency
 if nargin < 4, 
     showpercentiles = 1;
     param = inputdlg({'Individual plots [0] or subplots [1] for multiple channels';...
@@ -55,6 +55,9 @@ if nargin < 4,
         fhi = param(4);
         flo = param(5);
         showpercentiles = param(6);
+    else
+        out = [];
+        return
     end
 end
 
@@ -74,7 +77,7 @@ if ~isempty(audio) && ~isempty(fs) && ~isempty(cal) && ~isempty(showpercentiles)
         hiband = round(10*log10(fhi));
         if hiband > 42, hiband = 42; end
         loband = round(10*log10(flo));
-        if loband <15, loband = 15; end
+        if loband <12, loband = 12; end
         if hiband > loband
             flist = 10.^((loband:3:hiband)./10);
         else
@@ -115,7 +118,10 @@ if ~isempty(audio) && ~isempty(fs) && ~isempty(cal) && ~isempty(showpercentiles)
 
     out.Lmax = 10*log10(max(Itemp));
     out.Lmax = permute(out.Lmax,[3,2,1]);
-
+    
+    out.L1 = 10*log10(prctile(Itemp,99));
+    out.L1 = permute(out.L1,[3,2,1]);
+    
     out.L5 = 10*log10(prctile(Itemp,95));
     out.L5 = permute(out.L5,[3,2,1]);
 
@@ -185,8 +191,8 @@ if ~isempty(audio) && ~isempty(fs) && ~isempty(cal) && ~isempty(showpercentiles)
                     num2str(round(out.Leq(k,ch)*10)/10),'Color',[1,0.3,0.3])
             end
             %fig = figure('Visible','off');
-            table1 = uitable('Data',[out.Leq(:,ch),out.Lmax(:,ch),out.L5(:,ch),out.L10(:,ch),out.L50(:,ch),out.L90(:,ch)],...
-                             'ColumnName',{'Leq','Lmax','L5','L10','L50','L90'},...
+            table1 = uitable('Data',[out.Leq(:,ch),out.Lmax(:,ch),out.L1(:,ch),out.L5(:,ch),out.L10(:,ch),out.L50(:,ch),out.L90(:,ch)],...
+                             'ColumnName',{'Leq','Lmax','L1','L5','L10','L50','L90'},...
                              'RowName',num2cell(frequencies),'Parent',fig);
             %[fig,tables] = disptables(fig,table1,{['Chan' num2str(ch) ' - Octave band spectrum']});
             %delete(fig)
