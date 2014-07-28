@@ -142,6 +142,7 @@ if ~isempty(audio) && ~isempty(fs)...
 
     if dosubplots == 0
         out.tables = [];
+        fig = figure('Visible','on');
         for ch = 1:chans
             figure('name', ['1/3-Octave Band Spectrum, Channel ', ...
                 num2str(ch), ', tau = ', num2str(tau),' s'])
@@ -189,14 +190,16 @@ if ~isempty(audio) && ~isempty(fs)...
                 text(k-0.25,ymax-(ymax-ymin)*0.025, ...
                     num2str(round(out.Leq(k,ch)*10)/10),'Color',[1,0.3,0.3])
             end
-            fig = figure('Visible','off');
+            %fig = figure('Visible','on');
             table1 = uitable('Data',[out.Leq(:,ch),out.Lmax(:,ch),out.L5(:,ch),out.L10(:,ch),out.L50(:,ch),out.L90(:,ch)],...
                              'ColumnName',{'Leq','Lmax','L5','L10','L50','L90'},...
-                             'RowName',num2cell(frequencies));
-            [fig,tables] = disptables(fig,table1,{['Chan' num2str(ch) ' - 1/3-Octave band spectrum']});
-            delete(fig)
-            out.tables = [out.tables tables];
+                             'RowName',num2cell(frequencies),'Parent',fig);
+            %[fig,tables] = disptables(fig,table1,{['Chan' num2str(ch) ' - 1/3-Octave band spectrum']});
+            %delete(fig)
+            out.tables = [out.tables table1];
         end
+        tablenames = cellstr([repmat('Chan',chans,1),num2str((1:chans)'),repmat(' - 1/3-Octave band spectrum',chans,1)]);
+        [~,out.tables] = disptables(fig,out.tables,tablenames);
     else
         [r, c] = subplotpositions(chans, 0.8);
         figure('name', ['1/3-Octave Band Spectrum, tau = ', num2str(tau),' s'])

@@ -627,7 +627,7 @@ function setplottingoptions(handles)
         splitselA = strsplit(selA,',');
         mainaxA = [];
         for i = 1:length(splitselA)
-            if ~isempty(find(size(y2) == eval(['length(nodeA.(genvarname(cattable1{i,1}))(' splitselA{1,i} '))']),1))
+            if ~isempty(find(size(y1) == eval(['length(nodeA.(genvarname(cattable1{i,1}))(' splitselA{1,i} '))']),1))
                 mainaxA = [mainaxA i];
             end
         end
