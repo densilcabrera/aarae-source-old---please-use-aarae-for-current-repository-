@@ -892,6 +892,8 @@ function analyze_btn_Callback(hObject, ~, handles) %#ok
 % audiodata = getappdata(hMain,'testsignal');
 selectedNodes = handles.mytree.getSelectedNodes;
 funcallback = [];
+h = findobj('type','figure','-not','tag','aarae');
+delete(h)
 for nleafs = 1:length(selectedNodes)
     handles.nleafs = nleafs;
     guidata(hObject,handles)
