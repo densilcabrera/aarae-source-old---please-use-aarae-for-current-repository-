@@ -7,6 +7,9 @@ chartfunc = chartmenu{get(handles.chartfunc_popup,'Value')};
 cattable = get(handles.cattable);
 sel = strjoin(cattable.Data(:,2).',',');
 if isempty(sel), sel = '[1]'; end
+if ~isempty(findobj('Tag','tempaxes')) && get(haxes,'Parent') == handles.aarae
+    delete(findobj('Tag','tempaxes'));
+end
 try
     tabledata = get(handles.cattable,'Data');
     catorcont = tabledata(:,4);
@@ -17,7 +20,7 @@ try
         cmap = colormap(hsv(size(data,2))); %#ok : data defined in line 15
         set(get(haxes,'Parent'),'DefaultAxesColorOrder',cmap)
         % Line plotting (plot, semilogx, semilogy, loglog)
-        if ~strcmp(chartfunc,'distributionPlot') && ~strcmp(chartfunc,'boxplot')
+        if ~strcmp(chartfunc,'distributionPlot') && ~strcmp(chartfunc,'boxplot') && ~strcmp(chartfunc,'notboxplot')
             cla(haxes,'reset')
             axis = find([catorcont{:}] == true);
             Xdata = audiodata.(genvarname(tabledata{axis(1,1),1}));
@@ -31,7 +34,7 @@ try
             end
             xlabel(haxes,strrep([tabledata{axis(1,1),1} ' [' audiodata.(genvarname([tabledata{axis(1,1),1} 'info'])).units ']'],'_',' '),'HandleVisibility','on')
             ylabel(haxes,strrep(audiodata.datainfo.units,'_',' '),'HandleVisibility','on')
-        else % Distribution and box plotting
+        else % Distribution, box plotting and not box plotting
             cla(haxes,'reset')
             catdim = find(cellfun(@isempty,tabledata(:,4)),1);
             if isempty(catdim), catdim = 1; end
@@ -41,6 +44,13 @@ try
             end
             if strcmp(chartfunc,'boxplot')
                 eval([chartfunc '(haxes,data,''labels'',audiodata.(genvarname(cattable.Data{catdim,1}))(' cattable.Data{catdim,2} '))'])
+            end
+            if strcmp(chartfunc,'notboxplot')
+                notBoxPlot(data,[],[],[],haxes)
+                haxes2 = findobj('Tag','tempaxes','Parent',get(haxes,'Parent'));
+                if isvector(data), set(haxes2,'XLim',[0.5 1.5],'Xtick',1); end
+                set(haxes,'XLim',get(haxes2,'XLim'))
+                set(haxes2,'XTickLabel',eval(['audiodata.(genvarname(cattable.Data{catdim,1}))(' cattable.Data{catdim,2} ')']))
             end
             xlabel(haxes,strrep([cattable.Data{catdim,1} ' [' audiodata.(genvarname([cattable.Data{catdim,1} 'info'])).units ']'],'_',' '))
             ylabel(haxes,strrep(audiodata.datainfo.units,'_',' '))
@@ -193,9 +203,9 @@ catch error
                 naxis = length(find([catorcont{:}] == true));
                 switch naxis
                     case 0
-                        set(handles.chartfunc_popup,'String',{'distributionPlot','boxplot'},'Value',1)
+                        set(handles.chartfunc_popup,'String',{'distributionPlot','boxplot','notboxplot'},'Value',1)
                     case 1
-                        set(handles.chartfunc_popup,'String',{'plot','semilogx','semilogy','loglog','distributionPlot','boxplot'},'Value',1)
+                        set(handles.chartfunc_popup,'String',{'plot','semilogx','semilogy','loglog','distributionPlot','boxplot','notboxplot'},'Value',1)
                     case 2
                         set(handles.chartfunc_popup,'String',{'mesh','surf','imagesc'},'Value',1)
                     otherwise
@@ -260,9 +270,9 @@ catch error
                 naxis = length(find([catorcont{:}] == true));
                 switch naxis
                     case 0
-                        set(handles.chartfunc_popup,'String',{'distributionPlot','boxplot'},'Value',1)
+                        set(handles.chartfunc_popup,'String',{'distributionPlot','boxplot','notboxplot'},'Value',1)
                     case 1
-                        set(handles.chartfunc_popup,'String',{'plot','semilogx','semilogy','loglog','distributionPlot','boxplot'},'Value',1)
+                        set(handles.chartfunc_popup,'String',{'plot','semilogx','semilogy','loglog','distributionPlot','boxplot','notboxplot'},'Value',1)
                     case 2
                         set(handles.chartfunc_popup,'String',{'mesh','surf','imagesc'},'Value',1)
                     otherwise
@@ -277,9 +287,9 @@ catch error
         naxis = length(find([catorcont{:}] == true));
         switch naxis
             case 0
-                set(handles.chartfunc_popup,'String',{'distributionPlot','boxplot'},'Value',1)
+                set(handles.chartfunc_popup,'String',{'distributionPlot','boxplot','notboxplot'},'Value',1)
             case 1
-                set(handles.chartfunc_popup,'String',{'plot','semilogx','semilogy','loglog','distributionPlot','boxplot'},'Value',1)
+                set(handles.chartfunc_popup,'String',{'plot','semilogx','semilogy','loglog','distributionPlot','boxplot','notboxplot'},'Value',1)
             case 2
                 set(handles.chartfunc_popup,'String',{'mesh','surf','imagesc'},'Value',1)
             otherwise

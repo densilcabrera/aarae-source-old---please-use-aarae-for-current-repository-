@@ -1544,7 +1544,7 @@ if ~isempty(click) && ((click == handles.axesfreq) || (get(click,'Parent') == ha
     selectedNodes = selectedNodes(1);
     title(selectedNodes.getName.char)
 end
-if ~isempty(click) && ((click == handles.axesdata) || (get(click,'Parent') == handles.axesdata)) && ~strcmp(get(click,'Type'),'text')
+if ~isempty(click) && ((click == handles.axesdata) || isequal(click,findobj('Tag','tempaxes','Parent',hObject)) || (get(click,'Parent') == handles.axesdata) || isequal(get(click,'Parent'),findobj('Tag','tempaxes','Parent',hObject))) && ~strcmp(get(click,'Type'),'text')
     selectedNodes = handles.mytree.getSelectedNodes;
     data = selectedNodes(1).handle.UserData;
     if ~isfield(data,'tables')

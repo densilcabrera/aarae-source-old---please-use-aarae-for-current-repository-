@@ -221,9 +221,9 @@ set(handles.cattable, 'Data', dat);
 naxis = length(find([catorcont{:}] == true));
 switch naxis
     case 0
-        set(handles.chartfunc_popup,'String',{'distributionPlot','boxplot'},'Value',1)
+        set(handles.chartfunc_popup,'String',{'distributionPlot','boxplot','notboxplot'},'Value',1)
     case 1
-        set(handles.chartfunc_popup,'String',{'plot','semilogx','semilogy','loglog','distributionPlot','boxplot'},'Value',1)
+        set(handles.chartfunc_popup,'String',{'plot','semilogx','semilogy','loglog','distributionPlot','boxplot','notboxplot'},'Value',1)
     case 2
         set(handles.chartfunc_popup,'String',{'mesh','surf','imagesc'},'Value',1)
     otherwise
