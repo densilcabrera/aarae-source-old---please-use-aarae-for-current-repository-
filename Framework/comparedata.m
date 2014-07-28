@@ -244,12 +244,12 @@ try
     if dochartlabels
         eval(['z1 = nodeA.(genvarname(cattable1.Data{mainaxA(1,2),1}))(' cattable1.Data{mainaxA(1,2),2} ');'])
         if ~isnumeric(z1)
-            if iscell(z1), z1 = cell2mat(z1); end
+            if iscell(z1) && ~iscellstr(z1), z1 = cell2mat(z1); end
             if size(z1,1) < size(z1,2), z1 = z1'; end
         end
         eval(['z2 = nodeA.(genvarname(cattable2.Data{mainaxB(1,2),1}))(' cattable2.Data{mainaxB(1,2),2} ');'])
         if ~isnumeric(z2)
-            if iscell(z2), z2 = cell2mat(z2); end
+            if iscell(z2) && ~iscellstr(z2), z2 = cell2mat(z2); end
             if size(z2,1) < size(z2,2), z2 = z2'; end
         end
     end
@@ -322,7 +322,9 @@ try
             imagesc(1:length(z1),x1,ydif,'Parent',haxes)
             if length(z1) < 6, set(haxes,'Xtick',1:length(z1)); end
             if isequal(z1,z2)
-                set(haxes,'XTickLabel',num2str(z1(get(haxes,'XTick'))));
+                if ~iscellstr(z1), set(haxes,'XTickLabel',num2str(z1(get(haxes,'XTick'))));
+                else set(haxes,'XTickLabel',z1(get(haxes,'XTick'))); 
+                end
                 xlabel(haxes,strrep([cattable1.Data{mainaxA(1,2),1} ' [' nodeA.(genvarname([cattable1.Data{mainaxA(1,2),1} 'info'])).units ']'],'_',' '))
             else
                 xlabel(haxes,strrep([cattable1.Data{mainaxA(1,2),1} ' selection index'],'_',' '))
@@ -339,7 +341,9 @@ try
             imagesc(1:length(z1),x1,ydif,'Parent',haxes)
             if length(z1) < 6, set(haxes,'Xtick',1:length(z1)); end
             if isequal(z1,z2)
-                set(haxes,'XTickLabel',num2str(z1(get(haxes,'XTick'))));
+                if ~iscellstr(z1), set(haxes,'XTickLabel',num2str(z1(get(haxes,'XTick'))));
+                else set(haxes,'XTickLabel',z1(get(haxes,'XTick'))); 
+                end
                 xlabel(haxes,strrep([cattable1.Data{mainaxA(1,2),1} ' [' nodeA.(genvarname([cattable1.Data{mainaxA(1,2),1} 'info'])).units ']'],'_',' '))
             else
                 xlabel(haxes,strrep([cattable1.Data{mainaxA(1,2),1} ' selection index'],'_',' '))
@@ -356,7 +360,9 @@ try
             imagesc(1:length(z1),x1,ydif,'Parent',haxes)
             if length(z1) < 6, set(haxes,'Xtick',1:length(z1)); end
             if isequal(z1,z2)
-                set(haxes,'XTickLabel',num2str(z1(get(haxes,'XTick'))));
+                if ~iscellstr(z1), set(haxes,'XTickLabel',num2str(z1(get(haxes,'XTick'))));
+                else set(haxes,'XTickLabel',z1(get(haxes,'XTick'))); 
+                end
                 xlabel(haxes,strrep([cattable1.Data{mainaxA(1,2),1} ' [' nodeA.(genvarname([cattable1.Data{mainaxA(1,2),1} 'info'])).units ']'],'_',' '))
             else
                 xlabel(haxes,strrep([cattable1.Data{mainaxA(1,2),1} ' selection index'],'_',' '))
@@ -373,7 +379,9 @@ try
             imagesc(1:length(z1),x1,ydif,'Parent',haxes)
             if length(z1) < 6, set(haxes,'Xtick',1:length(z1)); end
             if isequal(z1,z2)
-                set(haxes,'XTickLabel',num2str(z1(get(haxes,'XTick'))));
+                if ~iscellstr(z1), set(haxes,'XTickLabel',num2str(z1(get(haxes,'XTick'))));
+                else set(haxes,'XTickLabel',z1(get(haxes,'XTick'))); 
+                end
                 xlabel(haxes,strrep([cattable1.Data{mainaxA(1,2),1} ' [' nodeA.(genvarname([cattable1.Data{mainaxA(1,2),1} 'info'])).units ']'],'_',' '))
             else
                 xlabel(haxes,strrep([cattable1.Data{mainaxA(1,2),1} ' selection index'],'_',' '))
@@ -390,7 +398,9 @@ try
             imagesc(1:length(z1),x1,ydif,'Parent',haxes)
             if length(z1) < 6, set(haxes,'Xtick',1:length(z1)); end
             if isequal(z1,z2)
-                set(haxes,'XTickLabel',num2str(z1(get(haxes,'XTick'))));
+                if ~iscellstr(z1), set(haxes,'XTickLabel',num2str(z1(get(haxes,'XTick'))));
+                else set(haxes,'XTickLabel',z1(get(haxes,'XTick'))); 
+                end
                 xlabel(haxes,strrep([cattable1.Data{mainaxA(1,2),1} ' [' nodeA.(genvarname([cattable1.Data{mainaxA(1,2),1} 'info'])).units ']'],'_',' '))
             else
                 xlabel(haxes,strrep([cattable1.Data{mainaxA(1,2),1} ' selection index'],'_',' '))
@@ -425,7 +435,9 @@ try
                 end
                 if strcmp(cattable1.Data{mainaxA(1,2),1},cattable2.Data{mainaxB(1,2),1})
                     if isequal(z1,z2)
-                        set(haxes,'XTickLabel',num2str(z1(get(haxes,'XTick'))));
+                        if ~iscellstr(z1), set(haxes,'XTickLabel',num2str(z1(get(haxes,'XTick'))));
+                        else set(haxes,'XTickLabel',z1(get(haxes,'XTick'))); 
+                        end
                         xlabel(haxes,strrep([cattable1.Data{mainaxA(1,2),1} ' [' nodeA.(genvarname([cattable1.Data{mainaxA(1,2),1} 'info'])).units ']'],'_',' '))
                     else
                         xlabel(haxes,strrep([cattable1.Data{mainaxA(1,2),1} ' selection index'],'_',' '))
@@ -455,7 +467,9 @@ try
                 end
                 if strcmp(cattable1.Data{mainaxA(1,1),1},cattable2.Data{mainaxB(1,1),1})
                     if isequal(x1,x2)
-                        set(haxes,'XTickLabel',num2str(x1(get(haxes,'XTick'))));
+                        if ~iscellstr(x1), set(haxes,'XTickLabel',num2str(x1(get(haxes,'XTick'))));
+                        else set(haxes,'XTickLabel',x1(get(haxes,'XTick'))); 
+                        end
                         xlabel(haxes,strrep([cattable1.Data{mainaxA(1,1),1} ' [' nodeA.(genvarname([cattable1.Data{mainaxA(1,1),1} 'info'])).units ']'],'_',' '))
                     else
                         xlabel(haxes,strrep([cattable1.Data{mainaxA(1,1),1} ' selection index'],'_',' '))
