@@ -1,4 +1,4 @@
-function varargout=notBoxPlot(y,x,jitter,style)
+function varargout=notBoxPlot(y,x,jitter,style,mainaxes)
 % notBoxPlot - Doesn't plot box plots!
 %
 % function notBoxPlot(y,x,jitter,style)
@@ -102,7 +102,7 @@ function varargout=notBoxPlot(y,x,jitter,style)
     
     
 % Check input arguments
-error(nargchk(0,4,nargin))
+error(nargchk(0,5,nargin))
 if nargin==0
     help(mfilename)
     return
@@ -119,7 +119,7 @@ if nargin<3 || isempty(jitter)
     jitter=0.3; %larger value means greater amplitude jitter
 end
 
-if nargin<4
+if nargin<4 || isempty(style)
   style='patch'; %Can also be 'line' or 'sdline'
 end
 style=lower(style);
@@ -174,16 +174,31 @@ end
 %colors so we loop through all unique x values and do the plotting
 %with nested functions. No clf in order to give the user more
 %flexibility in combining plot elements.
-hold on
+%hold on
 [uX,a,b]=unique(x);
-
+if nargin < 5
+    axes1 = axes;
+else
+    axes1 = mainaxes;
+end
+axes2 = axes(...
+            'Units',get(axes1,'Units'),...
+            'Position',get(axes1,'Position'),...
+            'XAxisLocation','top',...
+            'YAxisLocation','right',...
+            'Color','none',...
+            'XLim',get(axes1,'XLim'),...
+            'XColor','r',...
+            'YColor','r',...
+            'Parent',get(gca,'Parent'),...
+            'Tag','tempaxes');
 h=[];
 for ii=1:length(uX)
     f=find(b==ii);
     h=[h,myPlotter(x(f),y(:,f))];
 end
 
-hold off
+%hold off
 
 %Tidy up plot: make it look pretty 
 if length(x)>1
@@ -212,7 +227,7 @@ mu=nanmean(Y); %Requires the stats toolbox
 %location
 cols=hsv(length(X)+1)*0.5;
 cols(1,:)=0;
-jitScale=jitter*0.55; %To scale the patch by the width of the jitter
+jitScale=jitter*1.2; %To scale the patch by the width of the jitter
 
 for k=1:length(X)
     thisY=Y(:,k);
@@ -221,12 +236,14 @@ for k=1:length(X)
 
     if strcmp(style,'patch') 
       h(k).sdPtch=patchMaker(SD(k),[0.6,0.6,1]);
+      set(h(k).sdPtch,'Parent',axes1)
     end
     
     if strcmp(style,'patch') || strcmp(style,'sdline')
       h(k).semPtch=patchMaker(SEM(k),[1,0.6,0.6]);
-      h(k).mu=plot([X(k)-jitScale,X(k)+jitScale],[mu(k),mu(k)],'-r',...
-           'linewidth',2);
+      set(h(k).semPtch,'Parent',axes1)
+      h(k).mu=line([X(k)-jitScale,X(k)+jitScale],[mu(k),mu(k)],'color','r',...
+           'linewidth',2,'Parent',axes1);
     end
     
     %Plot jittered raw data
@@ -234,8 +251,8 @@ for k=1:length(X)
     J=(rand(size(thisX))-0.5)*jitter;
 
         
-    h(k).data=plot(thisX+J, thisY, 'o', 'color', C,...
-                   'markerfacecolor', C+(1-C)*0.65);
+    h(k).data=line(thisX+J, thisY,'LineStyle' ,'none','Marker','o', 'color', 'k',...
+                   'markerfacecolor', C+(1-C)*0.65,'MarkerSize',0.5,'Parent',axes2);
 end
 
 if strcmp(style,'line') | strcmp(style,'sdline')
@@ -267,7 +284,7 @@ function ptch=patchMaker(thisInterval,color)
     l=mu(k)-thisInterval;
     u=mu(k)+thisInterval;
     ptch=patch([X(k)-jitScale, X(k)+jitScale, X(k)+jitScale, X(k)-jitScale],...
-           [l,l,u,u], 0);
+           [l,l,u,u], 0,'Parent',axes1);
     set(ptch,'edgecolor','none','facecolor',color)
 end %function patchMaker
 
