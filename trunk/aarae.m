@@ -23,7 +23,7 @@ function varargout = aarae(varargin)
 
 % Edit the above text to modify the response to help aarae
 
-% Last Modified by GUIDE v2.5 18-Jul-2014 09:15:38
+% Last Modified by GUIDE v2.5 29-Jul-2014 17:40:21
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -853,10 +853,10 @@ handles.funcat = contents{get(hObject,'Value')};
 analyzers = what([cd '/Analysers/' handles.funcat]);
 if ~isempty(cellstr(analyzers.m))
     set(handles.fun_box,'Visible','on','String',[' ';cellstr(analyzers.m)],'Value',1,'Tooltip','');
-    set(handles.analyze_btn,'Visible','off');
+    set([handles.analyze_btn,handles.analyser_help_btn],'Visible','off');
 else
     set(handles.fun_box,'Visible','off');
-    set(handles.analyze_btn,'Visible','off');
+    set([handles.analyze_btn,handles.analyser_help_btn],'Visible','off');
 end
 guidata(hObject,handles);
 
@@ -997,13 +997,13 @@ if ~strcmp(selection,' ')
     handles.funname = funname;
     helptext = evalc(['help ' funname]);
     set(hObject,'Tooltip',helptext);
-    set(handles.analyze_btn,'Visible','on');
+    set([handles.analyze_btn,handles.analyser_help_btn],'Visible','on');
     set(handles.analyze_btn,'BackgroundColor',[0.94 0.94 0.94]);
-    set(handles.analyze_btn,'Enable','on');
+    set([handles.analyze_btn,handles.analyser_help_btn],'Enable','on');
 else
     handles.funname = [];
     set(hObject,'Tooltip','');
-    set(handles.analyze_btn,'Visible','off');
+    set([handles.analyze_btn,handles.analyser_help_btn],'Visible','off');
 end
 guidata(hObject,handles);
 
@@ -1039,10 +1039,10 @@ processes = what([cd '/Processors/' handles.procat]);
 
 if ~isempty(processes.m)
     set(handles.proc_box,'Visible','on','String',[' ';cellstr(processes.m)],'Value',1);
-    set(handles.proc_btn,'Visible','off');
+    set([handles.proc_btn,handles.proc_help_btn],'Visible','off');
 else
     set(handles.proc_box,'Visible','off');
-    set(handles.proc_btn,'Visible','off');
+    set([handles.proc_btn,handles.proc_help_btn],'Visible','off');
 end
 guidata(hObject,handles);
 
@@ -1082,13 +1082,13 @@ if ~strcmp(selection,' ')
     handles.funname = funname;
     helptext = evalc(['help ' funname]);
     set(hObject,'Tooltip',helptext);
-    set(handles.proc_btn,'Visible','on');
+    set([handles.proc_btn,handles.proc_help_btn],'Visible','on');
     set(handles.proc_btn,'BackgroundColor',[0.94 0.94 0.94]);
-    set(handles.proc_btn,'Enable','on');
+    set([handles.proc_btn,handles.proc_help_btn],'Enable','on');
 else
     handles.funname = [];
     set(hObject,'Tooltip','');
-    set(handles.proc_btn,'Visible','off');
+    set([handles.proc_btn,handles.proc_help_btn],'Visible','off');
 end
 guidata(hObject,handles);
 
@@ -2795,3 +2795,22 @@ if size(eventdata.Indices,1) ~= 0 && eventdata.Indices(1,2) == 4
         doresultplot(handles,handles.axesdata)
     end
 end
+
+
+% --- Executes on button press in proc_help_btn.
+function proc_help_btn_Callback(hObject, eventdata, handles)
+% hObject    handle to proc_help_btn (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+contents = cellstr(get(handles.proc_box,'String'));
+selection = contents{get(handles.proc_box,'Value')};
+eval(['doc ' selection])
+
+% --- Executes on button press in analyser_help_btn.
+function analyser_help_btn_Callback(hObject, eventdata, handles)
+% hObject    handle to analyser_help_btn (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+contents = cellstr(get(handles.fun_box,'String'));
+selection = contents{get(handles.fun_box,'Value')};
+eval(['doc ' selection])
