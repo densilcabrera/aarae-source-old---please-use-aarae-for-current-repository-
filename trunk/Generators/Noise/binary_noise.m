@@ -1,5 +1,5 @@
-function OUT = Gaussian_noise(duration, chans, fs)
-% Generates Gaussian noise with a standard deviation of 0.1
+function OUT = binary_noise(duration, chans, fs)
+% Generates binary noise with random values of -1 and 1
 
 if nargin == 0
     param = inputdlg({'Duration of the wave [s]';...
@@ -18,15 +18,17 @@ else
 end
 if ~isempty(param) || nargin ~= 0
 y = randn(round(duration*fs),chans)/10;
+y(y>=0) = 1;
+y(y<0) = -1;
 
-    tag = ['Gaussian' num2str(duration)];
+    tag = ['BinNoise' num2str(duration)];
     
     OUT.audio = y;
     OUT.audio2 = flipud(y); % inverse that assumes flat spectrum (poor assumption)
     %OUT.audio2 = ifft(1./fft(y)); % alternative 'inverse'
     OUT.fs = fs;
     OUT.tag = tag;
-    OUT.funcallback.name = 'Gaussian_noise.m';
+    OUT.funcallback.name = 'binary_noise.m';
     OUT.funcallback.inarg = {duration, chans, fs};
 else
     OUT = [];

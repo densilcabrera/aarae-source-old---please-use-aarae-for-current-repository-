@@ -1,13 +1,13 @@
 function y = convolvedemo(wave1, wave2, method, fs)
-% Add comments to clearly explain what this function does
-% It is advisable to test this, initially, with very short duration waves
-% This is Densil's convolution function available in his website. THe
-% mothod being used is number 2.
+% This function performs convolution using a variety of methods (for
+% demonstration purposes). The various methods may have different errors
+% due to precision, and some are much faster than others.
+% Method 2 is used by AARAE's framework (frequency domain multiplication).
 
 len1 = length(wave1);
 len2 = length(wave2);
 outputlength = len1 + len2 - 1;
-times = ((1:outputlength)-1) ./ fs;
+%times = ((1:outputlength)-1) ./ fs;
 
 switch method
     case 1
