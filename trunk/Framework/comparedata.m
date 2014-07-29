@@ -88,6 +88,7 @@ else
     if length(selectedNodes) == 1, selectedNodes(2) = selectedNodes(1); end
     handles.nodeA = selectedNodes(1).handle.UserData;
     handles.nodeB = selectedNodes(2).handle.UserData;
+    if ~isequal(size(handles.nodeA.data),size(handles.nodeB.data)), handles = truncateandresample(handles); end
     set(handles.name1txt,'String',selectedNodes(1).getName.char)
     set(handles.name2txt,'String',selectedNodes(2).getName.char)
     filltable(handles.nodeA,handles.cattable1)
@@ -676,8 +677,8 @@ function setplottingoptions(handles)
             dataunitsB = handles.nodeB.datainfo.units(strfind(handles.nodeB.datainfo.units,'[')+1:strfind(handles.nodeB.datainfo.units,']')-1);
         end
         if strcmp(iunitsA,iunitsB) && strcmp(iunitsA2,iunitsB2) &&...
-                isequal(handles.nodeA.(genvarname(cattable1{mainaxA(1,1),1})),handles.nodeB.(genvarname(cattable1{mainaxB(1,1),1}))) &&...
-                isequal(handles.nodeA.(genvarname(cattable1{mainaxA(1,2),1})),handles.nodeB.(genvarname(cattable1{mainaxB(1,2),1})))
+                isequal(handles.nodeA.(genvarname(cattable1{mainaxA(1,1),1})),handles.nodeB.(genvarname(cattable2{mainaxB(1,1),1}))) &&...
+                isequal(handles.nodeA.(genvarname(cattable1{mainaxA(1,2),1})),handles.nodeB.(genvarname(cattable2{mainaxB(1,2),1})))
             if ~isempty(hasunitsA) && ~isempty(hasunitsB) && strcmp(dataunitsA,'dB') && strcmp(dataunitsB,'dB')
                 set(handles.compfunc_popup,'String',cat(1,get(handles.compfunc_popup,'String'),{'difference'}))
             else
@@ -813,3 +814,98 @@ for k = 1:7
 end
 set(gca,'XTickLabel',{'Maximum','Minimum','Mean','Median','Standard Deviation','Skewness','Kurtosis'})
 legend(strrep(get(handles.name1txt,'String'),'_',' '),strrep(get(handles.name2txt,'String'),'_',' '))
+
+function handles = truncateandresample(handles)
+nodeA = handles.nodeA;
+nodeB = handles.nodeB;
+
+fieldsA = fieldnames(nodeA);
+fieldsA = fieldsA(3:end-1);
+categoriesA = fieldsA(mod(1:length(fieldsA),2) == 1);
+nn = 1;
+for n = 1:length(fieldsA)
+    if isnumeric(nodeA.(genvarname(fieldsA{n,1})))
+        catunitsA{nn,1} = nodeA.(genvarname([fieldsA{n,1} 'info'])).units;
+        nn = nn + 1;
+    end
+end
+
+fieldsB = fieldnames(nodeB);
+fieldsB = fieldsB(3:end-1);
+categoriesB = fieldsB(mod(1:length(fieldsB),2) == 1);
+nn = 1;
+for n = 1:length(fieldsB)
+    if isnumeric(nodeB.(genvarname(fieldsB{n,1})))
+        catunitsB{nn,1} = nodeB.(genvarname([fieldsB{n,1} 'info'])).units;
+        nn = nn + 1;
+    end
+end
+
+AandB = intersect(catunitsA,catunitsB);
+if ~isempty(AandB)
+    for i = 1:length(AandB)
+        for j = 1:length(categoriesA)
+            if strcmp(nodeA.(genvarname([categoriesA{j,1} 'info'])).units,AandB{i,1})
+                tofixA = nodeA.(genvarname(categoriesA{j,1}));
+                dimNA = j;
+            end
+        end
+        for j = 1:length(categoriesB)
+            if strcmp(nodeB.(genvarname([categoriesB{j,1} 'info'])).units,AandB{i,1})
+                tofixB = nodeB.(genvarname(categoriesB{j,1}));
+                dimNB = j;
+            end
+        end
+        isregA = mean(diff(tofixA,2)) < 1e-15;
+        isregB = mean(diff(tofixB,2)) < 1e-15;
+        if isregA && isregB
+            fsA = round(1/mean(diff(tofixA)));
+            fsB = round(1/mean(diff(tofixB)));
+            if fsA ~= fsB
+                if fsA < fsB
+                    tofixB = resample(tofixB,fsA,fsB);
+                    order = 1:ndims(nodeB.data);
+                    neworder = [dimNB,order(1:ndims(nodeB.data) ~= dimNB)];
+                    nodeB.data = permute(nodeB.data,neworder);
+                    newsize = size(nodeB.data);
+                    nodeB.data = resample(nodeB.data,fsA,fsB);
+                    nodeB.data = reshape(nodeB.data,[size(nodeB.data,1),newsize(2:end)]);
+                    nodeB.data = permute(nodeB.data,neworder);
+                else
+                    tofixA = resample(tofixA,fsB,fsA);
+                    order = 1:ndims(nodeA.data);
+                    neworder = [dimNA,order(1:ndims(nodeA.data) ~= dimNA)];
+                    nodeA.data = permute(nodeA.data,neworder);
+                    newsize = size(nodeA.data);
+                    nodeA.data = resample(nodeA.data,fsB,fsA);
+                    nodeA.data = reshape(nodeA.data,[size(nodeA.data,1),newsize(2:end)]);
+                    nodeA.data = permute(nodeA.data,neworder);
+                end
+            end
+            if length(tofixA) < length(tofixB)
+                nodeB.(genvarname(categoriesB{dimNB,1})) = tofixB(1:length(tofixA));
+                rsmB = repmat({':'},ndims(nodeB.data),1);
+                rsmB{dimNB,1} = '1:length(tofixA)';
+                rsmB = strjoin(rsmB',',');
+                eval(['nodeB.data = nodeB.data(' rsmB ');'])
+                nodeA.(genvarname(categoriesA{dimNA,1})) = tofixA;
+            else
+                nodeA.(genvarname(categoriesA{dimNA,1})) = tofixA(1:length(tofixB));
+                rsmA = repmat({':'},ndims(nodeA.data),1);
+                rsmA{dimNA,1} = '1:length(tofixB)';
+                rsmA = strjoin(rsmA',',');
+                eval(['nodeA.data = nodeA.data(' rsmA ');'])
+                nodeB.(genvarname(categoriesB{dimNB,1})) = tofixB;
+            end
+        end
+    end
+    handles.nodeA = nodeA;
+    handles.nodeB = nodeB;
+end
+        
+        
+        
+        
+        
+        
+        
