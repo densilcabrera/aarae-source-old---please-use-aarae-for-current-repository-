@@ -189,7 +189,7 @@ end
 
 %NCSILind = (70-(out.SIL-15));
 NCSILind=70-out.SIL-1;
-if NCSILind ~=0
+if ~(NCSILind<1) && ~(NCSILind>56)
     NCSILcurve= NCcurves(NCSILind,:);
 else
     NCSILcurve=[];
