@@ -46,15 +46,15 @@ if nargin < 4,
         'Analysis and display parameters',1, ...
         {num2str(dosubplots);num2str(tau); num2str(cal);num2str(fhi); ...
         num2str(flo); num2str(showpercentiles)});
-    param = str2num(char(param));
+    
     %if length(param) < 6, param = []; end
     if ~isempty(param)
-        dosubplots = round(param(1));
-        tau = param(2);
-        cal = param(3);
-        fhi = param(4);
-        flo = param(5);
-        showpercentiles = param(6);
+        dosubplots = round(str2num(char(param(1))));
+        tau = str2num(char(param(2)));
+        cal = str2num(char(param(3)));
+        fhi = str2num(char(param(4)));
+        flo = str2num(char(param(5)));
+        showpercentiles = str2num(char(param(6)));
     else
         out = [];
         return
@@ -139,10 +139,10 @@ if ~isempty(audio) && ~isempty(fs) && ~isempty(cal) && ~isempty(showpercentiles)
 
     ymax = 10*ceil(max(max(out.Lmax+5))/10);
     ymin = 10*floor(min(min(out.L90))/10);
-
+    fig = figure('Visible','on');
     if dosubplots == 0
         out.tables = [];
-        fig = figure('Visible','on');
+        
         for ch = 1:chans
             figure('name', ['Octave Band Spectrum, Channel ', ...
                 num2str(ch), ', tau = ', num2str(tau),' s'])
@@ -254,14 +254,16 @@ if ~isempty(audio) && ~isempty(fs) && ~isempty(cal) && ~isempty(showpercentiles)
     %             text(k-0.25,ymax-(ymax-ymin)*0.025, ...
     %                 num2str(round(out.Leq(k,ch)*10)/10),'Color',[1,0.3,0.3])
     %         end
-            fig = figure('Visible','off');
-            table1 = uitable('Data',[out.Leq(:,ch),out.Lmax(:,ch),out.L5(:,ch),out.L10(:,ch),out.L50(:,ch),out.L90(:,ch)],...
-                             'ColumnName',{'Leq','Lmax','L5','L10','L50','L90'},...
-                             'RowName',num2cell(frequencies));
-            [fig,tables] = disptables(fig,table1);
-            delete(fig)
-            out.tables = [out.tables tables];
+             %fig = figure('Visible','off');
+            table1 = uitable('Data',[out.Leq(:,ch),out.Lmax(:,ch),out.L1(:,ch),out.L5(:,ch),out.L10(:,ch),out.L50(:,ch),out.L90(:,ch)],...
+                             'ColumnName',{'Leq','Lmax','L1','L5','L10','L50','L90'},...
+                             'RowName',num2cell(frequencies),'Parent',fig);
+            %[fig,tables] = disptables(fig,table1,{['Chan' num2str(ch) ' - Octave band spectrum']});
+            %delete(fig)
+            out.tables = [out.tables table1];
         end
+        tablenames = cellstr([repmat('Chan',chans,1),num2str((1:chans)'),repmat(' - Octave band spectrum',chans,1)]);
+        [~,out.tables] = disptables(fig,out.tables,tablenames);
     end
 else
     out = [];
