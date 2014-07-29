@@ -23,7 +23,7 @@ function varargout = genaudio(varargin)
 
 % Edit the above text to modify the response to help genaudio
 
-% Last Modified by GUIDE v2.5 03-Jun-2014 11:38:06
+% Last Modified by GUIDE v2.5 29-Jul-2014 17:49:37
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -263,10 +263,10 @@ signalcat = contents{get(hObject,'Value')};
 signals = what([cd '/Generators/' signalcat]);
 if ~isempty(cellstr(signals.m))
     set(handles.signal_box,'Visible','on','String',[' ';cellstr(signals.m)],'Value',1,'Tooltip','');
-    set(handles.gen_btn,'Visible','off');
+    set([handles.gen_btn,handles.help_btn],'Visible','off');
 else
     set(handles.signal_box,'Visible','off');
-    set(handles.gen_btn,'Visible','off');
+    set([handles.gen_btn,handles.help_btn],'Visible','off');
 end
 guidata(hObject,handles);
 
@@ -306,11 +306,11 @@ if ~strcmp(selection,' ')
     handles.funname = funname;
     helptext = evalc(['help ' funname]);
     set(hObject,'Tooltip',helptext);
-    set(handles.gen_btn,'Visible','on');
+    set([handles.gen_btn,handles.help_btn],'Visible','on');
 else
     handles.funname = [];
     set(hObject,'Tooltip','');
-    set(handles.gen_btn,'Visible','off');
+    set([handles.gen_btn,handles.help_btn],'Visible','off');
 end
 guidata(hObject,handles);
 
@@ -470,3 +470,13 @@ function lsilence_IN_CreateFcn(hObject, ~, ~) %#ok : silence gap input box creat
 if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
     set(hObject,'BackgroundColor','white');
 end
+
+
+% --- Executes on button press in help_btn.
+function help_btn_Callback(~, ~, handles) %#ok : Executed when help button is clicked
+% hObject    handle to help_btn (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+contents = cellstr(get(handles.signal_box,'String'));
+selection = contents{get(handles.signal_box,'Value')};
+eval(['doc ' selection])

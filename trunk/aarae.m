@@ -2798,7 +2798,7 @@ end
 
 
 % --- Executes on button press in proc_help_btn.
-function proc_help_btn_Callback(hObject, eventdata, handles)
+function proc_help_btn_Callback(~, ~, handles) %#ok : Executed when help button for processors is clicked
 % hObject    handle to proc_help_btn (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
@@ -2807,7 +2807,7 @@ selection = contents{get(handles.proc_box,'Value')};
 eval(['doc ' selection])
 
 % --- Executes on button press in analyser_help_btn.
-function analyser_help_btn_Callback(hObject, eventdata, handles)
+function analyser_help_btn_Callback(~, ~, handles) %#ok : Executed when help button for analysers is clicked
 % hObject    handle to analyser_help_btn (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
