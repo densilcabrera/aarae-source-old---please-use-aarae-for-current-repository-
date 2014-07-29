@@ -22,7 +22,7 @@ function varargout = comparedata(varargin)
 
 % Edit the above text to modify the response to help comparedata
 
-% Last Modified by GUIDE v2.5 21-Jul-2014 10:59:09
+% Last Modified by GUIDE v2.5 29-Jul-2014 12:13:35
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -88,9 +88,9 @@ else
     if length(selectedNodes) == 1, selectedNodes(2) = selectedNodes(1); end
     handles.nodeA = selectedNodes(1).handle.UserData;
     handles.nodeB = selectedNodes(2).handle.UserData;
-    if ~isequal(size(handles.nodeA.data),size(handles.nodeB.data)), handles = truncateandresample(handles); end
     set(handles.name1txt,'String',selectedNodes(1).getName.char)
     set(handles.name2txt,'String',selectedNodes(2).getName.char)
+    if ~isequal(size(handles.nodeA.data),size(handles.nodeB.data)), handles = truncateandresample(handles); end
     filltable(handles.nodeA,handles.cattable1)
     filltable(handles.nodeB,handles.cattable2)
     setplottingoptions(handles)
@@ -868,18 +868,20 @@ if ~isempty(AandB)
                     neworder = [dimNB,order(1:ndims(nodeB.data) ~= dimNB)];
                     nodeB.data = permute(nodeB.data,neworder);
                     newsize = size(nodeB.data);
-                    nodeB.data = resample(nodeB.data,fsA,fsB);
+                    nodeB.data = resample(squeeze(nodeB.data),fsA,fsB);
                     nodeB.data = reshape(nodeB.data,[size(nodeB.data,1),newsize(2:end)]);
                     nodeB.data = permute(nodeB.data,neworder);
+                    set(handles.name2txt,'String',[get(handles.name2txt,'String') ', resampled'])
                 else
                     tofixA = resample(tofixA,fsB,fsA);
                     order = 1:ndims(nodeA.data);
                     neworder = [dimNA,order(1:ndims(nodeA.data) ~= dimNA)];
                     nodeA.data = permute(nodeA.data,neworder);
                     newsize = size(nodeA.data);
-                    nodeA.data = resample(nodeA.data,fsB,fsA);
+                    nodeA.data = resample(squeeze(nodeA.data),fsB,fsA);
                     nodeA.data = reshape(nodeA.data,[size(nodeA.data,1),newsize(2:end)]);
                     nodeA.data = permute(nodeA.data,neworder);
+                    set(handles.name1txt,'String',[get(handles.name1txt,'String') ', resampled'])
                 end
             end
             if length(tofixA) < length(tofixB)
@@ -888,6 +890,7 @@ if ~isempty(AandB)
                 rsmB{dimNB,1} = '1:length(tofixA)';
                 rsmB = strjoin(rsmB',',');
                 eval(['nodeB.data = nodeB.data(' rsmB ');'])
+                set(handles.name2txt,'String',[get(handles.name2txt,'String') ', truncated'])
                 nodeA.(genvarname(categoriesA{dimNA,1})) = tofixA;
             else
                 nodeA.(genvarname(categoriesA{dimNA,1})) = tofixA(1:length(tofixB));
@@ -895,6 +898,7 @@ if ~isempty(AandB)
                 rsmA{dimNA,1} = '1:length(tofixB)';
                 rsmA = strjoin(rsmA',',');
                 eval(['nodeA.data = nodeA.data(' rsmA ');'])
+                set(handles.name1txt,'String',[get(handles.name1txt,'String') ', truncated'])
                 nodeB.(genvarname(categoriesB{dimNB,1})) = tofixB;
             end
         end
@@ -902,10 +906,3 @@ if ~isempty(AandB)
     handles.nodeA = nodeA;
     handles.nodeB = nodeB;
 end
-        
-        
-        
-        
-        
-        
-        
