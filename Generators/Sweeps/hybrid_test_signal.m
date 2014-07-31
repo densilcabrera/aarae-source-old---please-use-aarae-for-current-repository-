@@ -81,6 +81,8 @@ end
             for n = 1: doMLS
                 OUTtemp = mls;
                 OUT = addsignal(OUTtemp,OUT,silencelen);
+                OUT.properties.MLSn(n) = OUTtemp.properties.n;
+                OUT.properties.MLScycles(n) = OUTtemp.properties.cycles;
             end
         end  
         
@@ -91,23 +93,13 @@ end
             end
         end  
         
-%         if nargin == 0
-      % You NEED to provide the sampling frequency of your audio.
+
             OUT.tag = 'Hybrid';     % You may assign it a name to be identified in AARAE.
             OUT.funcallback.name = 'hybrid_test_signal.m';
             %OUT.funcallback.inarg = {silencelen};
             OUT.funcallback.inarg = {};
 
-%         end
-        
-        % You may choose to increase the functionality of your code by allowing
-        % it to operate outside the AARAE environment you may want to output
-        % independent variables instead of a structure...
-%         if nargin ~= 0
-%             OUT = audio;
-%             varargout{1} = fs;
-%             %varargout{2} = ?;
-%         end
+
     else
         % AARAE requires that in case that the user doesn't input enough
         % arguments to generate audio to output an empty variable.

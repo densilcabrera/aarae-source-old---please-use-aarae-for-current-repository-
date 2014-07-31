@@ -3,11 +3,11 @@ function [OUT, varargout] = Hybrid_process(IN, fs, audio2)
 % Hybrid generator within AARAE. The output is an impulse response.
 %
 % Code by Densil Cabrera
-% Version 0 (beta) (11 May 2014)
+% Version 0.1 (beta) (31 July 2014)
 
 if nargin == 1 
     
-    param = inputdlg({'Mean [0], Trimmean [0<x<1], Median [1], Minimum [2], Maximum [3], or Stack in dimension 4 [4]';...
+    param = inputdlg({'Mean [0], Trimmean [0<x<1], Median [1], or Stack in dimension 4 [4]';...
         'Time domain [0] or Frequency domain [1]'},...
         'Combination method',... 
         [1 60],... 
@@ -65,7 +65,7 @@ if isfield(IN,'funcallback') && strcmp(IN.funcallback.name,'hybrid_test_signal.m
             
             
             
-            if signallist(n) ~= 5
+            if signallist(n) < 4
                 % convolution of audio with audio2
                 fftlen = len + length(audio2);
                 ir = ifft(fft(audio,fftlen)...
@@ -75,6 +75,17 @@ if isfield(IN,'funcallback') && strcmp(IN.funcallback.name,'hybrid_test_signal.m
 %                 figure
 %                 plot(10*log10(ir.^2),'Color',rand(1,3));
 %                 hold on
+            elseif signallist(n) == 4
+                % MLS processing
+                MLSindex = n - sum(signallist<4);
+                if isfield(IN.properties,'MLScycles')...
+                        && isfield(IN.properties,'MLSn')
+                        MLScycles = IN.properties.MLScycles(MLSindex);
+                        MLSorder = IN.properties.MLSn(MLSindex);
+                        ir = MLS_process(audio,0,0,0,MLScycles,MLSorder);
+                else
+                    ir = [ir;zeros(outlen-length(ir),1)];
+                end
                 
             else
                 % Golay processing
