@@ -167,7 +167,7 @@ if filename ~= 0
     t = linspace(0,length(handles.audio)/handles.mainHandles.fs,length(handles.audio));
     plot(handles.dispaxes,t,handles.audio)
     xlabel(handles.dispaxes,'Time [s]');
-    recrms = (mean(handles.audio.^2))^0.5;
+    recrms = (mean(handles.audio.^2))^0.5/2;
     handles.calthresh = line([0 length(t)/handles.mainHandles.fs],[recrms recrms],'Color','k');
     set(handles.threshold_IN,'String',num2str(recrms))
     set([handles.sperframe_IN,handles.percentage_IN,handles.threshold_IN,handles.tonelevel_IN,handles.evalcal_btn,handles.filter_btn],'Enable','on')
@@ -560,7 +560,7 @@ if ~isempty(rec)
     time = linspace(0,size(handles.audio,1)/handles.mainHandles.fs,length(handles.audio));
     plot(handles.dispaxes,time,handles.audio);
     xlabel(handles.dispaxes,'Time [s]');
-    recrms = (mean(rec.^2))^0.5;
+    recrms = (mean(rec.^2))^0.5/2;
     handles.calthresh = line([0 length(time)/handles.mainHandles.fs],[recrms recrms],'Color','k');
     set(handles.threshold_IN,'String',num2str(recrms))
     set([handles.sperframe_IN,handles.percentage_IN,handles.threshold_IN,handles.tonelevel_IN,handles.evalcal_btn,handles.filter_btn],'Enable','on')
