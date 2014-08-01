@@ -110,10 +110,10 @@ if isfield(IN,'properties')
     if isfield(IN.properties,'startflag') && dim4==1
         startflag = IN.properties.startflag;
         dim4 = length(startflag);
-        audiotemp = zeros((cycles+1)*(2^n-1),chans,bands,dim4);
+        audiotemp = zeros((cycles+1)*len2,chans,bands,dim4);
         for d=1:dim4
             audiotemp(:,:,:,d) = ...
-                audio(startflag(d):startflag(d)+(cycles+1)*(2^n-1)-1,:,:);
+                audio(startflag(d):startflag(d)+(cycles+1)*len2-1,:,:);
         end
     end
 end
