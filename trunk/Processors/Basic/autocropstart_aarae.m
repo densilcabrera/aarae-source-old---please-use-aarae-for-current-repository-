@@ -93,6 +93,8 @@ if ~isempty(threshold) && ~isempty(method)
                         out = audio(threshind:end,:,:,:,:,:);
                     end
                 end
+            else
+                out = audio; % find failed
             end
             
         case 3
