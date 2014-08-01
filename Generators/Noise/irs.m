@@ -3,21 +3,12 @@ function  OUT = irs(n,cycles,fs)
 % (IRS), made from a maximum length sequence signal (mls), which can be
 % used to measure impulse responses.
 %
-% The IRS signal consists of an MLS signal followed by its inversion, which
-% can be helpful in reducing distortion artefacts in the derivation of an
-% impulse response. The n input argument (or first field of the dialog box)
-% determines the bit length of the MLS signal (note that the IRS signal is
-% double the length of the MLS signal used). The number of samples in one
-% cycle of the IRS signal is 2*(2^n-1). 
+% The IRS signal consists of an MLS signal repeated once, with all even
+% samples multiplied by -1. The n input argument (or first field of the
+% dialog box) determines the bit length of the MLS signal (note that the
+% IRS signal is double the length of the MLS signal used). The number of
+% samples in one cycle of the IRS signal is 2*(2^n-1).
 %
-% This function also allows the first input argument to be used in
-% alternative ways: if a value greater than 24 is used, then this is the
-% length (in samples) of flat spectrum random phase noise (generated in the
-% frequency domain) which is used in place of the MLS signal. If a value
-% of 1 (or less) is used, then audio can be imported, its spectrum
-% flattened, and then used in place of the MLS signal. These alternative
-% approaches are mainly included for experimentation, rather than for
-% serious measurement.
 %
 % This function calls code by M.R.P. Thomas  - please refer to
 % the following folder AARAE/Generators/Noise/mls, which contains his code,
@@ -57,43 +48,14 @@ end
 if ~isempty(param) || nargin ~= 0
     
     if n >=2 && n <=24
-    %inefficient, but avoids any need to edit Thomas' code
-    [~, mls] = GenerateMLSSequence(2, n, 0); 
-    irs = [mls'; -mls'];
-    elseif n > 24
-    % generate flat spectrum random phase noise   
-        if rem(n,2) == 0
-             % even length spectrum
-            halfspectrum = ones(n/2-1,1).* exp(1i*2*pi.*rand(n/2-1,1));
-            y = ifft([0;halfspectrum;0;flipud(conj(halfspectrum))]);
-        else
-            % odd length spectrum
-            halfspectrum = ones(floor(n/2),1).* exp(1i*2*pi.*rand(floor(n/2),1));
-            y = ifft([0;halfspectrum;flipud(conj(halfspectrum))]);
-        end
-        irs = [y;-y];
+        %inefficient, but avoids any need to edit Thomas' code
+        [~, mls] = GenerateMLSSequence(2, round(n), 0);
+        irs = [mls'; mls'];
+        irs(2:2:end) = -irs(2:2:end);
+        
     else
-        % Import audio and flatten spectrum (apart from DC and Nyquist).
-        % This method is here mainly for experimentation with the concept
-        % rather than as a serious measurement tool
-        selection = choose_audio; % call AARAE's choose_audio function
-        if ~isempty(selection)
-            audioin = selection.audio; % get audio data
-            fs = selection.fs; %  overwrite previous sampling rate
-            audioin = sum(sum(audioin,3),2); % mix bands and channels if >1
-            audioin = fft(audioin);
-            if rem(length(audioin),2) == 0
-                audioin = ifft([0;ones(length(audioin)/2-1,1);0;ones(length(audioin)/2-1,1)] ...
-                    .* exp(1i*2*pi.*angle(audioin))); % just keep the phase
-            else
-                audioin = ifft([0;ones(floor(length(audioin)/2),1);ones(floor(length(audioin)/2),1)] ...
-                    .* exp(1i*2*pi.*angle(audioin))); % just keep the phase
-            end
-            irs = [audioin;-audioin];
-        else
-            OUT = [];
-            return
-        end
+        OUT = [];
+        return
     end
 
     OUT.audio = [repmat(irs,[cycles,1]);zeros(size(irs))];
