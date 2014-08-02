@@ -44,6 +44,9 @@ if nargin ==1
         calval = param(2);
         scaling = param(3);
         domain = param(4);
+    else
+        OUT=[];
+        return
     end
 else
     param = [];
