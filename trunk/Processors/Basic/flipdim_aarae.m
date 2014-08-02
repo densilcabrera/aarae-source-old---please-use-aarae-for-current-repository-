@@ -1,5 +1,5 @@
 function out = flipdim_aarae(in,flipvector)
-% Dimensions of the audio can be flipped, using a menu to select
+% Dimensions of the audio can be flipped, using a list dialog to select
 % dimensions, or by specifying a list of dimensions to be flipped (optional
 % flipvector input). Other AARAE fields that are associated with particular
 % dimensions are flipped accordingly (e.g. cal, chanID and bandID).
@@ -11,8 +11,8 @@ function out = flipdim_aarae(in,flipvector)
 % Higher dimensions are not defined (although dimension 4 is often used for
 % IR stacks). This function supports up to 6 dimensions.
 %
-% Code by Densil Cabrera & Daniel Jimenez
-% version 1.0 (5 November 2013)
+% Code by Densil Cabrera 
+% version 1.0 (2 August 2014)
 
 if isstruct(in)
     audio = in.audio;
