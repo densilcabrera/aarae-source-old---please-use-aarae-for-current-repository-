@@ -50,6 +50,7 @@ if isstruct(IN)
             OUT = [];
             return
         end
+
     if isfield(IN,'properties')
         if isfield(IN.properties,'combinehalves')
             combinehalvesdefault = IN.properties.combinehalves;
@@ -126,6 +127,7 @@ if d2stack == 1 && chans == 1 && dim4 > 1
     audio = permute(audio,[1,4,3,2]);
     chans = dim4;
     dim4 = 1;
+    chanID = cellstr([repmat('IR ',size(audio,2),1) num2str((1:size(audio,2))')]);
 end
 
 % apply offset
@@ -176,6 +178,9 @@ end
 
 if isstruct(IN)
     OUT.audio = ir;
+    if exist('chanID','var')
+        OUT.chanID = chanID;
+    end
     OUT.funcallback.name = 'CircXcorrforIR.m';
     OUT.funcallback.inarg = {offset, combinehalves, d2stack, cycles, n};
 else
