@@ -20,7 +20,6 @@ end
 [len,chans,bands,dim4,dim5,dim6]=size(audio);
 
 if nargin == 1
-    param = [1;2;3;4;5;6];
     menustring1 = ['Shift Dim 1: Time samples (' num2str(len) ')'];
     menustring2 = ['Shift Dim 2: Channels (' num2str(chans) ')'];
     menustring3 = ['Shift Dim 3: Bands (' num2str(bands) ')'];
