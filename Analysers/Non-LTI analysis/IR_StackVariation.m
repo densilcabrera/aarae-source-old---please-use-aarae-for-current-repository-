@@ -177,6 +177,23 @@ if ~isempty(audio) && ~isempty(fs) && ~isempty(cal)
     end
 
     
+    val = skewness(audio,[],stackdim);
+    ValNames = [ValNames, 'skewness'];
+    if stackdim == 4
+        Datastack = cat(4,Datastack,val);
+    else
+        Datastack = cat(2,Datastack,val);
+    end
+
+    
+    val = kurtosis(audio,[],stackdim);
+    ValNames = [ValNames, 'kurtosis'];
+    if stackdim == 4
+        Datastack = cat(4,Datastack,val);
+    else
+        Datastack = cat(2,Datastack,val);
+    end    
+    
     val = max(audio,[],stackdim);
     ValNames = [ValNames, 'max'];
     if stackdim == 4
@@ -201,7 +218,22 @@ if ~isempty(audio) && ~isempty(fs) && ~isempty(cal)
         Datastack = cat(2,Datastack,val);
     end
     
+    val = rms(audio,stackdim);
+    ValNames = [ValNames, 'rms'];
+    if stackdim == 4
+        Datastack = cat(4,Datastack,val);
+    else
+        Datastack = cat(2,Datastack,val);
+    end    
     
+    
+    val = std(audio,[],stackdim)./rms(audio,stackdim);
+    ValNames = [ValNames, 'stdonrms'];
+    if stackdim == 4
+        Datastack = cat(4,Datastack,val);
+    else
+        Datastack = cat(2,Datastack,val);
+    end
     
     if stackdim == 4
         doresultleaf(Datastack, 'Value', {xstring},...
