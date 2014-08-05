@@ -96,7 +96,7 @@ function mySelectFcn(tree, ~)
             refreshplots(mainHandles,'time')
             pause(0.001)
             refreshplots(mainHandles,'freq')
-            if isfield(audiodata,'audio2') && ~isempty(audiodata.audio2) && ismatrix(audiodata.audio)%(strcmp(audiodata.datatype,'measurements') || strcmp(audiodata.datatype,'testsignals') || strcmp(audiodata.datatype,'processed'))
+            if isfield(audiodata,'audio2') && ~isempty(audiodata.audio2)% && ismatrix(audiodata.audio)
                 set(mainHandles.IR_btn,'Enable','on');
             else
                 set(mainHandles.IR_btn,'Enable','off');% Display process IR button if selection is a measurement based on a sine sweep
