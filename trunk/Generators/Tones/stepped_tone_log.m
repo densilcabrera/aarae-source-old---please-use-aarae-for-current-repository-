@@ -7,10 +7,11 @@ function OUT = stepped_tone_log(duration, lof, hif, fstep, fs)
 % efficient ways of doing that!).
 %
 % The frequencies used are adjusted so that they have an integer number of
-% samples in their exact period - which facilitates analsysis. However,
-% when frequencies are high, this may result in a substantial adjustment
-% unless a high sampling rate is used (which is advisable in harmonic
-% distortion analysis anyway).
+% samples in their exact period - which facilitates analsysis (e.g., using
+% an fft with an analysis period equal to that of the fundamental).
+% However, when frequencies are high, this may result in a substantial
+% adjustment unless a high sampling rate is used (which is advisable in
+% harmonic distortion analysis anyway).
 %
 % The tone sequence is replicated in audio2. Additional properties fields
 % are generated to be used by an analyser.
