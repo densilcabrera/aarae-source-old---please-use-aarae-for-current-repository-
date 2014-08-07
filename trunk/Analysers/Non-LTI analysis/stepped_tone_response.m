@@ -48,7 +48,7 @@ function OUT = stepped_tone_response(IN,noiseadjust,highestharmonic,plottype,nor
 % the function will crash).
 %
 % Code by Densil Cabrera
-% version 0 (6 August 2014)
+% version 1.00 (7 August 2014)
 
 
 if nargin ==1
@@ -411,7 +411,9 @@ if ~isempty(audio) && ~isempty(fs) && ~isempty(cal)
                         end
                     end
                     set(gca,'Xscale','log')
-                    ylim([max(max(max(max(spectrum))))-100,max(max(max(max(spectrum))))])
+                    if normalizeplots == 1
+                        ylim([-100 10])
+                    end
                     xlabel('Excitation frequency (Hz)')
                     ylabel('Level (dB)')
                     legend('Show','Location','EastOutside')
