@@ -33,6 +33,13 @@ function OUT = stepped_tone_response(IN,noiseadjust,highestharmonic,plottype,nor
 %           extent that the noise is steady state. This operation can be
 %           omitted using the first dialog box field (or second input
 %           argument).
+%       *   Although the spectrum analysis has very high frequency
+%           selectivity, there is still a small error (around -88 dB). The
+%           power of this numerical noise is derived by analysing the
+%           original test signal, so that the error can be subtracted from
+%           the spectrum (optionally), allowing much lower levels of
+%           distortion to be detected if there is very little or no
+%           measurable noise.
 %       *   The tones' power spectra can be limited to a specified number
 %           of harmonics.
 %       *   THD, SNR and SINAD are calculated from these data.
@@ -50,17 +57,16 @@ function OUT = stepped_tone_response(IN,noiseadjust,highestharmonic,plottype,nor
 % Code by Densil Cabrera
 % version 1.00 (7 August 2014)
 
-
 if nargin ==1
     
-    param = inputdlg({'If silent cycle present: make no noise adjustment [0]; subtract noise [1]';...
+    param = inputdlg({'Make no noise adjustment [0]; subtract noise from silent cycle if present[1]; remove numerical analysis error [2]; methods 1 & 2 combined [3]';...
         'Highest harmonic [2+, or 0 for all]';...
         'Type of plot: ribbon [0], line [1], or both [2]';...
         'Normalize plots to fundamental [0 | 1]';...
         'Use Matlab''s own THD SNR and SINAD functions too (compatible with R2013b and later) [0 | 1]'},....
         'Stepped Tone Response',...
         [1 60],...
-        {'1';'0';'0';'0';'0'});
+        {'3';'0';'0';'0';'0'});
     
     param = str2num(char(param));
     
@@ -264,9 +270,13 @@ if ~isempty(audio) && ~isempty(fs) && ~isempty(cal)
         if ~exist('spectrum','var')
             spectrum = zeros(maxfidx,chans,dim3,length(flist));
         end
+        if ~exist('spectrum2','var')
+            spectrum2 = zeros(maxfidx,chans,1,length(flist));
+        end
         
         audiotemp = audio(startindex(n):endindex(n),:,:);
         nwin = floor(tonelen/nfft);
+        audiotemp2 = audio2(startindex(n):endindex(n),:,:);
         
         % Calculate Matlab's inbuilt THD, SNR and SINAD
         for ch = 1:chans
@@ -296,14 +306,20 @@ if ~isempty(audio) && ~isempty(fs) && ~isempty(cal)
         end
         
         powspectrumtemp = zeros(nfft,chans,dim3,nwin);
+        powspectrumtemp2 = zeros(nfft,chans,1,nwin);
         for m = 1:nwin
             powspectrumtemp(:,:,:,m) = abs(fft(audiotemp(1+(m-1)*nfft:(m-1)*nfft+nfft,...
                 :,:))./nfft).^2;
+            powspectrumtemp2(:,:,1,m) = abs(fft(audiotemp2(1+(m-1)*nfft:(m-1)*nfft+nfft,...
+                1,:))./nfft).^2;
         end
         
         % take the trimmean
         powspectrumtemp = trimmean(powspectrumtemp,25,4);
         spectrum(1:maxfidx,:,:,n) = powspectrumtemp(1:maxfidx,:,:);
+        
+        powspectrumtemp2 = trimmean(powspectrumtemp2,25,4);
+        spectrum2(1:maxfidx,:,1,n) = powspectrumtemp2(1:maxfidx,:,:);
         
         
         % get rid of non-harmonic data, and data beyond the highest
@@ -327,6 +343,10 @@ if ~isempty(audio) && ~isempty(fs) && ~isempty(cal)
         spectrum(1:maxfidx,:,firstseq:dim3,n) =...
             spectrum(1:maxfidx,:,firstseq:dim3,n)...
             .* repmat(spectrumind,[1,chans,dim3-(firstseq-1),1]);
+        
+        spectrum2(1:maxfidx,:,1,n) = ...
+            spectrum2(1:maxfidx,:,1,n) ...
+            .* repmat(spectrumind,[1,chans,1,1]);
     end
     
     if isinf(relgain(1)) % detect silent cycle
@@ -338,26 +358,38 @@ if ~isempty(audio) && ~isempty(fs) && ~isempty(cal)
             % subtract noise from signal (will only work if noise is
             % really steady)
             spectrum = spectrum - repmat(noisespectrum,[1,1,dim3,1]);
-            spectrum(spectrum<0)=1e-99;
+            spectrum(spectrum<0)=0;
             
         end
-%         SNR = 10*log10(spectrum ./ repmat(noisespectrum,[1,1,dim3,1]));
-%         if noiseadjust == 2 || noiseadjust == 3
-%             % apply SNR threshold
-%             spectrum(SNR < SNRthresh) = 1e-99;
-%         end
+
     else
         noisespectrum = 0;
+    end
+    
+    % scale spectrum error adjustment matrix by fundamental freq power, and
+    % subtract spectrum error from measurement
+    if noiseadjust == 2 || noiseadjust == 3
+    spectrum2 = repmat(spectrum2,[1,1,dim3,1]);
+    spectrum2 = spectrum2 .*...
+        repmat((spectrum(numF0cycles+1,:,:,:) ./ ...
+        spectrum2(numF0cycles+1,:,:,:)),[size(spectrum2,1),1,1,1]);
+    spectrum(numF0cycles+2:end,:,:,:) = spectrum(numF0cycles+2:end,:,:,:)...
+        - spectrum2(numF0cycles+2:end,:,:,:);
+    spectrum(spectrum<0)=0;
     end
     
     % SUMMARY VALUES
     SIGNALPOW = spectrum(numF0cycles+1,:,:,:);
     DISTORTIONPOW = sum(spectrum(numF0cycles+2:end,:,:,:));
     NOISEPOW = repmat(sum(noisespectrum),[1,1,dim3,1]);
+    TESTSIGERROR =1 + sum(spectrum2((numF0cycles+2):end,:,1,:)) ./ spectrum2(numF0cycles+1,:,1,:);
     
     THD2 = 10*log10( DISTORTIONPOW ./ SIGNALPOW );
     SNR2 = 10*log10( SIGNALPOW ./ NOISEPOW);
     SINAD2 = 10*log10( SIGNALPOW ./ (DISTORTIONPOW + NOISEPOW));
+    
+    
+
     
     % THD: ratio of harmonic power to F0 power
 %     if highestharmonic <2 % all harmonics
@@ -369,15 +401,15 @@ if ~isempty(audio) && ~isempty(fs) && ~isempty(cal)
 
 
     
-    % limit the range of output values
-    THD2(THD2<-200)=-inf;
-    SNR2(SNR2>200)=inf;
-    SINAD2(SINAD2>200)=inf;
-    
-    % the following values should be unlikely
-    THD2(THD2>200)=inf;
-    SNR2(SNR2<-200)=-inf;
-    SINAD2(SINAD2<-200)=-inf;
+%     % limit the range of output values
+%     THD2(THD2<-200)=-inf;
+%     SNR2(SNR2>200)=inf;
+%     SINAD2(SINAD2>200)=inf;
+%     
+%     % the following values should be unlikely
+%     THD2(THD2>200)=inf;
+%     SNR2(SNR2<-200)=-inf;
+%     SINAD2(SINAD2<-200)=-inf;
     
 
     
