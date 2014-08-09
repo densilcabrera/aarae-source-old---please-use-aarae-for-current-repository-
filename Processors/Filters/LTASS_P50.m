@@ -15,6 +15,8 @@ if nargin < 2
             'Fs',1,{'48000'});
         fs = str2num(char(fs));
     end
+else
+    audio = IN;
 end
 if ~isempty(audio) && ~isempty(fs)
     %if isdir([cd '/Processors/Filters/' num2str(fs) 'Hz'])
