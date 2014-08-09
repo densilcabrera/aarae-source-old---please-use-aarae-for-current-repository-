@@ -45,24 +45,9 @@ else
 end
 
 if ~isempty(data) && ~isempty(fs) && ~isempty(dBperOct) && ~isempty(doplay)
-    S = size(data); % size of the audio
-    ndim = length(S); % number of dimensions
-    switch ndim
-        case 1
-            len = S(1); % number of samples in audio
-            chans = 1; % number of channels
-            bands = 1; % number of bands
-        case 2
-            len = S(1); % number of samples in audio
-            chans = S(2); % number of channels
-            bands = 1; % number of bands
-        case 3
-            len = S(1); % number of samples in audio
-            chans = S(2); % number of channels
-            bands = S(3); % number of bands
-    end
-
-    nsamples = 2*(len/2); % use an even length fft
+    [len,chans,bands] = size(data); % size of the audio
+    
+    nsamples = 2*ceil(len/2); % use an even length fft
 
     % exponent used to generate magnitude slope
     fexponent = dBperOct/3;
