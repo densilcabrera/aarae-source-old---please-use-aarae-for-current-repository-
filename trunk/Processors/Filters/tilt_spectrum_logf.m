@@ -1,36 +1,28 @@
-function OUT = tilt_spectrum_logf(in, fs, dBperOct, doplay)
-% Applies a tilt to the magnitude spectrum of the input. The tilt is linear
-% as a function of log(frequency), and is specified in decibels per octave.
+function OUT = tilt_spectrum_logf(in, fs, dBperOct, lowf,hif, pivotf, doplay)
+% This function applies a tilt to the magnitude spectrum of the input. The
+% tilt is linear as a function of log(frequency), and is specified in
+% decibels per octave.
 %
 % The operation is done in the frequency domain, without changing phase.
 %
 % This can, for example, be used to transform between white and pink noise,
 % or assist in the derivation of impulse responses from a logarithmic swept
-% sine that is missing its inverse filter.
+% sine that is missing its inverse filter, or for spectrally weighting MLS
+% and unweighting it in the analysis.
+%
+% As well as specifying the spectral slope, you can also specify low and
+% high frequency limits to the spectrum slope (beyond which the gain
+% remains constant). If the slope is not limited in frequency, it can
+% create problems with very large gain or attenuation (especially in the
+% low frequency range).
+%
+% The pivot frequency is the frequency at which the filter has 0 dB gain
+% (1000 Hz by default).
 %
 %
-% Code by Densil Cabrera
-% version 1.0 (19 October 2013)
+% Code by Densil Cabrera version 1.01 (14 August 2014)
 
-if nargin < 4, doplay = 0; end
-if nargin < 3
-    dBperOct = 3;
-    %dialog box for settings
-    prompt = {'Spectrum tilt (dB/octave)', ...
-        'Play and/or display (0|1)'};
-    dlg_title = 'Settings';
-    num_lines = 1;
-    def = {'3', '0'};
-    answer = inputdlg(prompt,dlg_title,num_lines,def);
-    
-    if ~isempty(answer)
-        dBperOct = str2num(answer{1,1});
-        doplay = str2num(answer{2,1});
-    else
-        OUT = [];
-        return
-    end
-end
+
 
 if isstruct(in)
     data = in.audio;
@@ -44,9 +36,40 @@ else
     end
 end
 
-if ~isempty(data) && ~isempty(fs) && ~isempty(dBperOct) && ~isempty(doplay)
-    [len,chans,bands] = size(data); % size of the audio
+
+if nargin < 4, doplay = 0; end
+if nargin < 3
+    %dialog box for settings
+    prompt = {'Spectrum tilt (dB/octave)', ...
+        'Low frequency limit (Hz)',...
+        'High frequency limit (Hz)',...
+        'Pivot frequency (Hz) at which there is 0 dB gain',...
+        'Play and/or display (0|1)'};
+    dlg_title = 'Settings';
+    num_lines = 1;
+    def = {'3','20',num2str(fs/2),'1000','0'};
+    answer = inputdlg(prompt,dlg_title,num_lines,def);
     
+    if ~isempty(answer)
+        dBperOct = str2num(answer{1,1});
+        lowf = str2num(answer{2,1});
+        hif = str2num(answer{3,1});
+        pivotf = str2num(answer{4,1});
+        doplay = str2num(answer{5,1});
+    else
+        OUT = [];
+        return
+    end
+end
+
+if ~isempty(data) && ~isempty(fs) && ~isempty(dBperOct) && ~isempty(doplay)
+    [len,chans,bands,dim4,dim5,dim6] = size(data); % size of the audio
+    
+    if mod(len,2) == 0
+        evenlen = 1;
+    else
+        evenlen = 0;
+    end
     nsamples = 2*ceil(len/2); % use an even length fft
 
     % exponent used to generate magnitude slope
@@ -54,17 +77,38 @@ if ~isempty(data) && ~isempty(fs) && ~isempty(dBperOct) && ~isempty(doplay)
 
     % magnitude slope of half spectrum not including DC and Nyquist components
     magslope = ((1:nsamples/2-1)./(nsamples/4)).^(fexponent*0.5)';
+    
+    % find and apply low and high frequency indices
+    if lowf > 0
+        flowindx = ceil(nsamples * lowf/fs);
+        magslope(1:flowindx) = magslope(flowindx);
+    end
+    
+    if hif > lowf && hif < fs/2
+        fhiindx = floor(nsamples * hif/fs);
+        magslope(fhiindx:end) = magslope(fhiindx);
+    end
+    
+    % apply pivot frequency
+    pivotindx = round(nsamples * pivotf/fs);
+    if pivotindx < 1, pivotindx = 1; end
+    if pivotindx > length(magslope), pivotindx = length(magslope); end
+    magslope = magslope ./ magslope(pivotindx);
+    
 
     % magnitude slope across the whole spectrum
-    magslope = [1; magslope; 1; flipud(magslope)];
+    magslope = [magslope(1); magslope; magslope(end); flipud(magslope)];
 
     % apply the spectrum slope filter
-    y = ifft(fft(data,nsamples) .* repmat(magslope,[1,chans,bands]));
-
+    y = ifft(fft(data,nsamples) .* repmat(magslope,[1,chans,bands,dim4,dim5,dim6]));
+    if evenlen == 0
+        y = y(1:end-1,:,:,:,:,:);
+    end
+    
     if isstruct(in)
         OUT.audio = y;
         OUT.funcallback.name = 'tilt_spectrum_logf.m';
-        OUT.funcallback.inarg = {fs,dBperOct,doplay};
+        OUT.funcallback.inarg = {fs,dBperOct,lowf,hif,pivotf,doplay};
     else
         OUT = y;
     end
