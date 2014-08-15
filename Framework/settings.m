@@ -22,7 +22,7 @@ function varargout = settings(varargin)
 
 % Edit the above text to modify the response to help settings
 
-% Last Modified by GUIDE v2.5 18-Jul-2014 09:54:14
+% Last Modified by GUIDE v2.5 18-Jul-2014 11:18:53
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;

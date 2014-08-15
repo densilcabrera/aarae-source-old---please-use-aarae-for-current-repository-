@@ -75,10 +75,12 @@ function mySelectFcn(tree, ~)
             set(mainHandles.procat_box,'Value',1);
             set(mainHandles.proc_box,'Visible','off');
             set(mainHandles.proc_btn,'Visible','off');
+            set(mainHandles.proc_help_btn,'Visible','off');
             set(mainHandles.analysis_panel,'Visible','on');
             set(mainHandles.funcat_box,'Value',1);
             set(mainHandles.fun_box,'Visible','off');
             set(mainHandles.analyze_btn,'Visible','off');
+            set(mainHandles.analyser_help_btn,'Visible','off');
             if isfield(audiodata,'properties'), set(mainHandles.properties_btn,'Visible','on'); else set(mainHandles.properties_btn,'Visible','off'); end
             setappdata(hMain,'testsignal', audiodata); % Set leaf contents in the 'desktop'
             if ~ismatrix(audiodata.audio)
