@@ -360,13 +360,15 @@ for i = 1:length(filename)
                 specs = inputdlg('Please specify the sampling frequency','Sampling frequency',1);
                 if (isempty(specs))
                     warndlg('Input field is blank, cannot load data!','AARAE info');
-                    signaldata = [];
+                    %signaldata = [];
+                    return;
                 else
                     fs = str2double(specs{1,1});
                     %nbits = str2double(specs{2,1});
                     if isnan(fs) || fs<=0 % || isnan(nbits) || nbits<=0)
                         warndlg('Input MUST be a real positive number, cannot load data!','AARAE info');
-                        signaldata = [];
+                        %signaldata = [];
+                        return;
                     else
                         signaldata = [];
                         signaldata.audio = file;
@@ -1815,7 +1817,7 @@ function aarae_WindowKeyPressFcn(hObject, eventdata, handles) %#ok
 %	Character: character interpretation of the key(s) that was pressed
 %	Modifier: name(s) of the modifier key(s) (i.e., control, shift) pressed
 % handles    structure with handles and user data (see GUIDATA)
-
+handles = guidata(hObject);
 if strcmp(eventdata.Modifier,'shift')
     handles.alternate = 1;
 else
@@ -1846,23 +1848,30 @@ if ~isempty(eventdata.Modifier)
         switch eventdata.Key
             case 'r'
                 rec_btn_Callback(hObject, eventdata, handles)
+                handles = guidata(hObject);
             case 'g'
                 genaudio_btn_Callback(hObject, eventdata, handles)
+                handles = guidata(hObject);
             case 'l'
                 load_btn_Callback(hObject, eventdata, handles)
+                handles = guidata(hObject);
             case 'c'
                 calc_btn_Callback(hObject, eventdata, handles)
+                handles = guidata(hObject);
             case 'e'
                 if strcmp(get(handles.tools_panel,'Visible'),'on')
                     edit_btn_Callback(hObject, eventdata, handles)
+                    handles = guidata(hObject);
                 end
             case 's'
                 if strcmp(get(handles.tools_panel,'Visible'),'on')
                     save_btn_Callback(hObject, eventdata, handles)
+                    handles = guidata(hObject);
                 end
             case 'delete'
                 if strcmp(get(handles.tools_panel,'Visible'),'on')
                     delete_btn_Callback(hObject, eventdata, handles)
+                    handles = guidata(hObject);
                 end
         end
     end
