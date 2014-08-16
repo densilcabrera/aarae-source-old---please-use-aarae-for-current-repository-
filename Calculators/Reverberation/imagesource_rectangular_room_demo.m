@@ -173,7 +173,7 @@ ambichangain = [1, ...
 % apply channel gains
 OUT.audio = out .* repmat(ambichangain(1:nchans),length(out),1);
 OUT.fs = fs;
-
+OUT.chanID = cellstr([repmat('Chan',size(OUT.audio,2),1) num2str((1:size(OUT.audio,2))')]);
 
 % AIR ABSORPTION FILTER
 % This could be implemented by filtering the IR into a number of bands, and
