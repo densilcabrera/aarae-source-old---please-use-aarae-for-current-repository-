@@ -61,17 +61,29 @@ hoa2SpkCfg_for_directplot = Hoa2SpkDecodingFilters(hoaFmt,beams_for_directplot,h
 
 %firstarrival_hoaSignals = min(firstarrivalall_hoaSignals);
 
-direct_sound_HOA = hoaSignals(start_sample:end_sample,:);
+direct_sound_HOA = hoaSignals(start_sample:end_sample,:,:);
 
-beamsignals_for_directPlot = zeros(length(direct_sound_HOA),sphere_cover);
+bands = size(hoaSignals,3);
+
+beamsignals_for_directPlot = zeros(length(direct_sound_HOA),sphere_cover,bands);
 
 for i = 1:size(hoaSignals,2);
     for j = 1:sphere_cover;
-        beamsignals_for_directPlot(:,j) = beamsignals_for_directPlot(:,j)+(direct_sound_HOA(:,i).*hoa2SpkCfg_for_directplot.filters.gainMatrix(j,i));
+        for b = 1:bands
+            beamsignals_for_directPlot(:,j,b) = beamsignals_for_directPlot(:,j,b)+(direct_sound_HOA(:,i,b).*hoa2SpkCfg_for_directplot.filters.gainMatrix(j,i));
+        end
     end
 end
 
-PlotRobinsonProject([azim_for_directplot,elev_for_directplot],mag2db(sum(abs(beamsignals_for_directPlot))'));
+
+for b = 1:bands
+    PlotRobinsonProject([azim_for_directplot,elev_for_directplot],mag2db(sum(abs(beamsignals_for_directPlot(:,:,b)))'));
+    if isstruct(IN)
+        if isfield(IN,'bandID')
+            title([num2str(IN.bandID(b)), ' Hz'])
+        end
+    end
+end
 
 if isstruct(IN)
     OUT.funcallback.name = 'beamplotting.m';
