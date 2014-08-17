@@ -75,14 +75,31 @@ for i = 1:size(hoaSignals,2);
     end
 end
 
-
+[Goverdif,HOAdif] = deal(zeros(bands,1));
 for b = 1:bands
     PlotRobinsonProject([azim_for_directplot,elev_for_directplot],mag2db(sum(abs(beamsignals_for_directPlot(:,:,b)))'));
+    
+    % Diffuseness calculations and display
+    Goverdif(b) = GoverDiffuseness(direct_sound_HOA(:,:,b),hoaFmt);
+    HOAdif(b) = HoaDiffuseness(direct_sound_HOA(:,:,b),hoaFmt);
+    
+    % Band title
     if isstruct(IN)
         if isfield(IN,'bandID')
-            title([num2str(IN.bandID(b)), ' Hz'])
+            title([num2str(IN.bandID(b)), ' Hz, Gover dif. ',...
+                num2str(Goverdif(b)),', HOA dif. ', num2str(HOAdif(b))])
+        else
+            title(['Gover dif. ',...
+                num2str(Goverdif(b)),', HOA dif. ', num2str(HOAdif(b))])
         end
+    else
+        title(['Gover dif. ',...
+                num2str(Goverdif(b)),', HOA dif. ', num2str(HOAdif(b))])
     end
+    
+    
+    
+    
 end
 
 if isstruct(IN)
