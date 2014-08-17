@@ -3018,24 +3018,23 @@ switch nbPoints
                  0.91154,-0.065727,-0.08897,0.3016,-0.16177,-0.48549, ... 
                  0.6823,-0.81203,-0.40167,0.044456,-0.95982,0.65408, ... 
                  0.14304,0.0091815,1.274,-0.4384 ]' ;
-%     case 362
-%         azim = load('/Users/luismirandajofre/Documents/MATLAB/HOAToolbox/azim362.mat', 'azim362');
-%         azim = cell2mat(struct2cell(azim));
-%         elev = load('/Users/luismirandajofre/Documents/MATLAB/HOAToolbox/elev362.mat', 'elev362');
-%         elev = cell2mat(struct2cell(elev));
-%         
-%                 
-%     case 1512
-%         azim = load('/Users/luismirandajofre/Documents/MATLAB/HOAToolbox/azim1512.mat', 'azim1512');
-%         azim = cell2mat(struct2cell(azim));
-%         elev = load('/Users/luismirandajofre/Documents/MATLAB/HOAToolbox/elev1512.mat', 'elev1512');
-%         elev = cell2mat(struct2cell(elev));
-%         
-%     case 3002
-%         azim = load('/Users/luismirandajofre/Documents/MATLAB/HOAToolbox/azim3002.mat', 'azim3002');
-%         azim = cell2mat(struct2cell(azim));
-%         elev = load('/Users/luismirandajofre/Documents/MATLAB/HOAToolbox/elev3002.mat', 'elev3002');
-%         elev = cell2mat(struct2cell(elev));
+    case 362
+        azim = load([cd '/Processors/Beamforming/HOAToolbox/azim362.mat']);
+        azim = cell2mat(struct2cell(azim));
+        elev = load([cd '/Processors/Beamforming/HOAToolbox/elev362.mat']);
+        elev = cell2mat(struct2cell(elev));    
+                
+    case 1512
+        azim = load([cd '/Processors/Beamforming/HOAToolbox/azim1512.mat']);
+        azim = cell2mat(struct2cell(azim));
+        elev = load([cd '/Processors/Beamforming/HOAToolbox/elev1512.mat']);
+        elev = cell2mat(struct2cell(elev));    
+        
+    case 3002
+        azim = load([cd '/Processors/Beamforming/HOAToolbox/azim3002.mat']);
+        azim = cell2mat(struct2cell(azim));
+        elev = load([cd '/Processors/Beamforming/HOAToolbox/elev3002.mat']);
+        elev = cell2mat(struct2cell(elev));    
         
     otherwise
         disp('Selected number of points on sphere not supported by SphereCovering.m. 130 points used instead.')
