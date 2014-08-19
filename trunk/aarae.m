@@ -761,7 +761,11 @@ if isfield(audiodata,'properties') && isfield(audiodata.properties,'startflag')
                         newS(:,i,:) = S(startflag(i):startflag(i)+len-1,j,:);
                     end
                     newrmsize = size(newS);
-                    newinvS = repmat(audiodata.audio2(:,j),[1 newrmsize(2:end)]);
+                    if size(audiodata.audio2,2)>1
+                        newinvS = repmat(audiodata.audio2(:,j),[1 newrmsize(2:end)]);
+                    else
+                        newinvS = repmat(audiodata.audio2(:,1),[1 newrmsize(2:end)]);
+                    end
                     newS_pad = [newS; zeros(size(newinvS))];
                     invS_pad = [newinvS; zeros(size(newS))];
                     convolve = convolvedemo(newS_pad, invS_pad, 2, fs);
