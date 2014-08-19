@@ -7,7 +7,7 @@ function OUT = beamplotting(IN,fs,sphere_cover,start_time,end_time,max_order,hif
 % Diffusivity of the soundfield is calculated using the Gover and HOA
 % covariance methods.
 %
-% This function uses the HOAToolbox, by Nicholas Epain.
+% This function uses the HOAToolbox, by Nicolas Epain.
 %
 % Code by Daniel Jimenez, Luis Miranda and Densil Cabrera
 % Version 1.00 (19 August 2014)

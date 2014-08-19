@@ -1,10 +1,25 @@
 function OUT = audio2hoa(IN, fs, mic_coords, cropIR , max_order)
+% This function reduces raw recordings made from a spherical microphone
+% array to higher order Ambisonics (HOA) format, to allow them to be used
+% and analysed with processors and analysers that use this generic spatial
+% audio format.
+%
+% To use this processor, a mat file listing the microphone coordinates
+% (spherical) for the particular model of microphone used must be in the
+% Processors/Beamforming/Microphones directory (see the examples already
+% present). At the time of writing, files for the 32-channel Eigenmike and
+% the 64-channel Visisonics microphone are available.
+%
+% This function calls the HOAToolbox by Nicolas Epain.
+%
+% Code by Daniel Jimenez, Luis Miranda and Densil Cabrera
+% Version 1.0 (19 August 2014)
 
 if nargin < 5, max_order = 4; end
 if nargin < 4, cropIR = 0; end
 if nargin < 3, mic_coords = importdata([cd '/Processors/Beamforming/Microphones/visisonics_mic_loc.mat']); end
 if isstruct(IN)
-    IRs = IN.audio;
+    audio = IN.audio;
     fs = IN.fs;
     if nargin < 4
         param = inputdlg({'Maximum order','Apply autocropstart_aarae.m'},...
@@ -27,7 +42,7 @@ if isstruct(IN)
                          'ListString',mics.mat);
         if isempty(S), warndlg('No microphone coordinates selected. To add new mic coordinate files (*.mat) go to /Processors/Beamforming/Microphones','AARAE info','modal'); OUT = []; return; end
         mic_coords = importdata([cd '/Processors/Beamforming/Microphones/' mics.mat{S,1}]);
-        if size(IRs,2) ~= size(mic_coords,1), warndlg('The selected microphone coordinates do not match the number of calculated IRs.','AARAE info','modal'); OUT = []; return; end
+        if size(audio,2) ~= size(mic_coords,1), warndlg('The selected microphone coordinates do not match the number of calculated IRs.','AARAE info','modal'); OUT = []; return; end
     end
 else
     if nargin < 2
@@ -35,14 +50,14 @@ else
                            'Fs',1,{'48000'});
         fs = str2double(char(fs));
     end
-    IRs = IN;
+    audio = IN;
 end
 
 % Pre-treatment IRs
 if cropIR == 1,
-    trimmedIRs = autocropstart_aarae(IRs,-20,2);
+    trimmedIRs = autocropstart_aarae(audio,-20,2);
 else
-    trimmedIRs = IRs;
+    trimmedIRs = audio;
 end
 %[~, firstarrivalall] = max(IRs);
 
@@ -70,10 +85,16 @@ end
 % Mic setup
 
 if size(mic_coords,2) ~= 3;
-    error('Mic coordinates are three columns with spherical coordinates');
+    warndlg('Mic coordinates are three columns with spherical coordinates','AARAE info','modal'); OUT = []; return;
 end
 
 micFmt = GenerateMicFmt({'sphCoord',mic_coords,'micType','omni'});
+
+% Check that max_order is not impossibly big
+if (max_order+1)^2 > size(audio,2)
+    % reduce to maximum possible order for the number of input channels
+    max_order = floor(size(audio,2).^0.5)-1;
+end
 
 % HOA Signals
 
