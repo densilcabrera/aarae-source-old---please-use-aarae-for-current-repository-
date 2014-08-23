@@ -26,7 +26,7 @@ else
     hoaSignals = IN;
 end
 
-if nargin < 6, max_order = 4; end
+if nargin < 6, round(size(hoaSignals,2).^0.5-1); end
 if nargin < 5, end_time = length(hoaSignals)/fs; end
 if nargin < 4, start_time = 0; end
 if nargin < 3, sphere_cover = 130; end
@@ -59,6 +59,15 @@ if isstruct(IN)
             end_sample = round(end_time*fs);
             if end_sample >= length(hoaSignals), end_sample = length(hoaSignals); end
             max_order = str2double(param{4,1});
+            nchans = (max_order+1)^2;
+            if size(hoaSignals,2)>nchans % delete unused channels
+                hoaSignals = hoaSignals(:,1:nchans);
+            elseif size(hoaSignals,2)<nchans % limit max_order to available channels
+                max_order = round(size(hoaSignals,2).^0.5-1);
+                if nargin < 2
+                    warndlg(['Maximum available order for this audio input is ' num2str(max_order) '.'],'AARAE info','modal');
+                end
+            end
             hif = str2double(param{5,1});
             lof = str2double(param{6,1});
             if isnan(sphere_cover) || isnan(start_time) || isnan(end_time) || isnan(max_order) || isnan(hif) || isnan(lof), OUT = []; return; end
