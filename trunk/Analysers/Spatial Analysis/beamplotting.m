@@ -10,7 +10,7 @@ function OUT = beamplotting(IN,fs,sphere_cover,start_time,end_time,max_order,hif
 % This function uses the HOAToolbox, by Nicolas Epain.
 %
 % Code by Daniel Jimenez, Luis Miranda and Densil Cabrera
-% Version 1.00 (19 August 2014)
+% Version 1.01 (23 August 2014)
 
 
 
@@ -26,7 +26,7 @@ else
     hoaSignals = IN;
 end
 
-if nargin < 6, round(size(hoaSignals,2).^0.5-1); end
+if nargin < 6, max_order=round(size(hoaSignals,2).^0.5-1); end
 if nargin < 5, end_time = length(hoaSignals)/fs; end
 if nargin < 4, start_time = 0; end
 if nargin < 3, sphere_cover = 130; end
