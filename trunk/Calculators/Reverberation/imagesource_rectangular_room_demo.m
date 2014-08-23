@@ -27,6 +27,12 @@ function OUT = imagesource_rectangular_room_demo(Lx,Ly,Lz,xs,ys,zs,xr,yr,zr,c,ji
 % is not filtered by a wall reflection).
 %
 % a dissipation (air absorption) filter has not yet been implemented.
+%
+% This function has been adapted to use Nicolas Epain's HOAToolbox within
+% the AARAE project for higher order Ambisonics encoding of the impulse
+% response. Currently this makes the function VERY SLOW if high order
+% reflections and high order ambisonics are generated - hopefully a speed-up
+% will be added in a future revision.
 
 if nargin < 13, ambiorder = 0; end % ambisonics order of 0 yields 1 omnidirectional channel
 if nargin < 12, maxorder = 50; end % maximum reflection order calculated
@@ -98,6 +104,7 @@ end
 % number of channels
 nchans = (ambiorder + 1)^2;
 if nchans > 64, nchans = 64; end
+hoaFmt = GenerateHoaFmt('res2d',ambiorder,'res3d',ambiorder);
 
 % generate filter to simulate a single wall reflection. Edit the octave
 % band absorption coefficents in the second column below
@@ -141,7 +148,7 @@ for o = 1:maxorder + 1
             y = Ly*(ny+mod(ny,2))+ys*(-2*mod(ny,2)+1); % y coordinate
             for nz = [-(order-(abs(nx)+abs(ny))),order-(abs(nx)+abs(ny))]
                 z = Lz*(nz+mod(nz,2))+zs*(-2*mod(nz,2)+1); % z coordinate
-                [theta phi r] = cart2sph(x-xr,y-yr,z-zr); % angle & distance of image-source to receiver
+                [theta, phi, r] = cart2sph(x-xr,y-yr,z-zr); % angle & distance of image-source to receiver
                 if order ~= 0
                     r = r + jitter*randn; % distance with jitter (but don't jitter the direct sound)
                 end % if order ~= 0
@@ -149,9 +156,11 @@ for o = 1:maxorder + 1
                 % the following avoids jitter overshoot, and also avoids
                 % infinite amplitude at r = 0
                 if k>1 && k <=length(out)
-                    for ch = 1:nchans
-                        out(k, ch) = out(k, ch) + 1/r * spherharmonic(ch, theta, phi); % 1/r is amplitude
-                    end % for ch =
+                    if nchans == 1
+                        out(k) = out(k) + 1/r;
+                    else
+                    out(k,:) = out(k,:)+ SphericalHarmonicMatrix(hoaFmt,theta,phi)'/r;
+                    end
                 end % if k>=1
             end % for nz =
         end % for ny =
@@ -161,19 +170,17 @@ for o = 1:maxorder + 1
     end %if o <= maxorder
 end
 
-% Gains for ambisonics channels
-ambichangain = [1, ...
-    3^0.5, 3^0.5, 3^0.5, ...
-    15^0.5 /2, 15^0.5 /2, 5^0.5 /2, 15^0.5 /2, 15^0.5 /2, ...
-    (35/8)^0.5,  105^0.5 /2,  (21/8)^0.5,  7^0.5/2,  (21/8)^0.5,  105^0.5 /2,  (35/8)^0.5, ...
-    3/8*35^0.5, 3/2*(35/2)^0.5, 3/4*5^0.5, 3/4*(5/2)^0.5, 3/8, 3/4*(5/2)^0.5, 3/4*5^0.5, 3/2*(35/2)^0.5, 3/8*35^0.5, ...
-    3/8*(77/2)^0.5, 3/8*385^0.5, 1/8*(385/2)^0.5, 1155^0.5/4, 165^0.5/8, 11^0.5/8, 165^0.5/8, 1155^0.5/4, 1/8*(385/2)^0.5, 3/8*385^0.5, 3/8*(77/2)^0.5, ...
-    1/16*(3003/2)^0.5, 3/8*(1001/2)^0.5, 3/16*91^0.5, 1/8*(1365/2)^0.5, 1/16*(1365/2)^0.5,1/16*273^0.5, 13^0.5/16, 1/16*273^0.5, 1/16*(1365/2)^0.5, 1/8*(1365/2)^0.5, 3/16*91^0.5, 3/8*(1001/2)^0.5, 1/16*(3003/2)^0.5, ...
-    3/32*715^0.5, 3/16*(5005/2)^0.5, 3/32*385^0.5, 3/16*385^0.5, 3/32*35^0.5, 3/16*(35/2)^0.5, 1/32*105^0.5, 1/16*15^0.5, 1/32*105^0.5, 3/16*(35/2)^0.5, 3/32*35^0.5, 3/16*385^0.5, 3/32*385^0.5, 3/16*(5005/2)^0.5, 3/32*715^0.5];
-% apply channel gains
-OUT.audio = out .* repmat(ambichangain(1:nchans),length(out),1);
+
+OUT.audio = out;
 OUT.fs = fs;
-OUT.chanID = cellstr([repmat('Chan',size(OUT.audio,2),1) num2str((1:size(OUT.audio,2))')]);
+
+
+
+OUT.chanID = cellstr(num2str(hoaFmt.index));
+
+
+
+
 
 % AIR ABSORPTION FILTER
 % This could be implemented by filtering the IR into a number of bands, and
@@ -230,227 +237,3 @@ msgbox({['G     ',num2str(G,3),' dB'];['T20 ',num2str(T20,3),' s'];['T30 ',num2s
 sound(out(:,1)./max(abs(out(:,1))),fs) % play normalized sound wave (ch1 only)
 
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-function coef = spherharmonic(ch, theta, phi)
-% Based on http://ambisonics.ch/standards/channels/index
-% The gain coefficients (normalisation) are not included here - they are
-% listed in ambichangain, within the main function.
-%
-% A succinct alternative to the below hand-written code is to use
-% legendre. However the verbose equations below are useful in showing how
-% this works.
-switch ch
-    % Zeroth degree
-    case 1
-        % W (0,0)
-        coef = phi.^0;
-        
-        
-        % First degree
-    case 2
-        % Y (-1,1)
-        coef = cos(phi) .* sin(theta);
-    case 3
-        % Z (1,0)
-        coef = sin(phi);
-    case 4
-        % X (1,1)
-        coef = cos(phi) .* cos(theta);
-        
-        
-        % Second degree
-    case 5
-        % V (2,-2)
-        coef = cos(phi).^2 .* sin(2.*theta);
-    case 6
-        % T (2,-1)
-        coef = sin(2.*phi) .* sin(theta);
-    case 7
-        % R (2,0)
-        coef = (3.* sin(phi).^2 - 1);
-    case 8
-        % S (2,1)
-        coef = sin(2.*phi) .* cos(theta);
-    case 9
-        % U (2,2)
-        coef = cos(phi).^2 .* cos(2.*theta);
-        
-        
-        % Third degree
-    case 10
-        % Q (3,-3)
-        coef = cos(phi).^3 .* sin(3.*theta);
-    case 11
-        % O (3,-2)
-        coef = sin(phi) .* cos(phi).^2 .* sin(2.*theta);
-    case 12
-        % M (3,-1)
-        coef = cos(phi) .* (5 .* sin(phi).^2 - 1) .* sin(theta);
-    case 13
-        % K (3,0)
-        coef = sin(phi) .* (5 .* sin(phi).^2 -3);
-    case 14
-        % L (3,1)
-        coef = cos(phi) .* (5 .* sin(phi).^2 - 1) .* cos(theta);
-    case 15
-        % N (3,2)
-        coef = sin(phi) .* cos(phi).^2 .* cos(2.*theta);
-    case 16
-        % P (3,3)
-        coef = cos(phi).^3 .* cos(3.*theta);
-        
-        
-        % Fourth degree
-    case 17
-        % (4,-4)
-        coef = cos(phi).^4 .* sin(4.*theta);
-    case 18
-        % (4,-3)
-        coef = sin(phi) .* cos(phi).^3 .* sin(3.*theta);
-    case 19
-        % (4,-2)
-        coef = (7.*sin(phi).^2-1).*cos(phi).^2 .* sin(2.*theta);
-    case 20
-        % (4,-1)
-        coef = sin(2.*phi).*(7.*sin(phi).^2-3).*sin(theta);
-    case 21
-        % (4,0)
-        coef = (35.*sin(phi).^4 - 30.*sin(phi).^2 +3);
-    case 22
-        % (4,1)
-        coef = sin(2.*phi) .* (7.*sin(phi).^2-3).*cos(theta);
-    case 23
-        % (4,2)
-        coef = (7.*sin(phi).^2-1).*cos(phi).^2 .* cos(2.*theta);
-    case 24
-        % (4,3)
-        coef = sin(phi) .* cos(phi).^3 .* cos(3.*theta);
-    case 25
-        % (4,4)
-        coef = cos(phi).^4 .* cos(4.*theta);
-        
-        
-        % Fifth degree
-    case 26
-        % (5,-5)
-        coef = cos(phi).^5 .* sin(5.*theta);
-    case 27
-        % (5,-4)
-        coef = sin(phi) .* cos(phi).^4 .* sin(4.*theta);
-    case 28
-        % (5,-3)
-        coef = (9 .* sin(phi).^2 -1) .* cos(phi).^3 .* sin(3.*theta);
-    case 29
-        % (5,-2)
-        coef = sin(phi) .* (3 .* sin(phi).^2 - 1) .* cos (phi).^2 .* sin(2.*theta);
-    case 30
-        % (5,-1)
-        coef = (21 .* sin(phi).^4 - 14 .* sin(phi).^2 +1) .* cos(phi) .* sin(theta);
-    case 31
-        % (5,0)
-        coef = (63 .* sin(phi).^5 - 70 .* sin(phi).^3 + 15 .* sin(phi));
-    case 32
-        % (5,1)
-        coef = (21 .* sin(phi).^4 - 14 .* sin(phi).^2 +1) .* cos(phi) .* cos(theta);
-    case 33
-        % (5,2)
-        coef = sin(phi) .* (3 .* sin(phi).^2 - 1) .* cos (phi).^2 .* cos(2.*theta);
-    case 34
-        % (5,3)
-        coef = (9 .* sin(phi).^2 -1) .* cos(phi).^3 .* cos(3.*theta);
-    case 35
-        % (5,4)
-        coef = sin(phi) .* cos(phi).^4 .* cos(4.*theta);
-    case 36
-        % (5,5)
-        coef = cos(phi).^5 .* cos(5.*theta);
-        
-        
-        % Sixth degree
-    case 37
-        % (6,-6)
-        coef = cos(phi).^6 .* sin(6.*theta);
-    case 38
-        % (6,-5)
-        coef = sin(phi) .* cos(phi).^5 .* sin(5.*theta);
-    case 39
-        % (6,-4)
-        coef = (11.*sin(phi).^2 -1) .* cos(phi).^4 .* sin(4.*theta);
-    case 40
-        % (6,-3)
-        coef = sin(phi) .* (11.*sin(phi).^2 - 3) .* cos(phi).^3 .* sin(3.*theta);
-    case 41
-        % (6,-2)
-        coef = (33 .* sin(phi).^4 - 18 .* sin(phi).^2 +1) .* cos(phi).^2 .* sin(2.*theta);
-    case 42
-        % (6,-1)
-        coef = sin(2.*phi) .* (33 .* sin(phi).^4 - 30 .* sin(phi).^2 + 5) .* sin(theta);
-    case 43
-        % (6,0)
-        coef = (231 .* sin(phi).^6 - 315 .* sin(phi).^4 + 105.*sin(phi).^2 -5);
-    case 44
-        % (6,1)
-        coef = sin(2.*phi) .* (33 .* sin(phi).^4 - 30 .* sin(phi).^2 + 5) .* cos(theta);
-    case 45
-        % (6,2)
-        coef = (33 .* sin(phi).^4 - 18 .* sin(phi).^2 +1) .* cos(phi).^2 .* cos(2.*theta);
-    case 46
-        % (6,3)
-        coef = sin(phi) .* (11.*sin(phi).^2 - 3) .* cos(phi).^3 .* cos(3.*theta);
-    case 47
-        % (6,4)
-        coef = (11.*sin(phi).^2 -1) .* cos(phi).^4 .* cos(4.*theta);
-    case 48
-        % (6,5)
-        coef = sin(phi) .* cos(phi).^5 .* cos(5.*theta);
-    case 49
-        % (6,6)
-        coef = cos(phi).^6 .* cos(6.*theta);
-        
-        % Seventh degree
-    case 50
-        % (7,-7)
-        coef = cos(phi).^7 .* sin(7.*theta);
-    case 51
-        % (7,-6)
-        coef = sin(phi) .* cos(phi).^6 .* sin(6.*theta);
-    case 52
-        % (7,-5)
-        coef = (13.*sin(phi).^2 - 1) .* cos(phi).^5 .* sin(5.*theta);
-    case 53
-        % (7,-4)
-        coef = (13 .* sin(phi).^3 - 3.*sin(phi)) .* cos(phi).^4 .* sin(4.*theta);
-    case 54
-        % (7,-3)
-        coef = (143 .* sin(phi).^4 - 66 .* sin(phi).^2 + 3) .* cos(phi).^3 .* sin(3.*theta);
-    case 55
-        % (7,-2)
-        coef = (143 .* sin(phi).^5 - 110.*sin(phi).^3 + 15 .* sin(phi)) .* cos(phi).^2 .* sin(2.*theta);
-    case 56
-        % (7,-1)
-        coef = (429 .* sin(phi).^6 - 495.*sin(phi).^4 + 135 .* sin(phi).^2 -5) .* cos(phi) .* sin(theta);
-    case 57
-        % (7,0)
-        coef = (429 .* sin(phi).^7 - 693.*sin(phi).^5 + 315.*sin(phi).^3 - 35.*sin(phi));
-    case 58
-        % (7,1)
-        coef = (429 .* sin(phi).^6 - 495.*sin(phi).^4 + 135 .* sin(phi).^2 -5) .* cos(phi) .* cos(theta);
-    case 59
-        % (7,2)
-        coef = (143 .* sin(phi).^5 - 110.*sin(phi).^3 + 15 .* sin(phi)) .* cos(phi).^2 .* cos(2.*theta);
-    case 60
-        % (7,3)
-        coef = (143 .* sin(phi).^4 - 66 .* sin(phi).^2 + 3) .* cos(phi).^3 .* cos(3.*theta);
-    case 61
-        % (7,4)
-        coef = (13 .* sin(phi).^3 - 3.*sin(phi)) .* cos(phi).^4 .* cos(4.*theta);
-    case 62
-        % (7,5)
-        coef = (13.*sin(phi).^2 - 1) .* cos(phi).^5 .* cos(5.*theta);
-    case 63
-        % (7,6)
-        coef = sin(phi) .* cos(phi).^6 .* cos(6.*theta);
-    case 64
-        % (7,7)
-        coef = cos(phi).^7 .* cos(7.*theta);
-end
