@@ -7,16 +7,28 @@ function OUT = beamplotting(IN,fs,sphere_cover,start_time,end_time,max_order,hif
 % Diffusivity of the soundfield is calculated using the Gover and HOA
 % covariance methods.
 %
+% Currently three plotting methods are supported:
+% * Robinson projection (of the sphere onto a 2D surface), which plots
+%   using colormap based on the decibel scale
+% * Surface plot, which plots a surface using magnitude units and Jet
+%   colormap (interpolated, with a light source)
+% * Lit surface plot, which plots a surface using magnitude units and a
+%   Copper colormap (more angles are used in this plot than in the surface
+%   plot)
+%
 % This function uses the HOAToolbox, by Nicolas Epain.
 %
 % Code by Daniel Jimenez, Luis Miranda and Densil Cabrera
-% Version 1.01 (23 August 2014)
+% Version 1.02 (30 August 2014)
 
 
 
 if isstruct(IN)
     hoaSignals = IN.audio;
     fs = IN.fs;
+    if isfield(IN,'cal')
+        hoaSignals = cal_reset_aarae(hoaSignals,0,cal);
+    end
 else
     if nargin < 2
         fs = inputdlg({'Sampling frequency [samples/s]'},...
@@ -32,10 +44,10 @@ if nargin < 7, hif = fs/2; end
 if nargin < 6, max_order=round(size(hoaSignals,2).^0.5-1); end
 if nargin < 5, end_time = length(hoaSignals)/fs; end
 if nargin < 4, start_time = 0; end
-if nargin < 3, sphere_cover = 130; end
+if nargin < 3, sphere_cover = 1; end
 if isstruct(IN)
     if nargin < 3
-        param = inputdlg({'Number of points on the sphere',...
+        param = inputdlg({'Spatial density of points (0.25:1)',...
             'Start time [s]'...
             'End time [s]'...
             'Maximum order'...
@@ -54,7 +66,7 @@ if isstruct(IN)
             OUT = [];
             return;
         else
-            sphere_cover = str2double(param{1,1});
+            sphere_cover = round(130*str2double(param{1,1}));
             if sphere_cover>130,sphere_cover = 130;end
             if sphere_cover<4,sphere_cover = 4;end
             start_time = str2double(param{2,1});
@@ -91,9 +103,9 @@ switch plottype
     case {2, 3}
         % rectangular mesh
         if plottype == 2
-            step = pi/(6 * max_order);
+            step = pi/(6 * max_order * sphere_cover/130);
         elseif plottype == 3
-            step = pi/(12 * max_order);
+            step = pi/(12 * max_order * sphere_cover/130);
         end
         elev_for_directplot = -pi/2:step:pi/2; % elevation
         azim_for_directplot = 0:2*step:2*pi; % azimuth
@@ -104,49 +116,70 @@ switch plottype
         azim_for_directplot = reshape(azim_for_directplot,numel(azim_for_directplot),1);
         elev_for_directplot = reshape(elev_for_directplot,numel(elev_for_directplot),1);
         numberofdirections = numel(azim_for_directplot);
+        
+        hoaFmt = GenerateHoaFmt('res2d',max_order,'res3d',max_order) ;
+        
+        Y = SphericalHarmonicMatrix(hoaFmt,azim_for_directplot,elev_for_directplot);
+        
+        hoa2SpkCfg_for_directplot.filters.gainMatrix = Y;
+        direct_sound_HOA = hoaSignals(start_sample:end_sample,:,:);
+        bands = size(hoaSignals,3);
+        beamsignals_for_directPlot = zeros(length(direct_sound_HOA),numberofdirections,bands);
+        
+        
+        
+        for i = 1:size(hoaSignals,2);
+            for j = 1:numberofdirections;
+                for b = 1:bands
+                    beamsignals_for_directPlot(:,j,b) = beamsignals_for_directPlot(:,j,b)+(direct_sound_HOA(:,i,b).*hoa2SpkCfg_for_directplot.filters.gainMatrix(i,j));
+                end
+            end
+        end
+        
     otherwise
         % case 1
         % approximately even sphere covering
         [azim_for_directplot,elev_for_directplot] = SphereCovering(sphere_cover);
         numberofdirections = sphere_cover;
-end
-
-beams_for_directplot = GenerateSpkFmt('sphCoord',[azim_for_directplot elev_for_directplot ones(numberofdirections,1)]);
-
-hoa2SpkOpt_for_directplot = GenerateHoa2SpkOpt('decodType','basic','sampFreq',fs,'filterLength',128,'transFreq',6000,...
-    'transWidth',200,'spkDistCor',false);
-
-hoaFmt = GenerateHoaFmt('res2d',max_order,'res3d',max_order) ;
-
-hoa2SpkCfg_for_directplot = Hoa2SpkDecodingFilters(hoaFmt,beams_for_directplot,hoa2SpkOpt_for_directplot);
-
-%[~, firstarrivalall_hoaSignals] = max(hoaSignals);
-
-%firstarrival_hoaSignals = min(firstarrivalall_hoaSignals);
-
-direct_sound_HOA = hoaSignals(start_sample:end_sample,:,:);
-
-bands = size(hoaSignals,3);
-
-beamsignals_for_directPlot = zeros(length(direct_sound_HOA),numberofdirections,bands);
-
-for i = 1:size(hoaSignals,2);
-    for j = 1:numberofdirections;
-        for b = 1:bands
-            beamsignals_for_directPlot(:,j,b) = beamsignals_for_directPlot(:,j,b)+(direct_sound_HOA(:,i,b).*hoa2SpkCfg_for_directplot.filters.gainMatrix(j,i));
+        beams_for_directplot = GenerateSpkFmt('sphCoord',[azim_for_directplot elev_for_directplot ones(numberofdirections,1)]);
+        
+        hoa2SpkOpt_for_directplot = GenerateHoa2SpkOpt('decodType','basic','sampFreq',fs,'filterLength',128,'transFreq',6000,...
+            'transWidth',200,'spkDistCor',false);
+        
+        hoaFmt = GenerateHoaFmt('res2d',max_order,'res3d',max_order) ;
+        
+        hoa2SpkCfg_for_directplot = Hoa2SpkDecodingFilters(hoaFmt,beams_for_directplot,hoa2SpkOpt_for_directplot);
+        
+        %[~, firstarrivalall_hoaSignals] = max(hoaSignals);
+        
+        %firstarrival_hoaSignals = min(firstarrivalall_hoaSignals);
+        direct_sound_HOA = hoaSignals(start_sample:end_sample,:,:);
+        bands = size(hoaSignals,3);
+        beamsignals_for_directPlot = zeros(length(direct_sound_HOA),numberofdirections,bands);
+        
+        
+        
+        for i = 1:size(hoaSignals,2);
+            for j = 1:numberofdirections;
+                for b = 1:bands
+                    beamsignals_for_directPlot(:,j,b) = beamsignals_for_directPlot(:,j,b)+(direct_sound_HOA(:,i,b).*hoa2SpkCfg_for_directplot.filters.gainMatrix(j,i));
+                end
+            end
         end
-    end
+        
 end
+
+
 
 
 [Goverdif,HOAdif] = deal(zeros(bands,1));
 for b = 1:bands
     switch plottype
         case {2, 3}
-            figure
+            figure('Name','Plot of Magnitude')
             azim_for_directplot = reshape(azim_for_directplot,len1,len2);
             elev_for_directplot = reshape(elev_for_directplot,len1,len2);
-            values = reshape(sum(abs(beamsignals_for_directPlot(:,:,b))),len1,len2);
+            values = reshape(rms(abs(beamsignals_for_directPlot(:,:,b))),len1,len2);
             [x,y,z] = sph2cart(azim_for_directplot,elev_for_directplot,values);
             if plottype == 2
                 surf(x,y,z,values,'FaceColor','interp','FaceLighting','phong');
@@ -161,29 +194,37 @@ for b = 1:bands
             zlabel('z')
             set(gca, 'DataAspectRatio', [1 1 1])
             set(gca, 'PlotBoxAspectRatio', [1 1 1])
+            % Band title
+            if isstruct(IN)
+                if isfield(IN,'bandID')
+                    title([num2str(IN.bandID(b)), ' Hz'])
+                else
+                    title(['Band ', num2str(b)])
+                end
+            else
+                title(['Band ', num2str(b)])
+            end
         otherwise
-            PlotRobinsonProject([azim_for_directplot,elev_for_directplot],mag2db(sum(abs(beamsignals_for_directPlot(:,:,b)))'));
+            PlotRobinsonProject([azim_for_directplot,elev_for_directplot],mag2db(rms(abs(beamsignals_for_directPlot(:,:,b)))'));
+            % Diffuseness calculations and display (only done for
+            % approximately even spherical distribution)
+            Goverdif(b) = GoverDiffuseness(direct_sound_HOA(:,:,b),hoaFmt);
+            HOAdif(b) = HoaDiffuseness(direct_sound_HOA(:,:,b),hoaFmt);
+            
+            % Band title
+            if isstruct(IN)
+                if isfield(IN,'bandID')
+                    title([num2str(IN.bandID(b)), ' Hz, Gover dif. ',...
+                        num2str(Goverdif(b)),', HOA dif. ', num2str(HOAdif(b))])
+                else
+                    title(['Gover dif. ',...
+                        num2str(Goverdif(b)),', HOA dif. ', num2str(HOAdif(b))])
+                end
+            else
+                title(['Gover dif. ',...
+                    num2str(Goverdif(b)),', HOA dif. ', num2str(HOAdif(b))])
+            end
     end
-    % Diffuseness calculations and display
-    Goverdif(b) = GoverDiffuseness(direct_sound_HOA(:,:,b),hoaFmt);
-    HOAdif(b) = HoaDiffuseness(direct_sound_HOA(:,:,b),hoaFmt);
-    
-    % Band title
-    if isstruct(IN)
-        if isfield(IN,'bandID')
-            title([num2str(IN.bandID(b)), ' Hz, Gover dif. ',...
-                num2str(Goverdif(b)),', HOA dif. ', num2str(HOAdif(b))])
-        else
-            title(['Gover dif. ',...
-                num2str(Goverdif(b)),', HOA dif. ', num2str(HOAdif(b))])
-        end
-    else
-        title(['Gover dif. ',...
-            num2str(Goverdif(b)),', HOA dif. ', num2str(HOAdif(b))])
-    end
-    
-    
-    
     
 end
 
