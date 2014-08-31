@@ -11,10 +11,10 @@ function OUT = beamplotting(IN,fs,sphere_cover,start_time,end_time,max_order,hif
 % * Robinson projection (of the sphere onto a 2D surface), which plots
 %   using colormap based on the decibel scale
 % * Surface plot, which plots a surface using magnitude units and Jet
-%   colormap (interpolated, with a light source)
+%   colormap for value (interpolated, with a light source)
 % * Lit surface plot, which plots a surface using magnitude units and a
-%   Copper colormap (more angles are used in this plot than in the surface
-%   plot)
+%   Copper colormap for z (more angles are used in this plot than in the 
+%   surface plot)
 %
 % This function uses the HOAToolbox, by Nicolas Epain.
 %
@@ -53,7 +53,7 @@ if isstruct(IN)
             'Maximum order'...
             'High frequency cutoff (Hz)'...
             'Low frequency cutoff (Hz)'...
-            'PLOT TYPE: Robinson Projection in dB [1]; 3D colormap surface in amplitude [2]; 3D lit surface in amplitude (slow) [3]'},...
+            'PLOT TYPE: Robinson Projection in dB [1]; 3D colormap surface in amplitude [2]; 3D lit surface in amplitude (slow) [3]; 2D ripple plot [4]'},...
             'Input parameters',1,...
             {num2str(sphere_cover),...
             num2str(start_time),...
@@ -135,6 +135,40 @@ switch plottype
                 end
             end
         end
+
+        
+    case 4
+
+        step = 2*pi/(360*sphere_cover/130);
+        azim_for_directplot = 0:2*step:2*pi; % azimuth
+        elev_for_directplot = zeros(size(azim_for_directplot)); % elevation
+%         [azim_for_directplot, elev_for_directplot] =...
+%             meshgrid(azim_for_directplot, elev_for_directplot);
+%         [len1, len2] = size(azim_for_directplot);
+        
+%         azim_for_directplot = reshape(azim_for_directplot,numel(azim_for_directplot),1);
+%         elev_for_directplot = reshape(elev_for_directplot,numel(elev_for_directplot),1);
+        numberofdirections = numel(azim_for_directplot);
+        
+        hoaFmt = GenerateHoaFmt('res2d',max_order,'res3d',max_order) ;
+        
+        Y = SphericalHarmonicMatrix(hoaFmt,azim_for_directplot,elev_for_directplot);
+        
+        hoa2SpkCfg_for_directplot.filters.gainMatrix = Y;
+        direct_sound_HOA = hoaSignals(start_sample:end_sample,:,:);
+        bands = size(hoaSignals,3);
+        beamsignals_for_directPlot = zeros(length(direct_sound_HOA),numberofdirections,bands);
+        
+        
+        
+        for i = 1:size(hoaSignals,2);
+            for j = 1:numberofdirections;
+                for b = 1:bands
+                    beamsignals_for_directPlot(:,j,b) = beamsignals_for_directPlot(:,j,b)+(direct_sound_HOA(:,i,b).*hoa2SpkCfg_for_directplot.filters.gainMatrix(i,j));
+                end
+            end
+        end
+
         
     otherwise
         % case 1
@@ -204,6 +238,18 @@ for b = 1:bands
             else
                 title(['Band ', num2str(b)])
             end
+        case 4
+            figure
+            values = abs(beamsignals_for_directPlot(:,:,b)).^2;
+            %smooth values 2 ms window
+            values = filtfilt(hann(round(0.002*fs)),1,values);
+            % covert to dB
+            values = 10*log10(values);
+            % restrict to 60 dB range
+            levelrange = 40;
+            values(values < max(max(values))-levelrange) = max(max(values))-levelrange;
+            polarplot3d(values,'plottype','mesh');
+            
         otherwise
             PlotRobinsonProject([azim_for_directplot,elev_for_directplot],mag2db(rms(abs(beamsignals_for_directPlot(:,:,b)))'));
             % Diffuseness calculations and display (only done for
