@@ -19,6 +19,9 @@ if ~isempty(param)
     if ok == 1 && ~isempty(S)
         try
             out.audio = in.audio(:,S,:);
+            if isfield(in,'cal')
+                out.cal = in.cal(S);
+            end
             if isfield(in,'chanID')
                 out.chanID = in.chanID(S);
             else
