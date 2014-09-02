@@ -1,5 +1,9 @@
 function fontsize
-font = 11;
+if ismac 
+    font = 11; %Default font for mac
+else
+    font = 8; %Default font for windows
+end
 aarae = gcf;
 aaraechildren = get(aarae,'Children');
 for i = 1:length(aaraechildren)
