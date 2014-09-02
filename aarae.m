@@ -930,7 +930,7 @@ for nleafs = 1:length(selectedNodes)
             handles = guidata(aarae_fig);
             newleaf = cell(1,1);
             newleaf{1,1} = [char(selectedNodes(nleafs).getName) ' ' funname];
-            if ~isempty(out)
+            if ~isempty(out) && length(out) ~= 1
                 signaldata = out;
                 signaldata.datatype = 'results';
                 if isfield(signaldata,'audio')
@@ -1125,8 +1125,8 @@ for nleafs = 1:length(selectedNodes)
         set(hObject,'BackgroundColor','red');
         set(hObject,'Enable','off');
         % Processes the selected leaf using the selected process from proc_box
-%        contents = cellstr(get(handles.procat_box,'String'));
-%        category = contents{get(handles.procat_box,'Value')};
+        contents = cellstr(get(handles.procat_box,'String'));
+        category = contents{get(handles.procat_box,'Value')};
         contents = cellstr(get(handles.proc_box,'String'));
         file = contents(get(handles.proc_box,'Value'));
         name = selectedNodes(nleafs).getName.char;
@@ -1203,7 +1203,7 @@ for nleafs = 1:length(selectedNodes)
                     handles.mytree.expand(handles.processed);
                     set([handles.clrall_btn,handles.export_btn],'Enable','on')
                 end
-                fprintf(handles.fid, [' ' datestr(now,16) ' - Processed "' name '" using ' funname ' in ' handles.procat '\n']);
+                fprintf(handles.fid, [' ' datestr(now,16) ' - Processed "' name '" using ' funname ' in ' category '\n']);
             else
                 newleaf{1,1} = [];
             end
