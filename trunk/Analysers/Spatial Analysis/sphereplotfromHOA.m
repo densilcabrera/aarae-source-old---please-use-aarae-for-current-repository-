@@ -192,10 +192,10 @@ for b = 1:bands
             plot3([0,0],[0,0],[-polelength, polelength],'LineWidth',2,'Color',[0,0,0],'LineStyle','--','Marker','^');
             
             plot3([0,0],[-polelength, polelength],[0,0],'LineWidth',2,'Color',[0.8,0.8,0]);
-            plot3([0,0],[-polelength, polelength],[0,0],'LineWidth',2,'Color',[0,0,0],'LineStyle','--','Marker','^');
+            plot3([0,0],[-polelength, polelength],[0,0],'LineWidth',2,'Color',[0,0,0],'LineStyle','--','Marker','>');
             
             plot3([-polelength, polelength],[0,0],[0,0],'LineWidth',2,'Color',[0.8,0.8,0]);
-            plot3([-polelength, polelength],[0,0],[0,0],'LineWidth',2,'Color',[0,0,0],'LineStyle','--','Marker','^');
+            plot3([-polelength, polelength],[0,0],[0,0],'LineWidth',2,'Color',[0,0,0],'LineStyle','--','Marker','>');
             
             
             if plottype == 2
@@ -206,6 +206,7 @@ for b = 1:bands
                 shading interp
                 colormap(copper)
             end
+            grid on
             xlabel('x')
             ylabel('y')
             zlabel('z')

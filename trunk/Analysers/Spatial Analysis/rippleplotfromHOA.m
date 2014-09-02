@@ -1,4 +1,4 @@
-function OUT = rippleplotfromHOA(IN,fs,rotateangle,start_time,end_time,max_order,hif,lof,smoothlen,valtype,plottype)
+function OUT = rippleplotfromHOA(IN,fs,planechoice,start_time,end_time,max_order,hif,lof,smoothlen,valtype,plottype)
 % This function creates a ripple plot from HOA encoded data (impulse
 % responses are envisaged, but potentially other signals could be used).
 % A ripple plot represents the sound evolution over time in one plane
@@ -9,7 +9,7 @@ function OUT = rippleplotfromHOA(IN,fs,rotateangle,start_time,end_time,max_order
 % This function uses the HOAToolbox, by Nicolas Epain.
 %
 % Code by Densil Cabrera and Luis Miranda
-% Version 1.02 (30 August 2014)
+% Version 1.00 (2 September 2014)
 
 
 
@@ -27,16 +27,20 @@ else
     end
     hoaSignals = IN;
 end
+maxtime = size(hoaSignals,1)/fs;
 
-if nargin < 9, plottype = 1; end
-if nargin < 9, valtype = 40; end
+if nargin < 11, plottype = 1; end
+if nargin < 10, valtype = 40; end
 if nargin < 9, smoothlen = round(fs*0.002); end
 if nargin < 8, lof = 0; end
 if nargin < 7, hif = fs/2; end
 if nargin < 6, max_order=round(size(hoaSignals,2).^0.5-1); end
-if nargin < 5, end_time = length(hoaSignals)/fs; end
+if nargin < 5, 
+    end_time = 0.1;
+    if end_time > maxtime, end_time = maxtime; end
+end
 if nargin < 4, start_time = 0; end
-if nargin < 3, rotateangle = 0; end
+if nargin < 3, planechoice = 0; end
 if isstruct(IN)
     if nargin < 3
         param = inputdlg({'Plane: Horizontal [0]; Median [1]; Transverse [2]',...
@@ -55,14 +59,14 @@ if isstruct(IN)
             num2str(max_order),...
             num2str(fs/2),...
             '0',...
-            '2',...
+            '4',...
             '40',...
             '3'});
         if isempty(param) || isempty(param{1,1}) || isempty(param{2,1}) || isempty(param{3,1}) || isempty(param{4,1}) || isempty(param{5,1}) || isempty(param{6,1})
             OUT = [];
             return;
         else
-            rotateangle = str2double(param{1,1});
+            planechoice = str2double(param{1,1});
             start_time = str2double(param{2,1});
             start_sample = round(start_time*fs);
             if start_sample == 0, start_sample = 1; end
@@ -107,7 +111,7 @@ hoaFmt = GenerateHoaFmt('res2d',max_order,'res3d',max_order) ;
 
 % 1 deg resolution
 step = 2*pi/360;
-switch rotateangle
+switch planechoice
     case 1 % median plane
         elev_for_directplot1 = -pi/2:step:pi/2;
         elev_for_directplot2 = pi/2-step:-step:-pi/2;
@@ -157,6 +161,7 @@ switch valtype
         beamsignals = beamsignals.^2;
         if smoothlen > 0
             beamsignals = filtfilt(hann(smoothlen),1,beamsignals);
+            beamsignals(beamsignals<=0) = 1e-99;
         end
         beamsignals = 10*log10(beamsignals);
         % apply level range
@@ -216,30 +221,31 @@ for b = 1:bands
             end
     end
     
-    switch rotateangle
+    titlestring = [num2str(start_time), '-', num2str(end_time),' s, '];
+    switch planechoice
         case 1
             xlabel('x')
             ylabel('z')
-            titlestring = 'Median Plane';
+            titlestring = [titlestring, 'Median Plane'];
         case 2
             xlabel('y')
             ylabel('z')
-            titlestring = 'Transverse Plane';
+            titlestring = [titlestring, 'Transverse Plane'];
         otherwise
             xlabel('y')
             ylabel('x')
-            titlestring = 'Horizontal Plane';
+            titlestring = [titlestring, 'Horizontal Plane'];
     end
     
     % Band title
     if isstruct(IN)
         if isfield(IN,'bandID')
-            title([num2str(IN.bandID(b)), ' Hz ', titlestring])
+            title([num2str(IN.bandID(b)), ' Hz, ', titlestring])
         else
-            title(['Band ', num2str(b),' ', titlestring])
+            title(['Band ', num2str(b),', ', titlestring])
         end
     else
-        title(['Band ', num2str(b),' ', titlestring])
+        title(['Band ', num2str(b),', ', titlestring])
     end
     
     switch valtype
@@ -253,7 +259,7 @@ end
 
 if isstruct(IN)
     OUT.funcallback.name = 'rippleplotfromHOA.m';
-    OUT.funcallback.inarg = {fs,rotateangle,start_time,end_time,max_order,hif,lof,smoothlen,valtype,plottype};
+    OUT.funcallback.inarg = {fs,planechoice,start_time,end_time,max_order,hif,lof,smoothlen,valtype,plottype};
 else
     OUT = hoaSignals;
 end
