@@ -34,14 +34,13 @@ out = in;
 
 if sum(audiofields) == 1
     % if only one audio field exists, then swapping cannot be done
-    h = warndlg('Unable to swap audio fields because only one audio field exists','AARAE info','modal');
-    uiwait(h)
+    warndlg('Unable to swap audio fields because only one audio field exists','AARAE info','modal');
     
 elseif sum(audiofields) == 2
     % if only two audio fields exist, then swap them without dialog
     out.(audiofieldnames{1}) = in.(audiofieldnames{2});
     out.(audiofieldnames{2}) = in.(audiofieldnames{1});
-    
+    out.chanID = cellstr([repmat('Chan',size(out.audio,2),1) num2str((1:size(out.audio,2))')]);
 else
     % if more than two audio fields exist, then ask the user how to swap them
 
