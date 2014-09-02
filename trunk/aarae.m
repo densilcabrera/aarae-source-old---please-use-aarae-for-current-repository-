@@ -139,9 +139,8 @@ fprintf(handles.fid, ['Acoustic processing app started ' datestr(now) ' \n\n']);
 handles.defaultaudiopath = [cd '/Audio'];
 guidata(hObject, handles);
 
-if ismac
-    fontsize
-end
+
+fontsize
 % Set waiting flag in appdata
 setappdata(handles.aarae,'waiting',1)
 % UIWAIT makes aarae wait for user response (see UIRESUME)

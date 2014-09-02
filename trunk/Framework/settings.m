@@ -66,9 +66,9 @@ if (isempty(mainGuiInput)) ...
 else
     % Remember the handle, and adjust our position
     handles.main_stage1 = varargin{mainGuiInput+1};
-    if ismac
-        fontsize
-    end
+
+    fontsize
+
 end
 
 if dontOpen
