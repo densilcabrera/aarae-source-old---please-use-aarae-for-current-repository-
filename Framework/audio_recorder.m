@@ -66,9 +66,8 @@ else
     % Remember the handle, and adjust our position
     handles.main_stage1 = varargin{mainGuiInput+1};
     
-    if ismac
-        fontsize
-    end
+    fontsize
+    
     % Call the 'desktop'
     hMain = getappdata(0,'hMain');
     handles.signaldata = getappdata(hMain,'testsignal');
