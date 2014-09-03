@@ -929,7 +929,7 @@ for nleafs = 1:length(selectedNodes)
             handles = guidata(aarae_fig);
             newleaf = cell(1,1);
             newleaf{1,1} = [char(selectedNodes(nleafs).getName) ' ' funname];
-            if ~isempty(out) && length(out) ~= 1
+            if ~isempty(out)
                 signaldata = out;
                 signaldata.datatype = 'results';
                 if isfield(signaldata,'audio')
@@ -939,25 +939,26 @@ for nleafs = 1:length(selectedNodes)
                 else
                     iconPath = fullfile(matlabroot,'/toolbox/matlab/icons/notesicon.gif');
                 end
-                leafname = isfield(handles,genvarname(newleaf{1,1}));
-                if leafname == 1
-                    index = 1;
-                    % This while cycle is just to make sure no signals are
-                    % overwriten
-                    if length(genvarname([newleaf{1,1},'_',num2str(index)])) >= namelengthmax, newleaf{1,1} = newleaf{1,1}(1:round(end/2)); end
-                    while isfield(handles,genvarname([newleaf{1,1},'_',num2str(index)])) == 1
-                        index = index + 1;
+                if length(fieldnames(out)) ~= 1
+                    leafname = isfield(handles,genvarname(newleaf{1,1}));
+                    if leafname == 1
+                        index = 1;
+                        % This while cycle is just to make sure no signals are
+                        % overwriten
+                        if length(genvarname([newleaf{1,1},'_',num2str(index)])) >= namelengthmax, newleaf{1,1} = newleaf{1,1}(1:round(end/2)); end
+                        while isfield(handles,genvarname([newleaf{1,1},'_',num2str(index)])) == 1
+                            index = index + 1;
+                        end
+                        newleaf{1,1} = [newleaf{1,1},'_',num2str(index)];
                     end
-                    newleaf{1,1} = [newleaf{1,1},'_',num2str(index)];
+                    handles.(genvarname(newleaf{1,1})) = uitreenode('v0', newleaf{1,1},  newleaf{1,1},  iconPath, true);
+                    handles.(genvarname(newleaf{1,1})).UserData = signaldata;
+                    handles.results.add(handles.(genvarname(newleaf{1,1})));
+                    handles.mytree.reloadNode(handles.results);
+                    handles.mytree.expand(handles.results);
+                    %handles.mytree.setSelectedNode(handles.(genvarname(newleaf)));
+                    set([handles.clrall_btn,handles.export_btn],'Enable','on')
                 end
-                handles.(genvarname(newleaf{1,1})) = uitreenode('v0', newleaf{1,1},  newleaf{1,1},  iconPath, true);
-                handles.(genvarname(newleaf{1,1})).UserData = signaldata;
-                handles.results.add(handles.(genvarname(newleaf{1,1})));
-                handles.mytree.reloadNode(handles.results);
-                handles.mytree.expand(handles.results);
-                %handles.mytree.setSelectedNode(handles.(genvarname(newleaf)));
-                set([handles.clrall_btn,handles.export_btn],'Enable','on')
-
                 fprintf(handles.fid, [' ' datestr(now,16) ' - Analyzed "' char(selectedNodes(1).getName) '" using ' funname ' in ' handles.funcat '\n']);% In what category???
 
                 h = findobj('type','figure','-not','tag','aarae');
