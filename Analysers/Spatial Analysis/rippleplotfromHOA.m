@@ -1,15 +1,37 @@
-function OUT = rippleplotfromHOA(IN,fs,planechoice,start_time,end_time,max_order,hif,lof,smoothlen,valtype,plottype)
-% This function creates a ripple plot from HOA encoded data (impulse
-% responses are envisaged, but potentially other signals could be used).
-% A ripple plot represents the sound evolution over time in one plane
-% (often the horizontal plane). This is probably most useful for relatively
-% short time selections (e.g. 0.1 s, and probably of little use beyond 1
-% s).
+function OUT = rippleplotfromHOA(IN,fs,planechoice,start_time,end_time,max_order,hif,lof,smoothlen,valtype,plottype,domain)
+% This function creates a ripple plot from HOA encoded data, usually for
+% impulse response analysis.
+% 
+% The ripple plot is a representation of the impulse response (or HOA
+% waveform) in a plane: either the horizontal plane, median plane or
+% transverse plane.
+%
+% If the plot is time domain, then the radius from the centre represents
+% time (between the start time and the end time, which are user inputs).
+% The start time is in the centre, and end time at the edge.
+%
+% If the plot is frequency domain, then the radius from the centre
+% represents frequency (between the low and high cutoff frequencies, which
+% are user inputs). The low cutoff frequency is in the centre, and the high
+% cutoff frequency at the edge.
+%
+% In the time domain, values can be represented as the waveform itself, the
+% waveform's envelope, or the waveform's envelope expressed in decibels. In
+% the frequency domain, values can be represented as the spectrum magnitude
+% or the spectrum magnitude expressed in decibels (in frequency domain,
+% there is no difference between the VALUES input of 0 and 1, except that
+% the former cannot be smoothed).
+%
+% A smoothing filter can be applied to the plotted data, which can increase
+% readability.
+%
+% When the data size is large, and user parameters are set appropriately,
+% the data is downsampled prior to plotting.
 %
 % This function uses the HOAToolbox, by Nicolas Epain.
 %
 % Code by Densil Cabrera and Luis Miranda
-% Version 1.00 (2 September 2014)
+% Version 1.01 (3 September 2014)
 
 
 
@@ -27,11 +49,19 @@ else
     end
     hoaSignals = IN;
 end
-maxtime = size(hoaSignals,1)/fs;
 
+if abs(size(hoaSignals,2)^0.5 - round(size(hoaSignals,2)^0.5)) >1e-20
+    h=warndlg('This audio does not appear to be in HOA format. Unable to analyse with rippleplotfromHOA.','AARAE info','modal');
+    uiwait(h)
+    OUT = [];
+    return
+end
+
+maxtime = size(hoaSignals,1)/fs;
+if nargin < 12, domain = 0; end
 if nargin < 11, plottype = 1; end
 if nargin < 10, valtype = 40; end
-if nargin < 9, smoothlen = round(fs*0.002); end
+if nargin < 9, smoothlen = round(4*fs/1000); end
 if nargin < 8, lof = 0; end
 if nargin < 7, hif = fs/2; end
 if nargin < 6, max_order=round(size(hoaSignals,2).^0.5-1); end
@@ -49,9 +79,10 @@ if isstruct(IN)
             'Maximum order'...
             'High frequency cutoff (Hz)'...
             'Low frequency cutoff (Hz)'...
-            'Smoothing filter length [ms]'...
+            'Smoothing filter length (samples)'...
             'VALUES: Raw amplitude [0], Envelope in amplitude [1], Envelope in dB with a range of [2:100] dB'...
-            'PLOT TYPE: Mesh [1]; Surfn [2]; Surfl [3]'},...
+            'PLOT TYPE: Mesh [1]; Surfn [2]; Surfl [3]'...
+            'Domain: Time [0]; Frequency [1]'},...
             'Input parameters',1,...
             {'0',...
             num2str(start_time),...
@@ -59,9 +90,10 @@ if isstruct(IN)
             num2str(max_order),...
             num2str(fs/2),...
             '0',...
-            '4',...
+            num2str(round(4*fs/1000)),...
             '40',...
-            '3'});
+            '3',...
+            num2str(domain)});
         if isempty(param) || isempty(param{1,1}) || isempty(param{2,1}) || isempty(param{3,1}) || isempty(param{4,1}) || isempty(param{5,1}) || isempty(param{6,1})
             OUT = [];
             return;
@@ -85,11 +117,11 @@ if isstruct(IN)
             end
             hif = str2double(param{5,1});
             lof = str2double(param{6,1});
-            smoothlen = round(fs*str2double(param{7,1})/1000);
+            smoothlen = round(str2double(param{7,1}));
             valtype = abs(str2double(param{8,1}));
             
             plottype = str2double(param{9,1});
-            
+            domain= str2double(param{10,1});
             if isnan(start_time) || isnan(end_time) || isnan(max_order) || isnan(hif) || isnan(lof), OUT = []; return; end
         end
     end
@@ -145,22 +177,46 @@ for i = 1:size(hoaSignals,2);
     end
 end
 
+if domain == 1
+    fftlen = length(beamsignals);
+    if mod(fftlen,2)==1, fftlen = fftlen+1; end
+    beamsignals = abs(fft(beamsignals,fftlen));
+        % list of fft component frequencies
+    f = ((1:fftlen)'-1) * fs / fftlen;
+    
+    % index of low cut-off
+    indlo = find(abs(f(1:end/2)-lof) == min(abs(f(1:end/2)-lof)),1,'first');
+    
+    % index of high cut-off
+    indhi = find(abs(f(1:end/2)-hif) == min(abs(f(1:end/2)-hif)),1,'first');
+    beamsignals = beamsignals(indlo:indhi,:,:);
+end
+
 
 switch valtype
     case 0
-        % beamsignals is fine as is
-        % smoothing is not applied because that would just be the same as
-        % low-pass filtering the wave
+        % resample the wave is hif is low enough - to avoid plotting
+        % excessively large data (but still oversampling by a factor of 2)
+        if round(fs/(hif*4)) > 1 && length(beamsignals)>5000 && domain~=1
+            beamsignals = resample(beamsignals,1,round(fs/(hif*4)));
+        end
+        % no smoothing here for freq domain
     case 1
         beamsignals = abs(beamsignals);
         if smoothlen > 0
             beamsignals = filtfilt(hann(smoothlen),1,beamsignals);
+            if smoothlen/fs >=0.002  && length(beamsignals)>5000 && domain ~=1
+                beamsignals = resample(beamsignals,1,round(1000*smoothlen/fs));
+            end
         end
     otherwise
         % values are in dB, with valtype specifying the range of the data
         beamsignals = beamsignals.^2;
-        if smoothlen > 0
+        if smoothlen > 0  && smoothlen > 4*length(beamsignals)
             beamsignals = filtfilt(hann(smoothlen),1,beamsignals);
+            if smoothlen/fs >=0.002 && length(beamsignals)>5000 && domain ~=1
+                beamsignals = resample(beamsignals,1,round(1000*smoothlen/fs));
+            end
             beamsignals(beamsignals<=0) = 1e-99;
         end
         beamsignals = 10*log10(beamsignals);
@@ -222,6 +278,7 @@ for b = 1:bands
     end
     
     titlestring = [num2str(start_time), '-', num2str(end_time),' s, '];
+    
     switch planechoice
         case 1
             xlabel('x')
@@ -235,6 +292,13 @@ for b = 1:bands
             xlabel('y')
             ylabel('x')
             titlestring = [titlestring, 'Horizontal Plane'];
+    end
+    
+    if domain == 1
+        titlestring = [titlestring, ', Frequency domain: ',...
+            num2str(lof), ' Hz - ', num2str(hif), ' Hz '];
+    else
+        titlestring = [titlestring, ', Time domain '];
     end
     
     % Band title
@@ -259,7 +323,7 @@ end
 
 if isstruct(IN)
     OUT.funcallback.name = 'rippleplotfromHOA.m';
-    OUT.funcallback.inarg = {fs,planechoice,start_time,end_time,max_order,hif,lof,smoothlen,valtype,plottype};
+    OUT.funcallback.inarg = {fs,planechoice,start_time,end_time,max_order,hif,lof,smoothlen,valtype,plottype,domain};
 else
     OUT = hoaSignals;
 end
