@@ -212,7 +212,7 @@ switch valtype
     otherwise
         % values are in dB, with valtype specifying the range of the data
         beamsignals = beamsignals.^2;
-        if smoothlen > 0  && smoothlen > 4*length(beamsignals)
+        if smoothlen > 0  && smoothlen < length(beamsignals)/4
             beamsignals = filtfilt(hann(smoothlen),1,beamsignals);
             if smoothlen/fs >=0.002 && length(beamsignals)>5000 && domain ~=1
                 beamsignals = resample(beamsignals,1,round(1000*smoothlen/fs));
