@@ -16,11 +16,14 @@ function OUT = rippleplotfromHOA(IN,fs,planechoice,start_time,end_time,max_order
 % cutoff frequency at the edge.
 %
 % In the time domain, values can be represented as the waveform itself, the
-% waveform's envelope, or the waveform's envelope expressed in decibels. In
-% the frequency domain, values can be represented as the spectrum magnitude
-% or the spectrum magnitude expressed in decibels (in frequency domain,
-% there is no difference between the VALUES input of 0 and 1, except that
-% the former cannot be smoothed).
+% waveform's envelope, or the waveform's envelope expressed in decibels. 
+%
+% In the frequency domain, values can be represented as the spectrum
+% magnitude or the spectrum magnitude expressed in decibels (in frequency
+% domain, there is no difference between the VALUES input of 0 and 1,
+% except that the former cannot be smoothed). The choice of window
+% prior to FFT is: rectangular, half Hann (i.e with maximum at the start)
+% and full Hann (i.e. with zero at the start).
 %
 % A smoothing filter can be applied to the plotted data, which can increase
 % readability.
@@ -50,21 +53,23 @@ else
     hoaSignals = IN;
 end
 
-if abs(size(hoaSignals,2)^0.5 - round(size(hoaSignals,2)^0.5)) >1e-20
+[len,chans,bands,dim4,dim5,dim6] = size(hoaSignals);
+
+if abs(chans^0.5 - round(chans^0.5)) >1e-20
     h=warndlg('This audio does not appear to be in HOA format. Unable to analyse with rippleplotfromHOA.','AARAE info','modal');
     uiwait(h)
     OUT = [];
     return
 end
 
-maxtime = size(hoaSignals,1)/fs;
+maxtime = len/fs;
 if nargin < 12, domain = 0; end
 if nargin < 11, plottype = 1; end
 if nargin < 10, valtype = 40; end
 if nargin < 9, smoothlen = round(4*fs/1000); end
 if nargin < 8, lof = 0; end
 if nargin < 7, hif = fs/2; end
-if nargin < 6, max_order=round(size(hoaSignals,2).^0.5-1); end
+if nargin < 6, max_order=round(chans.^0.5-1); end
 if nargin < 5, 
     end_time = 0.1;
     if end_time > maxtime, end_time = maxtime; end
@@ -82,7 +87,7 @@ if isstruct(IN)
             'Smoothing filter length (samples)'...
             'VALUES: Raw amplitude [0], Envelope in amplitude [1], Envelope in dB with a range of [2:100] dB'...
             'PLOT TYPE: Mesh [1]; Surfn [2]; Surfl [3]'...
-            'Domain: Time [0]; Frequency [1]'},...
+            'Domain: Time [0]; Frequency domain rectangular window [1]; Frequency domain half Hann window [2]; Frequency domain full Hann window [3]'},...
             'Input parameters',1,...
             {'0',...
             num2str(start_time),...
@@ -124,10 +129,10 @@ end_sample = round(end_time*fs);
 if end_sample >= length(hoaSignals), end_sample = length(hoaSignals); end
 
 nchans = (max_order+1)^2;
-if size(hoaSignals,2)>nchans % delete unused channels
+if chans>nchans % delete unused channels
     hoaSignals = hoaSignals(:,1:nchans);
-elseif size(hoaSignals,2)<nchans % limit max_order to available channels
-    max_order = round(size(hoaSignals,2).^0.5-1);
+elseif chans<nchans % limit max_order to available channels
+    max_order = round(chans.^0.5-1);
     if nargin < 2
         warndlg(['Maximum available order for this audio input is ' num2str(max_order) '.'],'AARAE info','modal');
     end
@@ -174,10 +179,10 @@ Y = SphericalHarmonicMatrix(hoaFmt,azim_for_directplot,elev_for_directplot);
 
 hoa2SpkCfg_for_directplot.filters.gainMatrix = Y;
 direct_sound_HOA = hoaSignals(start_sample:end_sample,:,:);
-bands = size(hoaSignals,3);
+len = length(direct_sound_HOA);
 beamsignals = zeros(length(direct_sound_HOA),numberofdirections,bands);
 
-for i = 1:size(hoaSignals,2);
+for i = 1:chans;
     for j = 1:numberofdirections;
         for b = 1:bands
             beamsignals(:,j,b) = beamsignals(:,j,b)+(direct_sound_HOA(:,i,b).*hoa2SpkCfg_for_directplot.filters.gainMatrix(i,j));
@@ -185,12 +190,27 @@ for i = 1:size(hoaSignals,2);
     end
 end
 
-if domain == 1
-    fftlen = length(beamsignals);
-    if mod(fftlen,2)==1, fftlen = fftlen+1; end
-    beamsignals = abs(fft(beamsignals,fftlen));
+if domain == 1 || domain == 2 || domain == 3
+    
+    if mod(len,2)==1
+        len = len+1;
+        beamsignals = [beamsignals;zeros(1,numberofdirections,bands,dim4,dim5,dim6)];
+    end
+    
+    if domain == 2
+        window = hann(len*2);
+        window = window((end/2+1):end);
+    elseif domain == 3
+        window = hann(len);
+    else
+        window = ones(len,1);
+    end
+    % normalise window
+    window = window ./ sum(window);
+    
+    beamsignals = abs(fft(beamsignals .* repmat(window,[1,numberofdirections,bands,dim4,dim5,dim6]),len));
         % list of fft component frequencies
-    f = ((1:fftlen)'-1) * fs / fftlen;
+    f = ((1:len)'-1) * fs / len;
     
     % index of low cut-off
     indlo = find(abs(f(1:end/2)-lof) == min(abs(f(1:end/2)-lof)),1,'first');
@@ -205,15 +225,16 @@ switch valtype
     case 0
         % resample the wave is hif is low enough - to avoid plotting
         % excessively large data (but still oversampling by a factor of 2)
-        if round(fs/(hif*4)) > 1 && length(beamsignals)>5000 && domain~=1
+        if round(fs/(hif*4)) > 1 && length(beamsignals)>5000 && domain==0
             beamsignals = resample(beamsignals,1,round(fs/(hif*4)));
         end
         % no smoothing here for freq domain
     case 1
         beamsignals = abs(beamsignals);
-        if smoothlen > 0
-            beamsignals = filtfilt(hann(smoothlen),1,beamsignals);
-            if smoothlen/fs >=0.002  && length(beamsignals)>5000 && domain ~=1
+        if smoothlen > 0 && smoothlen < length(beamsignals)/4
+            bcoef = hann(smoothlen) ./ sum(hann(smoothlen));
+            beamsignals = filtfilt(bcoef,1,beamsignals);
+            if smoothlen/fs >=0.002  && length(beamsignals)>5000 && domain ==0
                 beamsignals = resample(beamsignals,1,round(1000*smoothlen/fs));
             end
         end
@@ -221,8 +242,9 @@ switch valtype
         % values are in dB, with valtype specifying the range of the data
         beamsignals = beamsignals.^2;
         if smoothlen > 0  && smoothlen < length(beamsignals)/4
-            beamsignals = filtfilt(hann(smoothlen),1,beamsignals);
-            if smoothlen/fs >=0.002 && length(beamsignals)>5000 && domain ~=1
+            bcoef = hann(smoothlen) ./ sum(hann(smoothlen));
+            beamsignals = filtfilt(bcoef,1,beamsignals);
+            if smoothlen/fs >=0.002 && length(beamsignals)>5000 && domain ==0
                 beamsignals = resample(beamsignals,1,round(1000*smoothlen/fs));
             end
             beamsignals(beamsignals<=0) = 1e-99;
@@ -302,11 +324,11 @@ for b = 1:bands
             titlestring = [titlestring, 'Horizontal Plane'];
     end
     
-    if domain == 1
+    if domain ~= 0
         titlestring = [titlestring, ', Frequency domain: ',...
-            num2str(lof), ' Hz - ', num2str(hif), ' Hz '];
+            num2str(lof), ' Hz - ', num2str(hif), ' Hz (low f at centre) '];
     else
-        titlestring = [titlestring, ', Time domain '];
+        titlestring = [titlestring, ', Time domain (start time at centre) '];
     end
     
     % Band title
