@@ -78,21 +78,11 @@ if isstruct(IN)
             if sphere_cover>130,sphere_cover = 130;end
             if sphere_cover<4,sphere_cover = 4;end
             start_time = str2double(param{2,1});
-            start_sample = round(start_time*fs);
-            if start_sample == 0, start_sample = 1; end
+            
             end_time = str2double(param{3,1});
-            end_sample = round(end_time*fs);
-            if end_sample >= length(hoaSignals), end_sample = length(hoaSignals); end
+            
             max_order = str2double(param{4,1});
-            nchans = (max_order+1)^2;
-            if size(hoaSignals,2)>nchans % delete unused channels
-                hoaSignals = hoaSignals(:,1:nchans);
-            elseif size(hoaSignals,2)<nchans % limit max_order to available channels
-                max_order = round(size(hoaSignals,2).^0.5-1);
-                if nargin < 2
-                    warndlg(['Maximum available order for this audio input is ' num2str(max_order) '.'],'AARAE info','modal');
-                end
-            end
+            
             hif = str2double(param{5,1});
             lof = str2double(param{6,1});
             plottype = str2double(param{7,1});
@@ -101,6 +91,21 @@ if isstruct(IN)
     end
 end
 
+start_sample = round(start_time*fs);
+if start_sample == 0, start_sample = 1; end
+end_sample = round(end_time*fs);
+if end_sample >= length(hoaSignals), end_sample = length(hoaSignals); end
+nchans = (max_order+1)^2;
+if size(hoaSignals,2)>nchans % delete unused channels
+    hoaSignals = hoaSignals(:,1:nchans);
+elseif size(hoaSignals,2)<nchans % limit max_order to available channels
+    max_order = round(size(hoaSignals,2).^0.5-1);
+    if nargin < 2
+        warndlg(['Maximum available order for this audio input is ' num2str(max_order) '.'],'AARAE info','modal');
+    end
+end
+
+            
 if (hif < fs/2 && hif > lof) || (lof > 0 && lof < hif)
     % bandlimit the spectrum
     filterorder = 48;
