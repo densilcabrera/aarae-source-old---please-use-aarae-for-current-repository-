@@ -70,7 +70,7 @@ function OUT = stepped_tone_response(IN,noiseadjust,highestharmonic,plottype,nor
 % I'm not sure whether that is the case or not).
 %
 % Code by Densil Cabrera
-% version 1.00 (8 August 2014)
+% version 1.01 (6 September 2014)
 
 if nargin ==1
     
@@ -299,7 +299,7 @@ if ~isempty(audio) && ~isempty(fs) && ~isempty(cal)
             spectrum = zeros(maxfidx,chans,dim3,length(flist));
         end
         if ~exist('spectrum2','var')
-            spectrum2 = zeros(maxfidx,chans,1,length(flist));
+            spectrum2 = zeros(maxfidx,1,1,length(flist));
         end
         
         audiotemp = audio(startindex(n):endindex(n),:,:);
@@ -336,11 +336,11 @@ if ~isempty(audio) && ~isempty(fs) && ~isempty(cal)
         
         
         powspectrumtemp = zeros(nfft,chans,dim3,nwin);
-        powspectrumtemp2 = zeros(nfft,chans,1,nwin);
+        powspectrumtemp2 = zeros(nfft,1,1,nwin);
         for m = 1:nwin
             powspectrumtemp(:,:,:,m) = abs(fft(audiotemp(1+(m-1)*nfft:(m-1)*nfft+nfft,...
                 :,:))./nfft).^2;
-            powspectrumtemp2(:,:,1,m) = abs(fft(audiotemp2(1+(m-1)*nfft:(m-1)*nfft+nfft,...
+            powspectrumtemp2(:,1,1,m) = abs(fft(audiotemp2(1+(m-1)*nfft:(m-1)*nfft+nfft,...
                 1,:))./nfft).^2;
         end
         
@@ -349,7 +349,7 @@ if ~isempty(audio) && ~isempty(fs) && ~isempty(cal)
         spectrum(1:maxfidx,:,:,n) = powspectrumtemp(1:maxfidx,:,:);
         
         powspectrumtemp2 = trimmean(powspectrumtemp2,25,4);
-        spectrum2(1:maxfidx,:,1,n) = powspectrumtemp2(1:maxfidx,:,:);
+        spectrum2(1:maxfidx,1,1,n) = powspectrumtemp2(1:maxfidx,1,:);
         
         
         % get rid of non-harmonic data, and data beyond the highest
@@ -374,9 +374,9 @@ if ~isempty(audio) && ~isempty(fs) && ~isempty(cal)
             spectrum(1:maxfidx,:,firstseq:dim3,n)...
             .* repmat(spectrumind,[1,chans,dim3-(firstseq-1),1]);
         
-        spectrum2(1:maxfidx,:,1,n) = ...
-            spectrum2(1:maxfidx,:,1,n) ...
-            .* repmat(spectrumind,[1,chans,1,1]);
+        spectrum2(1:maxfidx,1,1,n) = ...
+            spectrum2(1:maxfidx,1,1,n) ...
+            .* spectrumind;
     end
     
     if isinf(relgain(1)) % detect silent cycle
@@ -399,7 +399,7 @@ if ~isempty(audio) && ~isempty(fs) && ~isempty(cal)
     % scale spectrum error adjustment matrix by fundamental freq power, and
     % subtract spectrum error from measurement
     if noiseadjust == 2 || noiseadjust == 3
-    spectrum2 = repmat(spectrum2,[1,1,dim3,1]);
+    spectrum2 = repmat(spectrum2,[1,chans,dim3,1]);
     spectrum2 = spectrum2 .*...
         repmat((spectrum(numF0cycles+1,:,:,:) ./ ...
         spectrum2(numF0cycles+1,:,:,:)),[size(spectrum2,1),1,1,1]);
