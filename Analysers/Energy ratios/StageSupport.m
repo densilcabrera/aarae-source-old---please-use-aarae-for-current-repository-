@@ -202,8 +202,8 @@ if ~isempty(IR) && ~isempty(fs) && ~isempty(startthresh) && ~isempty(bpo) && ~is
         out.tables = [out.tables tables];
     end
     if doplot
-            ymax = 10*ceil(max(max(ST1+5))/10);
-            ymin = 10*floor(min(min([ST2,STLate]))/10);
+            ymax = 10*ceil(max(max([ST1,ST2,STLate]+5))/10);
+            ymin = 10*floor(min(min([ST1,ST2,STLate]-5))/10);
         for ch = 1:chans
             figure('name', ['Stage Support, Channel ', ...
                 num2str(ch)])
@@ -230,7 +230,7 @@ if ~isempty(IR) && ~isempty(fs) && ~isempty(startthresh) && ~isempty(bpo) && ~is
             legend 'off'
 
             for k = 1:length(bandfc)
-                text(k-0.25,ymax-(ymax-ymin)*0.08, ...
+                text(k-0.25,ST1(k,ch)+2.5, ...
                     num2str(round(ST1(k,ch)*10)/10),'Color',[1,0.3,0.3])
             end
             
@@ -257,7 +257,7 @@ if ~isempty(IR) && ~isempty(fs) && ~isempty(startthresh) && ~isempty(bpo) && ~is
             legend 'off'
 
             for k = 1:length(bandfc)
-                text(k-0.25,ymax-(ymax-ymin)*0.08, ...
+                text(k-0.25,ST2(k,ch)+2.5, ...
                     num2str(round(ST2(k,ch)*10)/10),'Color',[0.2,0.6,0.2])
             end
             
@@ -284,7 +284,7 @@ if ~isempty(IR) && ~isempty(fs) && ~isempty(startthresh) && ~isempty(bpo) && ~is
             legend 'off'
 
             for k = 1:length(bandfc)
-                text(k-0.25,ymax-(ymax-ymin)*0.08, ...
+                text(k-0.25,STLate(k,ch)+2.5, ...
                     num2str(round(STLate(k,ch)*10)/10),'Color',[0.3,0.3,1])
             end
             
