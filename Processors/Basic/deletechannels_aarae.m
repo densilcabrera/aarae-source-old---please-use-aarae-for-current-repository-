@@ -24,6 +24,7 @@ if ~isempty(param)
 
     if ok == 1 && ~isempty(S)
         try
+            out = in;
             out.audio = in.audio(:,S,:);
             if isfield(in,'chanID') && length(in.chanID) == size(in.audio,2)
                 out.chanID = in.chanID(S);
@@ -31,7 +32,11 @@ if ~isempty(param)
                     out.cal = in.cal(S);
                 end
             else
-                out.chanID = num2cell(S);
+                % write new chan IDs (preserving original chan numbers)
+                out.chanID = cellstr([repmat('Chan',size(out.audio,2),1) num2str(S')]);
+                if isfield(in,'cal')
+                    out = rmfield(out,'cal'); % remove cal field if it cannot be interpreted
+                end
             end
             out.funcallback.name = 'deletechannels_aarae.m';
             out.funcallback.inarg = {S};
