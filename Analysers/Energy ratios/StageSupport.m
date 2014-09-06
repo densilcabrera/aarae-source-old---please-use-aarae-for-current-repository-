@@ -142,7 +142,7 @@ if ~isempty(IR) && ~isempty(fs) && ~isempty(startthresh) && ~isempty(bpo) && ~is
 
     ST1 = 10*log10(Early20_100 ./ Direct10); 
     ST2 = 10*log10(Late100_200 ./ Direct10); 
-    STLate = (Late100_1000 ./ Direct10); 
+    STLate = 10*log10(Late100_1000 ./ Direct10); 
 
     meanbands = find(bandfc>=200 & bandfc<=2500);
     ST1av = mean(ST1(meanbands,:),1);
@@ -230,7 +230,7 @@ if ~isempty(IR) && ~isempty(fs) && ~isempty(startthresh) && ~isempty(bpo) && ~is
             legend 'off'
 
             for k = 1:length(bandfc)
-                text(k-0.25,ymin+(ymax-ymin)*0.025, ...
+                text(k-0.25,ymax-(ymax-ymin)*0.08, ...
                     num2str(round(ST1(k,ch)*10)/10),'Color',[1,0.3,0.3])
             end
             
@@ -238,7 +238,7 @@ if ~isempty(IR) && ~isempty(fs) && ~isempty(startthresh) && ~isempty(bpo) && ~is
             
             subplot(3,1,2)
             width = 0.5;
-            bar(1:length(bandfc),ST2(:,ch),width,'FaceColor',[0.3,1,0.3],...
+            bar(1:length(bandfc),ST2(:,ch),width,'FaceColor',[0.2,0.6,0.2],...
                 'EdgeColor',[0,0,0],'DisplayName', 'ST2','BaseValue',ymin);
             hold on
 
@@ -257,8 +257,8 @@ if ~isempty(IR) && ~isempty(fs) && ~isempty(startthresh) && ~isempty(bpo) && ~is
             legend 'off'
 
             for k = 1:length(bandfc)
-                text(k-0.25,ymin+(ymax-ymin)*0.025, ...
-                    num2str(round(ST2(k,ch)*10)/10),'Color',[0.3,1,0.3])
+                text(k-0.25,ymax-(ymax-ymin)*0.08, ...
+                    num2str(round(ST2(k,ch)*10)/10),'Color',[0.2,0.6,0.2])
             end
             
             
@@ -284,7 +284,7 @@ if ~isempty(IR) && ~isempty(fs) && ~isempty(startthresh) && ~isempty(bpo) && ~is
             legend 'off'
 
             for k = 1:length(bandfc)
-                text(k-0.25,ymin+(ymax-ymin)*0.025, ...
+                text(k-0.25,ymax-(ymax-ymin)*0.08, ...
                     num2str(round(STLate(k,ch)*10)/10),'Color',[0.3,0.3,1])
             end
             
