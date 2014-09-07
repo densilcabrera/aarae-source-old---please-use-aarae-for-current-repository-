@@ -9,10 +9,22 @@ function out = deletechannels_aarae(in,S)
 %end
 if isstruct(in)
     data = in.audio;
+    if isfield(in,'chanID')
+        if length(in.chanID) == size(data,2)
+            param = in.chanID;
+        else
+            param = cellstr([repmat('Chan',size(data,2),1) num2str((1:size(data,2))')]);
+        end
+    else
+        param = cellstr([repmat('Chan',size(data,2),1) num2str((1:size(data,2))')]);
+    end
 else
     data = in;
+    param = cellstr([repmat('Chan',size(data,2),1) num2str((1:size(data,2))')]);
 end
-param = cellstr([repmat('Chan',size(data,2),1) num2str((1:size(data,2))')]);
+
+
+
 
 if ~isempty(param)
     if nargin < 2
