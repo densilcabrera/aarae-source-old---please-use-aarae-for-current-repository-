@@ -1,23 +1,30 @@
-function out = StageSupport(data, fs, startthresh, bpo, doplot)
+function out = StageSupport(data, fs, startthresh,threshmethod, bpo, doplot)
 % This function calculates stage support parameters from a room impulse 
-% response.
-%--------------------------------------------------------------------------
-% INPUT VARIABLES
+% response (data).
 %
-% IR = .wav impulse response
+% The start of the impulse response is detected using a decibel value
+% specified by startthresh, and -20 dB is recommended by ISO3382-1.
 %
-% fs = Sampling frequency
+% Normally start threshold detection and truncation should be done prior to
+% filtering. The filterbanks used include zero-padding, to avoid loosing
+% energy (from the filters' time response). However, if the impulse
+% response has a highly variable group delay, it may be helpful to try
+% start threshold detection and truncation after filtering. Actually it is
+% better to avoid this problem in the first place by proper selection of
+% measurement equipment.
 %
-% startthresh = Defines beginning of the IR as the first startthresh sample
-%               as the maximum value in the IR (e.g if startthresh = -20,
-%               the new IR start is the first sample that is >= 20 dB below
-%               the maximum
+% Calculations would normally be done in octave bands (bpo = 1), but
+% 1/3-octave band analysis is also available.
 %
-% bpo = frequency scale to analyse
-%             (1 = octave bands (default); 3 = 1/3 octave bands)
+% Currently this function only analyses the first two channels of
+% multichannel audio input.
 %
-% doplot = Output plots (1 = yes; 0 = no)
+% Output values include ST Early (which is the same as ST1), ST2, and ST
+% Late.
 %
+% Code by Densil Cabrera and Grant Cuthbert
+% Version 1.01 (7 September 2014)
+
 
 if nargin < 5, doplot = 1; end
 if nargin < 4, bpo = 1; end
@@ -25,17 +32,19 @@ if nargin < 3
     startthresh = -20;
     %dialog box for settings
     prompt = {'Threshold for IR start detection', ...
+        'Detect start before filtering (0) or after filtering (1)',...
         'Bands per octave (1 | 3)', ...
         'Plot (0|1)'};
     dlg_title = 'Settings';
     num_lines = 1;
-    def = {'-20','1','1'};
+    def = {num2str(startthresh),'0','1','1'};
     answer = inputdlg(prompt,dlg_title,num_lines,def);
     
     if ~isempty(answer)
         startthresh = str2num(answer{1,1});
-        bpo = str2num(answer{2,1});
-        doplot = str2num(answer{3,1});
+        threshmethod = str2num(answer{2,1});
+        bpo = str2num(answer{3,1});
+        doplot = str2num(answer{4,1});
     else
         out = [];
         return
@@ -54,15 +63,21 @@ else
 end
 
 if ~isempty(IR) && ~isempty(fs) && ~isempty(startthresh) && ~isempty(bpo) && ~isempty(doplot)
+    
+    
+    
+    
+    
+    
+    
     %--------------------------------------------------------------------------
-    % TRUNCATION
+    % TRUNCATION PRIOR TO FILTERING
     %--------------------------------------------------------------------------
 
     % Check the input data dimensions
     [len, chans, bands] = size(IR);
     if bands>1
-        warning('The StageSupport function is not suitable for multiband audio.')
-        disp('Multiband audio has been mixed down, but results should be interpreted with caution.')
+        warndlg('The StageSupport function is not suitable for multiband audio. Multiband audio has been mixed down, but results should be interpreted with caution.')
         IR = mean(IR,3);
     end
 
@@ -73,36 +88,21 @@ if ~isempty(IR) && ~isempty(fs) && ~isempty(startthresh) && ~isempty(bpo) && ~is
     end
 
     if len/fs < 1
-        warning('The impulse response is not sufficiently long for STLate.')
-        disp('Zero padding has been applied, but results should be interpreted with caution.')
+        warndlg('The impulse response is not sufficiently long for STLate. Zero padding has been applied, but results should be interpreted with caution.')
         IR = [IR; zeros(round(fs),chans)];
     end
-
-    % Preallocate
-    m = zeros(1, chans); % maximum value of the IR
-    startpoint = zeros(1, chans); % the auto-detected start time of the IR
-
-    for dim2 = 1:chans
-        m(1,dim2) = max(IR(:,dim2).^2); % maximum value of the IR
-        startpoint(1,dim2) = find(IR(:,dim2).^2 >= m(1,dim2)./ ...
-            (10^(abs(startthresh)/10)),1,'first'); % Define start point
-
-        if startpoint(1,dim2) > 1
-            % zero the data before the startpoint
-            IR(1:startpoint(1,dim2)-1,dim2) = 0;
-
-            % rotate the zeros to the end (to keep a constant data length)
-            IR(:,dim2) = circshift(IR(:,dim2),-(startpoint(1,dim2)-1));
-        end
-    end
-
-    % Truncate sections of the IR prior to filtering
-    Direct10 = IR(1:1+floor(fs*0.01),:); % Truncate first 10 ms
-    Early20_100 = IR(1+floor(fs*0.02):1+floor(fs*0.1),:); % 20-100 ms
-    Late100_200 = IR(1+floor(fs*0.1):1+floor(fs*0.2),:); % 100-200 ms
-    All20_1000 = IR(1+floor(fs*0.02):1+floor(fs*1),:); % 20-1000 ms
-    Late100_1000 = IR(1+floor(fs*0.1):1+floor(fs*1),:); % 100-1000 ms
-
+    
+    if threshmethod == 0
+        % auto-crop start of individual audio columns
+        IR = autocropstart_aarae(IR,startthresh,1);
+        
+        % Truncate sections of the IR prior to filtering
+        Direct10 = IR(1:1+floor(fs*0.01),:); % Truncate first 10 ms
+        Early20_100 = IR(1+floor(fs*0.02):1+floor(fs*0.1),:); % 20-100 ms
+        Late100_200 = IR(1+floor(fs*0.1):1+floor(fs*0.2),:); % 100-200 ms
+        All20_1000 = IR(1+floor(fs*0.02):1+floor(fs*1),:); % 20-1000 ms
+        Late100_1000 = IR(1+floor(fs*0.1):1+floor(fs*1),:); % 100-1000 ms
+    
 
     %--------------------------------------------------------------------------
     % FILTERING
@@ -129,7 +129,45 @@ if ~isempty(IR) && ~isempty(fs) && ~isempty(startthresh) && ~isempty(bpo) && ~is
         Late100_1000 = octbandfilter_viaFFT(Late100_1000,fs,bandfc,12,round(0.1*fs));
 
     end
-
+    end
+    
+    
+    
+    
+    
+    
+    %--------------------------------------------------------------------------
+    % TRUNCATION AFTER FILTERING (NOT RECOMMENDED, BUT MIGHT HELP IF GROUP
+    % DELAY OF THE IR START VARIES A LOT)
+    %--------------------------------------------------------------------------
+    
+    if threshmethod == 1
+        % apply filterbank
+        if bpo == 3
+            bandfc = [100,125,160,200,250,315,400,500,630,800,1000,1250,1600, ...
+                2000,2500,3150,4000,5000];
+            IR = thirdoctbandfilter_viaFFT(IR,fs,bandfc,15,round(0.1*fs)); % IR
+            
+        else
+            bandfc = [125,250,500,1000,2000,4000];
+            IR = octbandfilter_viaFFT(IR,fs,bandfc,12,round(0.1*fs)); % IR
+        end
+        % autocrop start of individual audio columns (removes band time
+        % alignment)
+        IR = autocropstart_aarae(IR,startthresh,1);
+        
+        % Truncate sections of the IR
+        Direct10 = IR(1:1+floor(fs*0.01),:,:); % Truncate first 10 ms
+        Early20_100 = IR(1+floor(fs*0.02):1+floor(fs*0.1),:,:); % 20-100 ms
+        Late100_200 = IR(1+floor(fs*0.1):1+floor(fs*0.2),:,:); % 100-200 ms
+        All20_1000 = IR(1+floor(fs*0.02):1+floor(fs*1),:,:); % 20-1000 ms
+        Late100_1000 = IR(1+floor(fs*0.1):1+floor(fs*1),:,:); % 100-1000 ms
+    end
+    
+    
+    
+    
+    
     %--------------------------------------------------------------------------
     % CALCULATE ENERGY PARAMETERS
     %--------------------------------------------------------------------------
@@ -176,7 +214,7 @@ if ~isempty(IR) && ~isempty(fs) && ~isempty(startthresh) && ~isempty(bpo) && ~is
 %     end % if chans
 
     out.funcallback.name = 'StageSupport.m';
-    out.funcallback.inarg = {fs,startthresh,bpo};
+    out.funcallback.inarg = {fs,startthresh,threshmethod,bpo};
 
     % OUTPUT TABLE
     
