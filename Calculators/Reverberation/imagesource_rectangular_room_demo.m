@@ -176,7 +176,7 @@ OUT.fs = fs;
 
 
 
-OUT.chanID = cellstr(num2str(hoaFmt.index));
+OUT.chanID = cellstr([repmat('HOA ',[size(OUT.audio,2),1]),num2str(hoaFmt.index)]);
 
 
 

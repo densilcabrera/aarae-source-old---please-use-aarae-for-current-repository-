@@ -6,7 +6,7 @@ function OUT = stepped_tone_response(IN,noiseadjust,highestharmonic,plottype,nor
 %
 % To prepare a signal for measurement it is best to include a 'silent
 % cycle' (assuming that noise is steady state). Typically a test signal
-% would may also include non-silent cycles at various gains, to test the
+% would also include non-silent cycles at various gains, to test the
 % change in noise and distortion parameters as a function of the gain of
 % the input to the system. Tones of various frequencies (e.g. octave-spaced
 % or 1/3-octave spaced) can be tested from a single test signal using

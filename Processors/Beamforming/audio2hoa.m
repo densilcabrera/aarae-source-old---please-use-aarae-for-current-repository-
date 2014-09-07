@@ -142,7 +142,7 @@ if isstruct(IN)
     OUT.audio = hoaSignals;
     %OUT.fs = fs;
     OUT.cal = zeros(1,size(OUT.audio,2));
-    OUT.chanID = cellstr(num2str(hoaFmt.index));
+    OUT.chanID = cellstr([repmat('HOA ',[size(OUT.audio,2),1]),num2str(hoaFmt.index)]);
     OUT.funcallback.name = 'audio2hoa.m';
     OUT.funcallback.inarg = {fs, mic_coords, cropIR, max_order,filterlength};
 else
