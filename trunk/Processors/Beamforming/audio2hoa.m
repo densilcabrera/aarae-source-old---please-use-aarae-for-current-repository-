@@ -1,4 +1,4 @@
-function OUT = audio2hoa(IN, fs, mic_coords, cropIR , max_order)
+function OUT = audio2hoa(IN, fs, mic_coords, cropIR , max_order,filterlength)
 % This function reduces raw recordings made from a spherical microphone
 % array to higher order Ambisonics (HOA) format, to allow them to be used
 % and analysed with processors and analysers that use this generic spatial
@@ -15,6 +15,7 @@ function OUT = audio2hoa(IN, fs, mic_coords, cropIR , max_order)
 % Code by Daniel Jimenez, Luis Miranda and Densil Cabrera
 % Version 1.0 (19 August 2014)
 
+if nargin < 6, filterlength = 256; end
 if nargin < 5, max_order = 4; end
 if nargin < 4, cropIR = 0; end
 if nargin < 3, mic_coords = importdata([cd '/Processors/Beamforming/Microphones/visisonics_mic_loc.mat']); end
@@ -22,16 +23,17 @@ if isstruct(IN)
     audio = IN.audio;
     fs = IN.fs;
     if nargin < 4
-        param = inputdlg({'Maximum order','Apply autocropstart_aarae.m'},...
+        param = inputdlg({'Maximum order','Apply autocropstart_aarae.m','Filter length (in samples)'},...
                        'Input parameters',1,...
-                      {num2str(max_order),num2str(cropIR)});
-        if isempty(param) || isempty(param{1,1}) || isempty(param{2,1})
+                      {num2str(max_order),num2str(cropIR),num2str(filterlength)});
+        if isempty(param) || isempty(param{1,1}) || isempty(param{2,1}) || isempty(param{3,1})
             OUT = [];
             return;
         else
             max_order = str2double(param{1,1});
             cropIR = str2double(param{2,1});
-            if isnan(max_order) || isnan(cropIR), OUT = []; return; end
+            filterlength = str2double(param{3,1});
+            if isnan(max_order) || isnan(cropIR) || isnan(filterlength), OUT = []; return; end
         end
     end
     if nargin < 3
@@ -42,7 +44,7 @@ if isstruct(IN)
                          'ListString',mics.mat);
         if isempty(S), warndlg('No microphone coordinates selected. To add new mic coordinate files (*.mat) go to /Processors/Beamforming/Microphones','AARAE info','modal'); OUT = []; return; end
         mic_coords = importdata([cd '/Processors/Beamforming/Microphones/' mics.mat{S,1}]);
-        if size(audio,2) ~= size(mic_coords,1), warndlg('The selected microphone coordinates do not match the number of calculated IRs.','AARAE info','modal'); OUT = []; return; end
+        if size(audio,2) ~= size(mic_coords,1), warndlg('The selected microphone coordinates do not match the number of audio channels.','AARAE info','modal'); OUT = []; return; end
     end
 else
     if nargin < 2
@@ -53,12 +55,22 @@ else
     audio = IN;
 end
 
+
+
 % Pre-treatment IRs
 if cropIR == 1,
     trimmedIRs = autocropstart_aarae(audio,-20,2);
 else
     trimmedIRs = audio;
 end
+
+% reset cal to 0 dB if it exists
+if isstruct(IN)
+    if isfield(IN,'cal')
+        audio = cal_reset_aarae(audio,0,cal);        
+    end
+end
+
 %[~, firstarrivalall] = max(IRs);
 
 %firstarrival = min(firstarrivalall);
@@ -102,7 +114,7 @@ hoaFmt = GenerateHoaFmt('res2d',max_order,'res3d',max_order) ;
 
 mic2HoaOpt.sampFreq      = fs;
 mic2HoaOpt.filterType    = 'firMatrix' ;
-mic2HoaOpt.filterLength  = 256 ;
+mic2HoaOpt.filterLength  = filterlength;
 mic2HoaOpt.limiterMethod = 'tikh' ;
 mic2HoaOpt.limiterLevel  = 6 ;
 mic2HoaOpt.higherOrders  = false ;
@@ -122,12 +134,17 @@ for I = 1:size(trimmedIRs,2);
     end
 end
 
+
+
+
 if isstruct(IN)
+    OUT=IN;
     OUT.audio = hoaSignals;
-    OUT.fs = fs;
+    %OUT.fs = fs;
+    OUT.cal = zeros(1,size(OUT.audio,2));
     OUT.chanID = cellstr(num2str(hoaFmt.index));
     OUT.funcallback.name = 'audio2hoa.m';
-    OUT.funcallback.inarg = {fs, mic_coords, cropIR, max_order};
+    OUT.funcallback.inarg = {fs, mic_coords, cropIR, max_order,filterlength};
 else
     OUT = hoaSignals;
 end
