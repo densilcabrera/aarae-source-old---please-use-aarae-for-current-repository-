@@ -16,7 +16,9 @@ function OUT = rippleplotfromHOA(IN,fs,planechoice,start_time,end_time,max_order
 % cutoff frequency at the edge.
 %
 % In the time domain, values can be represented as the waveform itself, the
-% waveform's envelope, or the waveform's envelope expressed in decibels. 
+% waveform's envelope, or the waveform's envelope expressed in decibels.
+% These can be displayed directly, or their distribution can be displayed
+% using 100-bin histograms (rotated around the circle).
 %
 % In the frequency domain, values can be represented as the spectrum
 % magnitude or the spectrum magnitude expressed in decibels (in frequency
@@ -34,9 +36,10 @@ function OUT = rippleplotfromHOA(IN,fs,planechoice,start_time,end_time,max_order
 % This function uses the HOAToolbox, by Nicolas Epain.
 %
 % Code by Densil Cabrera and Luis Miranda
-% Version 1.01 (3 September 2014)
+% Version 1.02 (5 September 2014)
 
-
+% TO DO:
+% work out a good way of displaying radial axis values
 
 if isstruct(IN)
     hoaSignals = IN.audio;
@@ -85,9 +88,9 @@ if isstruct(IN)
             'High frequency cutoff (Hz)'...
             'Low frequency cutoff (Hz)'...
             'Smoothing filter length (samples)'...
-            'VALUES: Raw amplitude [0], Envelope in amplitude [1], Envelope in dB with a range of [2:100] dB'...
+            'VALUES: Raw amplitude [0], Envelope in amplitude [1], Envelope in dB with a range of [2:100] dB, Schroeder reverse integration [-1]'...
             'PLOT TYPE: Mesh [1]; Surfn [2]; Surfl [3]'...
-            'Domain: Time [0]; Frequency domain rectangular window [1]; Frequency domain half Hann window [2]; Frequency domain full Hann window [3]'},...
+            'Domain or transformation: Time [0]; Frequency domain rectangular window [1]; Frequency domain half Hann window [2]; Frequency domain full Hann window [3]; Histogram of time domain [4];'},...
             'Input parameters',1,...
             {'0',...
             num2str(start_time),...
@@ -113,7 +116,7 @@ if isstruct(IN)
             hif = str2double(param{5,1});
             lof = str2double(param{6,1});
             smoothlen = round(str2double(param{7,1}));
-            valtype = abs(str2double(param{8,1}));
+            valtype = str2double(param{8,1});
             
             plottype = str2double(param{9,1});
             domain= str2double(param{10,1});
@@ -177,7 +180,6 @@ numberofdirections = numel(azim_for_directplot);
 
 Y = SphericalHarmonicMatrix(hoaFmt,azim_for_directplot,elev_for_directplot);
 
-hoa2SpkCfg_for_directplot.filters.gainMatrix = Y;
 direct_sound_HOA = hoaSignals(start_sample:end_sample,:,:);
 len = length(direct_sound_HOA);
 beamsignals = zeros(length(direct_sound_HOA),numberofdirections,bands);
@@ -185,7 +187,7 @@ beamsignals = zeros(length(direct_sound_HOA),numberofdirections,bands);
 for i = 1:chans;
     for j = 1:numberofdirections;
         for b = 1:bands
-            beamsignals(:,j,b) = beamsignals(:,j,b)+(direct_sound_HOA(:,i,b).*hoa2SpkCfg_for_directplot.filters.gainMatrix(i,j));
+            beamsignals(:,j,b) = beamsignals(:,j,b)+(direct_sound_HOA(:,i,b).*Y(i,j));
         end
     end
 end
@@ -238,6 +240,21 @@ switch valtype
                 beamsignals = resample(beamsignals,1,round(1000*smoothlen/fs));
             end
         end
+    case -1 % Schroeder reverse integration
+        beamsignals = 10*log10(flipdim(cumsum(flipdim(beamsignals,1).^2),1));
+        dBrange = 60;
+        for b = 1:bands
+            beamsignals(beamsignals(:,:,b) < max(max(beamsignals(:,:,b)))-dBrange)...
+                = max(max(beamsignals(:,:,b)))-dBrange;
+        end
+        case -2 % differenced Schroeder reverse integration
+        beamsignals = 10*log10(flipdim(cumsum(flipdim(beamsignals,1).^2),1));
+        dBrange = 60;
+        for b = 1:bands
+            beamsignals(beamsignals(:,:,b) < max(max(beamsignals(:,:,b)))-dBrange)...
+                = max(max(beamsignals(:,:,b)))-dBrange;
+        end
+        beamsignals =diff(beamsignals);
     otherwise
         % values are in dB, with valtype specifying the range of the data
         beamsignals = beamsignals.^2;
@@ -258,7 +275,15 @@ switch valtype
         end
 end
 
-
+if domain == 4
+    nbins = 100;
+    values = zeros(nbins,numberofdirections,bands);
+    for b = 1:bands
+        values(:,:,b) = hist(beamsignals(:,:,b),nbins);
+    end
+    beamsignals = values;
+    clear values
+end
 
 
 for b = 1:bands
@@ -266,42 +291,45 @@ for b = 1:bands
     switch plottype
         % case 1 is taken care of by 'otherwise'
         case 2
-            polarplot3d(beamsignals(:,:,b),'plottype','surfn');
+            polarplot3d(beamsignals(:,:,b),'plottype','surfn','AxisLocation','bottom');
             hold on
-            switch valtype
-                case {0, 1}
+            if valtype == 0 || valtype == 1 || domain == 4
                     valrange = max(max(beamsignals(:,:,b)))-min(min(beamsignals(:,:,b)));
                     plot3([0,0],[0,0],[min(min(beamsignals(:,:,b)))-0.2*valrange,max(max(beamsignals(:,:,b)))+0.2*valrange],'LineWidth',2,'Color',[0.8,0.8,0]);
                     plot3([0,0],[0,0],[min(min(beamsignals(:,:,b)))-0.2*valrange,max(max(beamsignals(:,:,b)))+0.2*valrange],'LineWidth',2,'Color',[0,0,0],'LineStyle','--','Marker','^');
-                otherwise
+            else
                     plot3([0,0],[0,0],[min(min(beamsignals(:,:,b)))-10,max(max(beamsignals(:,:,b)))+10],'LineWidth',2,'Color',[0.8,0.8,0]);
                     plot3([0,0],[0,0],[min(min(beamsignals(:,:,b)))-10,max(max(beamsignals(:,:,b)))+10],'LineWidth',2,'Color',[0,0,0],'LineStyle','--','Marker','^');
             end
         case 3
             [x,y,z] = polarplot3d(beamsignals(:,:,b),'plottype','off');
+            hold on
             surfl(x,y,z,'light');
             shading interp
             colormap(jet)
+            grid on
             hold on
-            switch valtype
-                case {0,1}
+            if valtype == 0 || valtype == 1 || domain == 4
                     valrange = max(max(z))-min(min(z));
                     plot3([0,0],[0,0],[min(min(z))-0.2*valrange,max(max(z))+0.2*valrange],'LineWidth',2,'Color',[0.8,0.8,0]);
                     plot3([0,0],[0,0],[min(min(z))-0.2*valrange,max(max(z))+0.2*valrange],'LineWidth',2,'Color',[0,0,0],'LineStyle','--','Marker','^');
-                otherwise
+            else
                     plot3([0,0],[0,0],[min(min(z))-10,max(max(z))+10],'LineWidth',2,'Color',[0.8,0.8,0]);
                     plot3([0,0],[0,0],[min(min(z))-10,max(max(z))+10],'LineWidth',2,'Color',[0,0,0],'LineStyle','--','Marker','^');
             end
+        case 4
+            [x,y,z] = polarplot3d(beamsignals(:,:,b),'plottype','off');
+            hold on
+            contourf(x,y,z);
         otherwise
             % mesh
-            polarplot3d(beamsignals(:,:,b),'plottype','mesh');
+            polarplot3d(beamsignals(:,:,b),'plottype','mesh','AxisLocation','bottom');
             hold on
-            switch valtype
-                case {0, 1}
+            if valtype == 0 || valtype == 1 || domain == 4
                     valrange = max(max(beamsignals(:,:,b)))-min(min(beamsignals(:,:,b)));
                     plot3([0,0],[0,0],[min(min(beamsignals(:,:,b)))-0.2*valrange,max(max(beamsignals(:,:,b)))+0.2*valrange],'LineWidth',2,'Color',[0.8,0.8,0]);
                     plot3([0,0],[0,0],[min(min(beamsignals(:,:,b)))-0.2*valrange,max(max(beamsignals(:,:,b)))+0.2*valrange],'LineWidth',2,'Color',[0,0,0],'LineStyle','--','Marker','^');
-                otherwise
+            else
                     plot3([0,0],[0,0],[min(min(beamsignals(:,:,b)))-10,max(max(beamsignals(:,:,b)))+10],'LineWidth',2,'Color',[0.8,0.8,0]);
                     plot3([0,0],[0,0],[min(min(beamsignals(:,:,b)))-10,max(max(beamsignals(:,:,b)))+10],'LineWidth',2,'Color',[0,0,0],'LineStyle','--','Marker','^');
             end
@@ -324,11 +352,15 @@ for b = 1:bands
             titlestring = [titlestring, 'Horizontal Plane'];
     end
     
-    if domain ~= 0
-        titlestring = [titlestring, ', Frequency domain: ',...
+    switch domain
+        case {1,2,3}
+            titlestring = [titlestring, ', Frequency domain: ',...
             num2str(lof), ' Hz - ', num2str(hif), ' Hz (low f at centre) '];
-    else
-        titlestring = [titlestring, ', Time domain (start time at centre) '];
+        case 4
+            titlestring = [titlestring,...
+                ', Rotated histogram of time series values '];
+        otherwise
+            titlestring = [titlestring, ', Time domain (start time at centre) '];
     end
     
     % Band title
@@ -342,11 +374,17 @@ for b = 1:bands
         title(['Band ', num2str(b),', ', titlestring])
     end
     
+    if domain ~= 4
     switch valtype
         case {0,1}
             zlabel('Amplitude')
+        case -1
+            zlabel('Reverse-integrated decay (dB)')
         otherwise
             zlabel('Level (dB)')
+    end
+    else
+        zlabel('Histogram count')
     end
     
     colorbar;
