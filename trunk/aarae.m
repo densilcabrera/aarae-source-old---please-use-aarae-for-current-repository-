@@ -737,6 +737,12 @@ if isfield(audiodata,'properties') && isfield(audiodata.properties,'startflag')
                           'SelectionMode','single',...
                           'ListSize',[200 100]);
     if ok == 1
+        if ndims(S) > 3 && method == 1
+            method = 2;
+            average = true;
+        else
+            average = false;
+        end
         startflag = audiodata.properties.startflag;
         len = startflag(2)-startflag(1);
         switch method
@@ -750,37 +756,38 @@ if isfield(audiodata,'properties') && isfield(audiodata.properties,'startflag')
                     tempS(:,j) = mean(newS,2);
                 end
                 S = tempS;
+                %invS = invS(:,size(S,2));
             case 2
-                %IR = [];%audiodata.audio;
-                %ladjust = length(IR);
-                IR = zeros(startflag(2)-1+length(invS),size(S,2),length(startflag),1);
-                for j = 1:size(S,2)
-                    newS = zeros(startflag(2)-1,length(startflag));
-                    for i = 1:length(startflag)
-                        newS(:,i,:) = S(startflag(i):startflag(i)+len-1,j,:);
-                    end
-                    newrmsize = size(newS);
-                    if size(audiodata.audio2,2)>1
-                        newinvS = repmat(audiodata.audio2(:,j),[1 newrmsize(2:end)]);
-                    else
-                        newinvS = repmat(audiodata.audio2(:,1),[1 newrmsize(2:end)]);
-                    end
-                    newS_pad = [newS; zeros(size(newinvS))];
-                    invS_pad = [newinvS; zeros(size(newS))];
-                    convolve = convolvedemo(newS_pad, invS_pad, 2, fs);
-                    convolve = convolve(1:round(end/2),:,:);
-                    IR(:,j,:,:) = convolve;%zeros(ladjust-length(convolve),size(newS,2))]; % Calls convolvedemo.m
+                indices = cat(2,{1:len*length(startflag)},repmat({':'},1,ndims(S)-1));
+                S = S(indices{:});
+                sizeS = size(S);
+                if length(sizeS) == 2, sizeS = [sizeS,1]; end
+                if length(sizeS) < 3
+                    newS = zeros([len,sizeS(2:end),length(startflag)]);
+                    newinvS = zeros([length(audiodata.audio2),sizeS(2:end),length(startflag)]);
+                else
+                    sizeS(1,4) = length(startflag);
+                    newS = zeros([len,sizeS(2:end)]);
+                    newinvS = zeros([length(audiodata.audio2),sizeS(2:end)]);
                 end
-                IR = permute(IR,[1,2,4,3]);
-                if size(IR,2) == 1
-                    button = questdlg('Dimension 2 is singleton, stack IRs in dimension 2?','AARAE info','Yes','No','Yes');
-                    switch button
-                        case 'Yes'
-                            IR = permute(IR,[1,4,3,2]);
+                newindices = repmat({':'},1,ndims(newS));
+                for j = 1:size(S,2)
+                    indices{1,2} = j;
+                    newindices{1,2} = j;
+                    newS(newindices{:}) = reshape(S(indices{:}),[len,1,sizeS(3:end)]);
+                    newsizeS = size(newS);
+                    if size(S,2) == size(audiodata.audio2,2)
+                        newinvS(newindices{:}) = repmat(audiodata.audio2(:,j),[1 1 newsizeS(3:end)]);
+                    else
+                        newinvS(newindices{:}) = repmat(audiodata.audio2,[1 1 newsizeS(3:end)]);
                     end
                 end
                 S = newS;
-                invS = repmat(invS,1,size(S,2));
+                invS = newinvS;
+                if average
+                    S = mean(S,4);
+                    invS = mean(invS,4);
+                end
         end
     else
         return
@@ -789,19 +796,18 @@ else
     method = 1;
 end
 
-if method == 1 || method == 3
+if method == 1 || method == 2 || method == 3
     S_pad = [S; zeros(size(invS))];
     invS_pad = [invS; zeros(size(S))];
     IR = convolvedemo(S_pad, invS_pad, 2, fs); % Calls convolvedemo.m
-    IR = IR(1:length(S_pad),:,:);
+    indices = cat(2,{1:length(S_pad)},repmat({':'},1,ndims(IR)-1));
+    IR = IR(indices{:});
 end
 if method == 1
     if ~ismatrix(IR), tempIR(:,:) = IR(:,1,:); else tempIR = IR; end
     [trimsamp_low,trimsamp_high] = window_signal('main_stage1', handles.aarae,'IR',tempIR); % Calls the trimming GUI window to trim the IR
-    %[~, id] = max(abs(IR));
-    %trimsamp_low = id-round(IRlength./2);
-    %trimsamp_high = trimsamp_low + IRlength -1;
-    IR = IR(trimsamp_low:trimsamp_high,:,:);
+    indices{1,1} = trimsamp_low:trimsamp_high;
+    IR = IR(indices{:});
     IRlength = length(IR);
 else
     IRlength = length(IR);
@@ -1348,7 +1354,11 @@ if ~isempty(click) && ((click == handles.axestime) || (get(click,'Parent') == ha
             if ndims(data) == 3, cmap = colormap(hsv(size(data,3))); end
             if ndims(data) >= 4, cmap = colormap(copper(size(data,4))); end
         else
-            linea = data(To:Tf,:);
+            if handles.alternate == 0
+                linea = data(To:Tf,:);
+            else
+                linea = data;
+            end
             cmap = colormap(lines(size(data,2)));
         end
         if isfield(signaldata,'cal') && handles.Settings.calibrationtoggle == 1
@@ -1436,7 +1446,7 @@ if ~isempty(click) && ((click == handles.axestime) || (get(click,'Parent') == ha
     end
     selectedNodes = handles.mytree.getSelectedNodes;
     selectedNodes = selectedNodes(1);
-    title(selectedNodes.getName.char)
+    title(strrep(selectedNodes.getName.char,'_',' '))
 end
 if ~isempty(click) && ((click == handles.axesfreq) || (get(click,'Parent') == handles.axesfreq))
     hMain = getappdata(0,'hMain');
@@ -1460,7 +1470,11 @@ if ~isempty(click) && ((click == handles.axesfreq) || (get(click,'Parent') == ha
             if ndims(data) == 3, cmap = colormap(hsv(size(data,3))); end
             if ndims(data) >= 4, cmap = colormap(copper(size(data,4))); end
         else
-            linea = data(To:Tf,:);
+            if handles.alternate == 0
+                linea = data(To:Tf,:);
+            else
+                linea = data;
+            end
             cmap = colormap(lines(size(data,2)));
         end
         if isfield(signaldata,'cal') && handles.Settings.calibrationtoggle == 1
@@ -1548,7 +1562,7 @@ if ~isempty(click) && ((click == handles.axesfreq) || (get(click,'Parent') == ha
     end
     selectedNodes = handles.mytree.getSelectedNodes;
     selectedNodes = selectedNodes(1);
-    title(selectedNodes.getName.char)
+    title(strrep(selectedNodes.getName.char,'_',' '))
 end
 if ~isempty(click) && ((click == handles.axesdata) || isequal(click,findobj('Tag','tempaxes','Parent',hObject)) || (get(click,'Parent') == handles.axesdata) || isequal(get(click,'Parent'),findobj('Tag','tempaxes','Parent',hObject))) && ~strcmp(get(click,'Type'),'text')
     selectedNodes = handles.mytree.getSelectedNodes;
@@ -2385,14 +2399,14 @@ if handles.compareaudio == 1
                     subplot(length(selectedNodes),1,i);
                     set(gca,'NextPlot','replacechildren','ColorOrder',cmap)
                     plot(t,real(linea)) % Plot signal in time domain
-                    title(selectedNodes(i).getName.char)
+                    title(strrep(selectedNodes(i).getName.char,'_',' '))
                     xlabel('Time [s]');
                 end
                 if plottype >= 8
                     h = subplot(length(selectedNodes),1,i);
                     set(gca,'NextPlot','replacechildren','ColorOrder',cmap)
                     plot(f(1:length(linea)),linea);% Plot signal in frequency domain
-                    title(selectedNodes(i).getName.char)
+                    title(strrep(selectedNodes(i).getName.char,'_',' '))
                     xlabel('Frequency [Hz]');
                     if ischar(handles.Settings.frequencylimits)
                         xlim([f(2) signaldata.fs/2])

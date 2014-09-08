@@ -23,7 +23,7 @@ function varargout = audio_recorder(varargin)
 
 % Edit the above text to modify the response to help audio_recorder
 
-% Last Modified by GUIDE v2.5 02-Sep-2014 15:14:28
+% Last Modified by GUIDE v2.5 03-Sep-2014 11:14:24
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -105,9 +105,9 @@ else
         output_settings{4} = ['Duration = ',num2str(handles.dur),' s'];
         set(handles.IN_numchsout,'String','1')
         if size(handles.outputdata.audio,2) == 1
-            set([handles.text25,handles.IN_numchsout],'Visible','on')
+            set([handles.text25,handles.IN_numchsout,handles.sim_chk],'Visible','on')
         else
-            set([handles.text25,handles.IN_numchsout],'Visible','off')
+            set([handles.text25,handles.IN_numchsout,handles.sim_chk],'Visible','off')
         end
         pixels = get_axes_width(handles.OUT_axes);
         [t, line] = reduce_to_width(handles.t', handles.outputdata.audio, pixels, [-inf inf]);
@@ -252,13 +252,29 @@ if get(handles.pb_enable,'Value') == 1
     handles.har = dsp.AudioRecorder('DeviceName',inputdevname,'SampleRate',handles.outputdata.fs,'QueueDuration',handles.qdur,'OutputDataType','double','NumChannels',handles.numchs,'BufferSizeSource','Property','BufferSize',handles.buffer);
     % Set playback audio
     handles.hsr1 = dsp.SignalSource;
-    if size(handles.outputdata.audio,2) == 1
-        playbackaudio = repmat(handles.outputdata.audio,1,str2double(get(handles.IN_numchsout,'String')));
+    if size(handles.outputdata.audio,2) == 1 && str2double(get(handles.IN_numchsout,'String')) > 1
+        if get(handles.sim_chk,'Value') == 1
+            playbackaudio = repmat(handles.outputdata.audio,1,str2double(get(handles.IN_numchsout,'String')));
+            addtimeok = false;
+        else
+            playbackaudio = zeros((length(handles.outputdata.audio)+floor(handles.addtime*handles.fs))*str2double(get(handles.IN_numchsout,'String')),str2double(get(handles.IN_numchsout,'String')));
+            j = 1;
+            playbackaudio(1:length(handles.outputdata.audio),j) = handles.outputdata.audio;
+            for j = 1:str2double(get(handles.IN_numchsout,'String'))-1
+                playbackaudio((length(handles.outputdata.audio)+floor(handles.addtime*handles.fs))*j+1:(length(handles.outputdata.audio)+floor(handles.addtime*handles.fs))*j+length(handles.outputdata.audio),j+1) = handles.outputdata.audio;
+            end
+            addtimeok = true;
+        end
     else
         playbackaudio = handles.outputdata.audio;
+        addtimeok = false;
     end
     %if get(handles.invfilter_chk,'Value') == 1, playbackaudio = filter(handles.syscalstats.audio2,1,playbackaudio); end
-    handles.hsr1.Signal = [playbackaudio;zeros(floor((handles.addtime+handles.hap.QueueDuration)*handles.fs),size(playbackaudio,2))];
+    if ~addtimeok
+        handles.hsr1.Signal = [playbackaudio;zeros(floor((handles.addtime+handles.hap.QueueDuration)*handles.fs),size(playbackaudio,2))];
+    else
+        handles.hsr1.Signal = [playbackaudio;zeros(floor(handles.hap.QueueDuration*handles.fs),size(playbackaudio,2))];
+    end
     handles.hsr1.SamplesPerFrame = handles.har.SamplesPerFrame;
     guidata(hObject,handles)
     handles.rec = [];
@@ -292,7 +308,12 @@ if get(handles.pb_enable,'Value') == 1
     if ~isempty(handles.rec)
         handles.rec = handles.rec(handles.hap.QueueDuration*handles.fs:end,:);
         if UserData.state == false
-            handles.rec = handles.rec(1:(size(handles.outputdata.audio,1)+handles.addtime*handles.fs),:);
+            if ~addtimeok
+                handles.rec = handles.rec(1:(size(handles.outputdata.audio,1)+handles.addtime*handles.fs),:);
+            else
+                handles.rec = handles.rec(1:size(playbackaudio,1),:);
+                handles.rec = reshape(handles.rec,(size(handles.outputdata.audio,1)+handles.addtime*handles.fs),handles.numchs,1,1,str2double(get(handles.IN_numchsout,'String')));
+            end
         else
             UserData.state = false;
             set(handles.stop_btn,'UserData',UserData);
@@ -630,9 +651,9 @@ if get(hObject,'Value') == 1
     set(handles.output_panel,'Visible','on');
     set(handles.IN_numchsout,'String','1')
     if size(handles.outputdata.audio,2) == 1
-        set([handles.text25,handles.IN_numchsout],'Visible','on')
+        set([handles.text25,handles.IN_numchsout,handles.sim_chk],'Visible','on')
     else
-        set([handles.text25,handles.IN_numchsout],'Visible','off')
+        set([handles.text25,handles.IN_numchsout,handles.sim_chk],'Visible','off')
     end
     set(handles.IN_numchs,'String',num2str(getappdata(hMain,'audio_recorder_numchs')));
     set(handles.text1,'String','Add time');
@@ -964,3 +985,12 @@ function IN_numchsout_CreateFcn(hObject, ~, ~) %#ok : Creates number of output c
 if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
     set(hObject,'BackgroundColor','white');
 end
+
+
+% --- Executes on button press in sim_chk.
+function sim_chk_Callback(~, ~, ~) %#ok : Executed when simultaneous playback checkbox changes
+% hObject    handle to sim_chk (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hint: get(hObject,'Value') returns toggle state of sim_chk
