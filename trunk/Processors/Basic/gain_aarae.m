@@ -36,16 +36,18 @@ end
 
 if ~isempty(answer)
     gain = char(answer{1,1});
+    out.audio = in.audio;
+    indices = partial_selection(in);
     if gain == 'n'
         % normalize column channel individually
-        maxval = max(abs(in.audio));
-        out.audio = in.audio ./ repmat(maxval,[length(in.audio),1,1]);
+        maxval = max(abs(in.audio(indices{:})));
+        out.audio(indices{:}) = in.audio(indices{:}) ./ repmat(maxval,[length(in.audio(indices{:})),1,1]);
     elseif ~isempty(gain(gain == 'i'))
-        gain = str2num(gain);
-        out.audio = in.audio * gain;
+        gain = str2double(gain);
+        out.audio(indices{:}) = in.audio(indices{:}) * gain;
     else
-        gain = str2num(gain);
-        out.audio = in.audio * 10.^(gain/20);
+        gain = str2double(gain);
+        out.audio(indices{:}) = in.audio(indices{:}) * 10.^(gain/20);
     end
     out.funcallback.name = 'gain_aarae.m';
     out.funcallback.inarg = {gain};
