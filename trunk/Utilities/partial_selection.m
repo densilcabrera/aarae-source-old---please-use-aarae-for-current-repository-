@@ -6,13 +6,13 @@ def = cell(1,ndims(in.audio));
 dlgtitle = 'Data selection';
 
 for i = 1:ndims(in.audio)
-    prompt{1,i} = ['Dim' num2str(i)];
+    if i == 1, prompt{1,i} = ['Time in samples: (max. ' num2str(audiosize(1,i)) ')'];
+    elseif i == 2, prompt{1,i} = ['Channels: (max. ' num2str(audiosize(1,i)) ')'];
+    elseif i == 3, prompt{1,i} = ['Bands: (max. ' num2str(audiosize(1,i)) ')'];
+    else prompt{1,i} = ['Dim' num2str(i) ': (max. ' num2str(audiosize(1,i)) ')'];
+    end
     def{1,i} = ['1:' num2str(audiosize(1,i))];
 end
-
-prompt{1,1} = 'Time in samples';
-prompt{1,2} = 'Channels';
-prompt{1,3} = 'Bands';
 
 answer = inputdlg(prompt,dlgtitle,[1 50],def);
 
