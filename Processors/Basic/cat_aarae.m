@@ -118,7 +118,7 @@ function out = cat_aarae(in,catdim)
     % resolve or delete cal
     if catdim == 2 && isfield(in,'cal') && isfield(selection,'cal')
         if length(in.cal) == chans && length(selection.cal) == chans2
-            out.cal = [in.cal(:),selection.cal(:)]';
+            out.cal = [in.cal(:);selection.cal(:)]';
         else
             out.cal = [];
         end
