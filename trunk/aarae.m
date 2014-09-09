@@ -88,7 +88,14 @@ end
 
 if ~isdir([cd '/Log']), mkdir([cd '/Log']); end
 if ~isdir([cd '/Utilities/Temp']), mkdir([cd '/Utilities/Temp']); end
-if ~isdir([cd '/Utilities/Backup']), mkdir([cd '/Utilities/Backup']); end
+if ~isdir([cd '/Utilities/Backup'])
+    mkdir([cd '/Utilities/Backup']);
+    handles.defaultaudiopath = [cd '/Audio'];
+else
+    handles.defaultaudiopath = [cd '/Utilities/Backup'];
+    set(handles.recovery_txt,'Visible','on')
+end
+
 % Add folder paths for filter functions and signal analyzers
 addpath(genpath(cd));
 handles.player = audioplayer(0,48000);
@@ -135,9 +142,9 @@ else
     activitylog = ['/activity log ',num2str(index),'.txt'];
     handles.fid = fopen([cd '/Log' activitylog], 'w');
 end
+
 handles.alternate = 0;
 fprintf(handles.fid, ['Acoustic processing app started ' datestr(now) ' \n\n']);
-handles.defaultaudiopath = [cd '/Audio'];
 guidata(hObject, handles);
 
 
@@ -174,7 +181,7 @@ function genaudio_btn_Callback(hObject, ~, handles)
 % hObject    handle to genaudio_btn (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-
+if strcmp(get(handles.recovery_txt,'Visible'),'on'), set(handles.recovery_txt,'Visible','off'); end
 % Call the 'desktop'
 hMain = getappdata(0,'hMain');
 setappdata(hMain,'testsignal',[]);
@@ -332,7 +339,7 @@ function load_btn_Callback(hObject, ~, handles)
 % hObject    handle to load_btn (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-
+if strcmp(get(handles.recovery_txt,'Visible'),'on'), set(handles.recovery_txt,'Visible','off'); end
 % Get path of the file to load
 [filename,handles.defaultaudiopath,filterindex] = uigetfile(...
     {'*.wav;*.mat;.WAV;.MAT','Test Signals (*.wav,*.mat)';...
@@ -347,6 +354,8 @@ if ~iscell(filename)
     else return
     end
 end
+h = waitbar(0,['Loading 1 of ' num2str(length(filename)) ' files'],'Name','AARAE info','WindowStyle','modal','Tag','progressbar');
+steps = length(filename);
 for i = 1:length(filename)
     if filename{i} ~= 0
         newleaf = cell(1,1);
@@ -432,7 +441,14 @@ for i = 1:length(filename)
         end
         guidata(hObject, handles);
     end
+    try
+        waitbar(i / steps,h,sprintf('Loading %d of %d files',i,length(filename)));
+    catch
+        warndlg('Loading interrupted by user!','AARAE info')
+        break
+    end
 end
+if i == steps, close(h); end
 handles.mytree.setSelectedNode(handles.(genvarname(newleaf{1,1})));
 
 
@@ -441,7 +457,7 @@ function rec_btn_Callback(hObject, ~, handles)
 % hObject    handle to rec_btn (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-
+if strcmp(get(handles.recovery_txt,'Visible'),'on'), set(handles.recovery_txt,'Visible','off'); end
 % Call the 'desktop'
 hMain = getappdata(0,'hMain');
 
@@ -694,8 +710,10 @@ switch deleteans
             if ~isempty(audiodata)
                 
                 % Delete from backup files
+                rmpath([cd '/Utilities/Backup/'])
                 filename = [cd '/Utilities/Backup/' selectedNodes(nleafs).getName.char '.mat'];
                 delete(filename)
+                addpath([cd '/Utilities/Backup/'])
                 
                 selectedParent = selectedNodes(nleafs).getParent;
                 handles.mytree.remove(selectedNodes(nleafs));
@@ -751,6 +769,10 @@ function IR_btn_Callback(hObject, ~, handles) %#ok
 % hObject    handle to IR_btn (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
+
+set(hObject,'BackgroundColor','red');
+set(hObject,'Enable','off');
+
 hMain = getappdata(0,'hMain');
 audiodata = getappdata(hMain,'testsignal');
 S = audiodata.audio;
@@ -775,6 +797,7 @@ if isfield(audiodata,'properties') && isfield(audiodata.properties,'startflag')
                           'SelectionMode','single',...
                           'ListSize',[200 100]);
     if ok == 1
+        h = msgbox('Computing impulse response, please wait...','AARAE info','modal');
         if ndims(S) > 3 && method == 1
             method = 2;
             average = true;
@@ -851,6 +874,8 @@ else
     IRlength = length(IR);
 end
 
+if ishandle(h), close(h); end
+
 % Create new leaf and update the tree
 handles.mytree.setSelectedNode(handles.root);
 newleaf = ['IR_' selectedNodes(1).getName.char];
@@ -887,6 +912,9 @@ if ~isempty(getappdata(hMain,'testsignal'))
     set([handles.clrall_btn,handles.export_btn],'Enable','on')
     fprintf(handles.fid, [' ' datestr(now,16) ' - Processed "' char(selectedNodes(1).getName) '" to generate an impulse response of ' num2str(IRlength) ' points\n']);
 end
+
+set(hObject,'BackgroundColor',[0.94 0.94 0.94]);
+set(hObject,'Enable','on');
 
 guidata(hObject, handles);
 
@@ -1883,7 +1911,7 @@ function calc_btn_Callback(~, ~, handles)
 % hObject    handle to calc_btn (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-
+if strcmp(get(handles.recovery_txt,'Visible'),'on'), set(handles.recovery_txt,'Visible','off'); end
 % Call the window that displays calculators
 calculator('main_stage1', handles.aarae);
 
