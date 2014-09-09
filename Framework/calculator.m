@@ -129,6 +129,10 @@ if nargout(handles.funname) == 1
             end
             handles.funname = [handles.funname,'_',num2str(index)];
         end
+        
+        % Save as you go
+        save([cd '/Utilities/Backup/' handles.funname '.mat'], 'signaldata');
+        
         mainHandles.(genvarname(handles.funname)) = uitreenode('v0', handles.funname,  handles.funname,  iconPath, true);
         mainHandles.(genvarname(handles.funname)).UserData = signaldata;
         mainHandles.results.add(mainHandles.(genvarname(handles.funname)));

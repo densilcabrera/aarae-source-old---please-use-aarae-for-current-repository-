@@ -88,6 +88,7 @@ end
 
 if ~isdir([cd '/Log']), mkdir([cd '/Log']); end
 if ~isdir([cd '/Utilities/Temp']), mkdir([cd '/Utilities/Temp']); end
+if ~isdir([cd '/Utilities/Backup']), mkdir([cd '/Utilities/Backup']); end
 % Add folder paths for filter functions and signal analyzers
 addpath(genpath(cd));
 handles.player = audioplayer(0,48000);
@@ -158,6 +159,7 @@ function varargout = aarae_OutputFcn(~, ~, handles)
 rmappdata(0,'hMain');
 rmpath(genpath(cd));
 rmdir([cd '/Utilities/Temp'],'s');
+rmdir([cd '/Utilities/Backup'],'s');
 fprintf(handles.fid, ['\n- End of file - ' datestr(now)]);
 fclose('all');
 if ~isempty(handles.aarae)
@@ -203,14 +205,11 @@ if ~isempty(getappdata(hMain,'testsignal'))
         end
         newleaf = [newleaf,'_',num2str(index)];
     end
-%    if length(signaldata.audio) > 1e6
-%        audiodata = signaldata.audio;
-%        fileID = fopen([cd '/Utilities/Temp/' newleaf '.dat'],'w');
-%        fwrite(fileID,audiodata,'double');
-%        fclose(fileID);
-%        m = memmapfile([cd '/Utilities/Temp/' newleaf '.dat'],'Format','double');
-%        signaldata.audio = m;
-%    end
+    
+    % Save as you go
+    save([cd '/Utilities/Backup/' newleaf '.mat'], 'signaldata');
+    
+    % Generate new leaf
     handles.(genvarname(newleaf)) = uitreenode('v0', newleaf,  newleaf,  iconPath, true);
     handles.(genvarname(newleaf)).UserData = signaldata;
     handles.testsignals.add(handles.(genvarname(newleaf)));
@@ -302,24 +301,26 @@ for nleafs = 1:length(selectedNodes)
             if isempty(ext), ext = '.mat'; end
             if strcmp(ext,'.wav') && (~isfield(audiodata,'audio') || ~isfield(audiodata,'fs')), ext = '.mat'; end
             folder_name = uigetdir(handles.defaultaudiopath,'Save AARAE file');
-            handles.defaultaudiopath = folder_name;
-            listing = dir([folder_name '/' name{1,1} ext]);
-            if isempty(listing)
-                if strcmp(ext,'.mat'), save([folder_name '/' name{1,1} ext],'audiodata'); end
-                if strcmp(ext,'.wav'), audiowrite([folder_name '/' name{1,1} ext],audiodata.audio,audiodata.fs); end
-            else
-                index = 1;
-                % This while cycle is just to make sure no signals are
-                % overwriten
-                while isempty(dir([name{1,1},'_',num2str(index),ext])) == 0
-                    index = index + 1;
+            if ischar(folder_name)
+                handles.defaultaudiopath = folder_name;
+                listing = dir([folder_name '/' name{1,1} ext]);
+                if isempty(listing)
+                    if strcmp(ext,'.mat'), save([folder_name '/' name{1,1} ext],'audiodata'); end
+                    if strcmp(ext,'.wav'), audiowrite([folder_name '/' name{1,1} ext],audiodata.audio,audiodata.fs); end
+                else
+                    index = 1;
+                    % This while cycle is just to make sure no signals are
+                    % overwriten
+                    while isempty(dir([name{1,1},'_',num2str(index),ext])) == 0
+                        index = index + 1;
+                    end
+                    name{1,1} = [name{1,1},'_',num2str(index),ext];
+                    if strcmp(ext,'.mat'), save([folder_name '/' name{1,1} ext],'audiodata'); end
+                    if strcmp(ext,'.wav'), audiowrite(audiodata.audio,audiodata.fs,[folder_name '/' name{1,1}]); end
                 end
-                name{1,1} = [name{1,1},'_',num2str(index),ext];
-                if strcmp(ext,'.mat'), save([folder_name '/' name{1,1} ext],'audiodata'); end
-                if strcmp(ext,'.wav'), audiowrite(audiodata.audio,audiodata.fs,[folder_name '/' name{1,1}]); end
+                %current = cd;
+                fprintf(handles.fid, [' ' datestr(now,16) ' - Saved "' char(selectedNodes(nleafs).getName) '" to file "' name{1,1} ext '" in folder "%s"' '\n'],folder_name);
             end
-            %current = cd;
-            fprintf(handles.fid, [' ' datestr(now,16) ' - Saved "' char(selectedNodes(nleafs).getName) '" to file "' name{1,1} ext '" in folder "%s"' '\n'],folder_name);
         end
     end
 end
@@ -415,6 +416,10 @@ for i = 1:length(filename)
                 end
                 newleaf{1,1} = [newleaf{1,1},'_',num2str(index)];
             end
+            
+            % Save as you go
+            save([cd '/Utilities/Backup/' newleaf{1,1} '.mat'], 'signaldata');            
+            
             handles.(genvarname(newleaf{1,1})) = uitreenode('v0', newleaf{1,1},  newleaf{1,1},  iconPath, true);
             handles.(genvarname(newleaf{1,1})).UserData = signaldata;
             if strcmp(signaldata.datatype,'syscal'), signaldata.datatype = 'measurements'; end
@@ -454,7 +459,7 @@ if savenewsyscalstats == 1
     handles.mytree.setSelectedNode(handles.root);
     iconPath = fullfile(matlabroot,'/toolbox/matlab/icons/boardicon.gif');
     handles.syscalstats.datatype = 'syscal';
-    funname = ['System_calibration ' datestr(rem(now,1))];
+    funname = ['System_calibration ' strrep(datestr(rem(now,1)),':','_')];
     leafname = isfield(handles,genvarname(funname));
     if leafname == 1
         index = 1;
@@ -465,6 +470,11 @@ if savenewsyscalstats == 1
         end
         funname = [funname,'_',num2str(index)];
     end
+    
+    % Save as you go
+    tempsyscalstats = handles.syscalstats; %#ok : Used in followring line
+    save([cd '/Utilities/Backup/' funname '.mat'], 'tempsyscalstats');
+    
     handles.(genvarname(funname)) = uitreenode('v0', funname,  funname,  iconPath, true);
     handles.(genvarname(funname)).UserData = handles.syscalstats;
     handles.measurements.add(handles.(genvarname(funname)));
@@ -487,6 +497,14 @@ if ~isempty(audiodata)
         end
         newleaf = [newleaf,'_',num2str(index)];
     end
+    
+    audiodata_fields = fieldnames(audiodata);
+    audiodata_emptyfields = structfun(@isempty,audiodata);
+    audiodata = rmfield(audiodata,audiodata_fields(audiodata_emptyfields));
+    
+    % Save as you go
+    save([cd '/Utilities/Backup/' newleaf '.mat'], 'audiodata');
+    
     handles.(genvarname(newleaf)) = uitreenode('v0', newleaf,  newleaf,  iconPath, true);
     handles.(genvarname(newleaf)).UserData = audiodata;
     handles.measurements.add(handles.(genvarname(newleaf)));
@@ -548,57 +566,72 @@ end
 if nleaves == 0
     warndlg('Nothing to export!','AARAE info');
 else
-    leaves = cell(nleaves,1);
-    i = 0;
-    for n = 1:size(branches,1)
-        currentbranch = handles.(genvarname(branches{n,1}));
-        if currentbranch.getChildCount ~= 0
-            i = i + 1;
-            first = currentbranch.getFirstChild;
-            %leafnames(i,:) = first.getName;
-            leaves{i,1} = char(first.getValue);
-            next = first.getNextSibling;
-            if ~isempty(next)
-                for m = 1:currentbranch.getChildCount-1
-                    i = i + 1;
-                    %leafnames(i,:) = next.getName;
-                    leaves{i,1} = char(next.getValue);
-                    next = next.getNextSibling;
-                end
-            end
-        end
-    end
-    %leafnames = char(leafnames);
-    %leaves = char(leaves);
-    %folder = inputdlg('Folder name','Export all',[1 60],{'New Project'});
+%    leaves = cell(nleaves,1);
+%    i = 0;
+%    for n = 1:size(branches,1)
+%        currentbranch = handles.(genvarname(branches{n,1}));
+%        if currentbranch.getChildCount ~= 0
+%            i = i + 1;
+%            first = currentbranch.getFirstChild;
+%            %leafnames(i,:) = first.getName;
+%            leaves{i,1} = char(first.getValue);
+%            next = first.getNextSibling;
+%            if ~isempty(next)
+%                for m = 1:currentbranch.getChildCount-1
+%                    i = i + 1;
+%                    %leafnames(i,:) = next.getName;
+%                    leaves{i,1} = char(next.getValue);
+%                    next = next.getNextSibling;
+%                end
+%            end
+%        end
+%    end
     if ~isdir([cd '/Projects']), mkdir([cd '/Projects']); end
 	folder = uigetdir([cd '/Projects'],'Export all');
     if ischar(folder)
         set(hObject,'BackgroundColor','red');
         set(hObject,'Enable','off');
-        %leafnames = cellstr(leafnames);
-        for i = 1:size(leaves,1)
-            current = handles.(genvarname(leaves{i,:}));
-            current = current(1);
-            data = current.handle.UserData; %#ok : used in save
-            if ~exist([folder '/' leaves{i,:} '.mat'],'file')
-                save([folder '/' leaves{i,:} '.mat'], 'data');
-            else
-                button = questdlg(['A file called ' leaves{i,:} '.mat is already in the destination folder, would you like to replace it?'],...
-                                  'AARAE info','Yes','No','Append','Append');
-                switch button
-                    case 'Yes'
-                        save([folder '/' leaves{i,:} '.mat'], 'data');
-                    case 'Append'
-                        index = 1;
-                        % This while cycle is just to make sure no signals are
-                        % overwriten
-                        while exist([folder '/' leaves{i,:} '_' num2str(index) '.mat'],'file')
-                            index = index + 1;
-                        end
-                        save([folder '/' leaves{i,:} '_' num2str(index) '.mat'], 'data');
-                end
-            end
+        pause on
+        pause(0.001)
+        pause off
+%        h = waitbar(0,['1 of ' num2str(size(leaves,1))],'Name','Saving files...');
+%        steps = size(leaves,1);
+%        for i = 1:size(leaves,1)
+%            current = handles.(genvarname(leaves{i,:}));
+%            current = current(1);
+%            data = current.handle.UserData; %#ok : used in save
+%            if ~exist([folder '/' leaves{i,:} '.mat'],'file')
+%                try
+%                    save([folder '/' leaves{i,:} '.mat'], 'data');
+%                catch error
+%                    warndlg(error.message,'AARAE info')
+%                end
+%            else
+%                button = questdlg(['A file called ' leaves{i,:} '.mat is already in the destination folder, would you like to replace it?'],...
+%                                  'AARAE info','Yes','No','Append','Append');
+%                switch button
+%                    case 'Yes'
+%                        save([folder '/' leaves{i,:} '.mat'], 'data');
+%                    case 'Append'
+%                        index = 1;
+%                        % This while cycle is just to make sure no signals are
+%                        % overwriten
+%                        while exist([folder '/' leaves{i,:} '_' num2str(index) '.mat'],'file')
+%                            index = index + 1;
+%                        end
+%                        try
+%                            save([folder '/' leaves{i,:} '_' num2str(index) '.mat'], 'data');
+%                        catch error
+%                            warndlg(error.message,'AARAE info')
+%                        end 
+%                end
+%            end
+%            waitbar(i / steps,h,sprintf('%d of %d',i,size(leaves,1)))
+%        end
+%        close(h)
+        if isdir([cd '/Utilities/Backup'])
+            leaves = dir([cd '/Utilities/Backup/*.mat']);
+            copyfile([cd '/Utilities/Backup'],folder);
         end
         if isdir([cd '/Utilities/Temp'])
             nfigs = dir([cd '/Utilities/Temp/*.fig']);
@@ -644,10 +677,10 @@ function delete_btn_Callback(hObject, ~, handles)
 
 % Call the 'desktop'
 hMain = getappdata(0,'hMain');
-delete = questdlg('Current data will be lost, would you like to proceed?',...
+deleteans = questdlg('Current data will be lost, would you like to proceed?',...
     'Warning',...
     'Yes','No','Yes');
-switch delete
+switch deleteans
     case 'Yes'
         % Deletes selected leaf from the tree
         setappdata(hMain,'testsignal',[]);
@@ -659,6 +692,11 @@ switch delete
                 set(handles.signaltypetext,'String',[])
             end
             if ~isempty(audiodata)
+                
+                % Delete from backup files
+                filename = [cd '/Utilities/Backup/' selectedNodes(nleafs).getName.char '.mat'];
+                delete(filename)
+                
                 selectedParent = selectedNodes(nleafs).getParent;
                 handles.mytree.remove(selectedNodes(nleafs));
                 handles.mytree.reloadNode(selectedParent);
@@ -836,6 +874,10 @@ if ~isempty(getappdata(hMain,'testsignal'))
     signaldata.chanID = cellstr([repmat('Chan',size(signaldata.audio,2),1) num2str((1:size(signaldata.audio,2))')]);
     signaldata.datatype = 'measurements';
     iconPath = fullfile(matlabroot,'/toolbox/fixedpoint/fixedpointtool/resources/plot.png');
+    
+    % Save as you go
+    save([cd '/Utilities/Backup/' newleaf '.mat'], 'signaldata');
+    
     handles.(genvarname(newleaf)) = uitreenode('v0', newleaf,  newleaf,  iconPath, true);
     handles.(genvarname(newleaf)).UserData = signaldata;
     handles.measurements.add(handles.(genvarname(newleaf)));
@@ -957,6 +999,14 @@ for nleafs = 1:length(selectedNodes)
                         end
                         newleaf{1,1} = [newleaf{1,1},'_',num2str(index)];
                     end
+                    
+                    signaldata_fields = fieldnames(signaldata);
+                    signaldata_emptyfields = structfun(@isempty,signaldata);
+                    signaldata = rmfield(signaldata,signaldata_fields(signaldata_emptyfields));
+                    
+                    % Save as you go
+                    save([cd '/Utilities/Backup/' newleaf{1,1} '.mat'], 'signaldata');
+                    
                     handles.(genvarname(newleaf{1,1})) = uitreenode('v0', newleaf{1,1},  newleaf{1,1},  iconPath, true);
                     handles.(genvarname(newleaf{1,1})).UserData = signaldata;
                     handles.results.add(handles.(genvarname(newleaf{1,1})));
@@ -1202,6 +1252,14 @@ for nleafs = 1:length(selectedNodes)
                         end
                         newleaf{1,1} = [newleaf{1,1},'_',num2str(index)];
                     end
+                    
+                    newdata_fields = fieldnames(newdata);
+                    newdata_emptyfields = structfun(@isempty,newdata);
+                    newdata = rmfield(newdata,newdata_fields(newdata_emptyfields));
+                    
+                    % Save as you go
+                    save([cd '/Utilities/Backup/' newleaf{1,1} '.mat'], 'newdata');
+                    
                     handles.(genvarname(newleaf{1,1})) = uitreenode('v0', newleaf{1,1},  newleaf{1,1},  iconPath, true);
                     handles.(genvarname(newleaf{1,1})).UserData = newdata;
                     handles.processed.add(handles.(genvarname(newleaf{1,1})));
@@ -1805,6 +1863,11 @@ if ~isempty(cal_level)
         if size(signaldata.audio,2) < length(cal_level), callevel = cal_level(1:size(signaldata.audio,2)); end
         if size(signaldata.audio,2) > length(cal_level), callevel = [cal_level NaN(1,size(signaldata.audio,2)-length(cal_level))]; end
         signaldata.cal = callevel;
+        
+        % Save as you go
+        delete([cd '/Utilities/Backup/' selectedNodes(i).getName.char '.mat'])
+        save([cd '/Utilities/Backup/' selectedNodes(i).getName.char '.mat'], 'signaldata');
+        
         selectedNodes(i).handle.UserData = signaldata;
         selectedParent = selectedNodes(i).getParent;
         handles.mytree.reloadNode(selectedParent);
@@ -2204,8 +2267,12 @@ else
         handles.mytree.setSelectedNode(handles.root);
         rmpath([cd '/Utilities/Temp']);
         rmdir([cd '/Utilities/Temp'],'s');
+        rmpath([cd '/Utilities/Backup']);
+        rmdir([cd '/Utilities/Backup'],'s');
         mkdir([cd '/Utilities/Temp']);
+        mkdir([cd '/Utilities/Backup']);
         addpath([cd '/Utilities/Temp']);
+        addpath([cd '/Utilities/Backup']);
         set(handles.result_box,'Value',1);
         set(handles.result_box,'String',cell(1,1));
         fprintf(handles.fid, [' ' datestr(now,16) ' - Cleared workspace \n']);

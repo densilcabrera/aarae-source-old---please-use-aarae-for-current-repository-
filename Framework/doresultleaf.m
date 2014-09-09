@@ -31,6 +31,10 @@ if leafnameexist == 1
     leafname = [leafname,'_',num2str(index)];
 end
 iconPath = fullfile(matlabroot,'/toolbox/matlab/icons/help_fx.png');
+
+% Save as you go
+save([cd '/Utilities/Backup/' leafname '.mat'], 'out');
+
 handles.(genvarname(leafname)) = uitreenode('v0', leafname,  leafname, iconPath, true);
 handles.(genvarname(leafname)).UserData = out;
 handles.results.add(handles.(genvarname(leafname)));
