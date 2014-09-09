@@ -155,6 +155,12 @@ if ~isempty(handles.testsignal(handles.version))
     aarae_fig = findobj('type','figure','tag','aarae');
     selectedNodes = mainHandles.mytree.getSelectedNodes;
     removefield = genvarname(selectedNodes(1).getName.char);
+    
+    % Save as you go
+    delete([cd '/Utilities/Backup/' selectedNodes(1).getName.char '.mat'])
+    signaldata = handles.testsignal(handles.version); %#ok : Used in following line
+    save([cd '/Utilities/Backup/' handles.selNodeName '.mat'], 'signaldata');
+    
     set(mainHandles.(genvarname(removefield)),'Name',handles.selNodeName);
     set(mainHandles.(genvarname(removefield)),'Value',handles.selNodeName);
     mainHandles.(genvarname(handles.selNodeName)) = mainHandles.(genvarname(removefield));
@@ -929,6 +935,11 @@ if ~isempty(handles.testsignal(handles.version))
         if branch == 4, mainHandles.results.add(mainHandles.(genvarname(handles.selNodeName))); handles.testsignal(handles.version).datatype = 'results'; end
     end
     if strcmp(datatype,'syscal'), handles.testsignal(handles.version).datatype = 'syscal'; end
+    
+    % Save as you go
+    signaldata = handles.testsignal(handles.version); %#ok : Used in following line
+    save([cd '/Utilities/Backup/' handles.selNodeName '.mat'], 'signaldata');
+    
     mainHandles.(genvarname(handles.selNodeName)).UserData = handles.testsignal(handles.version);
     mainHandles.mytree.reloadNode(mainHandles.(genvarname(handles.selNodeName)).getParent);
     mainHandles.mytree.setSelectedNode(mainHandles.(genvarname(handles.selNodeName)));
