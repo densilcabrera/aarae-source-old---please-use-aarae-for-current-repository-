@@ -710,10 +710,8 @@ switch deleteans
             if ~isempty(audiodata)
                 
                 % Delete from backup files
-                rmpath([cd '/Utilities/Backup/'])
                 filename = [cd '/Utilities/Backup/' selectedNodes(nleafs).getName.char '.mat'];
                 delete(filename)
-                addpath([cd '/Utilities/Backup/'])
                 
                 selectedParent = selectedNodes(nleafs).getParent;
                 handles.mytree.remove(selectedNodes(nleafs));
