@@ -3,6 +3,14 @@ function chanID = makechanID(nchan,format,param)
 % number of channels (nchan) and format. If channels spatial coordiates are
 % used, these are provided by the third input argument, which must be at 
 % least as long as the number of channels. See comments in the code.
+%
+% The following formats are supported:
+% 1: numbered channels in the form Chan1;Chan2;...
+% 2: spherical harmonic order and degree, Y 0 0; Y 1 1; Y 1 -1; Y 1 0;...
+% 3: spherical coordinates using degrees, e.g., 90 deg,  45 deg, 1.4142 m
+% 4: spherical coordinates using radians, e.g., 0 rad,  1.3 rad, 1.4142 m
+% 5: Cartesian coordinates using metres, e.g., 1 m, 3 m, -4 m
+
 switch format
     case 0
         % generic chanID in the form of 'Chan1', 'Chan2', etc
@@ -22,6 +30,10 @@ switch format
         % chanID using spherical coordinates in degrees
         % param is a list Cartesian coordinates for each channel in the
         % form [x1,y1,z1; x2,y2,z2;...]
+        if ~exist('param','var')
+            chanID = [];
+            return
+        end
         if length(param)<nchan
             disp('Unable to make chanIDs from param due to channel count mismatch')
             chanID = cellstr([repmat('Chan',[nchan,1]) num2str((1:nchan)')]);
@@ -37,6 +49,10 @@ switch format
         % chanID using spherical coordinates in radians
         % param is a list Cartesian coordinates for each channel in the
         % form [x1,y1,z1; x2,y2,z2;...]
+        if ~exist('param','var')
+            chanID = [];
+            return
+        end
         if length(param)<nchan
             disp('Unable to make chanIDs from param due to channel count mismatch')
             chanID = cellstr([repmat('Chan',[nchan,1]) num2str((1:nchan)')]);
@@ -51,6 +67,10 @@ switch format
         % chanID using Cartesian coordinates in metres
         % param is a list Cartesian coordinates for each channel in the
         % form [x1,y1,z1; x2,y2,z2;...]
+        if ~exist('param','var')
+            chanID = [];
+            return
+        end
         if length(param)<nchan
             disp('Unable to make chanIDs from param due to channel count mismatch')
             chanID = cellstr([repmat('Chan',[nchan,1]) num2str((1:nchan)')]);
