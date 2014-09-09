@@ -1,12 +1,18 @@
 function [out,format] = readchanID(chanID)
 % This aarae utility function extracts the numerical data from chanIDs,
-% assuming that they are in one of the formats supported by makechanID. 
+% assuming that they are in one of the formats supported by aarae's 
+% makechanID. 
+% 
 % The following formats are supported:
-% 1: numbered channels in the form Chan1;Chan2;...
-% 2: spherical harmonic order and degree, Y 0 0; Y 1 1; Y 1 -1; Y 1 0;...
-% 3: spherical coordinates using degrees, e.g., 90 deg,  45 deg, 1.4142 m
-% 4: spherical coordinates using radians, e.g., 0 rad,  1.3 rad, 1.4142 m
-% 5: Cartesian coordinates using metres, e.g., 1 m, 3 m, -4 m
+% 0: numbered channels in the form Chan1;Chan2;...
+% 1: spherical harmonic order and degree, Y 0 0; Y 1 1; Y 1 -1; Y 1 0;...
+% 2: spherical coordinates using degrees, e.g., 90 deg,  45 deg, 1.4142 m
+% 3: spherical coordinates using radians, e.g., 0 rad,  1.3 rad, 1.4142 m
+% 4: Cartesian coordinates using metres, e.g., 1 m, 3 m, -4 m
+%
+% Note that the chanID formats are cell arrays of strings, in a column.
+%
+% See the code for more information on the imputs and outputs.
 
 if ~isempty(regexp(char(chanID{1}),'Chan','once'))
     % generic chanID in the form of 'Chan1', 'Chan2', etc

@@ -1,20 +1,36 @@
 function chanID = makechanID(nchan,format,param)
 % This aarae utility function makes a chanID cell array for the specified
-% number of channels (nchan) and format. If channels spatial coordiates are
-% used, these are provided by the third input argument, which must be at 
-% least as long as the number of channels. See comments in the code.
+% number of channels (nchan) and format.
 %
 % The following formats are supported:
-% 1: numbered channels in the form Chan1;Chan2;...
-% 2: spherical harmonic order and degree, Y 0 0; Y 1 1; Y 1 -1; Y 1 0;...
-% 3: spherical coordinates using degrees, e.g., 90 deg,  45 deg, 1.4142 m
-% 4: spherical coordinates using radians, e.g., 0 rad,  1.3 rad, 1.4142 m
-% 5: Cartesian coordinates using metres, e.g., 1 m, 3 m, -4 m
+% 0: numbered channels in the form Chan1;Chan2;...
+% 1: spherical harmonic order and degree, Y 0 0; Y 1 1; Y 1 -1; Y 1 0;...
+% 2: spherical coordinates using degrees, e.g., 90 deg,  45 deg, 1.4142 m
+% 3: spherical coordinates using radians, e.g., 0 rad,  1.3 rad, 1.4142 m
+% 4: Cartesian coordinates using metres, e.g., 1 m, 3 m, -4 m
+%
+% If format 0 is used, the param argument can optionally be used to provide
+% a numerical offset (to change the channel numbering).
+%
+% Formats 2,3 and 4 require spatial coordinates as input via param. The
+% input format is Cartesian in every case (regardless of the chanID
+% format). The param matrix must be at least as long as the number of
+% channels. See comments in the code for more information.
+%
+% AARAE also has a function readchanID which extracts numerical values from
+% the formats created by makechanID (this function).
+
 
 switch format
     case 0
         % generic chanID in the form of 'Chan1', 'Chan2', etc
-        chanID = cellstr([repmat('Chan',[nchan,1]) num2str((1:nchan)')]);
+        if exist('param','var')
+            offset = param(1,1);
+        else
+            offset = 0;
+        end
+        chanID = cellstr([repmat('Chan',[nchan,1])...
+            num2str(offset+(1:nchan)')]);
     case 1
         % Spherical harmonic chanIDs, showing order and degree (e.g., for 
         % HOA signals)
