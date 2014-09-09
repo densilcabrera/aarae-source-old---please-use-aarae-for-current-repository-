@@ -31,13 +31,19 @@ switch format
         % param is a list Cartesian coordinates for each channel in the
         % form [x1,y1,z1; x2,y2,z2;...]
         if ~exist('param','var')
-            chanID = [];
+            disp('Unable to make chanIDs from param because it is missing')
+            chanID = cellstr([repmat('Chan',[nchan,1]) num2str((1:nchan)')]);
             return
         end
-        if length(param)<nchan
+        [p1,p2] = size(param);
+        if p2 ~=3
+            disp('Unable to make chanIDs from param because param needs three columns')
+            chanID = cellstr([repmat('Chan',[nchan,1]) num2str((1:nchan)')]);
+        elseif p1<nchan
             disp('Unable to make chanIDs from param due to channel count mismatch')
             chanID = cellstr([repmat('Chan',[nchan,1]) num2str((1:nchan)')]);
         else
+            param = param(1:nchan,:);
         [param(:,1),param(:,2),param(:,3)] =...
             cart2sph(param(:,1),param(:,2),param(:,3));
         param(:,1:2) = 180 * param(:,1:2)./pi;
@@ -50,13 +56,19 @@ switch format
         % param is a list Cartesian coordinates for each channel in the
         % form [x1,y1,z1; x2,y2,z2;...]
         if ~exist('param','var')
-            chanID = [];
+            disp('Unable to make chanIDs from param because it is missing')
+            chanID = cellstr([repmat('Chan',[nchan,1]) num2str((1:nchan)')]);
             return
         end
-        if length(param)<nchan
+        [p1,p2] = size(param);
+        if p2 ~=3
+            disp('Unable to make chanIDs from param because param needs three columns')
+            chanID = cellstr([repmat('Chan',[nchan,1]) num2str((1:nchan)')]);
+        elseif p1<nchan
             disp('Unable to make chanIDs from param due to channel count mismatch')
             chanID = cellstr([repmat('Chan',[nchan,1]) num2str((1:nchan)')]);
         else
+            param = param(1:nchan,:);
         [param(:,1),param(:,2),param(:,3)] =...
             cart2sph(param(:,1),param(:,2),param(:,3));
         chanID = cellstr([num2str(param(:,1)),repmat(' rad, ',[length(param),1]),...
@@ -68,13 +80,19 @@ switch format
         % param is a list Cartesian coordinates for each channel in the
         % form [x1,y1,z1; x2,y2,z2;...]
         if ~exist('param','var')
-            chanID = [];
+            disp('Unable to make chanIDs from param because it is missing')
+            chanID = cellstr([repmat('Chan',[nchan,1]) num2str((1:nchan)')]);
             return
         end
-        if length(param)<nchan
+        [p1,p2] = size(param);
+        if p2 ~=3
+            disp('Unable to make chanIDs from param because param needs three columns')
+            chanID = cellstr([repmat('Chan',[nchan,1]) num2str((1:nchan)')]);
+        elseif p1<nchan
             disp('Unable to make chanIDs from param due to channel count mismatch')
             chanID = cellstr([repmat('Chan',[nchan,1]) num2str((1:nchan)')]);
         else
+            param = param(1:nchan,:);
         chanID = cellstr([num2str(param(:,1)),repmat(' m, ',[length(param),1]),...
             num2str(param(:,2)),repmat(' m, ',[length(param),1]),...
             num2str(param(:,3)),repmat(' m',[length(param),1])]);
