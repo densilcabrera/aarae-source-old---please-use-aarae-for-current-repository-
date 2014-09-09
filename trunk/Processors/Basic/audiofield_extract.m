@@ -70,8 +70,8 @@ else
 
     
     % overwrite chanIDs
-    out.chanID = cellstr([repmat('Chan',size(out.audio,2),1) num2str((1:size(out.audio,2))')]);
-    
+    %out.chanID = cellstr([repmat('Chan',size(out.audio,2),1) num2str((1:size(out.audio,2))')]);
+    out.chanID = makechanID(size(out.audio,2),0);
 
     
     % zap bandID field
