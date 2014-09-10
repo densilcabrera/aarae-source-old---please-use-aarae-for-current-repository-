@@ -119,11 +119,11 @@ else
     % Update handles structure
     guidata(hObject, handles);
     % UIWAIT makes edit_signal wait for user response (see UIRESUME)
-    if ndims(audiodata.audio) <= 4
+%    if ndims(audiodata.audio) <= 4
         uiwait(hObject)
-    else
-        warndlg('Edition of 4-Dimensional audio or greater not yet enabled, sorry!','AARAE info','modal')
-    end
+%    else
+%        warndlg('Edition of 4-Dimensional audio or greater not yet enabled, sorry!','AARAE info','modal')
+%    end
 end
 
 
@@ -218,9 +218,11 @@ if ((click == handles.IN_axes) || strcmp(obj,'line')) % If user clicks anywhere 
         % Save the selected chunk in a diferent variable
         handles.testsignal(handles.version) = handles.testsignal(handles.version - 1);
         if handles.timescale == 1
-            handles.testsignal(handles.version).audio = handles.testsignal(handles.version - 1).audio(round((xi-min(handles.rel_time))*handles.fs)+1:round((xf-min(handles.rel_time))*handles.fs),:,:);
+            indices = cat(2,{round((xi-min(handles.rel_time))*handles.fs)+1:round((xf-min(handles.rel_time))*handles.fs)},repmat({':'},1,ndims(handles.testsignal(handles.version - 1).audio)-1));
+            handles.testsignal(handles.version).audio = handles.testsignal(handles.version - 1).audio(indices{:});
         elseif handles.timescale == 2
-            handles.testsignal(handles.version).audio = handles.testsignal(handles.version - 1).audio(round((xi-min(handles.rel_time)))+1:round((xf-min(handles.rel_time))),:,:);
+            indices = cat(2,{round((xi-min(handles.rel_time)))+1:round((xf-min(handles.rel_time)))},repmat({':'},1,ndims(handles.testsignal(handles.version - 1).audio)-1));
+            handles.testsignal(handles.version).audio = handles.testsignal(handles.version - 1).audio(indices{:});
         end
         handles.rel_time = linspace(xi,xf,length(handles.testsignal(handles.version).audio));
         handles.xi(handles.version) = xi;
@@ -274,9 +276,11 @@ if ~isnan(xi) && ~isnan(xf) && xi >= min(handles.rel_time) && xi ~= xf
     set(handles.redo_btn,'Enable','off');
     handles.testsignal(handles.version) = handles.testsignal(handles.version - 1);
     if get(handles.timescale_popup,'Value') == 1
-        handles.testsignal(handles.version).audio = handles.testsignal(handles.version - 1).audio(ceil((xi-min(handles.rel_time))*handles.fs)+1:end,:,:);
+        indices = cat(2,{ceil((xi-min(handles.rel_time))*handles.fs)+1:length(handles.testsignal(handles.version - 1).audio)},repmat({':'},1,ndims(handles.testsignal(handles.version - 1).audio)-1));
+        handles.testsignal(handles.version).audio = handles.testsignal(handles.version - 1).audio(indices{:});
     elseif get(handles.timescale_popup,'Value') == 2
-        handles.testsignal(handles.version).audio = handles.testsignal(handles.version - 1).audio(ceil((xi-min(handles.rel_time)))+1:end,:,:);
+        indices = cat(2,{ceil((xi-min(handles.rel_time)))+1:length(handles.testsignal(handles.version - 1).audio)},repmat({':'},1,ndims(handles.testsignal(handles.version - 1).audio)-1));
+        handles.testsignal(handles.version).audio = handles.testsignal(handles.version - 1).audio(indices{:});
     end
     handles.rel_time = linspace(xi,xf,length(handles.testsignal(handles.version).audio));
     handles.xi(handles.version) = xi;
@@ -315,10 +319,11 @@ else % Display out of boundaries warnings
             set([handles.undo_btn handles.reset_btn],'Enable','on');
             set(handles.redo_btn,'Enable','off');
             handles.testsignal(handles.version) = handles.testsignal(handles.version - 1);
+            sizeprever = size(handles.testsignal(handles.version-1).audio);
             if get(handles.timescale_popup,'Value') == 1
-                handles.testsignal(handles.version).audio = cat(1,zeros(round(abs(xi-min(handles.rel_time))*handles.fs),size(handles.testsignal(handles.version-1).audio,2),size(handles.testsignal(handles.version-1).audio,3)),handles.testsignal(handles.version - 1).audio);
+                handles.testsignal(handles.version).audio = cat(1,zeros([round(abs(xi-min(handles.rel_time))*handles.fs),sizeprever(2:end)]),handles.testsignal(handles.version - 1).audio);
             elseif get(handles.timescale_popup,'Value') == 2
-                handles.testsignal(handles.version).audio = cat(1,zeros(round(abs(xi-min(handles.rel_time))),size(handles.testsignal(handles.version-1).audio,2),size(handles.testsignal(handles.version-1).audio,3)),handles.testsignal(handles.version - 1).audio);
+                handles.testsignal(handles.version).audio = cat(1,zeros([round(abs(xi-min(handles.rel_time))),sizeprever(2:end)]),handles.testsignal(handles.version - 1).audio);
             end
             handles.rel_time = linspace(xi,xf,length(handles.testsignal(handles.version).audio));
             handles.xi(handles.version) = xi;
@@ -371,9 +376,11 @@ if ~isnan(xi) && ~isnan(xf) && xf <= max(handles.rel_time) && xi ~= xf
     set(handles.redo_btn,'Enable','off');
     handles.testsignal(handles.version) = handles.testsignal(handles.version - 1);
     if handles.timescale == 1
-        handles.testsignal(handles.version).audio = handles.testsignal(handles.version - 1).audio(1:round((xf-min(handles.rel_time))*handles.fs),:,:);
+        indices = cat(2,{1:round((xf-min(handles.rel_time))*handles.fs)},repmat({':'},1,ndims(handles.testsignal(handles.version - 1).audio)-1));
+        handles.testsignal(handles.version).audio = handles.testsignal(handles.version - 1).audio(indices{:});
     elseif handles.timescale == 2
-        handles.testsignal(handles.version).audio = handles.testsignal(handles.version - 1).audio(1:round((xf-min(handles.rel_time))),:,:);
+        indices = cat(2,{1:round((xf-min(handles.rel_time)))},repmat({':'},1,ndims(handles.testsignal(handles.version - 1).audio)-1));
+        handles.testsignal(handles.version).audio = handles.testsignal(handles.version - 1).audio(indices{:});
     end
     handles.rel_time = linspace(xi,xf,length(handles.testsignal(handles.version).audio));
     handles.xi(handles.version) = handles.xi(handles.version - 1);
@@ -412,10 +419,11 @@ else % Display out of boundaries warnings
             set([handles.undo_btn handles.reset_btn],'Enable','on');
             set(handles.redo_btn,'Enable','off');
             handles.testsignal(handles.version) = handles.testsignal(handles.version - 1);
+            sizeprever = size(handles.testsignal(handles.version-1).audio);
             if get(handles.timescale_popup,'Value') == 1
-                handles.testsignal(handles.version).audio = cat(1,handles.testsignal(handles.version - 1).audio,zeros(abs(xf-max(handles.rel_time))*handles.fs,size(handles.testsignal(handles.version-1).audio,2),size(handles.testsignal(handles.version-1).audio,3)));
+                handles.testsignal(handles.version).audio = cat(1,handles.testsignal(handles.version - 1).audio,zeros([abs(xf-max(handles.rel_time))*handles.fs,sizeprever(2:end)]));
             elseif get(handles.timescale_popup,'Value') == 2
-                handles.testsignal(handles.version).audio = cat(1,handles.testsignal(handles.version - 1).audio,zeros(abs(xf-max(handles.rel_time)),size(handles.testsignal(handles.version-1).audio,2),size(handles.testsignal(handles.version-1).audio,3)));
+                handles.testsignal(handles.version).audio = cat(1,handles.testsignal(handles.version - 1).audio,zeros([abs(xf-max(handles.rel_time)),sizeprever(2:end)]));
             end
             handles.rel_time = linspace(xi,xf,length(handles.testsignal(handles.version).audio));
             handles.xi(handles.version) = handles.xi(handles.version - 1);
