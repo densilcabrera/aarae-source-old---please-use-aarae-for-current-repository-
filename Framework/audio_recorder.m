@@ -295,10 +295,10 @@ if get(handles.pb_enable,'Value') == 1
            else
                break
            end
-           waitbar(i/ncycles)
+           waitbar(i/ncycles,h)
            pause(0.0000001)
         end
-        delete(h)
+        if i == ncycles, delete(h); end
     catch sthgwrong
         UserData.state = true;
         handles.rec = [];
@@ -361,10 +361,10 @@ else
            else
                break
            end
-           waitbar(i/ncycles)
+           waitbar(i/ncycles,h)
            pause(0.0000001)
         end
-        delete(h)
+        if i == ncycles, delete(h); end
     catch sthgwrong
         UserData.state = true;
         handles.rec = [];
