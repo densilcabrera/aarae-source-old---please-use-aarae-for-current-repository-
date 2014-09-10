@@ -105,7 +105,9 @@ else
         set(handles.IN_nchannel,'String','1');
         set(handles.tchannels,'String',['/ ' num2str(size(handles.testsignal(handles.version).audio,2))]);
         line(:,:) = handles.testsignal(handles.version).audio(:,str2double(get(handles.IN_nchannel,'String')),:);
-        cmap = colormap(hsv(size(handles.testsignal(handles.version).audio,3)));
+        if ndims(handles.testsignal(handles.version).audio) == 3, cmap = colormap(hsv(size(handles.testsignal(handles.version).audio,3))); end
+        if ndims(handles.testsignal(handles.version).audio) == 4, cmap = colormap(copper(size(handles.testsignal(handles.version).audio,4))); end
+        if ndims(handles.testsignal(handles.version).audio) >= 5, cmap = colormap(cool(size(handles.testsignal(handles.version).audio,5))); end
         set(handles.edit_signal,'DefaultAxesColorOrder',cmap)
     else
         set(handles.channel_panel,'Visible','off');
@@ -235,7 +237,9 @@ if ((click == handles.IN_axes) || strcmp(obj,'line')) % If user clicks anywhere 
         if ~ismatrix(handles.testsignal(handles.version).audio)
             set(handles.channel_panel,'Visible','on');
             line(:,:) = handles.testsignal(handles.version).audio(:,str2double(get(handles.IN_nchannel,'String')),:);
-            cmap = colormap(hsv(size(handles.testsignal(handles.version).audio,3)));
+            if ndims(handles.testsignal(handles.version).audio) == 3, cmap = colormap(hsv(size(handles.testsignal(handles.version).audio,3))); end
+            if ndims(handles.testsignal(handles.version).audio) == 4, cmap = colormap(copper(size(handles.testsignal(handles.version).audio,4))); end
+            if ndims(handles.testsignal(handles.version).audio) >= 5, cmap = colormap(cool(size(handles.testsignal(handles.version).audio,5))); end
             set(handles.edit_signal,'DefaultAxesColorOrder',cmap)
         else
             set(handles.channel_panel,'Visible','off');
@@ -293,7 +297,9 @@ if ~isnan(xi) && ~isnan(xf) && xi >= min(handles.rel_time) && xi ~= xf
     if ~ismatrix(handles.testsignal(handles.version).audio)
         set(handles.channel_panel,'Visible','on');
         line(:,:) = handles.testsignal(handles.version).audio(:,str2double(get(handles.IN_nchannel,'String')),:);
-        cmap = colormap(hsv(size(handles.testsignal(handles.version).audio,3)));
+        if ndims(handles.testsignal(handles.version).audio) == 3, cmap = colormap(hsv(size(handles.testsignal(handles.version).audio,3))); end
+        if ndims(handles.testsignal(handles.version).audio) == 4, cmap = colormap(copper(size(handles.testsignal(handles.version).audio,4))); end
+        if ndims(handles.testsignal(handles.version).audio) >= 5, cmap = colormap(cool(size(handles.testsignal(handles.version).audio,5))); end
         set(handles.edit_signal,'DefaultAxesColorOrder',cmap)
     else
         set(handles.channel_panel,'Visible','off');
@@ -336,7 +342,9 @@ else % Display out of boundaries warnings
             if ~ismatrix(handles.testsignal(handles.version).audio)
                 set(handles.channel_panel,'Visible','on');
                 line(:,:) = handles.testsignal(handles.version).audio(:,str2double(get(handles.IN_nchannel,'String')),:);
-                cmap = colormap(hsv(size(handles.testsignal(handles.version).audio,3)));
+                if ndims(handles.testsignal(handles.version).audio) == 3, cmap = colormap(hsv(size(handles.testsignal(handles.version).audio,3))); end
+                if ndims(handles.testsignal(handles.version).audio) == 4, cmap = colormap(copper(size(handles.testsignal(handles.version).audio,4))); end
+                if ndims(handles.testsignal(handles.version).audio) >= 5, cmap = colormap(cool(size(handles.testsignal(handles.version).audio,5))); end
                 set(handles.edit_signal,'DefaultAxesColorOrder',cmap)
             else
                 set(handles.channel_panel,'Visible','off');
@@ -393,7 +401,9 @@ if ~isnan(xi) && ~isnan(xf) && xf <= max(handles.rel_time) && xi ~= xf
     if ~ismatrix(handles.testsignal(handles.version).audio)
         set(handles.channel_panel,'Visible','on');
         line(:,:) = handles.testsignal(handles.version).audio(:,str2double(get(handles.IN_nchannel,'String')),:);
-        cmap = colormap(hsv(size(handles.testsignal(handles.version).audio,3)));
+        if ndims(handles.testsignal(handles.version).audio) == 3, cmap = colormap(hsv(size(handles.testsignal(handles.version).audio,3))); end
+        if ndims(handles.testsignal(handles.version).audio) == 4, cmap = colormap(copper(size(handles.testsignal(handles.version).audio,4))); end
+        if ndims(handles.testsignal(handles.version).audio) >= 5, cmap = colormap(cool(size(handles.testsignal(handles.version).audio,5))); end
         set(handles.edit_signal,'DefaultAxesColorOrder',cmap)
     else
         set(handles.channel_panel,'Visible','off');
@@ -436,7 +446,9 @@ else % Display out of boundaries warnings
             if ~ismatrix(handles.testsignal(handles.version).audio)
                 set(handles.channel_panel,'Visible','on');
                 line(:,:) = handles.testsignal(handles.version).audio(:,str2double(get(handles.IN_nchannel,'String')),:);
-                cmap = colormap(hsv(size(handles.testsignal(handles.version).audio,3)));
+                if ndims(handles.testsignal(handles.version).audio) == 3, cmap = colormap(hsv(size(handles.testsignal(handles.version).audio,3))); end
+                if ndims(handles.testsignal(handles.version).audio) == 4, cmap = colormap(copper(size(handles.testsignal(handles.version).audio,4))); end
+                if ndims(handles.testsignal(handles.version).audio) >= 5, cmap = colormap(cool(size(handles.testsignal(handles.version).audio,5))); end
                 set(handles.edit_signal,'DefaultAxesColorOrder',cmap)
             else
                 set(handles.channel_panel,'Visible','off');
@@ -494,7 +506,9 @@ if ~ismatrix(handles.testsignal(handles.version).audio)
     set(handles.IN_nchannel,'String','1');
     set(handles.tchannels,'String',['/ ' num2str(size(handles.testsignal(handles.version).audio,2))]);
     line(:,:) = handles.testsignal(handles.version).audio(:,str2double(get(handles.IN_nchannel,'String')),:);
-    cmap = colormap(hsv(size(handles.testsignal(handles.version).audio,3)));
+    if ndims(handles.testsignal(handles.version).audio) == 3, cmap = colormap(hsv(size(handles.testsignal(handles.version).audio,3))); end
+    if ndims(handles.testsignal(handles.version).audio) == 4, cmap = colormap(copper(size(handles.testsignal(handles.version).audio,4))); end
+    if ndims(handles.testsignal(handles.version).audio) >= 5, cmap = colormap(cool(size(handles.testsignal(handles.version).audio,5))); end
     set(handles.edit_signal,'DefaultAxesColorOrder',cmap)
 else
     set(handles.channel_panel,'Visible','off');
@@ -596,7 +610,9 @@ if ~isempty(processed)
         set(handles.channel_panel,'Visible','on');
         set(handles.tchannels,'String',['/ ' num2str(size(handles.testsignal(handles.version).audio,2))]);
         line(:,:) = handles.testsignal(handles.version).audio(:,str2double(get(handles.IN_nchannel,'String')),:);
-        cmap = colormap(hsv(size(handles.testsignal(handles.version).audio,3)));
+        if ndims(handles.testsignal(handles.version).audio) == 3, cmap = colormap(hsv(size(handles.testsignal(handles.version).audio,3))); end
+        if ndims(handles.testsignal(handles.version).audio) == 4, cmap = colormap(copper(size(handles.testsignal(handles.version).audio,4))); end
+        if ndims(handles.testsignal(handles.version).audio) >= 5, cmap = colormap(cool(size(handles.testsignal(handles.version).audio,5))); end
         set(handles.edit_signal,'DefaultAxesColorOrder',cmap)
     else
         set(handles.channel_panel,'Visible','off');
@@ -733,7 +749,9 @@ handles.rel_time = linspace(handles.xi(handles.version),handles.xf(handles.versi
 if ~ismatrix(handles.testsignal(handles.version).audio)
     set(handles.channel_panel,'Visible','on');
     line(:,:) = handles.testsignal(handles.version).audio(:,str2double(get(handles.IN_nchannel,'String')),:);
-    cmap = colormap(hsv(size(handles.testsignal(handles.version).audio,3)));
+    if ndims(handles.testsignal(handles.version).audio) == 3, cmap = colormap(hsv(size(handles.testsignal(handles.version).audio,3))); end
+    if ndims(handles.testsignal(handles.version).audio) == 4, cmap = colormap(copper(size(handles.testsignal(handles.version).audio,4))); end
+    if ndims(handles.testsignal(handles.version).audio) >= 5, cmap = colormap(cool(size(handles.testsignal(handles.version).audio,5))); end
     set(handles.edit_signal,'DefaultAxesColorOrder',cmap)
 else
     set(handles.channel_panel,'Visible','off');
@@ -766,7 +784,9 @@ if handles.version <= length(handles.testsignal)
     if ~ismatrix(handles.testsignal(handles.version).audio)
         set(handles.channel_panel,'Visible','on');
         line(:,:) = handles.testsignal(handles.version).audio(:,str2double(get(handles.IN_nchannel,'String')),:);
-        cmap = colormap(hsv(size(handles.testsignal(handles.version).audio,3)));
+        if ndims(handles.testsignal(handles.version).audio) == 3, cmap = colormap(hsv(size(handles.testsignal(handles.version).audio,3))); end
+        if ndims(handles.testsignal(handles.version).audio) == 4, cmap = colormap(copper(size(handles.testsignal(handles.version).audio,4))); end
+        if ndims(handles.testsignal(handles.version).audio) >= 5, cmap = colormap(cool(size(handles.testsignal(handles.version).audio,5))); end
         set(handles.edit_signal,'DefaultAxesColorOrder',cmap)
     else
         set(handles.channel_panel,'Visible','off');
