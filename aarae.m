@@ -770,7 +770,7 @@ function IR_btn_Callback(hObject, ~, handles) %#ok
 
 set(hObject,'BackgroundColor','red');
 set(hObject,'Enable','off');
-
+h = msgbox('Computing impulse response, please wait...','AARAE info','modal');
 hMain = getappdata(0,'hMain');
 audiodata = getappdata(hMain,'testsignal');
 S = audiodata.audio;
@@ -795,7 +795,6 @@ if isfield(audiodata,'properties') && isfield(audiodata.properties,'startflag')
                           'SelectionMode','single',...
                           'ListSize',[200 100]);
     if ok == 1
-        h = msgbox('Computing impulse response, please wait...','AARAE info','modal');
         if ndims(S) > 3 && method == 1
             method = 2;
             average = true;
@@ -862,6 +861,9 @@ if method == 1 || method == 2 || method == 3
     indices = cat(2,{1:length(S_pad)},repmat({':'},1,ndims(IR)-1));
     IR = IR(indices{:});
 end
+
+if ishandle(h), close(h); end
+
 if method == 1
     if ~ismatrix(IR), tempIR(:,:) = IR(:,1,:); else tempIR = IR; end
     [trimsamp_low,trimsamp_high] = window_signal('main_stage1', handles.aarae,'IR',tempIR); % Calls the trimming GUI window to trim the IR
@@ -871,8 +873,6 @@ if method == 1
 else
     IRlength = length(IR);
 end
-
-if ishandle(h), close(h); end
 
 % Create new leaf and update the tree
 handles.mytree.setSelectedNode(handles.root);
