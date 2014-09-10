@@ -286,6 +286,7 @@ if get(handles.pb_enable,'Value') == 1
     pause on
     try
         UserData = get(handles.stop_btn,'UserData');
+        h = waitbar(0,'Recording in progress...','Name','AARAE info');
         for i = 1:ncycles
            UserData = get(handles.stop_btn,'UserData');
            if UserData.state == false
@@ -294,8 +295,10 @@ if get(handles.pb_enable,'Value') == 1
            else
                break
            end
+           waitbar(i/ncycles)
            pause(0.0000001)
         end
+        delete(h)
     catch sthgwrong
         UserData.state = true;
         handles.rec = [];
@@ -350,6 +353,7 @@ else
     pause on
     try
         UserData = get(handles.stop_btn,'UserData');
+        h = waitbar(0,'Recording in progress...','Name','AARAE info');
         for i = 1:ncycles
            UserData = get(handles.stop_btn,'UserData');
            if UserData.state == false
@@ -357,8 +361,10 @@ else
            else
                break
            end
+           waitbar(i/ncycles)
            pause(0.0000001)
         end
+        delete(h)
     catch sthgwrong
         UserData.state = true;
         handles.rec = [];
