@@ -105,18 +105,20 @@ else
         set(handles.channel_panel,'Visible','on');
         set(handles.IN_nchannel,'String','1');
         set(handles.tchannels,'String',['/ ' num2str(size(handles.testsignal(handles.version).audio,2))]);
-        line(:,:) = handles.testsignal(handles.version).audio(:,str2double(get(handles.IN_nchannel,'String')),:);
+        linea(:,:) = handles.testsignal(handles.version).audio(:,str2double(get(handles.IN_nchannel,'String')),:);
         if ndims(handles.testsignal(handles.version).audio) == 3, cmap = colormap(hsv(size(handles.testsignal(handles.version).audio,3))); end
         if ndims(handles.testsignal(handles.version).audio) == 4, cmap = colormap(copper(size(handles.testsignal(handles.version).audio,4))); end
         if ndims(handles.testsignal(handles.version).audio) >= 5, cmap = colormap(cool(size(handles.testsignal(handles.version).audio,5))); end
         set(handles.edit_signal,'DefaultAxesColorOrder',cmap)
     else
         set(handles.channel_panel,'Visible','off');
-        line = handles.testsignal(handles.version).audio;
+        linea = handles.testsignal(handles.version).audio;
         cmap = colormap(lines(size(handles.testsignal(handles.version).audio,2)));
         set(handles.edit_signal,'DefaultAxesColorOrder',cmap)
     end
-    plot(handles.IN_axes,handles.rel_time,line)
+    pixels = get_axes_width(handles.IN_axes);
+    [t, linea] = reduce_to_width(handles.rel_time, real(linea), pixels, [-inf inf]);
+    plot(handles.IN_axes,t,linea)
     xlabel(handles.IN_axes,'Time');
     set(handles.IN_axes,'XTickLabel',num2str(get(handles.IN_axes,'XTick').'))
     % Update handles structure
@@ -237,18 +239,20 @@ if ((click == handles.IN_axes) || strcmp(obj,'line')) % If user clicks anywhere 
         handles.timescale = handles.timescale(1:handles.version);
         if ~ismatrix(handles.testsignal(handles.version).audio)
             set(handles.channel_panel,'Visible','on');
-            line(:,:) = handles.testsignal(handles.version).audio(:,str2double(get(handles.IN_nchannel,'String')),:);
+            linea(:,:) = handles.testsignal(handles.version).audio(:,str2double(get(handles.IN_nchannel,'String')),:);
             if ndims(handles.testsignal(handles.version).audio) == 3, cmap = colormap(hsv(size(handles.testsignal(handles.version).audio,3))); end
             if ndims(handles.testsignal(handles.version).audio) == 4, cmap = colormap(copper(size(handles.testsignal(handles.version).audio,4))); end
             if ndims(handles.testsignal(handles.version).audio) >= 5, cmap = colormap(cool(size(handles.testsignal(handles.version).audio,5))); end
             set(handles.edit_signal,'DefaultAxesColorOrder',cmap)
         else
             set(handles.channel_panel,'Visible','off');
-            line = handles.testsignal(handles.version).audio;
+            linea = handles.testsignal(handles.version).audio;
             cmap = colormap(lines(size(handles.testsignal(handles.version).audio,2)));
             set(handles.edit_signal,'DefaultAxesColorOrder',cmap)
         end
-        plot(handles.IN_axes,handles.rel_time,line);
+        pixels = get_axes_width(handles.IN_axes);
+        [t, linea] = reduce_to_width(handles.rel_time, real(linea), pixels, [-inf inf]);
+        plot(handles.IN_axes,t,linea);
         xlabel(handles.IN_axes,'Time');
         set(handles.IN_axes,'XTickLabel',num2str(get(handles.IN_axes,'XTick').'))
         audiodata = handles.testsignal(handles.version); %#ok : Used in evalc below
@@ -297,18 +301,20 @@ if ~isnan(xi) && ~isnan(xf) && xi >= min(handles.rel_time) && xi ~= xf
     handles.timescale = handles.timescale(1:handles.version);
     if ~ismatrix(handles.testsignal(handles.version).audio)
         set(handles.channel_panel,'Visible','on');
-        line(:,:) = handles.testsignal(handles.version).audio(:,str2double(get(handles.IN_nchannel,'String')),:);
+        linea(:,:) = handles.testsignal(handles.version).audio(:,str2double(get(handles.IN_nchannel,'String')),:);
         if ndims(handles.testsignal(handles.version).audio) == 3, cmap = colormap(hsv(size(handles.testsignal(handles.version).audio,3))); end
         if ndims(handles.testsignal(handles.version).audio) == 4, cmap = colormap(copper(size(handles.testsignal(handles.version).audio,4))); end
         if ndims(handles.testsignal(handles.version).audio) >= 5, cmap = colormap(cool(size(handles.testsignal(handles.version).audio,5))); end
         set(handles.edit_signal,'DefaultAxesColorOrder',cmap)
     else
         set(handles.channel_panel,'Visible','off');
-        line = handles.testsignal(handles.version).audio;
+        linea = handles.testsignal(handles.version).audio;
         cmap = colormap(lines(size(handles.testsignal(handles.version).audio,2)));
         set(handles.edit_signal,'DefaultAxesColorOrder',cmap)
     end
-    plot(handles.IN_axes,handles.rel_time,line);
+    pixels = get_axes_width(handles.IN_axes);
+    [t, linea] = reduce_to_width(handles.rel_time, real(linea), pixels, [-inf inf]);
+    plot(handles.IN_axes,t,linea);
     xlabel(handles.IN_axes,'Time');
     set(handles.IN_axes,'XTickLabel',num2str(get(handles.IN_axes,'XTick').'))
     audiodata = handles.testsignal(handles.version); %#ok : Used in evalc below
@@ -342,18 +348,20 @@ else % Display out of boundaries warnings
             handles.timescale = handles.timescale(1:handles.version);
             if ~ismatrix(handles.testsignal(handles.version).audio)
                 set(handles.channel_panel,'Visible','on');
-                line(:,:) = handles.testsignal(handles.version).audio(:,str2double(get(handles.IN_nchannel,'String')),:);
+                linea(:,:) = handles.testsignal(handles.version).audio(:,str2double(get(handles.IN_nchannel,'String')),:);
                 if ndims(handles.testsignal(handles.version).audio) == 3, cmap = colormap(hsv(size(handles.testsignal(handles.version).audio,3))); end
                 if ndims(handles.testsignal(handles.version).audio) == 4, cmap = colormap(copper(size(handles.testsignal(handles.version).audio,4))); end
                 if ndims(handles.testsignal(handles.version).audio) >= 5, cmap = colormap(cool(size(handles.testsignal(handles.version).audio,5))); end
                 set(handles.edit_signal,'DefaultAxesColorOrder',cmap)
             else
                 set(handles.channel_panel,'Visible','off');
-                line = handles.testsignal(handles.version).audio;
+                linea = handles.testsignal(handles.version).audio;
                 cmap = colormap(lines(size(handles.testsignal(handles.version).audio,2)));
                 set(handles.edit_signal,'DefaultAxesColorOrder',cmap)
             end
-            plot(handles.IN_axes,handles.rel_time,line);
+            pixels = get_axes_width(handles.IN_axes);
+            [t, linea] = reduce_to_width(handles.rel_time, real(linea), pixels, [-inf inf]);
+            plot(handles.IN_axes,t,linea);
             xlabel(handles.IN_axes,'Time');
             set(handles.IN_axes,'XTickLabel',num2str(get(handles.IN_axes,'XTick').'))
             audiodata = handles.testsignal(handles.version); %#ok : Used in evalc below
@@ -401,18 +409,20 @@ if ~isnan(xi) && ~isnan(xf) && xf <= max(handles.rel_time) && xi ~= xf
     handles.timescale = handles.timescale(1:handles.version);
     if ~ismatrix(handles.testsignal(handles.version).audio)
         set(handles.channel_panel,'Visible','on');
-        line(:,:) = handles.testsignal(handles.version).audio(:,str2double(get(handles.IN_nchannel,'String')),:);
+        linea(:,:) = handles.testsignal(handles.version).audio(:,str2double(get(handles.IN_nchannel,'String')),:);
         if ndims(handles.testsignal(handles.version).audio) == 3, cmap = colormap(hsv(size(handles.testsignal(handles.version).audio,3))); end
         if ndims(handles.testsignal(handles.version).audio) == 4, cmap = colormap(copper(size(handles.testsignal(handles.version).audio,4))); end
         if ndims(handles.testsignal(handles.version).audio) >= 5, cmap = colormap(cool(size(handles.testsignal(handles.version).audio,5))); end
         set(handles.edit_signal,'DefaultAxesColorOrder',cmap)
     else
         set(handles.channel_panel,'Visible','off');
-        line = handles.testsignal(handles.version).audio;
+        linea = handles.testsignal(handles.version).audio;
         cmap = colormap(lines(size(handles.testsignal(handles.version).audio,2)));
         set(handles.edit_signal,'DefaultAxesColorOrder',cmap)
     end
-    plot(handles.IN_axes,handles.rel_time,line);
+    pixels = get_axes_width(handles.IN_axes);
+    [t, linea] = reduce_to_width(handles.rel_time, real(linea), pixels, [-inf inf]);
+    plot(handles.IN_axes,t,linea);
     xlabel(handles.IN_axes,'Time');
     set(handles.IN_axes,'XTickLabel',num2str(get(handles.IN_axes,'XTick').'))
     audiodata = handles.testsignal(handles.version); %#ok : Used in evalc below
@@ -446,18 +456,20 @@ else % Display out of boundaries warnings
             handles.timescale = handles.timescale(1:handles.version);
             if ~ismatrix(handles.testsignal(handles.version).audio)
                 set(handles.channel_panel,'Visible','on');
-                line(:,:) = handles.testsignal(handles.version).audio(:,str2double(get(handles.IN_nchannel,'String')),:);
+                linea(:,:) = handles.testsignal(handles.version).audio(:,str2double(get(handles.IN_nchannel,'String')),:);
                 if ndims(handles.testsignal(handles.version).audio) == 3, cmap = colormap(hsv(size(handles.testsignal(handles.version).audio,3))); end
                 if ndims(handles.testsignal(handles.version).audio) == 4, cmap = colormap(copper(size(handles.testsignal(handles.version).audio,4))); end
                 if ndims(handles.testsignal(handles.version).audio) >= 5, cmap = colormap(cool(size(handles.testsignal(handles.version).audio,5))); end
                 set(handles.edit_signal,'DefaultAxesColorOrder',cmap)
             else
                 set(handles.channel_panel,'Visible','off');
-                line = handles.testsignal(handles.version).audio;
+                linea = handles.testsignal(handles.version).audio;
                 cmap = colormap(lines(size(handles.testsignal(handles.version).audio,2)));
                 set(handles.edit_signal,'DefaultAxesColorOrder',cmap)
             end
-            plot(handles.IN_axes,handles.rel_time,line);
+            pixels = get_axes_width(handles.IN_axes);
+            [t, linea] = reduce_to_width(handles.rel_time, real(linea), pixels, [-inf inf]);
+            plot(handles.IN_axes,t,linea);
             xlabel(handles.IN_axes,'Time');
             set(handles.IN_axes,'XTickLabel',num2str(get(handles.IN_axes,'XTick').'))
             audiodata = handles.testsignal(handles.version); %#ok : Used in evalc below
@@ -506,18 +518,20 @@ if ~ismatrix(handles.testsignal(handles.version).audio)
     set(handles.channel_panel,'Visible','on');
     set(handles.IN_nchannel,'String','1');
     set(handles.tchannels,'String',['/ ' num2str(size(handles.testsignal(handles.version).audio,2))]);
-    line(:,:) = handles.testsignal(handles.version).audio(:,str2double(get(handles.IN_nchannel,'String')),:);
+    linea(:,:) = handles.testsignal(handles.version).audio(:,str2double(get(handles.IN_nchannel,'String')),:);
     if ndims(handles.testsignal(handles.version).audio) == 3, cmap = colormap(hsv(size(handles.testsignal(handles.version).audio,3))); end
     if ndims(handles.testsignal(handles.version).audio) == 4, cmap = colormap(copper(size(handles.testsignal(handles.version).audio,4))); end
     if ndims(handles.testsignal(handles.version).audio) >= 5, cmap = colormap(cool(size(handles.testsignal(handles.version).audio,5))); end
     set(handles.edit_signal,'DefaultAxesColorOrder',cmap)
 else
     set(handles.channel_panel,'Visible','off');
-    line = handles.testsignal(handles.version).audio;
+    linea = handles.testsignal(handles.version).audio;
     cmap = colormap(lines(size(handles.testsignal(handles.version).audio,2)));
     set(handles.edit_signal,'DefaultAxesColorOrder',cmap)
 end
-plot(handles.IN_axes,handles.rel_time,line)
+pixels = get_axes_width(handles.IN_axes);
+[t, linea] = reduce_to_width(handles.rel_time, real(linea), pixels, [-inf inf]);
+plot(handles.IN_axes,t,linea)
 xlabel(handles.IN_axes,'Time');
 set(handles.IN_axes,'XTickLabel',num2str(get(handles.IN_axes,'XTick').'))
 audiodata = handles.testsignal(handles.version); %#ok : Used in evalc below
@@ -610,18 +624,20 @@ if ~isempty(processed)
     if ~ismatrix(handles.testsignal(handles.version).audio)
         set(handles.channel_panel,'Visible','on');
         set(handles.tchannels,'String',['/ ' num2str(size(handles.testsignal(handles.version).audio,2))]);
-        line(:,:) = handles.testsignal(handles.version).audio(:,str2double(get(handles.IN_nchannel,'String')),:);
+        linea(:,:) = handles.testsignal(handles.version).audio(:,str2double(get(handles.IN_nchannel,'String')),:);
         if ndims(handles.testsignal(handles.version).audio) == 3, cmap = colormap(hsv(size(handles.testsignal(handles.version).audio,3))); end
         if ndims(handles.testsignal(handles.version).audio) == 4, cmap = colormap(copper(size(handles.testsignal(handles.version).audio,4))); end
         if ndims(handles.testsignal(handles.version).audio) >= 5, cmap = colormap(cool(size(handles.testsignal(handles.version).audio,5))); end
         set(handles.edit_signal,'DefaultAxesColorOrder',cmap)
     else
         set(handles.channel_panel,'Visible','off');
-        line = handles.testsignal(handles.version).audio;
+        linea = handles.testsignal(handles.version).audio;
         cmap = colormap(lines(size(handles.testsignal(handles.version).audio,2)));
         set(handles.edit_signal,'DefaultAxesColorOrder',cmap)
     end
-    plot(handles.IN_axes,handles.rel_time,line)
+    pixels = get_axes_width(handles.IN_axes);
+    [t, linea] = reduce_to_width(handles.rel_time, real(linea), pixels, [-inf inf]);
+    plot(handles.IN_axes,t,linea)
     xlabel(handles.IN_axes,'Time');
     set(handles.IN_axes,'XTickLabel',num2str(get(handles.IN_axes,'XTick').'))
     audiodata = handles.testsignal(handles.version); %#ok : Used in evalc below
@@ -649,8 +665,10 @@ channel = str2double(get(handles.IN_nchannel,'String'));
 
 if (channel <= size(handles.testsignal(handles.version).audio,2)) && (channel > 0) && ~isnan(channel)
     handles.channel = channel;
-    line(:,:) = handles.testsignal(handles.version).audio(:,channel,:);
-    plot(handles.IN_axes,handles.rel_time,line)
+    linea(:,:) = handles.testsignal(handles.version).audio(:,channel,:);
+    pixels = get_axes_width(handles.IN_axes);
+    [t, linea] = reduce_to_width(handles.rel_time, real(linea), pixels, [-inf inf]);
+    plot(handles.IN_axes,t,linea)
     xlabel(handles.IN_axes,'Time');
     set(handles.IN_axes,'XTickLabel',num2str(get(handles.IN_axes,'XTick').'))
 else
@@ -692,11 +710,13 @@ if handles.timescale(handles.version) == 1 && strcmp(timescale,'Samples')
     set(handles.OUT_end,'String',num2str(handles.xf(handles.version)));
     handles.rel_time = linspace(handles.xi(handles.version),handles.xf(handles.version),length(handles.testsignal(handles.version).audio));
     if ~ismatrix(handles.testsignal(handles.version).audio)
-        line(:,:) = handles.testsignal(handles.version).audio(:,str2double(get(handles.IN_nchannel,'String')),:);
+        linea(:,:) = handles.testsignal(handles.version).audio(:,str2double(get(handles.IN_nchannel,'String')),:);
     else
-        line = handles.testsignal(handles.version).audio;
+        linea = handles.testsignal(handles.version).audio;
     end
-    plot(handles.IN_axes,handles.rel_time,line)
+    pixels = get_axes_width(handles.IN_axes);
+    [t, linea] = reduce_to_width(handles.rel_time, real(linea), pixels, [-inf inf]);
+    plot(handles.IN_axes,t,linea)
     xlabel(handles.IN_axes,'Samples');
     set(handles.IN_axes,'XTickLabel',num2str(get(handles.IN_axes,'XTick').'))
 elseif handles.timescale(handles.version) == 2 && strcmp(timescale,'Seconds')
@@ -706,11 +726,13 @@ elseif handles.timescale(handles.version) == 2 && strcmp(timescale,'Seconds')
     set(handles.OUT_end,'String',num2str(handles.xf(handles.version)));
     handles.rel_time = linspace(handles.xi(handles.version),handles.xf(handles.version),length(handles.testsignal(handles.version).audio));
     if ~ismatrix(handles.testsignal(handles.version).audio)
-        line(:,:) = handles.testsignal(handles.version).audio(:,str2double(get(handles.IN_nchannel,'String')),:);
+        linea(:,:) = handles.testsignal(handles.version).audio(:,str2double(get(handles.IN_nchannel,'String')),:);
     else
-        line = handles.testsignal(handles.version).audio;
+        linea = handles.testsignal(handles.version).audio;
     end
-    plot(handles.IN_axes,handles.rel_time,line)
+    pixels = get_axes_width(handles.IN_axes);
+    [t, linea] = reduce_to_width(handles.rel_time, real(linea), pixels, [-inf inf]);
+    plot(handles.IN_axes,t,linea)
     xlabel(handles.IN_axes,'Time');
     set(handles.IN_axes,'XTickLabel',num2str(get(handles.IN_axes,'XTick').'))
 end
@@ -749,18 +771,20 @@ set(handles.timescale_popup,'Value',handles.timescale(handles.version));
 handles.rel_time = linspace(handles.xi(handles.version),handles.xf(handles.version),length(handles.testsignal(handles.version).audio));
 if ~ismatrix(handles.testsignal(handles.version).audio)
     set(handles.channel_panel,'Visible','on');
-    line(:,:) = handles.testsignal(handles.version).audio(:,str2double(get(handles.IN_nchannel,'String')),:);
+    linea(:,:) = handles.testsignal(handles.version).audio(:,str2double(get(handles.IN_nchannel,'String')),:);
     if ndims(handles.testsignal(handles.version).audio) == 3, cmap = colormap(hsv(size(handles.testsignal(handles.version).audio,3))); end
     if ndims(handles.testsignal(handles.version).audio) == 4, cmap = colormap(copper(size(handles.testsignal(handles.version).audio,4))); end
     if ndims(handles.testsignal(handles.version).audio) >= 5, cmap = colormap(cool(size(handles.testsignal(handles.version).audio,5))); end
     set(handles.edit_signal,'DefaultAxesColorOrder',cmap)
 else
     set(handles.channel_panel,'Visible','off');
-    line = handles.testsignal(handles.version).audio;
+    linea = handles.testsignal(handles.version).audio;
     cmap = colormap(lines(size(handles.testsignal(handles.version).audio,2)));
     set(handles.edit_signal,'DefaultAxesColorOrder',cmap)
 end
-plot(handles.IN_axes,handles.rel_time,line);
+pixels = get_axes_width(handles.IN_axes);
+[t, linea] = reduce_to_width(handles.rel_time, real(linea), pixels, [-inf inf]);
+plot(handles.IN_axes,t,linea);
 audiodata = handles.testsignal(handles.version); %#ok : Used in evalc below
 %mainHandles = guidata(handles.main_stage1);
 %selectedNodes = mainHandles.mytree.getSelectedNodes;
@@ -784,18 +808,20 @@ if handles.version <= length(handles.testsignal)
     handles.rel_time = linspace(handles.xi(handles.version),handles.xf(handles.version),length(handles.testsignal(handles.version).audio));
     if ~ismatrix(handles.testsignal(handles.version).audio)
         set(handles.channel_panel,'Visible','on');
-        line(:,:) = handles.testsignal(handles.version).audio(:,str2double(get(handles.IN_nchannel,'String')),:);
+        linea(:,:) = handles.testsignal(handles.version).audio(:,str2double(get(handles.IN_nchannel,'String')),:);
         if ndims(handles.testsignal(handles.version).audio) == 3, cmap = colormap(hsv(size(handles.testsignal(handles.version).audio,3))); end
         if ndims(handles.testsignal(handles.version).audio) == 4, cmap = colormap(copper(size(handles.testsignal(handles.version).audio,4))); end
         if ndims(handles.testsignal(handles.version).audio) >= 5, cmap = colormap(cool(size(handles.testsignal(handles.version).audio,5))); end
         set(handles.edit_signal,'DefaultAxesColorOrder',cmap)
     else
         set(handles.channel_panel,'Visible','off');
-        line = handles.testsignal(handles.version).audio;
+        linea = handles.testsignal(handles.version).audio;
         cmap = colormap(lines(size(handles.testsignal(handles.version).audio,2)));
         set(handles.edit_signal,'DefaultAxesColorOrder',cmap)
     end
-    plot(handles.IN_axes,handles.rel_time,line);
+    pixels = get_axes_width(handles.IN_axes);
+    [t, linea] = reduce_to_width(handles.rel_time, real(linea), pixels, [-inf inf]);
+    plot(handles.IN_axes,t,linea);
     audiodata = handles.testsignal(handles.version); %#ok : Used in evalc below
     %mainHandles = guidata(handles.main_stage1);
     %selectedNodes = mainHandles.mytree.getSelectedNodes;
