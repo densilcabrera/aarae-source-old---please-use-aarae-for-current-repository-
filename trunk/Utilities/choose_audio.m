@@ -56,11 +56,17 @@ switch method
             leaves = leaves(~cellfun(@isempty,leaves));
             %leafnames = char(leafnames);
             [s,ok] = listdlg('PromptString','Select a file:',...
-                    'SelectionMode','single',...
                     'ListString',leaves);
             %leaves = char(leaves);
             if ok == 1
-                out = handles.(genvarname(leaves{s,1})).handle.UserData;
+                if length(s) == 1
+                    out = handles.(genvarname(leaves{s,1})).handle.UserData;
+                else
+                    out = cell(size(s'));
+                    for i = 1:length(s)
+                        out{i,1} = handles.(genvarname(leaves{s(1,i),1})).handle.UserData;
+                    end
+                end
             else
                 out = [];
                 warndlg('No signal loaded!','Whoops...!');
