@@ -23,7 +23,7 @@ function varargout = edit_signal(varargin)
 
 % Edit the above text to modify the response to help edit_signal
 
-% Last Modified by GUIDE v2.5 04-Feb-2014 09:55:37
+% Last Modified by GUIDE v2.5 10-Sep-2014 14:29:13
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -89,8 +89,9 @@ else
     mainHandles = guidata(handles.main_stage1);
     selectedNodes = mainHandles.mytree.getSelectedNodes;
     handles.selNodeName = selectedNodes(1).getName.char;
+    set(handles.IN_name,'String',handles.selNodeName)
     audiodatatext = evalc('audiodata');
-    set(handles.audiodatatext,'String',['Selected: ' handles.selNodeName audiodatatext]);
+    set(handles.audiodatatext,'String',audiodatatext);
     handles.fs = audiodata.fs;
     dur = length(handles.testsignal(handles.version).audio)/handles.fs;
     % Allocate memory space for the edited signal
@@ -254,7 +255,7 @@ if ((click == handles.IN_axes) || strcmp(obj,'line')) % If user clicks anywhere 
         %mainHandles = guidata(handles.main_stage1);
         %selectedNodes = mainHandles.mytree.getSelectedNodes;
         audiodatatext = evalc('audiodata');
-        set(handles.audiodatatext,'String',['Selected: ' handles.selNodeName audiodatatext]);
+        set(handles.audiodatatext,'String',audiodatatext);
         guidata(hObject,handles);
     else % Display out of boundaries warnings
         warndlg('Data selection out of boundaries','WARNING');
@@ -314,7 +315,7 @@ if ~isnan(xi) && ~isnan(xf) && xi >= min(handles.rel_time) && xi ~= xf
     %mainHandles = guidata(handles.main_stage1);
     %selectedNodes = mainHandles.mytree.getSelectedNodes;
     audiodatatext = evalc('audiodata');
-    set(handles.audiodatatext,'String',['Selected: ' handles.selNodeName audiodatatext]);
+    set(handles.audiodatatext,'String',audiodatatext);
 else % Display out of boundaries warnings
     addsilence = questdlg('Would you like to add silence before the audio data displayed?',...
                           'Data selection out of boundaries',...
@@ -359,7 +360,7 @@ else % Display out of boundaries warnings
             %mainHandles = guidata(handles.main_stage1);
             %selectedNodes = mainHandles.mytree.getSelectedNodes;
             audiodatatext = evalc('audiodata');
-            set(handles.audiodatatext,'String',['Selected: ' handles.selNodeName audiodatatext]);
+            set(handles.audiodatatext,'String',audiodatatext);
         case 'No'
             set(handles.OUT_start,'String',num2str(handles.xi(handles.version)));
             set(handles.OUT_end,'String',num2str(handles.xf(handles.version)));
@@ -418,7 +419,7 @@ if ~isnan(xi) && ~isnan(xf) && xf <= max(handles.rel_time) && xi ~= xf
     %mainHandles = guidata(handles.main_stage1);
     %selectedNodes = mainHandles.mytree.getSelectedNodes;
     audiodatatext = evalc('audiodata');
-    set(handles.audiodatatext,'String',['Selected: ' handles.selNodeName audiodatatext]);
+    set(handles.audiodatatext,'String',audiodatatext);
 else % Display out of boundaries warnings
     addsilence = questdlg('Would you like to add silence after the audio data displayed?',...
                           'Data selection out of boundaries',...
@@ -463,7 +464,7 @@ else % Display out of boundaries warnings
             %mainHandles = guidata(handles.main_stage1);
             %selectedNodes = mainHandles.mytree.getSelectedNodes;
             audiodatatext = evalc('audiodata');
-            set(handles.audiodatatext,'String',['Selected: ' handles.selNodeName audiodatatext]);
+            set(handles.audiodatatext,'String',audiodatatext);
         case 'No'
             set(handles.OUT_start,'String',num2str(handles.xi(handles.version)));
             set(handles.OUT_end,'String',num2str(handles.xf(handles.version)));
@@ -523,7 +524,7 @@ audiodata = handles.testsignal(handles.version); %#ok : Used in evalc below
 %mainHandles = guidata(handles.main_stage1);
 %selectedNodes = mainHandles.mytree.getSelectedNodes;
 audiodatatext = evalc('audiodata');
-set(handles.audiodatatext,'String',['Selected: ' handles.selNodeName audiodatatext]);
+set(handles.audiodatatext,'String',audiodatatext);
 %    handles.line = findobj(gcf,'type','line');
 % Update handles structure
 guidata(hObject, handles);
@@ -627,7 +628,7 @@ if ~isempty(processed)
     %mainHandles = guidata(handles.main_stage1);
     %selectedNodes = mainHandles.mytree.getSelectedNodes;
     audiodatatext = evalc('audiodata');
-    set(handles.audiodatatext,'String',['Selected: ' handles.selNodeName audiodatatext]);
+    set(handles.audiodatatext,'String',audiodatatext);
 else
     handles.version = handles.version - 1;
 end
@@ -764,7 +765,7 @@ audiodata = handles.testsignal(handles.version); %#ok : Used in evalc below
 %mainHandles = guidata(handles.main_stage1);
 %selectedNodes = mainHandles.mytree.getSelectedNodes;
 audiodatatext = evalc('audiodata');
-set(handles.audiodatatext,'String',['Selected: ' handles.selNodeName audiodatatext]);
+set(handles.audiodatatext,'String',audiodatatext);
 if handles.version == 1, set(hObject,'Enable','off'); end
 guidata(hObject,handles);
 
@@ -799,7 +800,7 @@ if handles.version <= length(handles.testsignal)
     %mainHandles = guidata(handles.main_stage1);
     %selectedNodes = mainHandles.mytree.getSelectedNodes;
     audiodatatext = evalc('audiodata');
-    set(handles.audiodatatext,'String',['Selected: ' handles.selNodeName audiodatatext]);
+    set(handles.audiodatatext,'String',audiodatatext);
     if handles.version == 1, set(hObject,'Enable','off'); end
     if handles.version == length(handles.testsignal), set(hObject,'Enable','off'); end
     guidata(hObject,handles);
@@ -882,54 +883,6 @@ end
 guidata(hObject,handles);
 
 
-% --- Executes on button press in editfield_btn.
-function editfield_btn_Callback(hObject, ~, handles) %#ok : Executed when edit fields button is clicked
-% hObject    handle to editfield_btn (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
-%mainHandles = guidata(handles.main_stage1);
-%selectedNodes = mainHandles.mytree.getSelectedNodes;
-if isfield(handles.testsignal(handles.version),'cal')
-    prompt = {'Name','Sampling frequency [samples/s]','Calibration offset'};
-    defans = {handles.selNodeName,num2str(handles.testsignal(handles.version).fs),num2str(handles.testsignal(handles.version).cal)};
-    fields = inputdlg(prompt,'Edit fields',[1 60],defans);
-    if ~isempty(fields) && ~isempty(fields{1,1}) && str2double(fields{2,1}) > 0 && str2double(fields{3,1})
-        oktoedit = 1;
-    else
-        oktoedit = 0;
-    end
-else
-    prompt = {'Name','Sampling frequency [samples/s]'};
-    defans = {handles.selNodeName,num2str(handles.testsignal(handles.version).fs)};
-    fields = inputdlg(prompt,'Edit fields',[1 60],defans);
-    if ~isempty(fields) && ~isempty(fields{1,1}) && str2double(fields{2,1}) > 0
-        oktoedit = 1;
-    else
-        oktoedit = 0;
-    end
-end
-if oktoedit == 1
-    handles.version = handles.version + 1;
-    handles.testsignal(handles.version) = handles.testsignal(handles.version - 1);
-    handles.xi(handles.version) = handles.xi(handles.version - 1);
-    handles.xf(handles.version) = handles.xf(handles.version - 1);
-    handles.timescale(handles.version) = get(handles.timescale_popup,'Value');
-    handles.testsignal = handles.testsignal(1:handles.version);
-    handles.xi = handles.xi(1:handles.version);
-    handles.xf = handles.xf(1:handles.version);
-    handles.timescale = handles.timescale(1:handles.version);
-    handles.selNodeName = fields{1,1};
-    handles.testsignal(handles.version).fs = str2double(fields{2,1});
-    if isfield(handles.testsignal(handles.version),'cal'), handles.testsignal(handles.version).cal = str2double(fields{3,1}); end
-    audiodata = handles.testsignal(handles.version); %#ok : Used in evalc below
-    audiodatatext = evalc('audiodata');
-    set(handles.audiodatatext,'String',['Selected: ' handles.selNodeName audiodatatext]);
-else
-    warndlg('Check inputs and try again','AARAE info');
-end
-guidata(hObject,handles)
-
-
 % --- Executes on button press in wn_btn.
 function wn_btn_Callback(hObject, ~, handles) %#ok : Executed when Write to new button is clicked
 % hObject    handle to wn_btn (see GCBO)
@@ -975,3 +928,31 @@ if ~isempty(handles.testsignal(handles.version))
 end
 guidata(hObject,handles);
 uiresume(handles.edit_signal);
+
+
+
+function IN_name_Callback(hObject, ~, handles) %#ok : Executed when the content of the name input changes
+% hObject    handle to IN_name (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: get(hObject,'String') returns contents of IN_name as text
+%        str2double(get(hObject,'String')) returns contents of IN_name as a double
+if ~isempty(get(hObject,'String'))
+    handles.selNodeName = get(hObject,'String');
+else
+    set(hObject,'String',handles.selNodeName)
+end
+guidata(hObject,handles)
+
+% --- Executes during object creation, after setting all properties.
+function IN_name_CreateFcn(hObject, ~, ~) %#ok : Creation of name input box
+% hObject    handle to IN_name (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: edit controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
