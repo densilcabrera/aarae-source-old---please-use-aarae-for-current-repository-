@@ -95,6 +95,7 @@ else
         mainHandles = guidata(handles.main_stage1);
         selectednode = mainHandles.mytree.getSelectedNodes;
         set(handles.pb_enable,'Visible','on','Value',1);
+        set(handles.IN_name,'String',['rec_' selectednode(1).getName.char])
         handles.outputdata = handles.signaldata;
         handles.dur = length(handles.outputdata.audio)/handles.outputdata.fs;
         handles.t = linspace(0,handles.dur,length(handles.outputdata.audio));
@@ -139,6 +140,7 @@ else
         set(handles.pb_enable,'Visible','off','Value',0);
         set(handles.output_panel,'Visible','off');
         set(handles.text1,'String','Duration');
+        set(handles.IN_name,'String','recording')
         set(handles.inputdev_popup,'Value',getappdata(hMain,'audio_recorder_input'));
         set(handles.IN_numchs,'String',num2str(getappdata(hMain,'audio_recorder_numchs')));
         set(handles.IN_duration,'String',num2str(getappdata(hMain,'audio_recorder_duration')));
@@ -661,6 +663,9 @@ if get(hObject,'Value') == 1
     else
         set([handles.text25,handles.IN_numchsout,handles.sim_chk],'Visible','off')
     end
+    mainHandles = guidata(handles.main_stage1);
+    selectednode = mainHandles.mytree.getSelectedNodes;
+    set(handles.IN_name,'String',['rec_' selectednode(1).getName.char])
     set(handles.IN_numchs,'String',num2str(getappdata(hMain,'audio_recorder_numchs')));
     set(handles.text1,'String','Add time');
     set(handles.IN_duration,'String',num2str(getappdata(hMain,'audio_recorder_duration')));
@@ -684,6 +689,7 @@ else
     if isfield(handles.syscalstats,'latency'), set(handles.delay_chk,'Enable','off','Value',0); end
     if isfield(handles.syscalstats,'audio'), set(handles.invfilter_chk,'Enable','off','Value',0); end
     set(handles.output_panel,'Visible','off');
+    set(handles.IN_name,'String','recording')
     set(handles.text1,'String','Duration');
     set(handles.IN_duration,'String',num2str(getappdata(hMain,'audio_recorder_duration')));
     set(handles.IN_fs,'Enable','on');
