@@ -1,4 +1,23 @@
-function out = choose_audio
+function out = choose_audio(varargin)
+% If you'd like to enable multiple selection for the 'Choose from AARAE'
+% option, call the function sending the string 'multiple' as an input
+% argument. E.g.:
+%
+% out = choose_audio('multiple')
+
+
+if isempty(varargin)
+    varargin{1} = 'single';
+else
+    if length(varargin) > 1
+        varargin = cell(1,1);
+        varargin{1} = 'single';
+    else
+        if ~strcmp(varargin{1},'multiple')
+            varargin{1} = 'single';
+        end
+    end
+end
 
 handles = guidata(findobj('Tag','aarae'));
 
@@ -56,6 +75,7 @@ switch method
             leaves = leaves(~cellfun(@isempty,leaves));
             %leafnames = char(leafnames);
             [s,ok] = listdlg('PromptString','Select a file:',...
+                    'SelectionMode',varargin{1},...
                     'ListString',leaves);
             %leaves = char(leaves);
             if ok == 1
@@ -69,7 +89,6 @@ switch method
                 end
             else
                 out = [];
-                warndlg('No signal loaded!','Whoops...!');
             end
         else
             out = [];
@@ -108,6 +127,5 @@ switch method
         end
     otherwise
         out = [];
-        warndlg('File selection canceled!','AARAE info')
 end
 end
