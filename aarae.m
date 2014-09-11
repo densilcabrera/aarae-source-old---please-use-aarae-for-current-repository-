@@ -71,7 +71,7 @@ setappdata(hMain,'audio_recorder_fs',48000)
 %setappdata(hMain,'audio_recorder_nbits',16)
 setappdata(hMain,'audio_recorder_qdur',1)
 setappdata(hMain,'audio_recorder_buffer',1024)
-
+set(hObject,'Name','AARAE')
 % Read settings file
 Settings = [];
 if ~isempty(dir([cd '/Settings.mat']))
@@ -87,7 +87,12 @@ else
 end
 
 if ~isdir([cd '/Log']), mkdir([cd '/Log']); end
-if ~isdir([cd '/Utilities/Temp']), mkdir([cd '/Utilities/Temp']); end
+if ~isdir([cd '/Utilities/Temp'])
+    mkdir([cd '/Utilities/Temp']);
+else
+    results = dir([cd '/Utilities/Temp']);
+    set(handles.result_box,'String',[' ';cellstr({results(3:length(results)).name}')]);
+end
 if ~isdir([cd '/Utilities/Backup'])
     mkdir([cd '/Utilities/Backup']);
     handles.defaultaudiopath = [cd '/Audio'];
