@@ -3,7 +3,14 @@ function out = choose_audio(varargin)
 % option, call the function sending the string 'multiple' as an input
 % argument. E.g.:
 %
-% out = choose_audio('multiple')
+% out = choose_audio('multiple');
+%
+% This will return a cell array, where each cell contains an audio
+% structure.Otherwise the function can be called as:
+%
+% out = choose_audio;
+%
+% And the output will return the audio structure.
 
 
 if isempty(varargin)
