@@ -1443,7 +1443,8 @@ if ~isempty(click) && ((click == handles.axestime) || (get(click,'Parent') == ha
                 linea(:,:) = data(:,channel,:);
             end
             if ndims(data) == 3, cmap = colormap(hsv(size(data,3))); end
-            if ndims(data) >= 4, cmap = colormap(copper(size(data,4))); end
+            if ndims(data) == 4, cmap = colormap(copper(size(data,4))); end
+            if ndims(data) >= 5, cmap = colormap(cool(size(data,5))); end
         else
             if handles.alternate == 0
                 linea = data(To:Tf,:);
@@ -1559,7 +1560,8 @@ if ~isempty(click) && ((click == handles.axesfreq) || (get(click,'Parent') == ha
                 linea(:,:) = data(:,channel,:);
             end
             if ndims(data) == 3, cmap = colormap(hsv(size(data,3))); end
-            if ndims(data) >= 4, cmap = colormap(copper(size(data,4))); end
+            if ndims(data) == 4, cmap = colormap(copper(size(data,4))); end
+            if ndims(data) >= 5, cmap = colormap(cool(size(data,5))); end
         else
             if handles.alternate == 0
                 linea = data(To:Tf,:);
