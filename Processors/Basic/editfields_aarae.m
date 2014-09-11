@@ -317,7 +317,9 @@ for n = 1: length(chosenfields)
     
     
     % GENERIC EDITOR
-    
+if ~exist('OUT','var')
+    OUT = [];
+end
     
 end
 end % eof
