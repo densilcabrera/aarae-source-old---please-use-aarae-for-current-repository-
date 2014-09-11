@@ -1,4 +1,36 @@
 function [out,leafname] = doresultleaf(varargin)
+% You may output data to be plotted in a variety of charts, including
+% lines, mesh, surf, imagesc, loglog, and others depending on the
+% number of dimensions of your data using the doresultleaf.m function:
+% E.g.:
+%
+%    doresultleaf(myresultvariable,'Type [units]',{'Time','channels','Frequency'},...
+%                 'Time',      t,                's',           true,...
+%                 'channels',  chanID,           'categorical', [],...
+%                 'Frequency', num2cell(bandfc), 'Hz',          false,...
+%                 'name','my_results');
+%
+% Input arguments:
+% #1: Your data variable. It can be multidimensional, make sure you
+%     specify what each dimension is.
+% #2: What is your data variable representing? is it level? is it
+%     reverb time? make sure you label it appropriately and assign
+%     units to it, this second argument is a single string.
+% #3: This is a cell array where each cell contains the name of each
+%     dimension.
+%
+% #4: Name of your first dimension. (String)
+% #5: Matrix that matches your first dimension, in this case time.
+% #6: Units of your first dimension. (String)
+% #7: Can this dimension be used as a category? (true, false, [])
+%
+% Replicate arguments 4 to 7 for as many dimensions as your data
+% variable has.
+%
+% The second last input argument is the string 'name', this helps the
+% function identify that the last input argument is the name that will
+% be displayed in AARAEs categorical tree under the results leaf.
+
 % Save a copy of the input arguments
 input = varargin(4:end);
 % Assign first input argument to data variable
