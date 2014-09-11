@@ -1207,6 +1207,8 @@ function proc_btn_Callback(hObject, ~, handles) %#ok
 selectedNodes = handles.mytree.getSelectedNodes;
 funcallback = [];
 for nleafs = 1:length(selectedNodes)
+    handles.nleafs = nleafs;
+    guidata(hObject,handles)
     signaldata = selectedNodes(nleafs).handle.UserData;
     if ~isempty(signaldata)
         set(hObject,'BackgroundColor','red');
