@@ -1464,7 +1464,15 @@ if ~isempty(click) && ((click == handles.axestime) || (get(click,'Parent') == ha
             end
         end
         t = linspace(To,Tf,length(linea))./signaldata.fs;
-        f = signaldata.fs .* ((1:length(linea))-1) ./ length(linea);
+        f = signaldata.fs .* ((1:length(linea))-1) ./ length(linea);        
+        switch handles.Settings.specmagscale;
+            case {'Divided by length'}
+                spectscale = 1./length(linea);
+            case {'Times sqrt2/length'}
+                spectscale = 2.^0.5./length(linea);
+            otherwise
+                spectscale = 1;
+        end
         h = figure;
         set(h,'DefaultAxesColorOrder',cmap);
         plottype = get(handles.time_popup,'Value');
@@ -1475,11 +1483,11 @@ if ~isempty(click) && ((click == handles.axestime) || (get(click,'Parent') == ha
         if plottype == 5, linea = medfilt1(diff([angle(hilbert(real(linea))); zeros(1,size(linea,2))])*signaldata.fs/2/pi, 5); end
         if plottype == 6, linea = abs(linea); end
         if plottype == 7, linea = imag(linea); end
-        if plottype == 8, linea = 10*log10(abs(fft(linea).*2.^0.5/length(linea)).^2); end %freq
-        if plottype == 9, linea = (abs(fft(linea)).*2.^0.5/length(linea)).^2; end
-        if plottype == 10, linea = abs(fft(linea)).*2.^0.5/length(linea); end
-        if plottype == 11, linea = real(fft(linea)).*2.^0.5/length(linea); end
-        if plottype == 12, linea = imag(fft(linea)).*2.^0.5/length(linea); end
+        if plottype == 8, linea = 10*log10(abs(fft(linea).*spectscale).^2); end %freq
+        if plottype == 9, linea = (abs(fft(linea)).*spectscale).^2; end
+        if plottype == 10, linea = abs(fft(linea)).*spectscale; end
+        if plottype == 11, linea = real(fft(linea)).*spectscale; end
+        if plottype == 12, linea = imag(fft(linea)).*spectscale; end
         if plottype == 13, linea = angle(fft(linea)); end
         if plottype == 14, linea = unwrap(angle(fft(linea))); end
         if plottype == 15, linea = angle(fft(linea)) .* 180/pi; end
@@ -1582,6 +1590,14 @@ if ~isempty(click) && ((click == handles.axesfreq) || (get(click,'Parent') == ha
         end
         t = linspace(To,Tf,length(linea))./signaldata.fs;
         f = signaldata.fs .* ((1:length(linea))-1) ./ length(linea);
+        switch handles.Settings.specmagscale;
+            case {'Divided by length'}
+                spectscale = 1./length(linea);
+            case {'Times sqrt2/length'}
+                spectscale = 2.^0.5./length(linea);
+            otherwise
+                spectscale = 1;
+        end
         h = figure;
         set(h,'DefaultAxesColorOrder',cmap);
         plottype = get(handles.freq_popup,'Value');
@@ -1592,11 +1608,11 @@ if ~isempty(click) && ((click == handles.axesfreq) || (get(click,'Parent') == ha
         if plottype == 5, linea = medfilt1(diff([angle(hilbert(real(linea))); zeros(1,size(linea,2))])*signaldata.fs/2/pi, 5); end
         if plottype == 6, linea = abs(linea); end
         if plottype == 7, linea = imag(linea); end
-        if plottype == 8, linea = 10*log10(abs(fft(linea).*2.^0.5/length(linea)).^2); end
-        if plottype == 9, linea = (abs(fft(linea)).*2.^0.5/length(linea)).^2; end
-        if plottype == 10, linea = abs(fft(linea)).*2.^0.5/length(linea); end
-        if plottype == 11, linea = real(fft(linea)).*2.^0.5/length(linea); end
-        if plottype == 12, linea = imag(fft(linea)).*2.^0.5/length(linea); end
+        if plottype == 8, linea = 10*log10(abs(fft(linea).*spectscale).^2); end %freq
+        if plottype == 9, linea = (abs(fft(linea)).*spectscale).^2; end
+        if plottype == 10, linea = abs(fft(linea)).*spectscale; end
+        if plottype == 11, linea = real(fft(linea)).*spectscale; end
+        if plottype == 12, linea = imag(fft(linea)).*spectscale; end
         if plottype == 13, linea = angle(fft(linea)); end
         if plottype == 14, linea = unwrap(angle(fft(linea))); end
         if plottype == 15, linea = angle(fft(linea)) .* 180/pi; end
@@ -2439,6 +2455,14 @@ if handles.compareaudio == 1
                     linea = linea.*repmat(10.^(cal./20),length(linea),1);
                 end
             end
+            switch handles.Settings.specmagscale;
+                case {'Divided by length'}
+                    spectscale = 1./length(linea);
+                case {'Times sqrt2/length'}
+                    spectscale = 2.^0.5./length(linea);
+                otherwise
+                    spectscale = 1;
+            end
             if plottype == 1, linea = real(linea); end
             if plottype == 2, linea = linea.^2; end
             if plottype == 3, linea = 10.*log10(linea.^2); end
@@ -2446,11 +2470,11 @@ if handles.compareaudio == 1
             if plottype == 5, linea = medfilt1(diff([angle(hilbert(real(linea))); zeros(1,size(linea,2))])*signaldata.fs/2/pi, 5); end
             if plottype == 6, linea = abs(linea); end
             if plottype == 7, linea = imag(linea); end
-            if plottype == 8, linea = 10*log10(abs(fft(linea)).^2); end %freq
-            if plottype == 9, linea = abs(fft(linea)).^2; end
-            if plottype == 10, linea = abs(fft(linea)); end
-            if plottype == 11, linea = real(fft(linea)); end
-            if plottype == 12, linea = imag(fft(linea)); end
+            if plottype == 8, linea = 10*log10(abs(fft(linea).*spectscale).^2); end %freq
+            if plottype == 9, linea = (abs(fft(linea)).*spectscale).^2; end
+            if plottype == 10, linea = abs(fft(linea)).*spectscale; end
+            if plottype == 11, linea = real(fft(linea)).*spectscale; end
+            if plottype == 12, linea = imag(fft(linea)).*spectscale; end
             if plottype == 13, linea = angle(fft(linea)); end
             if plottype == 14, linea = unwrap(angle(fft(linea))); end
             if plottype == 15, linea = angle(fft(linea)) .* 180/pi; end

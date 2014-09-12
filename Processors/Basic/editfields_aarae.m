@@ -312,11 +312,7 @@ for n = 1: length(chosenfields)
         end
     end
     
-    
-    % ADD EDITORS FOR PROPERTIES ETC HERE
-    
-    
-    % GENERIC EDITOR
+
 if ~exist('OUT','var')
     OUT = [];
 end

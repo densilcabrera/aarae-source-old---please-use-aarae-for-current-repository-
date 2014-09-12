@@ -33,6 +33,14 @@ if isfield(signaldata,'cal') && handles.Settings.calibrationtoggle == 1
 end
 fftlength = length(linea);
 set(handles.(genvarname(['smooth' axes '_popup'])),'Visible','off');
+switch handles.Settings.specmagscale;
+    case {'Divided by length'}
+        spectscale = 1./length(linea);
+    case {'Times sqrt2/length'}
+        spectscale = 2.^0.5./length(linea);
+    otherwise
+        spectscale = 1;
+end
 if plottype == 1, linea = real(linea); end
 if plottype == 2, linea = linea.^2; end
 if plottype == 3, linea = 10.*log10(linea.^2); end
@@ -40,15 +48,15 @@ if plottype == 4, linea = abs(hilbert(real(linea))); end
 if plottype == 5, linea = medfilt1(diff([angle(hilbert(real(linea))); zeros(1,size(linea,2))])*signaldata.fs/2/pi, 5); end
 if plottype == 6, linea = abs(linea); end
 if plottype == 7, linea = imag(linea); end
-if plottype == 8, linea = 10*log10(abs(fft(linea,fftlength).*2.^0.5/fftlength).^2);  set(handles.(genvarname(['smooth' axes '_popup'])),'Visible','on'); end %freq
-if plottype == 9, linea = (abs(fft(linea,fftlength)).*2.^0.5/fftlength).^2; end
-if plottype == 10, linea = abs(fft(linea,fftlength)).*2.^0.5/fftlength; end
-if plottype == 11, linea = real(fft(linea,fftlength)).*2.^0.5/fftlength; end
-if plottype == 12, linea = imag(fft(linea,fftlength)).*2.^0.5/fftlength; end
-if plottype == 13, linea = angle(fft(linea,fftlength)); end
-if plottype == 14, linea = unwrap(angle(fft(linea,fftlength))); end
-if plottype == 15, linea = angle(fft(linea,fftlength)) .* 180/pi; end
-if plottype == 16, linea = unwrap(angle(fft(linea,fftlength))) ./(2*pi); end
+if plottype == 8, linea = 10*log10(abs(fft(linea).*spectscale).^2); end %freq
+if plottype == 9, linea = (abs(fft(linea)).*spectscale).^2; end
+if plottype == 10, linea = abs(fft(linea)).*spectscale; end
+if plottype == 11, linea = real(fft(linea)).*spectscale; end
+if plottype == 12, linea = imag(fft(linea)).*spectscale; end
+if plottype == 13, linea = angle(fft(linea)); end
+if plottype == 14, linea = unwrap(angle(fft(linea))); end
+if plottype == 15, linea = angle(fft(linea)) .* 180/pi; end
+if plottype == 16, linea = unwrap(angle(fft(linea))) ./(2*pi); end
 if plottype == 17, spec = fft(linea,fftlength); linea = -diff(unwrap(angle(spec))).*length(spec)/(signaldata.fs*2*pi).*1000; end
 if strcmp(get(handles.(genvarname(['smooth' axes '_popup'])),'Visible'),'on')
     smoothfactor = get(handles.(genvarname(['smooth' axes '_popup'])),'Value');
