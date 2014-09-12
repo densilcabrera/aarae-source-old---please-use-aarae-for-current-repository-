@@ -22,7 +22,7 @@ function varargout = settings(varargin)
 
 % Edit the above text to modify the response to help settings
 
-% Last Modified by GUIDE v2.5 18-Jul-2014 11:18:53
+% Last Modified by GUIDE v2.5 12-Sep-2014 09:33:00
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -95,6 +95,12 @@ else
         set(handles.colormap_popup,'Value',find(cellfun(@strcmp,colormaps,repmat(cellstr(mainHandles.Settings.colormap),length(colormaps),1))))
     else
         set(handles.colormap_popup,'Value',1)
+    end
+    specmagscales = cellstr(get(handles.specmagscale_popup,'String'));
+    if ischar(mainHandles.Settings.specmagscale)
+        set(handles.specmagscale_popup,'Value',find(cellfun(@strcmp,specmagscales,repmat(cellstr(mainHandles.Settings.specmagscale),length(specmagscales),1))))
+    else
+        set(handles.specmagscale_popup,'Value',1)
     end
     handles.output = mainHandles.Settings;
     guidata(hObject, handles);
@@ -269,4 +275,33 @@ custom_colormaps = what([cd '/Utilities/Custom_colormaps']);
 custom_colormaps = cellstr(custom_colormaps.mat);
 all_colormaps = cat(1,default_colormaps,custom_colormaps);
 set(hObject,'String',all_colormaps)
+guidata(hObject,handles)
+
+% Popup menu for spectrum magnitude scaling choice
+% --- Executes on selection change in specmagscale_popup.
+function specmagscale_popup_Callback(hObject, eventdata, handles)
+% hObject    handle to specmagscale_popup (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: contents = cellstr(get(hObject,'String')) returns specmagscale_popup contents as cell array
+%        contents{get(hObject,'Value')} returns selected item from specmagscale_popup
+contents = cellstr(get(hObject,'String'));
+selection = contents{get(hObject,'Value')};
+handles.output.specmagscale = selection;
+guidata(hObject,handles)
+
+% --- Executes during object creation, after setting all properties.
+function specmagscale_popup_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to specmagscale_popup (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: popupmenu controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+scalingmethod = {'Raw','Divided by length','Times sqrt2/length'};
+set(hObject,'String',scalingmethod)
 guidata(hObject,handles)
