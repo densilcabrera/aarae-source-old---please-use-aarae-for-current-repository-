@@ -82,6 +82,7 @@ else
     Settings.frequencylimits = 'Default';
     Settings.calibrationtoggle = 1;
     Settings.colormap = 'Jet';
+    Settings.specmagscale = 'Raw';
     handles.Settings = Settings;
     save([cd '/Settings.mat'],'Settings')
 end
