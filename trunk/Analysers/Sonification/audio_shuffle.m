@@ -33,6 +33,7 @@ function OUT = audio_shuffle(in,fs,windowlength,depthfactor, outduration, revers
 % windows will be forward in time.
 
 if isstruct(in)
+    in = choose_from_higher_dimensions(in,2,1); 
     % required field of input structure
     data = in.audio; % audio waveform
     fs = in.fs; % audio sampling rate

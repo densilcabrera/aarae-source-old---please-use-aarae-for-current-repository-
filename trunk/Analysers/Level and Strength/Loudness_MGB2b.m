@@ -126,6 +126,7 @@ function [OUT, varargout] = Loudness_MGB2b(IN,fs,filtermethod,cal,faster,decay,d
 % J. Acoust. Soc. Am. 121: 1604-1612
 
 if isstruct(IN)
+    IN = choose_from_higher_dimensions(IN,2,1); 
     if isfield(IN,'cal')
         cal = IN.cal;
     else

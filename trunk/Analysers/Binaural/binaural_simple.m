@@ -53,6 +53,7 @@ function out = binaural_simple(in, fs, f_low, f_high, t_start, t_end)
 % frequencies is a vector with the frequencies pertaining to Levelspectrum
 
 if isstruct(in)
+    in = choose_from_higher_dimensions(in,3,1); 
     wave = in.audio;
     fs = in.fs;
 else

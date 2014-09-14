@@ -183,6 +183,7 @@ end
 
 % SETTINGS FOR AARAE
 if isstruct(RIR)
+    RIR = choose_from_higher_dimensions(RIR,1,1); 
     data = RIR.audio;
     fs = RIR.fs;
 elseif ischar(RIR)

@@ -56,6 +56,7 @@ function out = audification_simple(in,fs,hiF,loF,speedupfactor,reverse,envelopee
 
 
 if isstruct(in)
+    in = choose_from_higher_dimensions(in,3,1); 
     % required field of input structure
     out = in;
     audio = in.audio;
@@ -144,7 +145,7 @@ if ~isempty(audio) && ~isempty(fs) && ~isempty(hiF) && ~isempty(loF) && ~isempty
 
     % time reversal
     if reverse
-        audio = flipud(audio);
+        audio = flipdim(audio,1);
     end
 
     % envelope contrast and smoothing

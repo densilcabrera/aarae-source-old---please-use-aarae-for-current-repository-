@@ -8,6 +8,7 @@ function [OUT,varargout] = STIspeechlevel(speech, fs, cal, doplot, wintime, calt
 
 
 if isstruct(speech)
+    speech = choose_from_higher_dimensions(speech,2,1);
     signal = speech.audio;
     fs = speech.fs;
     if isfield(speech,'cal')

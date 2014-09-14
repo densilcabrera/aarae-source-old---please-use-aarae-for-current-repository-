@@ -25,6 +25,7 @@ function OUT = sphereplotfromHOA(IN,fs,sphere_cover,start_time,end_time,max_orde
 
 
 if isstruct(IN)
+    IN = choose_from_higher_dimensions(IN,3,1); 
     hoaSignals = IN.audio;
     fs = IN.fs;
     if isfield(IN,'cal')

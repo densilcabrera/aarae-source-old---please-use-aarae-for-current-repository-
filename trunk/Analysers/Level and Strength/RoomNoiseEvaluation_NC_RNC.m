@@ -6,6 +6,7 @@ function out = RoomNoiseEvaluation_NC_RNC(in, fs, cal, showpercentiles)
 % version 0 (not validated yet)
 
 if isstruct(in)
+    in = choose_from_higher_dimensions(in,1,1); 
     audio = in.audio;
     fs = in.fs;
     if isfield(in,'cal')
