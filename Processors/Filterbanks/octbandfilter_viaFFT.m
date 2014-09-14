@@ -185,13 +185,13 @@ if size(audio,3) > 1
 end
 
 if ok == 1
-    chans = size(audio,2);
+    [~,chans,~,dim4,dim5,dim6] = size(audio);
     if zeropad > 0
-        audio = [zeros(zeropad,chans); audio; zeros(zeropad,chans)];
+        audio = [zeros(zeropad,chans,1,dim4,dim5,dim6); audio; zeros(zeropad,chans,1,dim4,dim5,dim6)];
     end
     
     len = size(audio,1);
-    filtered = zeros(len,chans,length(param));
+    filtered = zeros(len,chans,length(param),dim4,dim5,dim6);
         
     if test == 1
         testaudio = zeros(len,1);
@@ -287,13 +287,13 @@ if ok == 1
         end
         
         if (phasemode == 0) || (phasemode == 10)
-            bandfiltered = ifft(repmat(mag,[1,chans]) .* spectrum);
+            bandfiltered = ifft(repmat(mag,[1,chans,1,dim4,dim5,dim6]) .* spectrum);
         elseif (phasemode == -1) || (phasemode == 1)
              % real output only for min phase and max phase
-             bandfiltered = real(ifft(repmat(mag,[1,chans]) .* spectrum));
+             bandfiltered = real(ifft(repmat(mag,[1,chans,1,dim4,dim5,dim6]) .* spectrum));
         elseif (phasemode == -11) || (phasemode == 11)
             % quadrature min and max phase
-             bandfiltered = ifft(repmat(mag,[1,chans]) .* spectrum);
+             bandfiltered = ifft(repmat(mag,[1,chans,1,dim4,dim5,dim6]) .* spectrum);
         else
             disp('Phasemode value not recognized');
             OUT = [];
@@ -304,7 +304,7 @@ if ok == 1
         
         % truncate waveform and send to filtered waveform matrix
 
-            filtered(:,:,b) = bandfiltered(1:len,:);
+            filtered(:,:,b,:,:,:) = bandfiltered(1:len,:,1,:,:,:);
 
         
         
