@@ -35,6 +35,7 @@ function out = spectrogram_simple(in, fs, transposesubplots, winlen, NOVERLAP, d
 % generated.
 
 if isstruct(in)
+    in = choose_from_higher_dimensions(in,3,1);
     audio = in.audio;
     fs = in.fs;
     if isfield(in, 'cal')

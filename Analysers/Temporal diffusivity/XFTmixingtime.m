@@ -28,6 +28,7 @@ else
     param = [];
 end
 if isstruct(IN)
+    IN = choose_from_higher_dimensions(IN,3,1); 
     audio = IN.audio; 
     fs = IN.fs;       
 

@@ -5,6 +5,7 @@ function MultiWavePlot_aarae(in, fs, answer)
 % It calls Christopher Hummersone's multiwaveplot function (2010).
 
 if isstruct(in)
+    in = choose_from_higher_dimensions(in,3,1);
     audio = in.audio;
     fs = in.fs;
     if isfield(in,'bandID')

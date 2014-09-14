@@ -37,6 +37,7 @@ else
     param = [];
 end
 if isstruct(IN) 
+    IN = choose_from_higher_dimensions(IN,2,1);
     audio = IN.audio; % Extract the audio data
     fs = IN.fs;       % Extract the sampling frequency of the audio data
     audio = sum(audio,3); % mixdown bands if present
