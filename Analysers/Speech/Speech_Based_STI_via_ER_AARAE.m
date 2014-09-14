@@ -43,7 +43,7 @@ if nargin ==1
     end
     
     if isstruct(IN) % if the reference signal is a structure
-    
+    IN = choose_from_higher_dimensions(IN,1,1); 
     Reference_Signal = IN.audio; % Extract the audio data
     fs = IN.fs;
     else

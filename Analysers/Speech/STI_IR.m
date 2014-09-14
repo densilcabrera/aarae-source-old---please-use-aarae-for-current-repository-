@@ -275,6 +275,7 @@ if (isstruct(IR) || dialogmode) && nargin < 2
     
     % required data from input structure
     if isstruct(IR)
+        IR = choose_from_higher_dimensions(IR,2,1); 
         data = IR.audio;
         fs = IR.fs;
     end

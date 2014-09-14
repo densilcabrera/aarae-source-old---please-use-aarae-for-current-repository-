@@ -25,6 +25,7 @@ function OUT = sonifyHRIR_CabreraMartens2011(HRIR,fs)
 
 % Interpret input
 if isstruct(HRIR)
+    HRIR = choose_from_higher_dimensions(HRIR,2,1); 
     OUT = HRIR;
     data = squeeze(HRIR.audio(:,:,1)); % discard 3rd dimension if present
     fs = HRIR.fs;

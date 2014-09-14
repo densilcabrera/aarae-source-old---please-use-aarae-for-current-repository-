@@ -14,6 +14,7 @@ function OUT = soundlogger(IN, windowtime, windowhop, tau, weighting, cal, fs)
 % version 0 (30 May 2014)
 
 if isstruct(IN)
+    IN = choose_from_higher_dimensions(IN,3,1); 
     if isfield(IN,'bandID')
         bandID = IN.bandID;
     end

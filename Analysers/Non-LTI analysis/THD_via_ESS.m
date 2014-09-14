@@ -9,43 +9,8 @@ function OUT = THD_via_ESS(IN,nh,ave_or_reg,w,amp,mw,ir_plot,indv_harmonic,ampl_
 % version 0.00 beta (18 June 2014) - mostly works but needs some clean-up
 % to improve AARAE integration.
 
-
-if nargin ==1
-    
-    param = inputdlg({...
-        'Highest Harmonic Order to Evaluate';...
-        'Average THD Over Frequency Bands? 1=Yes 0=No';...
-        'Frequency Bands Per Octave (If THD is Averaged)';...
-        'Amplify Noise by' ;...
-        'Window Size for Noise Floor Comparison (samples)';...
-        'Plot Each Trimmed Pseudo-IR?';...
-        'Plot the Transfer Function of Each Harmonic? 1=Yes 0=No';...
-        'Amplitude Normalisation? 1=Yes 0=No';...
-        'Plot Transfer Function of DUT? 1=Yes 0=No'},...
-        'User Input Parameters',... % window title.
-        [1 60],... %
-        {'6';'0';'24';'1'; '300'; '0';'0';'1';'0'}); % Default values
-    
-    param = str2num(char(param));
-    
-    if length(param) < 9, param = []; end
-    if ~isempty(param) % Assign the dialog's inputs to your function's input parameters.
-        nh = param(1); %Number of harmonics to be evaluated
-        ave_or_reg = param(2); % if==1 the THD will be calculated based on
-        % harmonics whose levels are averaged over the specified frequency band. If=0 the THD will be calculated directly
-        w = param(3); % Width of the frequency band that each harmonic's levels are averaged over.
-        amp = param(4); % Adjusting the amplitude of the silent signal when comparing the IRs to the noise floor. Increasing amp truncates the psuedo IRs.
-        mw = param(5);     %The size of the window used to evaluate the power of the signal compared to the noise floor.
-        ir_plot= param(6); %if==1 the windowed IR or each harmonic is plotted, so the user can validate they are trimmed appropriately.
-        indv_harmonic=param(7); %if==1 the transfer function of each harmonic is plotted
-        ampl_norm=param(8); %if==1 the THD results will be amplitude normalised. This is preferred, however many other methods do not employ it.
-        plot_TF=param(9); %if==1 the linear transfer function of the DUT is plotted
-    end
-    
-    %param = [8;1;6;1;30;300;0;1;1];
-end
-
 if isstruct(IN)
+    IN = choose_from_higher_dimensions(IN,4,1); 
     % Apply scaling based on .cal field value (probably not necessary in
     % this function)
     if isfield(IN,'cal')
@@ -92,6 +57,44 @@ else
 end
 
 
+if nargin ==1
+    
+    param = inputdlg({...
+        'Highest Harmonic Order to Evaluate';...
+        'Average THD Over Frequency Bands? 1=Yes 0=No';...
+        'Frequency Bands Per Octave (If THD is Averaged)';...
+        'Amplify Noise by' ;...
+        'Window Size for Noise Floor Comparison (samples)';...
+        'Plot Each Trimmed Pseudo-IR?';...
+        'Plot the Transfer Function of Each Harmonic? 1=Yes 0=No';...
+        'Amplitude Normalisation? 1=Yes 0=No';...
+        'Plot Transfer Function of DUT? 1=Yes 0=No'},...
+        'User Input Parameters',... % window title.
+        [1 60],... %
+        {'6';'0';'24';'1'; '300'; '0';'0';'1';'0'}); % Default values
+    
+    param = str2num(char(param));
+    
+    if length(param) < 9, param = []; end
+    if ~isempty(param) % Assign the dialog's inputs to your function's input parameters.
+        nh = param(1); %Number of harmonics to be evaluated
+        ave_or_reg = param(2); % if==1 the THD will be calculated based on
+        % harmonics whose levels are averaged over the specified frequency band. If=0 the THD will be calculated directly
+        w = param(3); % Width of the frequency band that each harmonic's levels are averaged over.
+        amp = param(4); % Adjusting the amplitude of the silent signal when comparing the IRs to the noise floor. Increasing amp truncates the psuedo IRs.
+        mw = param(5);     %The size of the window used to evaluate the power of the signal compared to the noise floor.
+        ir_plot= param(6); %if==1 the windowed IR or each harmonic is plotted, so the user can validate they are trimmed appropriately.
+        indv_harmonic=param(7); %if==1 the transfer function of each harmonic is plotted
+        ampl_norm=param(8); %if==1 the THD results will be amplitude normalised. This is preferred, however many other methods do not employ it.
+        plot_TF=param(9); %if==1 the linear transfer function of the DUT is plotted
+    end
+    
+    %param = [8;1;6;1;30;300;0;1;1];
+end
+
+
+
+
 %Colours
 c = [127, 0, 255; % violet
     0, 0, 0; ... % black
@@ -123,7 +126,7 @@ if ~isempty(IR) && ~isempty(fs) && ~isempty(T) && ~isempty(freqs)&& ~isempty(rel
     vzero=ceil(wzero/.975); %Lowest Valid Frequency in the exponential sweep (compensates for sweep fade-in)
     wone=freqs(1,2); %Highest Frequency in the exponential sweep
     vone=ceil(wone*.975); %Highest Valid Frequency in the exponential sweep (compensates for sweep fade-out)
-    
+% CONSIDER ALLOWING THE USER TO FURTHER REDUCE THE FREQUENCY RANGE FROM THIS, TO REDUCE SNR PROBLEMS    
     
     %%%% DETERMINING A REASONABLE LOCATION FOR THE LINEAR IR's PEAK %%%
     
@@ -195,6 +198,7 @@ if ~isempty(IR) && ~isempty(fs) && ~isempty(T) && ~isempty(freqs)&& ~isempty(rel
                     
                     tsf=tsf+1; %Times this loop has searched forward.
                     strt(p,sn)=dirac-(samp_offset+(mw.*tsf)); %buffer to search before the IR
+%THE FOLLOWING LINE CAN RESULT IN ERRORS
                     winltlf=IR(strt(p,sn):strt(p,sn)+mw,chn,1,sn); %a small window before the dirac
                     winnoif=IR(strt(p,sn):strt(p,sn)+mw,chn,1,1);  %a corresponding small window in the quiet sweep
                     
@@ -293,6 +297,7 @@ if ~isempty(IR) && ~isempty(fs) && ~isempty(T) && ~isempty(freqs)&& ~isempty(rel
         mat_in=ceil((big_mat-mid_mat)/2);
         mat_out=big_mat-mat_in-1;
         
+%THE FOLLOWING LINE CAN RESULT IN ERRORS
         Harmonic_Seg=Harmonic_Seg(mat_in:mat_out,:,:); %resizing the matrix
         
         %create a frequencies vector to normalise each harmonic to it's

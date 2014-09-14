@@ -10,6 +10,7 @@ function out = octave_band_level_barplot(in, fs, cal, showpercentiles, flo, fhi,
 % version 1.01 (28 July 2014)
 
 if isstruct(in)
+    in = choose_from_higher_dimensions(in,3,1); 
     audio = in.audio;
     fs = in.fs;
     if isfield(in,'cal')

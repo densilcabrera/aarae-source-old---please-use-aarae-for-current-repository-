@@ -109,6 +109,7 @@ function output=TN_LeeCabreraMartensJASA2012(RIR, level, ERdB_User)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 if isstruct(RIR)
+    RIR = choose_from_higher_dimensions(RIR,3,1); 
     data = RIR.audio;
     fs = RIR.fs;
     

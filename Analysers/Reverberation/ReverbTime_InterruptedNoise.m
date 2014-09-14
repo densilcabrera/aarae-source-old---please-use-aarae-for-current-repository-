@@ -50,6 +50,7 @@ else
 end
 
 if isstruct(IN)
+    IN = choose_from_higher_dimensions(IN,3,1); 
     audio = IN.audio; % Extract the audio data
     fs = IN.fs;       % Extract the sampling frequency of the audio data
 %     if isfield(IN,'audio3')

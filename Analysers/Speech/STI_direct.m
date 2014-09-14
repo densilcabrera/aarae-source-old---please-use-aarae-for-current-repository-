@@ -38,6 +38,7 @@ function out = STI_direct(in, fs, cal, refsignal, AuditoryMasking, doplot, doref
 
 % INPUTS AND SETTINGS
 if isstruct(in)
+    in = choose_from_higher_dimensions(in,2,1); 
     audio = in.audio;
     fs = in.fs;   
     if isfield(in,'cal')

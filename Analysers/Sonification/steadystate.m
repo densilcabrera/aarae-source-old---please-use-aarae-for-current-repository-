@@ -30,6 +30,7 @@ if nargin < 3
     end
 end
 if isstruct(in)
+    in = choose_from_higher_dimensions(in,2,1); 
     data = in.audio;
     fs = in.fs;
 else

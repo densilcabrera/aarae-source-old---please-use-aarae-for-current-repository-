@@ -42,6 +42,7 @@ function OUT = rippleplotfromHOA(IN,fs,planechoice,start_time,end_time,max_order
 % work out a good way of displaying radial axis values
 
 if isstruct(IN)
+    IN = choose_from_higher_dimensions(IN,3,1); 
     hoaSignals = IN.audio;
     fs = IN.fs;
     if isfield(IN,'cal')

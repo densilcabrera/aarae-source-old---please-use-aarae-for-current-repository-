@@ -120,6 +120,13 @@ function out = ReverberationTime_IR1(data,fs,startthresh,bpo,doplot,filterstreng
 
 
 if isstruct(data)
+    % AARAE's check dimensions utility to make a partial selection of data
+    % if it has more dimensions than this analyser can deal with. The
+    % second argument is the maximum number of dimensions that the analyser
+    % can handle, and the third argument determines whether a dialog box is
+    % used for selection. If the number of dimensions in the input is ok
+    % then no change is made.
+    data = choose_from_higher_dimensions(data,3,1); 
     ir = data.audio;
     fs = data.fs;
     if size(ir,3)>1
