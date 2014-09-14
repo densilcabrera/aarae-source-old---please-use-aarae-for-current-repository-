@@ -6,6 +6,7 @@ function out = LevelStats(inputwave,tau,cal,weight)
 % version 1.01 (21 March 2014)
 
 if isstruct(inputwave)
+    inputwave = choose_from_higher_dimensions(inputwave,3,1);
     audio = inputwave.audio;
     fs = inputwave.fs;
     if isfield(inputwave,'bandID')

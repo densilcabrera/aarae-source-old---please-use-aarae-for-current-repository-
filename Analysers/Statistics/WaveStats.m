@@ -1,6 +1,7 @@
 function WS = WaveStats(IN)
 % returns simple overall statistics of the input wave(s)
 if isstruct(IN)
+    IN = choose_from_higher_dimensions(IN,3,1);
     inputwave = IN.audio;
     fs = IN.fs;
     if isfield(IN,'bandID')
