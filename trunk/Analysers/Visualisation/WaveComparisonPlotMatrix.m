@@ -13,6 +13,7 @@ function OUT = WaveComparisonPlotMatrix(in,fs,lagadjust)
 % Version 1.01 (5 December 2013)
 
 if isstruct(in)
+    in = choose_from_higher_dimensions(in,3,1);
     audio = in.audio;
     fs = in.fs;
     if isfield(in,'bandID')

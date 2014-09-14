@@ -5,6 +5,7 @@ function OUT = spectrogram_2chancolor(in, fs, transposesubplots, winlen, NOVERLA
 % Code by Densil Cabrera
 % Version 1.0 (19 October 2013)
 if isstruct(in)
+    in = choose_from_higher_dimensions(in,2,1);
     audio = in.audio;
     fs = in.fs;
 else

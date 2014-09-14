@@ -55,6 +55,7 @@ function out = DiffusenessHanyuISRA2013(IR, fs, startindex, endindex, doplot, th
 % Check the input data
 
 if isstruct(IR)
+    IR = choose_from_higher_dimensions(IR,3,1); 
     % if the first input is a structure, then dialog boxes may be used for
     % user controls
     % required fields from input structure

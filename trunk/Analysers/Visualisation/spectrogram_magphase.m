@@ -46,6 +46,7 @@ function out = spectrogram_magphase(in, fs, transposesubplots, winlen, NOVERLAP,
 % version 0 (work in progress!) 26 July 2014
 
 if isstruct(in)
+    in = choose_from_higher_dimensions(in,2,1);
     audio = in.audio;
     fs = in.fs;
     if isfield(in, 'cal')

@@ -28,6 +28,7 @@ if nargin < 3
     end
 end
 if isstruct(in)
+    in = choose_from_higher_dimensions(in,3,1);
     audio = in.audio;
     fs = in.fs;
     if isfield(in, 'cal')

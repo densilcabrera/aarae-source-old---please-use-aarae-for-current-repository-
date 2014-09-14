@@ -33,6 +33,7 @@ if nargin < 2
     end
 end
 if isstruct(in)
+    in = choose_from_higher_dimensions(in,3,1);
     audio = in.audio;
     if isfield(in, 'cal')
        cal = in.cal; % get the calibration offset from the input structure
@@ -41,26 +42,12 @@ else
     audio = in;
 end
 
-S = size(audio); % size of the IR
-ndim = length(S); % number of dimensions
-switch ndim
-    case 1
-        len = S(1); % number of samples in IR
-        chans = 1; % number of channels
-        bands = 1; % number of bands
-    case 2
-        len = S(1); % number of samples in IR
-        chans = S(2); % number of channels
-        bands = 1; % number of bands
-    case 3
-        len = S(1); % number of samples in IR
-        chans = S(2); % number of channels
-        bands = S(3); % number of bands
-end
+[len,chans,bands] = size(audio); 
+
 
 % apply calibration factor if it has been provided
 if exist('cal','var')
-    audio = audio .* 10.^(repmat(cal,[len,1,bands])/20);
+    audio = cal_reset_aarae(audio,0,cal);
 end
 
 if normdist
