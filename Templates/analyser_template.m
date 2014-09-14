@@ -60,7 +60,19 @@ end
 % *************************************************************************
 if isstruct(IN) % You should check that the function is being called within
                 % the AARAE environment, if so, you can extract the
-                % information you need to run your processor.
+                % information you need to run your processor. Audio in
+                % AARAE is in a Matlab structure (hence the isstruct test).
+                
+    % AARAE audio data can have up to 6 dimension, but most analysers cannot 
+    % handle all of those dimensions. The following utility function call
+    % reduces the number of dimensions in the audio field of the input 
+    % structure if they are greater than the second input argument (3 in
+    % the example below). For further information see the comments in
+    % choose_from_higher_dimensions in AARAE's utilities directory. Unless
+    % there is a reason not to, it is usually a good idea to support
+    % analysis of the first three dimensions.
+    IN = choose_from_higher_dimensions(IN,3,1); 
+    
     audio = IN.audio; % Extract the audio data
     fs = IN.fs;       % Extract the sampling frequency of the audio data
     
@@ -74,6 +86,8 @@ if isstruct(IN) % You should check that the function is being called within
     % exiting from the function
     if isfield(IN,'cal') % Get the calibration offset if it exists
         cal = IN.cal;
+        % Note that the aarae basic processor cal_reset_aarae could be
+        % called here. However, in this template it is called later.
     else
         % Here is an example of how to exit the function with a warning
         % message
