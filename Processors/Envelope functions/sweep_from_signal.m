@@ -22,6 +22,7 @@ function [OUT, varargout] = sweep_from_signal(IN, hiF, loF, Duration, smoothval,
 
 
 if isstruct(IN)
+    IN = choose_from_higher_dimensions(IN,1,1); % only 1-D data allowed
     signal = IN.audio;
     fs = IN.fs;
 else
@@ -71,15 +72,15 @@ if ~isempty(signal) && ~isempty(fs)
     [len,chans,bands] = size(signal);
     
     
-    if bands > 1
-        signal = sum(signal,3);
-        disp('Multiband audio has been mixed into a single band')
-    end
+        if bands > 1
+            signal = sum(signal,3);
+            disp('Multiband audio has been mixed into a single band')
+        end
     
-    if chans > 1
-        signal = mean(signal,2);
-        disp('Multichannel audio has been mixed')
-    end
+        if chans > 1
+            signal = mean(signal,2);
+            disp('Multichannel audio has been mixed')
+        end
     
     if ~isreal(signal)
         signal = abs(signal).*cos(angle(signal));
