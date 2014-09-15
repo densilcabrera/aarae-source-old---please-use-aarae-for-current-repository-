@@ -67,7 +67,7 @@ if ~isempty(in)&& ~isempty(fs) && ~isempty(filterlength) && ~isempty(invmode) &&
         for d5 = 1:dim5
             for d6 = 1:dim6
                 for b = 1:bands
-                    h(:,:,b) = hilbert(audio(:,:,b,d4,d5,d6));
+                    h(:,:,b,:,:,:) = hilbert(audio(:,:,b,d4,d5,d6));
                 end
             end
         end
