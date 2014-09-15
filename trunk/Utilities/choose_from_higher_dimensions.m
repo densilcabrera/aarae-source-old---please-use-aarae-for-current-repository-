@@ -16,10 +16,35 @@ function OUT = choose_from_higher_dimensions(IN,maxdim,method)
 % However, many analysers are not suitable for analysing 6-dimensional
 % data, and may be better suited to analysing a subset.
 %
+% This function offers three solutions to the problem ('method'):
+%
+% METHOD = 1
 % If the number of dimensions of the intput audio is less than or equal to
 % maxdim, then the input is returned to the output without any change.
-% Otherwise either a dialog box is used for user selection, or if method==0
-% then only the first index in each higher dimension is chosen.
+% Otherwise either a dialog box is used for user selection
+%
+% METHOD = 0
+% Only the first index in each higher dimension is chosen - except for
+% dimension 4, for which the last index is used (to avoid selecting the
+% cycle with -inf dB gain). There is no dialog box.
+%
+% METHOD = -1 
+% Audio is reshaped to fit the dimension limitations specified by maxdim
+% (i.e., all audio will be returned, rather than a subset of it). Where
+% possible, reshaping is done to extend dimension 2 (channels). There is no
+% dialog box. It is probably not a good idea to use this approach with
+% multiband (dimension 3, if maxdim < 3) data - it may be better to mixdown
+% multiband data prior to calling this function. Also, using this with
+% maxdim = 1 could cause many problems (but might be of some use in special
+% cases)! Therefore, in general it is best to write analysers capable of
+% dealing with at least the first three dimensions of audio (so that maxdim
+% >= 3).
+%
+% It is anticipated that a user setting will be added to AARAE that will
+% override the third input argument (method) if the user chooses to do so,
+% thereby taking control of the method away from the function call in the
+% analyser. This is not implemented yet.
+
 
 
 % default settings
@@ -76,14 +101,21 @@ if maxdim == 1 && Sz(2) == 1
     return
 end
     
+% Override 3rd input argument (not implemented yet)
+% if strcmp(handles.Settings.extradims,'Reshape Data')
+%     method = -1;
+% end
+    
 
 % If we get here, then we do need to do something
 nonsingleton = Sz>1; % non singleton dimensions
 nonsingleton = [nonsingleton,zeros(1,6-length(Sz))];
-nonsingleton(1:maxdim) = 0; % don't worry about dims >= maxdim
+nonsingleton(1:maxdim) = 0; % don't worry about dims <= maxdim
 numberofdimstochange = sum(nonsingleton);
 if method == 0
-    % take the first index of each excess dimension
+    % take the first index of each excess dimension, except dimension 4,
+    % where we take the last index (because of its use for variable gain in
+    % multicycle tests - including the silent cycle which is always first)
     if nonsingleton(2)
         audio = audio(:,1,:,:,:,:);
         if exist('chanID','var')
@@ -100,12 +132,12 @@ if method == 0
         end
     end
     if nonsingleton(4)
-        audio = audio(:,:,:,1,:,:);
+        audio = audio(:,:,:,end,:,:);
         if exist('startflag','var')
-            startflag = startflag(1);
+            startflag = startflag(end);
         end
         if exist('relgain','var')
-            relgain = relgain(1);
+            relgain = relgain(end); % should be 0 dB
         end
     end
     if nonsingleton(5)
@@ -114,8 +146,81 @@ if method == 0
     if nonsingleton(6)
         audio = audio(:,:,:,:,:,1);
     end
+    
+    
 elseif method ==-1
-    % reshape the audio into channels (not implemented yet)
+    % reshape the audio into maxdim
+    [d1,d2,d3,d4,d5,d6] = size(audio);
+    switch maxdim
+        case 1
+            % This is usually not be a good idea!! It would be better to make
+            % sure the analyser can deal with more dimensions (ideally at least 3)
+            % Furthermore, with impulse response analysis, there could be
+            % big problems with reshaping to one dimension.
+            audio = reshape(audio, [d1*d2*d3*d4*d5*d6,1]);
+            chanID = {'allchans'};
+            if isfield(IN,'cal')
+                if sum(abs(diff(cal,2))) == 0
+                    cal = cal(1);
+                else
+                    IN = rmfield(IN,'cal');
+                end
+            end
+            if isfield(IN,'bandID')
+                IN = rmfield(IN,'bandID');
+            end
+            
+        case 2
+            % This also is usually not a good idea for multiband audio!!
+            % In many cases it would be better to mix down bands prior to
+            % calling this function if the 3rd dimension cannot be used
+            audio = reshape(audio,[d1,d2*d3*d4*d5*d6]);
+            if isfield(IN,'chanID')
+                chanID = repmat(chanID,[d3*d4*d5*d6,1]);
+            end
+            if isfield(IN,'cal')
+                cal = repmat(cal(:),[d3*d4*d5*d6,1])';
+            end
+            if isfield(IN,'bandID')
+                IN = rmfield(IN,'bandID');
+            end
+        case 3
+            % reshape into channels
+            audio = reshape(audio,[d1,d2*d4*d5*d6,d3]);
+            % need to rewrite chanIDs
+            % need to deal with HOA chan format issues within analysers
+            if isfield(IN,'chanID')
+                chanID = repmat(chanID,[d4*d5*d6,1]);
+            end
+            if isfield(IN,'cal')
+                cal = repmat(cal(:),[d4*d5*d6,1])';
+            end
+        case 4
+            % reshape into channels
+            audio = reshape(audio,[d1,d2*d5*d6,d3,d4]);
+            if isfield(IN,'chanID')
+                chanID = repmat(chanID,[d5*d6,1]);
+            end
+            if isfield(IN,'cal')
+                cal = repmat(cal(:),[d5*d6,1])';
+            end
+        case 5
+            % reshape into channels
+            audio = reshape(audio,[d1,d2*d6,d3,d4,d5]);
+            if isfield(IN,'chanID')
+                chanID = repmat(chanID,[d6,1]);
+            end
+            if isfield(IN,'cal')
+                cal = repmat(cal(:),[d6,1])';
+            end
+        case 6
+            % everything is fine - no need to do anything
+        otherwise
+            disp('Unrecognized maxdim value in choose_from_higher_dimensions (AARAE utility)')
+    end
+    
+    
+    
 else % method = 1 (or anything else)
     % prompt user for choice of indices in higher dimensions
     prompt = cell(1,numberofdimstochange);
