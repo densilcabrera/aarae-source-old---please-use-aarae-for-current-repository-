@@ -60,11 +60,17 @@ else
     end
 end
 if ~isempty(in)&& ~isempty(fs) && ~isempty(filterlength) && ~isempty(invmode) && ~isempty(doplot)
-    [len, chans, bands] = size(audio);
+    [len, chans, bands,dim4,dim5,dim6] = size(audio);
 
-    h = zeros(len, chans, bands);
-    for b = 1:bands
-        h(:,:,b) = hilbert(audio(:,:,b));
+    h = zeros(len, chans, bands,dim4,dim5,dim6);
+    for d4 = 1:dim4
+        for d5 = 1:dim5
+            for d6 = 1:dim6
+                for b = 1:bands
+                    h(:,:,b) = hilbert(audio(:,:,b,d4,d5,d6));
+                end
+            end
+        end
     end
 
     envelope1 = abs(h);
@@ -73,7 +79,7 @@ if ~isempty(in)&& ~isempty(fs) && ~isempty(filterlength) && ~isempty(invmode) &&
     if filterlength > 0
     envelope2 = filtfilt(ones(1,filterlength)/filterlength, 1, envelope1);
     elseif invmode == 0
-        envelope2 = ones(len, chans, bands);
+        envelope2 = ones(len, chans, bands,dim4,dim5,dim6);
     else
         envelope2 = envelope1;
     end
@@ -93,20 +99,21 @@ if ~isempty(in)&& ~isempty(fs) && ~isempty(filterlength) && ~isempty(invmode) &&
     end
 
     if doplot
-        ymix = mean(y,3); % mixdown of bands if multiband
-        sound(ymix./max(max(abs(ymix))),fs)
+        ymix = sum(sum(sum(mean(y,3),4),5),6); % mixdown of bands if multiband
+        sound(ymix./(max(max(abs(ymix)))),fs)
         t = ((1:len)'-1)/fs;
         figure('Name', 'Hilbert envelope smoothing')
         k = 1; % subplot counter
 
         for ch = 1:chans
             for b = 1:bands
+                
                 subplot(chans,bands,k)
                 hold on
-                plot(t,audio(:,ch,b),'Color',[0.7 0.7 0.7])
-                plot(t,y(:,ch,b),'Color',[0.3 0.3 0.3])
-                plot(t,envelope1(:,ch,b),'r')
-                plot(t,envelope2(:,ch,b),'b')
+                plot(t,mean(mean(mean(audio(:,ch,b,:,:,:),4),5),6),'Color',[0.7 0.7 0.7])
+                plot(t,mean(mean(mean(y(:,ch,b,:,:,:),4),5),6),'Color',[0.3 0.3 0.3])
+                plot(t,mean(mean(mean(envelope1(:,ch,b,:,:,:),4),5),6),'r')
+                plot(t,mean(mean(mean(envelope2(:,ch,b,:,:,:),4),5),6),'b')
                 if ch == chans
                     xlabel('Time (s)')
                 end
@@ -118,6 +125,7 @@ if ~isempty(in)&& ~isempty(fs) && ~isempty(filterlength) && ~isempty(invmode) &&
                 end
                 hold off
                 k = k+1;
+                end
             end
         end
     end

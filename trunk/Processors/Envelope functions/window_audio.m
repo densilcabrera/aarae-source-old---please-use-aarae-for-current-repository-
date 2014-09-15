@@ -36,22 +36,7 @@ else
 end
 
 if ~isempty(data) && ~isempty(fs) && ~isempty(winchoice) && ~isempty(halfwin) && ~isempty(doplay)
-    S = size(data); % size of the audio
-    ndim = length(S); % number of dimensions
-    switch ndim
-        case 1
-            len = S(1); % number of samples in audio
-            chans = 1; % number of channels
-            bands = 1; % number of bands
-        case 2
-            len = S(1); % number of samples in audio
-            chans = S(2); % number of channels
-            bands = 1; % number of bands
-        case 3
-            len = S(1); % number of samples in audio
-            chans = S(2); % number of channels
-            bands = S(3); % number of bands
-    end
+[len,chans,bands,dim4,dim5,dim6] = size(data);
 
     if abs(halfwin) == 1
         wlen = 2*len;
@@ -68,7 +53,7 @@ if ~isempty(data) && ~isempty(fs) && ~isempty(winchoice) && ~isempty(halfwin) &&
             wf = flipud(wf(1:len));
     end
 
-    y = data .* repmat(wf,[1,chans,bands]);
+    y = data .* repmat(wf,[1,chans,bands,dim4,dim5,dim6]);
     
     if isstruct(in)
         OUT.audio = y;
@@ -100,7 +85,7 @@ if ~isempty(data) && ~isempty(fs) && ~isempty(winchoice) && ~isempty(halfwin) &&
                 'Plot spectrogram', 'Save wav file', 'Discard', 'Done');
             switch choice
                 case 1
-                    ysumbands = sum(y,3);
+                    ysumbands = mean(mean(mean(sum(y,3),4),5),6);
                     sound(ysumbands./max(max(abs(ysumbands))),fs)
                 case 2
                     plot_wave_simple(y, fs)
@@ -109,7 +94,7 @@ if ~isempty(data) && ~isempty(fs) && ~isempty(winchoice) && ~isempty(halfwin) &&
                     spectrogram_simple(y,fs);
                 case 4
                     [filename, pathname] = uiputfile({'*.wav'},'Save as');
-                    ysumbands = sum(y,3);
+                    ysumbands = mean(mean(mean(sum(y,3),4),5),6);
                     if max(max(abs(ysumbands)))>1
                         ysumbands = ysumbands./max(max(abs(ysumbands)));
                         disp('Wav data has been normalized to avoid clipping')

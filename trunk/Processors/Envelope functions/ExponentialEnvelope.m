@@ -44,13 +44,13 @@ else
 end
 
 if ~isempty(audio) && ~isempty(fs) && ~isempty(exponent) && ~isempty(normalize)
-    [len, chans, bands] = size(audio);
+    [len, chans, bands,dim4,dim5,dim6] = size(audio);
 
     t = (0:(len-1))./fs; % time in s
     envelope = exp(exponent.*t)';
-    audio = audio .* repmat(envelope, [1,chans,bands]);
+    audio = audio .* repmat(envelope, [1,chans,bands,dim4,dim5,dim6]);
     if normalize
-        audio = audio ./ max(max(max(abs(audio))));
+        audio = audio ./ max(max(max(max(max(max(abs(audio)))))));
     end
     
     if isstruct(in)

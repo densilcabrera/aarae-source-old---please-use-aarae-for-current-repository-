@@ -57,7 +57,7 @@ else
 end
 
 if ~isempty(audio) && ~isempty(fs)
-    [len, chans, bands] = size(audio);
+    [len, chans, bands,dim4,dim5,dim6] = size(audio);
     if ~exist('bandID','var')
         bandID = 1:bands;
     end
@@ -70,18 +70,24 @@ if ~isempty(audio) && ~isempty(fs)
     
     Tstart = floor(abs(start_time * fs));
     decaycurve = flipdim(10*log10(cumsum(flipdim(audio.^2,1))+1e-300),1);
-    decaycurve = decaycurve - repmat(decaycurve(1,:,:),[len,1,1]);
+    decaycurve = decaycurve - repmat(decaycurve(1,:,:,:,:,:),[len,1,1,1,1,1]);
     slope = zeros(chans, bands);
     for ch = 1:chans
         for b = 1:bands
-            p = polyfit((Tstart:Tend)'./fs, decaycurve(Tstart:Tend,ch,b),1); %linear regression
-            slope(ch,b) = p(1);
+            for d4 = 1:dim4
+                for d5 = 1:dim5
+                    for d6 = 1:dim6
+            p = polyfit((Tstart:Tend)'./fs, decaycurve(Tstart:Tend,ch,b,d4,d5,d6),1); %linear regression
+            slope(ch,b,d4,d5,d6) = p(1);
+                    end
+                end
+            end
         end
     end
     T = -60 ./ slope;
     tau1 = T ./ (log(60));
-    tau1 = permute(tau1,[3,1,2]);
-     audio_out = audio .* exp((repmat((0:len-1)',[1,chans, bands])./fs)./repmat(tau1,[len,1,1]));
+    tau1 = permute(tau1,[6,1,2,3,4,5]);
+     audio_out = audio .* exp((repmat((0:len-1)',[1,chans, bands,dim4,dim5,dim6])./fs)./repmat(tau1,[len,1,1,1,1,1]));
     
     if isstruct(IN)
         OUT.audio = audio_out;
