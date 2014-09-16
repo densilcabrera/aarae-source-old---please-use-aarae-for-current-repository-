@@ -20,7 +20,7 @@ if ~isempty(param)
 
     if ok == 1 && ~isempty(S)
         try
-            out.audio = in.audio(:,:,S);
+            out.audio = in.audio(:,:,S,:,:,:);
             if isfield(in,'bandID')
                 out.bandID = in.bandID(S);
             else

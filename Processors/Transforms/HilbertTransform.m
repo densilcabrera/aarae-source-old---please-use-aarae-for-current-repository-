@@ -19,11 +19,17 @@ method = menu('Output Format', ...
               'Absolute value');
 end
 % Matlab's hilbert() seems to only work on up to 2-dimensional data,
-% hence the following loop to allow for 3 dimensions
-[len,chans,bands] = size(in.audio);
-transformed = zeros(len,chans,bands);
+% hence the following loop to allow for 6 dimensions
+[len,chans,bands,dim4,dim5,dim6] = size(in.audio);
+transformed = zeros(len,chans,bands,dim4,dim5,dim6);
 for b = 1:bands
-    transformed(:,:,b) = hilbert(in.audio(:,:,b));
+    for d4 = 1:dim4
+        for d5 = 1:dim5
+            for d6 = 1:dim6
+    transformed(:,:,b,d4,d5,d6) = hilbert(in.audio(:,:,b,d4,d5,d6));
+            end
+        end
+    end
 end
 
 switch method

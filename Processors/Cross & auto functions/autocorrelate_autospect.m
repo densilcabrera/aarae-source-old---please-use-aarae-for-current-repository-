@@ -17,7 +17,7 @@ spectrum = fft(in.audio,fftlen);
 out = ifft(spectrum .* conj(spectrum));
 
 % normalize
-out = out ./ repmat(out(1,:,:),[fftlen,1,1]);
+out = out ./ repmat(out(1,:,:,:,:,:),[fftlen,1,1,1,1,1]);
 
 if isstruct(in)
     OUT.audio = out;

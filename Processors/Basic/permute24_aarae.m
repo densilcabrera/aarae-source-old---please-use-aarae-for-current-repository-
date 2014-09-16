@@ -4,7 +4,7 @@ function out = permute24_aarae(in)
 % Code by Densil Cabrera
 % version 1.0 (2 August 2014)
 if ndims(in.audio) > 1
-    out.audio = permute(in.audio,[1,4,3,2]);
+    out.audio = permute(in.audio,[1,4,3,2,5,6]);
     
     if isfield(in,'dim4ID')
         if iscell(in.dim4ID)

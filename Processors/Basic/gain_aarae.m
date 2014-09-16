@@ -39,9 +39,9 @@ if ~isempty(answer)
     out.audio = in.audio;
     indices = partial_selection(in);
     if gain == 'n'
-        % normalize column channel individually
+        % normalize column individually
         maxval = max(abs(in.audio(indices{:})));
-        out.audio(indices{:}) = in.audio(indices{:}) ./ repmat(maxval,[length(in.audio(indices{:})),1,1]);
+        out.audio(indices{:}) = in.audio(indices{:}) ./ repmat(maxval,[length(in.audio(indices{:})),1,1,1,1,1]);
     elseif ~isempty(gain(gain == 'i'))
         gain = str2double(gain);
         out.audio(indices{:}) = in.audio(indices{:}) * gain;

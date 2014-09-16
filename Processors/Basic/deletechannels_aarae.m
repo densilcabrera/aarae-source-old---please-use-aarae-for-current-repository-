@@ -37,7 +37,7 @@ if ~isempty(param)
     if ok == 1 && ~isempty(S)
         try
             out = in;
-            out.audio = in.audio(:,S,:);
+            out.audio = in.audio(:,S,:,:,:,:);
             if isfield(in,'chanID') && length(in.chanID) == size(in.audio,2)
                 out.chanID = in.chanID(S);
                 if isfield(in,'cal')

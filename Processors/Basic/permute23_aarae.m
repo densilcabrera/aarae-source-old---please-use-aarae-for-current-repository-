@@ -6,7 +6,7 @@ function out = permute23_aarae(in)
 % Code by Densil Cabrera & Daniel Jimenez
 % version 1.0 (5 November 2013)
 if ndims(in.audio) > 2
-    out.audio = permute(in.audio,[1,3,2]);
+    out.audio = permute(in.audio,[1,3,2,4,5,6]);
 
     if isfield(in,'bandID')
         out.chanID = cellstr(num2str(in.bandID'));
