@@ -124,17 +124,24 @@ mic2HoaOpt.lowPassFreq   = 22000 ;
 
 mic2HoaCfg = Mic2HoaEncodingFilters(hoaFmt,micFmt,mic2HoaOpt);
 
-hoaSignals = zeros(length(trimmedIRs),hoaFmt.nbComp);
-
-for I = 1:size(trimmedIRs,2);
-    for J = 1:hoaFmt.nbComp;
-        % revisar si se puede hacer matricial
-        hoaSignals(:,J) = hoaSignals(:,J) + fftfilt(mic2HoaCfg.filters.firMatrix(:,J,I),trimmedIRs(:,I));
-        
+[len,~,bands,dim4,dim5,dim6] = size(trimmedIRs);
+hoaSignals = zeros(len,hoaFmt.nbComp,bands,dim4,dim5,dim6);
+for d6=1:dim6
+    for d5 = 1:dim5
+        for d4 = 1:dim4
+            for b = 1:bands
+                for I = 1:size(trimmedIRs,2);
+                    for J = 1:hoaFmt.nbComp;
+                        % revisar si se puede hacer matricial
+                        hoaSignals(:,J,b,d4,d5,d6) =...
+                            hoaSignals(:,J,b,d4,d5,d6) +...
+                            fftfilt(mic2HoaCfg.filters.firMatrix(:,J,I),trimmedIRs(:,I,b,d4,d5,d6));
+                    end
+                end
+            end
+        end
     end
 end
-
-
 
 
 if isstruct(IN)

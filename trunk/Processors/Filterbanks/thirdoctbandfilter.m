@@ -34,21 +34,23 @@ function [OUT,varargout] = thirdoctbandfilter(IN,fs,param)
             content = load([cd '/Processors/Filterbanks/' num2str(fs) 'Hz/ThirdOctaveBandFilterBank.mat']);
             filterbank = content.filterbank;
             centerf = zeros(size(param));
+            filtered = zeros(size(audio,1),size(audio,2),length(param),...
+            size(audio,4),size(audio,5),size(audio,6));
             for i = 1:length(param)
-                for j = 1:size(audio,2)
+                
                     centerf(i) = param(1,i);
-                    filtered(:,j,i) = filter(filterbank(1,S(1,i)),audio(:,j));
-                end
+                    filtered(:,:,i,:,:,:) = filter(filterbank(1,S(1,i)),audio(:,:,1,:,:,:));
+                
             end
         else
             F0 = param;
             centerf = zeros(size(param));
             for i = 1:length(param)
-                for j = 1:size(audio,2)
+
                     centerf(i) = param(1,i);
                     filterbank = thirdoctband(B, N, adjustF0(F0(i)), fs);
-                    filtered(:,j,i) = filter(filterbank,audio(:,j));
-                end
+                    filtered(:,:,i,:,:,:) = filter(filterbank,audio(:,:,1,:,:,:));
+                
             end 
         end
     else

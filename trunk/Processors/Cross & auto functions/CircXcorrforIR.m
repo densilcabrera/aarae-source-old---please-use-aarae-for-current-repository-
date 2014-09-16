@@ -104,17 +104,17 @@ else
     param = [];
 end
 
-[len, chans, bands, dim4] = size(audio);
+[len, chans, bands, dim4,dim5,dim6] = size(audio);
 
 % Stack IRs in dimension 4 if AARAE's multi-cycle mode was used
 if isfield(IN,'properties')
     if isfield(IN.properties,'startflag') && dim4==1
         startflag = IN.properties.startflag;
         dim4 = length(startflag);
-        audiotemp = zeros((cycles+1)*len2,chans,bands,dim4);
+        audiotemp = zeros((cycles+1)*len2,chans,bands,dim4,dim5,dim6);
         for d=1:dim4
-            audiotemp(:,:,:,d) = ...
-                audio(startflag(d):startflag(d)+(cycles+1)*len2-1,:,:);
+            audiotemp(:,:,:,d,:,:) = ...
+                audio(startflag(d):startflag(d)+(cycles+1)*len2-1,:,:,1,:,:);
         end
     end
 end
@@ -124,7 +124,7 @@ if exist('audiotemp','var')
 end
 
 if d2stack == 1 && chans == 1 && dim4 > 1
-    audio = permute(audio,[1,4,3,2]);
+    audio = permute(audio,[1,4,3,2,5,6]);
     chans = dim4;
     dim4 = 1;
     chanID = cellstr([repmat('IR ',size(audio,2),1) num2str((1:size(audio,2))')]);
@@ -138,25 +138,25 @@ audio = circshift(audio,offset);
 endindextail = len2 * (cycles+1);
 startindextail = 1 + endindextail - len2;
 if endindextail <= len 
-    audio(startindextail:endindextail,:,:,:) = ...
-        audio(startindextail:endindextail,:,:,:) +...
-        audio(1:len2,:,:,:);
+    audio(startindextail:endindextail,:,:,:,:,:) = ...
+        audio(startindextail:endindextail,:,:,:,:,:) +...
+        audio(1:len2,:,:,:,:,:);
 elseif cycles > 2
     % remove 1 cycle because audio is too short
     cycles = cycles-1;
 else
     % zero pad end (not a great solution)
-    audio = [audio;zeros(len,chans,bands,dim4)];
+    audio = [audio;zeros(len,chans,bands,dim4,dim5,dim6)];
 end
 
-invfiltspect = repmat(fft(audio2),[1,chans,bands,dim4]);
-ir = zeros(len2,chans,bands,dim4);
+invfiltspect = repmat(fft(audio2),[1,chans,bands,dim4,dim5,dim6]);
+ir = zeros(len2,chans,bands,dim4,dim5,dim6);
 cyclecount = 0;
 for n = 2:cycles
     endindex = len2 * n;
     startindex = 1 + endindex - len2;
     if startindex >= 1 && endindex <= len
-        ir = ir + (ifft(fft(audio(startindex:endindex,:,:,:)) ...
+        ir = ir + (ifft(fft(audio(startindex:endindex,:,:,:,:,:)) ...
             .* invfiltspect));
         cyclecount = cyclecount+1;
     end
@@ -172,8 +172,8 @@ end
 ir=circshift(ir,1);
 
 if combinehalves == 1
-    ir(1:end/2,:,:,:) = ir(1:end/2,:,:,:) - ir(end/2+1:end,:,:,:);
-    ir = ir(1:end/2,:,:,:);
+    ir(1:end/2,:,:,:,:,:) = ir(1:end/2,:,:,:,:,:) - ir(end/2+1:end,:,:,:,:,:);
+    ir = ir(1:end/2,:,:,:,:,:);
 end
 
 if isstruct(IN)

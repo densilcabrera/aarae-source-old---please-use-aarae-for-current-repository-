@@ -26,9 +26,16 @@ if ~isempty(newfs)
     end
     for i = 1:size(in.audio,2)
         for j = 1:size(in.audio,3)
-            out.audio(:,i,j) = resample(in.audio(:,i,j), newfs, fs, n);
+            for k = 1:size(in.audio,4)
+                for l = 1:size(in.audio,5)
+                    for m = 1:size(in.audio,6)
+            out.audio(:,i,j,k,l,m) = resample(in.audio(:,i,j,k,l,m), newfs, fs, n);
+                    end
+                end
+            end
         end
     end
+%    out.audio = resample(in.audio, newfs, fs, n); % this reshapes to 2D
     if numtracks > 1
         for tracknum = 2:numtracks
             for i = 1:size(in.(genvarname(['audio' num2str(tracknum)])),2)

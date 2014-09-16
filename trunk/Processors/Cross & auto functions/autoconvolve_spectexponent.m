@@ -94,14 +94,14 @@ spectrum = fft(audio,fftlen).^exponent;
 % lowpass filter
 if (hiF < Nyquist) && (hiF > loF)  && (hiF > 0)
     hicomponent = ceil(hiF / (in.fs / fftlen)) + 1;
-    spectrum(hicomponent:fftlen - hicomponent+2,:,:) = 0;
+    spectrum(hicomponent:fftlen - hicomponent+2,:,:,:,:,:) = 0;
 end
 
 % hipass filter
 if (loF > 0) && (loF < hiF) && (loF < Nyquist)
     locomponent = floor(loF / (fs / fftlen)) + 1;
-    spectrum(1:locomponent,:,:) = 0;
-    spectrum(fftlen-locomponent+2:fftlen,:,:) = 0;
+    spectrum(1:locomponent,:,:,:,:,:) = 0;
+    spectrum(fftlen-locomponent+2:fftlen,:,:,:,:,:) = 0;
 end
 
 % return to time domain
@@ -109,7 +109,7 @@ out = ifft(spectrum);
 
 % normalization
 if normalize
-    out = out / max(max(max(abs(abs(out)))));
+    out = out / max(max(max(max(max(max(abs(abs(out))))))));
 end
 
 if isstruct(in)
@@ -127,7 +127,8 @@ if audioplay
         wavout = out;
     end
 
-    sound(sum(wavout,3)./max(max(abs(sum(wavout,3)))), in.fs)
+    sound(sum(sum(sum(sum(wavout,3),4),5),6)...
+        ./max(max(abs(sum(sum(sum(sum(wavout,3),4),5),6)))), in.fs)
 
     % Loop for replaying, saving and finishing
     choice = 'x'; % create a string
