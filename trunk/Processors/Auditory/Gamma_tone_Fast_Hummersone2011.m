@@ -47,11 +47,17 @@ if ~isempty(audio) && ~isempty(fs)
     cfs = MakeErbCFs(lof,hif,bands);
     
     audio = sum(audio,3); % mixdown 3rd dimension if it exists
-    [len,chans] = size(audio);
-    bm = zeros(len,chans,bands);
+    [len,chans,~,dim4,dim5,dim6] = size(audio);
+    bm = zeros(len,chans,bands,dim4,dim5,dim6);
     for ch = 1:chans
-        bmchan = gammatoneFast(audio(:,ch),cfs,fs,align);
-        bm(:,ch,:) = permute(bmchan,[1,3,2]);
+        for d4 = 1:dim4
+            for d5 = 1:dim5
+                for d6 = 1:dim6
+        bmchan = gammatoneFast(audio(:,ch,1,d4,d5,d6),cfs,fs,align);
+        bm(:,ch,:,d4,d5,d6) = permute(bmchan,[1,3,2]);
+                end
+            end
+        end
     end
 
     
