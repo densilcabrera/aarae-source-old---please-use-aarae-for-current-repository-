@@ -57,27 +57,16 @@ if nargin < 3
     end
     Nyquist = fs/2;
 
-    ndim = ndims(audio); % number of dimensions
-    switch ndim
-        case 1
-            chans = 1; % number of channels
-            bands = 1; % number of bands
-        case 2
-            chans = size(audio,2); % number of channels
-            bands = 1; % number of bands
-        case 3
-            chans = size(audio,2); % number of channels
-            bands = size(audio,3); % number of bands
-    end
+    [~,bands,chans,dim4,dim5,dim6] = size(audio);
 
     %dialog box for settings
     prompt = {'Level threshold', 'High cutoff frequency (Hz)', ...
               'Low cutoff frequency (Hz)', 'zero pad (samples)',...
               'pseudo-Wiener N/S ratio (dB)', ...
-              'Rotate inverse filter via ifftshift (0 | 1)', 'Plot (0 | 1)'};
+              'Rotate inverse filter via ifftshift (0 | 1)'};
     dlg_title = 'Settings';
     num_lines = 1;
-    def = {'-60', num2str(Nyquist), '0', '0', 'n', '0', '0'};
+    def = {'-60', num2str(Nyquist), '0', '0', 'n', '0'};
     answer = inputdlg(prompt,dlg_title,num_lines,def);
 
     if ~isempty(answer)
@@ -87,7 +76,7 @@ if nargin < 3
         zeropad = str2num(answer{4,1});
         doweiner = answer{5,1};
         rotateinv = str2num(answer{6,1});
-        doplot = str2num(answer{7,1});
+        doplot = false;
     else
         OUT = [];
         return
@@ -109,7 +98,7 @@ Nyquist = fs/2;
 
 if ~isempty(fs) && ~isempty(Threshold) && ~isempty(hiF) && ~isempty(loF) && ~isempty(zeropad) && ~isempty(doweiner) && ~isempty(rotateinv) && ~isempty(doplot)
     if zeropad > 0
-        audio = [audio; zeros(zeropad,chans,bands)];
+        audio = [audio; zeros(zeropad,chans,bands,dim4,dim5,dim6)];
     end
 
     len = 2*(ceil(length(audio)/2)); % make len even
@@ -118,7 +107,7 @@ if ~isempty(fs) && ~isempty(Threshold) && ~isempty(hiF) && ~isempty(loF) && ~ise
 
     magThreshold = 10.^(Threshold / 20);
 
-    magnitude_max = repmat(max(abs(invfilter)), [len, 1,1]);
+    magnitude_max = repmat(max(abs(invfilter)), [len, 1,1,1,1,1]);
     below_threshold = magnitude_max < magnitude_max * magThreshold;
 
     if doweiner
@@ -132,14 +121,14 @@ if ~isempty(fs) && ~isempty(Threshold) && ~isempty(hiF) && ~isempty(loF) && ~ise
     % lowpass filter
     if (hiF < Nyquist) && (hiF > loF)  && (hiF > 0)
         hicomponent = ceil(hiF / (fs / len)) + 1;
-        invfilter(hicomponent:len - hicomponent+2,:,:) = 0;
+        invfilter(hicomponent:len - hicomponent+2,:,:,:,:,:) = 0;
     end
 
     % hipass filter
     if (loF > 0) && (loF < hiF) && (loF < Nyquist)
         locomponent = floor(loF / (fs / len)) + 1;
-        invfilter(1:locomponent,:,:) = 0;
-        invfilter(len-locomponent+2:len,:,:) = 0;
+        invfilter(1:locomponent,:,:,:,:,:) = 0;
+        invfilter(len-locomponent+2:len,:,:,:,:,:) = 0;
     end
 
     % get rid of NaN and inf if there are any
@@ -161,6 +150,7 @@ if ~isempty(fs) && ~isempty(Threshold) && ~isempty(hiF) && ~isempty(loF) && ~ise
         OUT = out;
     end
 
+    doplot = false; % the following is not compatible with higher dimensional audio, and is unnecessary within the AARAE environment
     if doplot
         figure('Name', 'Spectrum inversion of a waveform')
         % plot original

@@ -65,7 +65,8 @@ if nargin < 3
 end
 if isstruct(in)
 % get audio signal from AARAE field
-    SndIn = in.audio;
+in = choose_from_higher_dimensions(in,2,1); 
+    audio = in.audio;
     GCparam.fs = in.fs;
 elseif ~isempty(answer)
     SndIn = in;
@@ -78,17 +79,26 @@ elseif ~isempty(answer)
     end
 end
 if ~isempty(GCparam.fs) && ~isempty(compressive) && ~isempty(GCparam.NumCh) && ~isempty(Hicutoff) && ~isempty(Locutoff) && ~isempty(GCparam.OutMidCrct)
-    SndIn = mean(SndIn,3); % mixdown the third dimension, if it exists
-    SndIn = SndIn(:,1); % select the first channel in the case of multichannel
-    SndIn = SndIn'; % transpose (1 row of audio signal is required for GCFBv208)
-
     % set gammachirp parameters
     GCparam.FRange = [Locutoff Hicutoff];
 
     GCparam = GCFBv208_SetParam(GCparam);
+    
+    [cGCout,pGCout]=deal(zeros(GCparam.NumCh,length(audio),size(audio,2)));
+    for ch = 1:size(audio,2)
+        SndIn = audio(:,ch,1,1,1,1)';
+%     SndIn = mean(SndIn,3); % mixdown the third dimension, if it exists - not needed anymore
+%     SndIn = SndIn(:,1); % select the first channel in the case of multichannel
+%     SndIn = SndIn'; % transpose (1 row of audio signal is required for GCFBv208)
 
-    [cGCout, pGCout, GCparam, GCresp] = GCFBv208(SndIn,GCparam);
+    
 
+    [cGCout(:,:,ch), pGCout(:,:,ch), GCparam, GCresp] = GCFBv208(SndIn,GCparam);
+    
+    
+    end
+    
+    
     if ~isstruct(in)
         if compressive
             out = permute(cGCout,[2,3,1]);
