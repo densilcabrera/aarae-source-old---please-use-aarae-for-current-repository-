@@ -94,7 +94,7 @@ end
 % reset cal to 0 dB if it exists
 if isstruct(IN)
     if isfield(IN,'cal')
-        audio = cal_reset_aarae(audio,0,cal);        
+        audio = cal_reset_aarae(audio,0,IN.cal);        
     end
 end
 
@@ -121,7 +121,7 @@ if dim4 > 1
     for d4 = 2:dim4
         % rotate and translate the microphone coordinates for each step
         coords((d4*(chans-1)+1):end,:) =...
-            AxelRot(coords((d4*(chans-1)+1):end,:), rotstep, rotaxis, [0,0,0])...
+            AxelRot(coords((d4*(chans-1)+1):end,:)', rotstep, rotaxis, [0,0,0])'...
             + repmat(trans,[size(coords((d4*(chans-1)+1):end,:),1),1]);
     end
 end
@@ -129,7 +129,7 @@ end
 
 
 % reshape so that dim4 is concatenated to chans
-audio = reshape(audio,[len,chans+dim4,bands,1,dim5,dim6]);
+audio = reshape(audio,[len,chans*dim4,bands,1,dim5,dim6]);
 
 switch method
     case 0
@@ -153,8 +153,9 @@ switch method
         % Find typical radius & delete atypical channels
         [~,~,radius] = cart2sph(coords(:,1),coords(:,2),coords(:,3));
         typicalradius = median(radius);
-        radiustolerance = 1; % radius tolerance in dB, re inverse square law
-        radiusOK = radius(abs(20*log10(radius./typicalradius))<=radiustolerance);
+        radiustolerance = 3; % radius tolerance in dB, re inverse square law
+        %radiusOK = radius(abs(20*log10(radius./typicalradius))<=radiustolerance);
+        radiusOK = true(length(coords),1);
         audio = audio(:,radiusOK); % delete atypical radius audio channels
         coords = coords(radiusOK,:); % delete corresponding atypical coordinates
         
@@ -162,15 +163,15 @@ switch method
         % duplicates and near-duplicates
         angletolerance = 0.4; % angle tolerance in degrees
         angletolerance = angletolerance  * pi/180;
-        angleOK = ones(length(coords));
-        for n = 1:length(coords)-1
-            for m = n+1:length(coords)
-                theta = subspace(coords(n,:)',coords(m,:)');
-                if theta < angletolerance
-                    angleOK(m)=0;
-                end
-            end
-        end
+        angleOK = ones(length(coords),1);
+%         for n = 1:length(coords)-1
+%             for m = n+1:length(coords)
+%                 theta = subspace(coords(n,:)',coords(m,:)');
+%                 if theta < angletolerance
+%                     angleOK(m)=0;
+%                 end
+%             end
+%         end
         audio = audio(:,angleOK); % delete close angle audio channels
         coords = coords(angleOK,:); % delete corresponding close coordinates
 
@@ -184,13 +185,13 @@ switch method
         
         hoaSignals = zeros(length(audio),hoaFmt.nbComp);
         
-        [azm,elv] = cart2sph(coords);
+        [azm,elv] = cart2sph(coords(:,1),coords(:,2),coords(:,3));
         Y = SphericalHarmonicMatrix(hoaFmt,azm,elv);
         
         for I = 1:size(audio,2);
             for J = 1:hoaFmt.nbComp;
                 % revisar si se puede hacer matricial
-                hoaSignals(:,J) = hoaSignals(:,J) + audio(:,I).*Y(I,J);     
+                hoaSignals(:,J) = hoaSignals(:,J) + audio(:,I).*Y(J,I);     
             end
         end
         audio = hoaSignals;
