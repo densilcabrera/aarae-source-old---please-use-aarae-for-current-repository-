@@ -861,9 +861,31 @@ else
 end
 
 if method == 1 || method == 2 || method == 3
-    S_pad = [S; zeros(size(invS))];
-    invS_pad = [invS; zeros(size(S))];
-    IR = convolvedemo(S_pad, invS_pad, 2, fs); % Calls convolvedemo.m
+    maxsize = 1e7; % this could be a user setting (maximum size that can be handled to avoid out-of-memory error)
+    if numel(S) <= maxsize
+        S_pad = [S; zeros(size(invS))];
+        invS_pad = [invS; zeros(size(S))];
+        IR = convolvedemo(S_pad, invS_pad, 2, fs); % Calls convolvedemo.m
+    else
+        % use nested for loops instead of doing everything at once (could
+        % be very slow!) if the audio is too big for vectorized processing
+        [~,chans,bands,dim4,dim5,dim6] = size(S);
+        IR = zeros(2*(length(S)+length(invS))-1,chans,bands,dim4,dim5,dim6);
+        for ch = 1:chans
+            for b = 1:bands
+                for d4 = 1:dim4
+                    for d5 = 1:dim5
+                        for d6 = 1:dim6
+                            S_pad = [S(:,ch,b,d4,d5,d6);zeros(length(invS),1)];
+                            invS_pad = [invS(:,ch,b,d4,d5,d6); zeros(length(S),1)];
+                            IR(:,ch,b,d4,d5,d6) =...
+                                convolvedemo(S_pad, invS_pad, 2, fs);
+                        end
+                    end
+                end
+            end
+        end
+    end
     indices = cat(2,{1:length(S_pad)},repmat({':'},1,ndims(IR)-1));
     IR = IR(indices{:});
 end
