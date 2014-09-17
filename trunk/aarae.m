@@ -220,7 +220,7 @@ if ~isempty(getappdata(hMain,'testsignal'))
     end
     
     % Save as you go
-    save([cd '/Utilities/Backup/' newleaf '.mat'], 'signaldata');
+    save([cd '/Utilities/Backup/' newleaf '.mat','-v7.3'], 'signaldata');
     
     % Generate new leaf
     handles.(genvarname(newleaf)) = uitreenode('v0', newleaf,  newleaf,  iconPath, true);
@@ -318,7 +318,7 @@ for nleafs = 1:length(selectedNodes)
                 handles.defaultaudiopath = folder_name;
                 listing = dir([folder_name '/' name{1,1} ext]);
                 if isempty(listing)
-                    if strcmp(ext,'.mat'), save([folder_name '/' name{1,1} ext],'audiodata'); end
+                    if strcmp(ext,'.mat'), save([folder_name '/' name{1,1} ext],'audiodata','-v7.3'); end
                     if strcmp(ext,'.wav'), audiowrite([folder_name '/' name{1,1} ext],audiodata.audio,audiodata.fs); end
                 else
                     index = 1;
@@ -328,7 +328,7 @@ for nleafs = 1:length(selectedNodes)
                         index = index + 1;
                     end
                     name{1,1} = [name{1,1},'_',num2str(index),ext];
-                    if strcmp(ext,'.mat'), save([folder_name '/' name{1,1} ext],'audiodata'); end
+                    if strcmp(ext,'.mat'), save([folder_name '/' name{1,1} ext],'audiodata','-v7.3'); end
                     if strcmp(ext,'.wav'), audiowrite(audiodata.audio,audiodata.fs,[folder_name '/' name{1,1}]); end
                 end
                 %current = cd;
@@ -433,7 +433,7 @@ for i = 1:length(filename)
             end
             
             % Save as you go
-            save([cd '/Utilities/Backup/' newleaf{1,1} '.mat'], 'signaldata');            
+            save([cd '/Utilities/Backup/' newleaf{1,1} '.mat','-v7.3'], 'signaldata');            
             
             handles.(genvarname(newleaf{1,1})) = uitreenode('v0', newleaf{1,1},  newleaf{1,1},  iconPath, true);
             handles.(genvarname(newleaf{1,1})).UserData = signaldata;
@@ -495,7 +495,7 @@ if savenewsyscalstats == 1
     
     % Save as you go
     tempsyscalstats = handles.syscalstats; %#ok : Used in followring line
-    save([cd '/Utilities/Backup/' funname '.mat'], 'tempsyscalstats');
+    save([cd '/Utilities/Backup/' funname '.mat','-v7.3'], 'tempsyscalstats');
     
     handles.(genvarname(funname)) = uitreenode('v0', funname,  funname,  iconPath, true);
     handles.(genvarname(funname)).UserData = handles.syscalstats;
@@ -525,7 +525,7 @@ if ~isempty(audiodata)
     audiodata = rmfield(audiodata,audiodata_fields(audiodata_emptyfields));
     
     % Save as you go
-    save([cd '/Utilities/Backup/' newleaf '.mat'], 'audiodata');
+    save([cd '/Utilities/Backup/' newleaf '.mat','-v7.3'], 'audiodata');
     
     handles.(genvarname(newleaf)) = uitreenode('v0', newleaf,  newleaf,  iconPath, true);
     handles.(genvarname(newleaf)).UserData = audiodata;
@@ -905,7 +905,7 @@ if ~isempty(getappdata(hMain,'testsignal'))
     iconPath = fullfile(matlabroot,'/toolbox/fixedpoint/fixedpointtool/resources/plot.png');
     
     % Save as you go
-    save([cd '/Utilities/Backup/' newleaf '.mat'], 'signaldata');
+    save([cd '/Utilities/Backup/' newleaf '.mat','-v7.3'], 'signaldata');
     
     handles.(genvarname(newleaf)) = uitreenode('v0', newleaf,  newleaf,  iconPath, true);
     handles.(genvarname(newleaf)).UserData = signaldata;
@@ -1037,7 +1037,7 @@ for nleafs = 1:length(selectedNodes)
                     signaldata = rmfield(signaldata,signaldata_fields(signaldata_emptyfields));
                     
                     % Save as you go
-                    save([cd '/Utilities/Backup/' newleaf{1,1} '.mat'], 'signaldata');
+                    save([cd '/Utilities/Backup/' newleaf{1,1} '.mat','-v7.3'], 'signaldata');
                     
                     handles.(genvarname(newleaf{1,1})) = uitreenode('v0', newleaf{1,1},  newleaf{1,1},  iconPath, true);
                     handles.(genvarname(newleaf{1,1})).UserData = signaldata;
@@ -1292,7 +1292,7 @@ for nleafs = 1:length(selectedNodes)
                     newdata = rmfield(newdata,newdata_fields(newdata_emptyfields));
                     
                     % Save as you go
-                    save([cd '/Utilities/Backup/' newleaf{1,1} '.mat'], 'newdata');
+                    save([cd '/Utilities/Backup/' newleaf{1,1} '.mat','-v7.3'], 'newdata');
                     
                     handles.(genvarname(newleaf{1,1})) = uitreenode('v0', newleaf{1,1},  newleaf{1,1},  iconPath, true);
                     handles.(genvarname(newleaf{1,1})).UserData = newdata;
@@ -1918,7 +1918,7 @@ if ~isempty(cal_level)
         
         % Save as you go
         delete([cd '/Utilities/Backup/' selectedNodes(i).getName.char '.mat'])
-        save([cd '/Utilities/Backup/' selectedNodes(i).getName.char '.mat'], 'signaldata');
+        save([cd '/Utilities/Backup/' selectedNodes(i).getName.char '.mat','-v7.3'], 'signaldata');
         
         selectedNodes(i).handle.UserData = signaldata;
         selectedParent = selectedNodes(i).getParent;
