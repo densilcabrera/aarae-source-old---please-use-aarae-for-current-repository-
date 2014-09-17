@@ -29,7 +29,7 @@ if isstruct(IN)
     hoaSignals = IN.audio;
     fs = IN.fs;
     if isfield(IN,'cal')
-        hoaSignals = cal_reset_aarae(hoaSignals,0,cal);
+        hoaSignals = cal_reset_aarae(hoaSignals,0,IN.cal);
     end
 else
     if nargin < 2
