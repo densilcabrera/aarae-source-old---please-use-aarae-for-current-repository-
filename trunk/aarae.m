@@ -861,13 +861,15 @@ else
 end
 
 if method == 1 || method == 2 || method == 3
-    maxsize = 1e7; % this could be a user setting (maximum size that can be handled to avoid out-of-memory error)
+    maxsize = 1e6; % this could be a user setting 
+                   % (maximum size that can be handled to avoid 
+                   % out-of-memory error from convolution process)
     if numel(S) <= maxsize
         S_pad = [S; zeros(size(invS))];
         invS_pad = [invS; zeros(size(S))];
         IR = convolvedemo(S_pad, invS_pad, 2, fs); % Calls convolvedemo.m
     else
-        % use nested for loops instead of doing everything at once (could
+        % use nested for-loops instead of doing everything at once (could
         % be very slow!) if the audio is too big for vectorized processing
         [~,chans,bands,dim4,dim5,dim6] = size(S);
         IR = zeros(2*(length(S)+length(invS))-1,chans,bands,dim4,dim5,dim6);
