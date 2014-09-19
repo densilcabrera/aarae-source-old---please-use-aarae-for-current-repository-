@@ -1,4 +1,4 @@
-function OUT = ExponentialEnvelope(in, fs, exponent, normalize)
+function OUT = ExponentialEnvelope(in, fs, exponent, normalize, starttime)
 % This function applies an exponential envelope to the audio.
 %
 % Use a positive exponent for exponential growth.
@@ -18,17 +18,18 @@ function OUT = ExponentialEnvelope(in, fs, exponent, normalize)
 if nargin < 4, normalize = 1; end
 if nargin < 3
     prompt = {'Exponential growth or decay constant', ...
-        'Normalize'};
+        'Normalize', 'Start time (s)'};
     dlg_title = 'Settings';
     num_lines = 1;
-    def = {'0','1'};
+    def = {'0','1','0'};
     answer = inputdlg(prompt,dlg_title,num_lines,def);
     if isempty(answer)
         OUT = [];
         return
     else
-        exponent = str2num(answer{1,1});
-        normalize = abs(str2num(answer{2,1}));
+        exponent = str2double(answer{1,1});
+        normalize = abs(str2double(answer{2,1}));
+        starttime = str2double(answer{3,1});
     end
 end
 if isstruct(in)
@@ -45,10 +46,16 @@ end
 
 if ~isempty(audio) && ~isempty(fs) && ~isempty(exponent) && ~isempty(normalize)
     [len, chans, bands,dim4,dim5,dim6] = size(audio);
-
-    t = (0:(len-1))./fs; % time in s
+    
+    startind = abs(round(starttime*fs)) + 1;
+    if startind > len
+        startind = 1;
+    end
+    t = (0:(len-startind))./fs; % time in s
     envelope = exp(exponent.*t)';
-    audio = audio .* repmat(envelope, [1,chans,bands,dim4,dim5,dim6]);
+    
+    audio(startind:end,:,:,:,:,:) = audio(startind:end,:,:,:,:,:)...
+        .* repmat(envelope, [1,chans,bands,dim4,dim5,dim6]);
     if normalize
         audio = audio ./ max(max(max(max(max(max(abs(audio)))))));
     end
@@ -56,7 +63,7 @@ if ~isempty(audio) && ~isempty(fs) && ~isempty(exponent) && ~isempty(normalize)
     if isstruct(in)
         OUT.audio = audio;
         OUT.funcallback.name = 'ExponentialEnvelope.m';
-        OUT.funcallback.inarg = {fs,exponent,normalize};
+        OUT.funcallback.inarg = {fs,exponent,normalize,starttime};
     else
         OUT = audio;
     end
