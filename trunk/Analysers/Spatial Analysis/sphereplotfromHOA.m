@@ -62,7 +62,7 @@ if isstruct(IN)
             'Maximum order'...
             'High frequency cutoff (Hz)'...
             'Low frequency cutoff (Hz)'...
-            'PLOT TYPE: Robinson Projection in dB [1]; 3D colormap surface in amplitude [2]; 3D lit surface in amplitude (slow) [3]'},...
+            'PLOT TYPE: Tetramesh plot of amplitude [0]; Robinson Projection in dB [1]; 3D colormap surface in amplitude [2]; 3D lit surface in amplitude (slow) [3]'},...
             'Input parameters',1,...
             {num2str(sphere_cover),...
             num2str(start_time),...
@@ -156,6 +156,9 @@ switch plottype
     otherwise
         % case 1
         % approximately even sphere covering
+        if plottype == 0
+            sphere_cover = 3002;
+        end
         [azim_for_directplot,elev_for_directplot] = SphereCovering(sphere_cover);
         numberofdirections = sphere_cover;
         beams_for_directplot = GenerateSpkFmt('sphCoord',[azim_for_directplot elev_for_directplot ones(numberofdirections,1)]);
@@ -236,7 +239,53 @@ for b = 1:bands
                 title(['Band ', num2str(b)])
             end
             
+        case 0
+
             
+            [x1,y1,z1] = sph2cart(azim_for_directplot,...
+                elev_for_directplot,...
+                ones(size(azim_for_directplot))); % mesh with radius of 1
+            K = convhulln([x1,y1,z1]);
+            
+            [x,y,z] = sph2cart(azim_for_directplot,...
+                elev_for_directplot,...
+                rms(abs(beamsignals_for_directPlot(:,:,b)))');
+            
+            
+            figure
+            
+            trisurf(K,x,y,z);
+            colormap(copper)
+            
+            hold on
+            % plot axis poles
+            polelength = 1.1*max(max(abs([x;y;z])));
+            plot3([0,0],[0,0],[-polelength, polelength],'LineWidth',2,'Color',[0.8,0.8,0]);
+            plot3([0,0],[0,0],[-polelength, polelength],'LineWidth',2,'Color',[0,0,0],'LineStyle','--','Marker','^');
+            
+            plot3([0,0],[-polelength, polelength],[0,0],'LineWidth',2,'Color',[0.8,0.8,0]);
+            plot3([0,0],[-polelength, polelength],[0,0],'LineWidth',2,'Color',[0,0,0],'LineStyle','--','Marker','>');
+            
+            plot3([-polelength, polelength],[0,0],[0,0],'LineWidth',2,'Color',[0.8,0.8,0]);
+            plot3([-polelength, polelength],[0,0],[0,0],'LineWidth',2,'Color',[0,0,0],'LineStyle','--','Marker','>');
+            
+            
+             Goverdif(b) = GoverDiffuseness(direct_sound_HOA(:,:,b),hoaFmt);
+            HOAdif(b) = HoaDiffuseness(direct_sound_HOA(:,:,b),hoaFmt);
+            
+            % Band title
+            if isstruct(IN)
+                if isfield(IN,'bandID')
+                    title([num2str(IN.bandID(b)), ' Hz, Gover dif. ',...
+                        num2str(Goverdif(b)),', HOA dif. ', num2str(HOAdif(b))])
+                else
+                    title(['Gover dif. ',...
+                        num2str(Goverdif(b)),', HOA dif. ', num2str(HOAdif(b))])
+                end
+            else
+                title(['Gover dif. ',...
+                    num2str(Goverdif(b)),', HOA dif. ', num2str(HOAdif(b))])
+            end
             
         otherwise
             PlotRobinsonProject([azim_for_directplot,elev_for_directplot],mag2db(rms(abs(beamsignals_for_directPlot(:,:,b)))'));
