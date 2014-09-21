@@ -62,7 +62,7 @@ if isstruct(IN)
             'Maximum order'...
             'High frequency cutoff (Hz)'...
             'Low frequency cutoff (Hz)'...
-            'PLOT TYPE: Tetramesh plot of amplitude [0]; Robinson Projection in dB [1]; 3D colormap surface in amplitude [2]; 3D lit surface in amplitude (slow) [3]'},...
+            'PLOT TYPE: Trisurf plot of amplitude [0]; Robinson Projection in dB [1]; 3D colormap surface in amplitude [2]; 3D lit surface in amplitude (slow) [3]'},...
             'Input parameters',1,...
             {num2str(sphere_cover),...
             num2str(start_time),...
@@ -215,7 +215,9 @@ for b = 1:bands
             
             
             if plottype == 2
-                surf(x,y,z,values,'FaceColor','interp','FaceLighting','phong');
+                surf(x,y,z,values,'FaceColor','interp','FaceLighting','phong',...
+                'EdgeLighting','phong','DiffuseStrength',1,'EdgeAlpha',0.1,...
+                'AmbientStrength',0.6);
                 camlight right
             elseif plottype ==3
                 surfl(x,y,z,'light');
@@ -246,17 +248,21 @@ for b = 1:bands
                 elev_for_directplot,...
                 ones(size(azim_for_directplot))); % mesh with radius of 1
             K = convhulln([x1,y1,z1]);
+            values = rms(abs(beamsignals_for_directPlot(:,:,b)))';
             
             [x,y,z] = sph2cart(azim_for_directplot,...
                 elev_for_directplot,...
-                rms(abs(beamsignals_for_directPlot(:,:,b)))');
+                values);
             
             
             figure
             
-            trisurf(K,x,y,z);
-            colormap(copper)
-            
+            trisurf(K,x,y,z,values,'FaceColor','interp','FaceLighting','phong',...
+                'EdgeLighting','phong','DiffuseStrength',1,'EdgeAlpha',0.1,...
+                'AmbientStrength',0.6);
+            camlight right
+            %colormap(copper)
+            colormap(autumn)
             hold on
             % plot axis poles
             polelength = 1.1*max(max(abs([x;y;z])));
@@ -269,6 +275,12 @@ for b = 1:bands
             plot3([-polelength, polelength],[0,0],[0,0],'LineWidth',2,'Color',[0.8,0.8,0]);
             plot3([-polelength, polelength],[0,0],[0,0],'LineWidth',2,'Color',[0,0,0],'LineStyle','--','Marker','>');
             
+            grid on
+            xlabel('x')
+            ylabel('y')
+            zlabel('z')
+            set(gca, 'DataAspectRatio', [1 1 1])
+            set(gca, 'PlotBoxAspectRatio', [1 1 1])
             
              Goverdif(b) = GoverDiffuseness(direct_sound_HOA(:,:,b),hoaFmt);
             HOAdif(b) = HoaDiffuseness(direct_sound_HOA(:,:,b),hoaFmt);
