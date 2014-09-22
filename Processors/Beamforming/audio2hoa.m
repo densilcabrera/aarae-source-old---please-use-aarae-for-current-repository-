@@ -41,7 +41,7 @@ if isstruct(IN)
         if isempty(mics.mat), warndlg('No microphone coordinates available. To add new mic coordinate files (*.mat) go to /Processors/Beamforming/Microphones','AARAE info','modal'); OUT = []; return; end
         [S,ok] = listdlg('Name','Microphones',...
                          'PromptString','Select microphone coordinates',...
-                         'ListString',mics.mat);
+                         'ListString',mics.mat,'SelectionMode','Single');
         if isempty(S), warndlg('No microphone coordinates selected. To add new mic coordinate files (*.mat) go to /Processors/Beamforming/Microphones','AARAE info','modal'); OUT = []; return; end
         mic_coords = importdata([cd '/Processors/Beamforming/Microphones/' mics.mat{S,1}]);
         if size(audio,2) ~= size(mic_coords,1), warndlg('The selected microphone coordinates do not match the number of audio channels.','AARAE info','modal'); OUT = []; return; end
