@@ -54,7 +54,7 @@ if isstruct(IN)
         if isempty(mics.mat), warndlg('No microphone coordinates available. To add new mic coordinate files (*.mat) go to /Processors/Beamforming/MicArraysSpecial','AARAE info','modal'); OUT = []; return; end
         [S,ok] = listdlg('Name','Microphones',...
                          'PromptString','Select microphone coordinates',...
-                         'ListString',mics.mat);
+                         'ListString',mics.mat,'SelectionMode','Single');
         if isempty(S), warndlg('No microphone coordinates selected. To add new mic coordinate files (*.mat) go to /Processors/Beamforming/MicArraysSpecial','AARAE info','modal'); OUT = []; return; end
         mic_coords = importdata([cd '/Processors/Beamforming/MicArraysSpecial/' mics.mat{S,1}]);
         if size(audio,2) ~= size(mic_coords.locations,1), warndlg('The selected microphone coordinates do not match the number of audio channels.','AARAE info','modal'); OUT = []; return; end
@@ -151,19 +151,20 @@ switch method
         % channels might not be part of the spherical array)
         
         % Find typical radius & delete atypical channels
-        [~,~,radius] = cart2sph(coords(:,1),coords(:,2),coords(:,3));
-        typicalradius = median(radius);
-        radiustolerance = 3; % radius tolerance in dB, re inverse square law
+%         [~,~,radius] = cart2sph(coords(:,1),coords(:,2),coords(:,3));
+%         typicalradius = median(radius);
+%         radiustolerance = 3; % radius tolerance in dB, re inverse square law
         %radiusOK = radius(abs(20*log10(radius./typicalradius))<=radiustolerance);
-        radiusOK = true(length(coords),1);
-        audio = audio(:,radiusOK); % delete atypical radius audio channels
-        coords = coords(radiusOK,:); % delete corresponding atypical coordinates
+%         radiusOK = true(length(coords),1);
+%         audio = audio(:,radiusOK); % delete atypical radius audio channels
+%         coords = coords(radiusOK,:); % delete corresponding atypical coordinates
         
         % find repeat measurements (e.g. at rotation poles) and delete
         % duplicates and near-duplicates
-        angletolerance = 0.4; % angle tolerance in degrees
-        angletolerance = angletolerance  * pi/180;
-        angleOK = ones(length(coords),1);
+%         angletolerance = 0.4; % angle tolerance in degrees
+%         angletolerance = angletolerance  * pi/180;
+%         angleOK = ones(length(coords),1);
+        % the following is too slow!
 %         for n = 1:length(coords)-1
 %             for m = n+1:length(coords)
 %                 theta = subspace(coords(n,:)',coords(m,:)');
@@ -172,29 +173,51 @@ switch method
 %                 end
 %             end
 %         end
-        audio = audio(:,angleOK); % delete close angle audio channels
-        coords = coords(angleOK,:); % delete corresponding close coordinates
 
+% Get rid of redundant polar mics (temporary fix)
+indx1 = find(abs(coords(:,1)) >1e-4  | abs(coords(:,2)) >1e-4);
+indx2 = find(abs(coords(:,1)) <1e-4  | abs(coords(:,2)) <1e-4,1,'first');
+indx = [indx1;indx2];
+coords = coords(indx,:);
+audio = audio(:,indx);
+        
+        % visual check to see that things are ok
+        figure('Name','Rotated microphone array locations');
+        scatter3(coords(:,1),coords(:,2),coords(:,3));
+        
         % Check that max_order is not impossibly big
         if (max_order+1)^2 > size(audio,2)
             % reduce to maximum possible order for the number of input channels
             max_order = floor(size(audio,2).^0.5)-1;
         end
         
-        hoaFmt = GenerateHoaFmt('res2d',max_order,'res3d',max_order) ;
+        hoaFmt = GenerateHoaFmt('res2d',max_order,'res3d',max_order,...
+            'type','complex') ;
         
         hoaSignals = zeros(length(audio),hoaFmt.nbComp);
         
         [azm,elv] = cart2sph(coords(:,1),coords(:,2),coords(:,3));
         Y = SphericalHarmonicMatrix(hoaFmt,azm,elv);
         
-        for I = 1:size(audio,2);
-            for J = 1:hoaFmt.nbComp;
-                % revisar si se puede hacer matricial
-                hoaSignals(:,J) = hoaSignals(:,J) + audio(:,I).*Y(J,I);     
-            end
+        % new code from here
+        Yinv = pinv(Y);
+        
+        audio = fft(audio);
+        
+        hoaweights=zeros(length(audio),size(Y,1));
+        for f = 1:length(audio)
+            hoaweights(f,:) =  audio(f,:)*Yinv;     
         end
-        audio = hoaSignals;
+        
+        audio = real(ifft(hoaweights));
+        
+%         for I = 1:size(audio,2);
+%             for J = 1:hoaFmt.nbComp;
+%                 % revisar si se puede hacer matricial
+%                 hoaSignals(:,J) = hoaSignals(:,J) + audio(:,I).*Y(J,I);     
+%             end
+%         end
+%         audio = hoaSignals;
         %chanID = cellstr([repmat('Y ',[size(audio,2),1]),num2str(hoaFmt.index)]);
         chanID = makechanID(size(audio,2),1);
         
