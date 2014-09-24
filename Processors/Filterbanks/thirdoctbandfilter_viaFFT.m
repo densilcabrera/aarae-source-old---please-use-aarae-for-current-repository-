@@ -90,6 +90,15 @@ else
     end
 end
 
+TOOBIG = 1e6;
+if numel(audio) >= TOOBIG;
+    warndlg('This audio input is probably too big for thirdoctbandfilter_viaFFT. Try AARAE''s thirdoctbandfilter processor instead.')
+    OUT = [];
+    return
+end
+
+
+
 maxfrq = fs / 2.^1.16; % maximum possible octave band centre frequency
 
 if exist('param','var')
