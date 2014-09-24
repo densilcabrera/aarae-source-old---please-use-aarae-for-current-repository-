@@ -208,7 +208,7 @@ if ok == 1
         fftlen = minfftlen;
     end
     
-    spectrum = fft(audio, fftlen);
+    audio = fft(audio, fftlen);
     if test == 1
         testspectrum = fft(testaudio, fftlen);
     end
@@ -287,13 +287,13 @@ if ok == 1
         end
         
         if (phasemode == 0) || (phasemode == 10)
-            bandfiltered = ifft(repmat(mag,[1,chans,1,dim4,dim5,dim6]) .* spectrum);
+            bandfiltered = ifft(repmat(mag,[1,chans,1,dim4,dim5,dim6]) .* audio);
         elseif (phasemode == -1) || (phasemode == 1)
              % real output only for min phase and max phase
-             bandfiltered = real(ifft(repmat(mag,[1,chans,1,dim4,dim5,dim6]) .* spectrum));
+             bandfiltered = real(ifft(repmat(mag,[1,chans,1,dim4,dim5,dim6]) .* audio));
         elseif (phasemode == -11) || (phasemode == 11)
             % quadrature min and max phase
-             bandfiltered = ifft(repmat(mag,[1,chans,1,dim4,dim5,dim6]) .* spectrum);
+             bandfiltered = ifft(repmat(mag,[1,chans,1,dim4,dim5,dim6]) .* audio);
         else
             disp('Phasemode value not recognized');
             OUT = [];
@@ -314,6 +314,7 @@ if ok == 1
         end
         
     end
+    clear audio bandfiltered mag testaudiofiltered
     
     if test == 1
         testlevel = 10*log10(abs(fft(testaudioout)).^2);
