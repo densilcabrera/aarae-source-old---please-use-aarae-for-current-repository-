@@ -1,4 +1,4 @@
-function OUT = MicArraysSpecialProcess(IN, fs, mic_coords, cropIR , max_order,method)
+function OUT = MicArraysSpecialProcess(IN, fs, mic_coords, cropIR , micremove,method)
 % This function can be used to process repeated measurements made with
 % microphone transposition and/or rotation. An example of this might be if
 % a loudspeaker is repeatedly measured using a turntable to rotate it in
@@ -27,26 +27,26 @@ function OUT = MicArraysSpecialProcess(IN, fs, mic_coords, cropIR , max_order,me
 % Version 1.0 (7 September 2014)
 
 if nargin < 6, method = 0; end
-if nargin < 5, max_order = 4; end
+if nargin < 5, micremove = 0; end
 if nargin < 4, cropIR = 0; end
 if nargin < 3, mic_coords = importdata([cd '/Processors/Beamforming/MicArraysSpecial/USydAnechoicRoom2014.mat']); end
 if isstruct(IN)
     audio = IN.audio;
     fs = IN.fs;
     if nargin < 4
-        param = inputdlg({'Write chanIDs using spherical coordinates in degrees [0]; Write chanIDs using spherical coordinates in radians [1]; Write chanIDs using Cartesian coordinates in degrees [0]; Convert a spherical array of microphone signals to HOA format [3];',...
-            'Maximum HOA order (if relevant)',...
+        param = inputdlg({'Write chanIDs using spherical coordinates in degrees [0]; Write chanIDs using spherical coordinates in radians [1]; Write chanIDs using Cartesian coordinates in degrees [2]',...
+            'Remove exactly redundant microphones [0]; or enter the length of a cube in metres around each non-redundant microphone; or enter -1 to keep all microphones.',...
             'Apply autocropstart_aarae.m'},...
                        'Input parameters',1,...
-                      {num2str(method),num2str(max_order),num2str(cropIR)});
+                      {num2str(method),num2str(micremove),num2str(cropIR)});
         if isempty(param) || isempty(param{1,1}) || isempty(param{2,1}) || isempty(param{3,1})
             OUT = [];
             return;
         else
             method = str2double(param{1,1});
-            max_order = str2double(param{2,1});
+            micremove = str2double(param{2,1});
             cropIR = str2double(param{3,1});
-            if isnan(max_order) || isnan(cropIR), OUT = []; return; end
+            if isnan(micremove) || isnan(cropIR), OUT = []; return; end
         end
     end
     if nargin < 3
@@ -129,7 +129,28 @@ end
 
 
 % reshape so that dim4 is concatenated to chans
-audio = reshape(audio,[len,chans*dim4,bands,1,dim5,dim6]);
+% the permutes are required to avoid problems with reshaping multiband data
+audio = permute(audio,[1,2,4,3,5,6]);
+audio = reshape(audio,[len,chans*dim4,1,bands,dim5,dim6]);
+audio = permute(audio,[1,2,4,3,5,6]);
+
+% remove redundant mics
+if micremove >= 0
+    if micremove > 0
+        roundcoords = round(coords./micremove);
+        [~,ia] = unique(roundcoords,'rows');
+        coords = coords(ia,:);
+    else
+        [coords,ia] = unique(coords,'rows');
+    end
+    audio = audio(:,ia,:,:,:,:);
+end
+
+
+% visual check to see that things are ok
+figure('Name','Microphone array locations');
+scatter3(coords(:,1),coords(:,2),coords(:,3));
+
 
 switch method
     case 0
@@ -141,50 +162,16 @@ switch method
     case 2
         % chanID using Cartesian coordinates in metres
         chanID = makechanID(size(audio,2),4,coords);
-    case 3
+    case 1000000 % THIS DOES NOT WORK, AND MIGHT NEVER WORK....
         % In this case we assume that the microphones are distributed
         % approximately equidistant from the sound source, distributed
         % reasonably evenly over the sphere.
         %
-        % We need to remove repeated measurements (i.e. at the same
-        % location) and measurements that are not at the radius (e.g., some
-        % channels might not be part of the spherical array)
-        
-        % Find typical radius & delete atypical channels
-%         [~,~,radius] = cart2sph(coords(:,1),coords(:,2),coords(:,3));
-%         typicalradius = median(radius);
-%         radiustolerance = 3; % radius tolerance in dB, re inverse square law
-        %radiusOK = radius(abs(20*log10(radius./typicalradius))<=radiustolerance);
-%         radiusOK = true(length(coords),1);
-%         audio = audio(:,radiusOK); % delete atypical radius audio channels
-%         coords = coords(radiusOK,:); % delete corresponding atypical coordinates
-        
-        % find repeat measurements (e.g. at rotation poles) and delete
-        % duplicates and near-duplicates
-%         angletolerance = 0.4; % angle tolerance in degrees
-%         angletolerance = angletolerance  * pi/180;
-%         angleOK = ones(length(coords),1);
-        % the following is too slow!
-%         for n = 1:length(coords)-1
-%             for m = n+1:length(coords)
-%                 theta = subspace(coords(n,:)',coords(m,:)');
-%                 if theta < angletolerance
-%                     angleOK(m)=0;
-%                 end
-%             end
-%         end
 
-% Get rid of redundant polar mics (temporary fix)
-indx1 = find(abs(coords(:,1)) >1e-4  | abs(coords(:,2)) >1e-4);
-indx2 = find(abs(coords(:,1)) <1e-4  | abs(coords(:,2)) <1e-4,1,'first');
-indx = [indx1;indx2];
-coords = coords(indx,:);
-audio = audio(:,indx);
         
-        % visual check to see that things are ok
-        figure('Name','Rotated microphone array locations');
-        scatter3(coords(:,1),coords(:,2),coords(:,3));
         
+        
+        max_order = 6; % this needs to be a user input
         % Check that max_order is not impossibly big
         if (max_order+1)^2 > size(audio,2)
             % reduce to maximum possible order for the number of input channels
@@ -192,32 +179,32 @@ audio = audio(:,indx);
         end
         
         hoaFmt = GenerateHoaFmt('res2d',max_order,'res3d',max_order,...
-            'type','complex') ;
+            'type','real') ;
         
         hoaSignals = zeros(length(audio),hoaFmt.nbComp);
         
         [azm,elv] = cart2sph(coords(:,1),coords(:,2),coords(:,3));
         Y = SphericalHarmonicMatrix(hoaFmt,azm,elv);
         
-        % new code from here
-        Yinv = pinv(Y);
-        
-        audio = fft(audio);
-        
-        hoaweights=zeros(length(audio),size(Y,1));
-        for f = 1:length(audio)
-            hoaweights(f,:) =  audio(f,:)*Yinv;     
-        end
-        
-        audio = real(ifft(hoaweights));
-        
-%         for I = 1:size(audio,2);
-%             for J = 1:hoaFmt.nbComp;
-%                 % revisar si se puede hacer matricial
-%                 hoaSignals(:,J) = hoaSignals(:,J) + audio(:,I).*Y(J,I);     
-%             end
+        % new code from here - use hoaFormat 'type','complex'
+%         Yinv = pinv(Y);
+%         
+%         audio = fft(audio);
+%         
+%         hoaweights=zeros(length(audio),size(Y,1));
+%         for f = 1:length(audio)
+%             hoaweights(f,:) =  (audio(f,:)*Yinv);     
 %         end
-%         audio = hoaSignals;
+%         
+%         audio = real(ifft(hoaweights));
+        
+        for I = 1:size(audio,2);
+            for J = 1:hoaFmt.nbComp;
+                % revisar si se puede hacer matricial
+                hoaSignals(:,J) = hoaSignals(:,J) + audio(:,I).*Y(J,I);     
+            end
+        end
+        audio = hoaSignals;
         %chanID = cellstr([repmat('Y ',[size(audio,2),1]),num2str(hoaFmt.index)]);
         chanID = makechanID(size(audio,2),1);
         
@@ -234,7 +221,7 @@ if isstruct(IN)
     OUT.chanID = chanID;
     OUT.cal = zeros(1,size(OUT.audio,2));
     OUT.funcallback.name = 'MicArraysSpecialProcess.m';
-    OUT.funcallback.inarg = {fs, mic_coords, cropIR, max_order};
+    OUT.funcallback.inarg = {fs, mic_coords, cropIR, micremove,method};
 else
     OUT = audio;
 end

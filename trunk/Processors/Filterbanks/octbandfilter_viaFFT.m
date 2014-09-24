@@ -43,7 +43,7 @@ function [OUT,varargout] = octbandfilter_viaFFT(IN,fs,param,order,zeropad,minfft
 % and centre frequencies). Enter 2 or 10 (base 10 is default).
 %
 % Code by Densil Cabrera
-% Version 1.05 (7 February 2014)
+% Version 1.06 (24 September 2014)
 
 if ~exist('test','var')
     test = 0;
@@ -100,6 +100,14 @@ else
         error('fs must be specified')
     end
 end
+
+TOOBIG = 1e6;
+if numel(audio) >= TOOBIG;
+    warndlg('This audio input is probably too big for octbandfilter_viaFFT. Try AARAE''s octbandfilter processor instead.')
+    OUT = [];
+    return
+end
+
 
 maxfrq = fs / 2.^1.51; % maximum possible octave band centre frequency
 
