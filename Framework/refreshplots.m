@@ -8,6 +8,9 @@ if ~ismatrix(signaldata.audio)
 else
     linea = signaldata.audio;
 end
+if size(linea,2) > handles.Settings.maxlines
+    linea = linea(:,1:handles.Settings.maxlines);
+end
 plottype = get(handles.(genvarname([axes '_popup'])),'Value');
 %if plottype == 4 || plottype == 5 || plottype > 7
     set(handles.(genvarname(['To_' axes])),'Visible','on')

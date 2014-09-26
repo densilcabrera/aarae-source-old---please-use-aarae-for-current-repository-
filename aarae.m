@@ -81,6 +81,7 @@ else
     Settings.maxtimetodisplay = 10;
     Settings.frequencylimits = 'Default';
     Settings.calibrationtoggle = 1;
+    Settings.maxlines = 100;
     Settings.colormap = 'Jet';
     Settings.specmagscale = 'Raw';
     handles.Settings = Settings;
