@@ -22,7 +22,7 @@ function varargout = settings(varargin)
 
 % Edit the above text to modify the response to help settings
 
-% Last Modified by GUIDE v2.5 12-Sep-2014 09:33:00
+% Last Modified by GUIDE v2.5 26-Sep-2014 17:21:35
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -90,6 +90,7 @@ else
         set(handles.flimtext,'String',['[' num2str(mainHandles.Settings.frequencylimits) ']'])
     end
     set(handles.cal_chk,'Value',mainHandles.Settings.calibrationtoggle)
+    set(handles.maxlines,'String',num2str(mainHandles.Settings.maxlines))
     colormaps = cellstr(get(handles.colormap_popup,'String'));
     if ischar(mainHandles.Settings.colormap)
         set(handles.colormap_popup,'Value',find(cellfun(@strcmp,colormaps,repmat(cellstr(mainHandles.Settings.colormap),length(colormaps),1))))
@@ -305,3 +306,32 @@ end
 scalingmethod = {'Raw','Divided by length','Times sqrt2/length'};
 set(hObject,'String',scalingmethod)
 guidata(hObject,handles)
+
+
+
+function maxlines_Callback(hObject, eventdata, handles)
+% hObject    handle to maxlines (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: get(hObject,'String') returns contents of maxlines as text
+%        str2double(get(hObject,'String')) returns contents of maxlines as a double
+maxlines = str2double(get(hObject,'String'));
+if ~isnan(maxlines) && maxlines > 0
+    handles.output.maxlines = maxlines;
+else
+    warndlg('Invalid entry!','AARAE info','modal')
+end
+guidata(hObject,handles)
+
+% --- Executes during object creation, after setting all properties.
+function maxlines_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to maxlines (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: edit controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
