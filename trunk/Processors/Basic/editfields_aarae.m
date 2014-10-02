@@ -35,7 +35,11 @@ function OUT = editfields_aarae(IN)
 
 % Make a list of editable fields
 fnames = fieldnames(IN);
-fnamesprop = fieldnames(IN.properties);
+if isfield(IN,'properties')
+    fnamesprop = fieldnames(IN.properties);
+else
+    fnamesprop = [];
+end
 
 isproperties = [zeros(length(fnames),1);ones(length(fnamesprop),1)];
 iseditable = false(size(isproperties));

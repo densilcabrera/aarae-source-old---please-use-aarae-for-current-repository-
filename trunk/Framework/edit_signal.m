@@ -67,9 +67,13 @@ else
     % Remember the handle, and adjust our position
     handles.main_stage1 = varargin{mainGuiInput+1};
 
+    handles.fid = varargin{mainGuiInput+3};
+
     fontsize
 
 end
+
+
 
 if dontOpen
    disp('-----------------------------------------------------');
@@ -186,6 +190,7 @@ function cancel_btn_Callback(~, ~, handles) %#ok : Executed when Cancel button i
 % handles    structure with handles and user data (see GUIDATA)
 set(handles.OUT_start,'String','-');
 set(handles.OUT_end,'String','-');
+fprintf(handles.fid, ['%% CANCEL EDIT\n']);
 uiresume(handles.edit_signal);
 
 
@@ -542,6 +547,7 @@ set(handles.audiodatatext,'String',audiodatatext);
 %    handles.line = findobj(gcf,'type','line');
 % Update handles structure
 guidata(hObject, handles);
+fprintf(handles.fid, ['%% RESET EDIT\n']);
 
 
 % --- Executes on selection change in edit_box.
@@ -645,6 +651,9 @@ if ~isempty(processed)
     %selectedNodes = mainHandles.mytree.getSelectedNodes;
     audiodatatext = evalc('audiodata');
     set(handles.audiodatatext,'String',audiodatatext);
+    fprintf(handles.fid, ['%% ' datestr(now,16) ' - Processed in edit window using ' handles.funname '\n']);
+    % Log verbose metadata need handles.fid
+    logaudioleaffields(handles.fid,audiodata);
 else
     handles.version = handles.version - 1;
 end
@@ -790,6 +799,7 @@ audiodata = handles.testsignal(handles.version); %#ok : Used in evalc below
 %selectedNodes = mainHandles.mytree.getSelectedNodes;
 audiodatatext = evalc('audiodata');
 set(handles.audiodatatext,'String',audiodatatext);
+fprintf(handles.fid,'%% UNDO PREVIOUS EDIT\n');
 if handles.version == 1, set(hObject,'Enable','off'); end
 guidata(hObject,handles);
 
@@ -830,6 +840,7 @@ if handles.version <= length(handles.testsignal)
     if handles.version == 1, set(hObject,'Enable','off'); end
     if handles.version == length(handles.testsignal), set(hObject,'Enable','off'); end
     guidata(hObject,handles);
+    fprintf(handles.fid,'%% REDO PREVIOUS EDIT\n');
 end
 
 
@@ -951,6 +962,7 @@ if ~isempty(handles.testsignal(handles.version))
     mainHandles.mytree.reloadNode(mainHandles.(genvarname(handles.selNodeName)).getParent);
     mainHandles.mytree.setSelectedNode(mainHandles.(genvarname(handles.selNodeName)));
     guidata(aarae_fig, mainHandles);
+    fprintf(handles.fid,'%% WRITE TO NEW\n');
 end
 guidata(hObject,handles);
 uiresume(handles.edit_signal);
@@ -969,6 +981,7 @@ if ~isempty(get(hObject,'String'))
 else
     set(hObject,'String',handles.selNodeName)
 end
+fprintf(handles.fid,['%% New name: ', handles.selNodeName,'\n']);
 guidata(hObject,handles)
 
 % --- Executes during object creation, after setting all properties.
