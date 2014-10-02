@@ -151,7 +151,7 @@ else
 end
 
 handles.alternate = 0;
-fprintf(handles.fid, ['Acoustic processing app started ' datestr(now) ' \n\n']);
+fprintf(handles.fid, ['%% AARAE session started ' datestr(now) ' \n\n']);
 guidata(hObject, handles);
 
 
@@ -174,7 +174,7 @@ rmappdata(0,'hMain');
 rmpath(genpath(cd));
 rmdir([cd '/Utilities/Temp'],'s');
 rmdir([cd '/Utilities/Backup'],'s');
-fprintf(handles.fid, ['\n- End of file - ' datestr(now)]);
+fprintf(handles.fid, ['\n%% - End of AARAE session - ' datestr(now)]);
 fclose('all');
 if ~isempty(handles.aarae)
     delete(handles.aarae);
@@ -232,9 +232,9 @@ if ~isempty(getappdata(hMain,'testsignal'))
     handles.mytree.setSelectedNode(handles.(genvarname(newleaf)));
     set([handles.clrall_btn,handles.export_btn],'Enable','on')
     % Log event
-    fprintf(handles.fid, [' ' datestr(now,16) ' - Generated ' newleaf ': duration = ' num2str(length(signaldata.audio)/signaldata.fs) 's ; fs = ' num2str(signaldata.fs) 'Hz; size = ' num2str(size(signaldata.audio)) '\n']);
+    fprintf(handles.fid, ['%% ' datestr(now,16) ' - Generated ' newleaf ': duration = ' num2str(length(signaldata.audio)/signaldata.fs) ' s ; fs = ' num2str(signaldata.fs) ' Hz; size = ' num2str(size(signaldata.audio)) '\n']);
     % Log verbose metadata
-    logaudioleaffields(handles,signaldata);
+    logaudioleaffields(handles.fid,signaldata,0);
 end
 guidata(hObject, handles);
 
@@ -336,7 +336,7 @@ for nleafs = 1:length(selectedNodes)
                     if strcmp(ext,'.wav'), audiowrite(audiodata.audio,audiodata.fs,[folder_name '/' name{1,1}]); end
                 end
                 %current = cd;
-                fprintf(handles.fid, [' ' datestr(now,16) ' - Saved "' char(selectedNodes(nleafs).getName) '" to file "' name{1,1} ext '" in folder "%s"' '\n'],folder_name);
+                fprintf(handles.fid, ['%% ' datestr(now,16) ' - Saved "' char(selectedNodes(nleafs).getName) '" to file "' name{1,1} ext '" in folder "%s"' '\n'],folder_name);
             end
         end
     end
@@ -447,9 +447,9 @@ for i = 1:length(filename)
             handles.mytree.expand(handles.(genvarname(signaldata.datatype)));
             %handles.mytree.setSelectedNode(handles.(genvarname(newleaf{1,1})));
             set([handles.clrall_btn,handles.export_btn],'Enable','on')
-            fprintf(handles.fid, [' ' datestr(now,16) ' - Loaded "' filename{i} '" to branch "' char(handles.(genvarname(signaldata.datatype)).getName) '"\n']);
+            fprintf(handles.fid, ['%% ' datestr(now,16) ' - Loaded "' filename{i} '" to branch "' char(handles.(genvarname(signaldata.datatype)).getName) '"\n']);
             % Log verbose metadata
-            logaudioleaffields(handles,signaldata);
+            logaudioleaffields(handles.fid,signaldata);
         end
         guidata(hObject, handles);
     end
@@ -510,7 +510,7 @@ if savenewsyscalstats == 1
     handles.mytree.expand(handles.measurements);
     handles.mytree.setSelectedNode(handles.(genvarname(funname)));
     set([handles.clrall_btn,handles.export_btn],'Enable','on')
-    fprintf(handles.fid, [' ' datestr(now,16) ' - Saved system calibration data ' handles.funname '\n']);
+    fprintf(handles.fid, ['%% ' datestr(now,16) ' - Saved system calibration data ' handles.funname '\n\n']);
 end
 if ~isempty(audiodata)
     audiodata.datatype = 'measurements';
@@ -540,9 +540,9 @@ if ~isempty(audiodata)
     handles.mytree.expand(handles.measurements);
     handles.mytree.setSelectedNode(handles.(genvarname(newleaf)));
     set([handles.clrall_btn,handles.export_btn],'Enable','on')
-    fprintf(handles.fid, [' ' datestr(now,16) ' - Recorded "' newleaf '": duration = ' num2str(length(audiodata.audio)/audiodata.fs) 's\n']);
+    fprintf(handles.fid, ['%% ' datestr(now,16) ' - Recorded "' newleaf '": duration = ' num2str(length(audiodata.audio)/audiodata.fs) 's\n']);
     % Log verbose metadata
-    logaudioleaffields(handles,audiodata);
+    logaudioleaffields(handles.fid,audiodata);
 end
 guidata(hObject, handles);
 
@@ -561,12 +561,15 @@ if isempty(signaldata), warndlg('No signal loaded!','Whoops...!');
 %elseif ndims(signaldata.audio) > 2, warndlg('Cannot edit file!','Whoops...!');
 else
     % Call editing window
-    [xi,xf] = edit_signal('main_stage1', handles.aarae);
+    selectedNodes = handles.mytree.getSelectedNodes;
+    selectedNodes = selectedNodes(1);
+    fprintf(handles.fid, ['%% ' datestr(now,16) ' - Opened edit window with "' char(selectedNodes.getName) '"\n\n']);
+    [xi,xf] = edit_signal('main_stage1', handles.aarae,'fid',handles.fid);
     % Update tree with edited signal
     if ~isempty(xi) && ~isempty(xf)
-        selectedNodes = handles.mytree.getSelectedNodes;
-        selectedNodes = selectedNodes(1);
-        fprintf(handles.fid, [' ' datestr(now,16) ' - Edited "' char(selectedNodes.getName) '": cropped from %fs to %fs; new duration = ' num2str(length(signaldata.audio)/signaldata.fs) 's\n'],xi,xf);
+         selectedNodes = handles.mytree.getSelectedNodes;
+         selectedNodes = selectedNodes(1);
+        fprintf(handles.fid, ['%% ' datestr(now,16) ' - Edited "' char(selectedNodes.getName) '": cropped from %fs to %fs; new duration = ' num2str(length(signaldata.audio)/signaldata.fs) ' s\n\n'],xi,xf);
     else
         handles.mytree.setSelectedNode(handles.root);
     end
@@ -668,7 +671,7 @@ else
             copyfile([cd '/Utilities/Temp'],[folder '/figures']);
         end
         addpath(genpath([cd '/Projects']))
-        fprintf(handles.fid, [' ' datestr(now,16) ' - Exported ' num2str(size(leaves,1)) ' data files and ' num2str(size(nfigs,1)) ' figures to "%s" \n'],folder);
+        fprintf(handles.fid, ['%% ' datestr(now,16) ' - Exported ' num2str(size(leaves,1)) ' data files and ' num2str(size(nfigs,1)) ' figures to "%s" \n\n'],folder);
         set(hObject,'BackgroundColor',[0.94 0.94 0.94]);
         set(hObject,'Enable','off');
     else
@@ -732,7 +735,7 @@ switch deleteans
                 handles.mytree.reloadNode(selectedParent);
                 handles.mytree.setSelectedNode(handles.root);
                 handles = rmfield(handles,genvarname(char(selectedNodes(nleafs).getName)));
-                fprintf(handles.fid, [' ' datestr(now,16) ' - Deleted "' char(selectedNodes(nleafs).getName) '" from branch "' char(selectedParent.getName) '"\n']);
+                fprintf(handles.fid, ['%% ' datestr(now,16) ' - Deleted "' char(selectedNodes(nleafs).getName) '" from branch "' char(selectedParent.getName) '"\n\n']);
             end
         end
         guidata(hObject, handles);
@@ -768,7 +771,7 @@ else
         play(handles.player);
         selectedNodes = handles.mytree.getSelectedNodes;
         contents = cellstr(get(handles.device_popup,'String'));
-        fprintf(handles.fid, [' ' datestr(now,16) ' - Played "' char(selectedNodes(1).getName) '" using ' contents{get(hObject,'Value')} '\n']);
+        fprintf(handles.fid, ['%% ' datestr(now,16) ' - Played "' char(selectedNodes(1).getName) '" using ' contents{get(hObject,'Value')} '\n\n']);
     else
         warndlg('Device not supported for playback!');
     end
@@ -952,9 +955,9 @@ if ~isempty(getappdata(hMain,'testsignal'))
     handles.mytree.expand(handles.measurements);
     handles.mytree.setSelectedNode(handles.(genvarname(newleaf)));
     set([handles.clrall_btn,handles.export_btn],'Enable','on')
-    fprintf(handles.fid, [' ' datestr(now,16) ' - Processed "' char(selectedNodes(1).getName) '" to generate an impulse response of ' num2str(IRlength) ' points\n']);
+    fprintf(handles.fid, ['%% ' datestr(now,16) ' - Processed "' char(selectedNodes(1).getName) '" to generate an impulse response of ' num2str(IRlength) ' points\n\n']);
     % Log verbose metadata (not necessary here)
-    % logaudioleaffields(handles,signaldata);
+    % logaudioleaffields(handles.fid,signaldata);
 end
 
 set(hObject,'BackgroundColor',[0.94 0.94 0.94]);
@@ -1087,9 +1090,9 @@ for nleafs = 1:length(selectedNodes)
                     %handles.mytree.setSelectedNode(handles.(genvarname(newleaf)));
                     set([handles.clrall_btn,handles.export_btn],'Enable','on')
                 end
-                fprintf(handles.fid, [' ' datestr(now,16) ' - Analyzed "' char(selectedNodes(1).getName) '" using ' funname ' in ' handles.funcat '\n']);% In what category???
+                fprintf(handles.fid, ['%% ' datestr(now,16) ' - Analyzed "' char(selectedNodes(1).getName) '" using ' funname ' in ' handles.funcat '\n']);% In what category???
                 % Log verbose metadata
-                logaudioleaffields(handles,signaldata);
+                logaudioleaffields(handles.fid,signaldata);
     
                 h = findobj('type','figure','-not','tag','aarae');
                 index = 1;
@@ -1343,9 +1346,9 @@ for nleafs = 1:length(selectedNodes)
                     handles.mytree.expand(handles.processed);
                     set([handles.clrall_btn,handles.export_btn],'Enable','on')
                 end
-                fprintf(handles.fid, [' ' datestr(now,16) ' - Processed "' name '" using ' funname ' in ' category '\n']);
+                fprintf(handles.fid, ['%% ' datestr(now,16) ' - Processed "' name '" using ' funname ' in ' category '\n']);
                 % Log verbose metadata
-                logaudioleaffields(handles,newdata);
+                logaudioleaffields(handles.fid,newdata);
             else
                 newleaf{1,1} = [];
             end
@@ -1967,7 +1970,7 @@ if ~isempty(cal_level)
         selectedNodes(i).handle.UserData = signaldata;
         selectedParent = selectedNodes(i).getParent;
         handles.mytree.reloadNode(selectedParent);
-        fprintf(handles.fid, [' ' datestr(now,16) ' - Calibrated "' char(selectedNodes(i).getName) '": adjusted to ' num2str(cal_level) 'dB \n']);
+        fprintf(handles.fid, ['%% ' datestr(now,16) ' - Calibrated "' char(selectedNodes(i).getName) '": adjusted to ' num2str(cal_level) 'dB \n\n']);
     end
     handles.mytree.setSelectedNodes(selectedNodes)
 end
@@ -2170,7 +2173,7 @@ else
         play(handles.player);
         selectedNodes = handles.mytree.getSelectedNodes;
         contents = cellstr(get(handles.device_popup,'String'));
-        fprintf(handles.fid, [' ' datestr(now,16) ' - Played "' char(selectedNodes(1).getName) '" using ' contents{get(hObject,'Value')} '\n']);
+        fprintf(handles.fid, ['%% ' datestr(now,16) ' - Played "' char(selectedNodes(1).getName) '" using ' contents{get(hObject,'Value')} '\n\n']);
     else
         warndlg('Device not supported for playback!');
     end
@@ -2211,7 +2214,7 @@ else
         play(handles.player);
         selectedNodes = handles.mytree.getSelectedNodes;
         contents = cellstr(get(handles.device_popup,'String'));
-        fprintf(handles.fid, [' ' datestr(now,16) ' - Played "' char(selectedNodes(1).getName) '" using ' contents{get(hObject,'Value')} '\n']);
+        fprintf(handles.fid, ['%% ' datestr(now,16) ' - Played "' char(selectedNodes(1).getName) '" using ' contents{get(hObject,'Value')} '\n\n']);
     else
         warndlg('Device not supported for playback!');
     end
@@ -2255,7 +2258,7 @@ else
         play(handles.player);
         selectedNodes = handles.mytree.getSelectedNodes;
         contents = cellstr(get(handles.device_popup,'String'));
-        fprintf(handles.fid, [' ' datestr(now,16) ' - Played "' char(selectedNodes(1).getName) '" using ' contents{get(hObject,'Value')} '\n']);
+        fprintf(handles.fid, ['%% ' datestr(now,16) ' - Played "' char(selectedNodes(1).getName) '" using ' contents{get(hObject,'Value')} '\n\n']);
     else
         warndlg('Device not supported for playback!');
     end
@@ -2295,7 +2298,7 @@ else
         play(handles.player);
         selectedNodes = handles.mytree.getSelectedNodes;
         contents = cellstr(get(handles.device_popup,'String'));
-        fprintf(handles.fid, [' ' datestr(now,16) ' - Played "' char(selectedNodes(1).getName) '" using ' contents{get(hObject,'Value')} '\n']);
+        fprintf(handles.fid, ['%% ' datestr(now,16) ' - Played "' char(selectedNodes(1).getName) '" using ' contents{get(hObject,'Value')} '\n\n']);
     else
         warndlg('Device not supported for playback!');
     end
@@ -2371,7 +2374,7 @@ else
         addpath([cd '/Utilities/Backup']);
         set(handles.result_box,'Value',1);
         set(handles.result_box,'String',cell(1,1));
-        fprintf(handles.fid, [' ' datestr(now,16) ' - Cleared workspace \n']);
+        fprintf(handles.fid, ['%% ' datestr(now,16) ' - Cleared workspace \n\n']);
         set(hObject,'BackgroundColor',[0.94 0.94 0.94]);
         set(hObject,'Enable','off');
         set(handles.export_btn,'Enable','off');
@@ -3013,75 +3016,3 @@ contents = cellstr(get(handles.fun_box,'String'));
 selection = contents{get(handles.fun_box,'Value')};
 eval(['doc ' selection])
 
-% --- Writes verbose data to the log file for an audio leaf
-function logaudioleaffields(handles,signaldata)
-    % Log of function callback
-    if isfield(signaldata,'funcallback')
-        if isfield(signaldata.funcallback,'name')
-            fprintf(handles.fid, ['  ','funcallback.name: ',signaldata.funcallback.name,'\n']); 
-        end
-        if isfield(signaldata.funcallback,'inarg')
-            for inargcount = 1:length(signaldata.funcallback.inarg)
-                if ~ischar(signaldata.funcallback.inarg{inargcount})
-                    fprintf(handles.fid,['  ','input argument ', num2str(inargcount),': ',num2str(signaldata.funcallback.inarg{inargcount}),'\n']);
-                else
-                    fprintf(handles.fid,['  ','input argument ', num2str(inargcount),': ',signaldata.funcallback.inarg{inargcount},'\n']);
-                end
-            end
-        end
-    end
-    
-    % Log of chan, band and audio2 fields if they exist
-    if isfield(signaldata,'cal')
-        fprintf(handles.fid,['  ','Channel calibration offset (dB): ', num2str(signaldata.cal(:)'),'\n']);
-    end
-    if isfield(signaldata,'chanID')
-        fprintf(handles.fid,['  ','ChanID: ']);
-        for ch = 1:length(signaldata.chanID)
-            fprintf(handles.fid,[signaldata.chanID{ch},'; ']);
-        end
-        fprintf(handles.fid,'\n');
-    end
-    if isfield(signaldata,'bandID')
-        fprintf(handles.fid,['  ','BandID: ', num2str(signaldata.bandID(:)'),'\n']);
-    end
-    if isfield(signaldata,'audio2')
-        fprintf(handles.fid,'  audio2 exists \n');
-    end
-    
-    % Log of properties subfields
-    if isfield(signaldata,'properties')
-        fnamesprop = fieldnames(signaldata.properties);
-        for fpropcount = 1:length(fnamesprop)
-            dat = signaldata.properties.(fnamesprop{fpropcount});
-            try
-                if length(size(dat)) <=2 || numel(dat)<=100 % filter out multidimensional and big data
-                    if ischar(dat)
-                        fprintf(handles.fid,['  ','properties.',fnamesprop{fpropcount}, ': ', dat,'\n']);
-                    elseif iscell(dat)
-                        for rw=1:size(dat,1)
-                            if rw == 1
-                                fprintf(handles.fid,['  ','properties.',fnamesprop{fpropcount}, ': ', dat{rw,:},'\n']);
-                            else
-                                fprintf(handles.fid,['                ', dat{rw,:},'\n']);
-                            end
-                        end
-                    else
-                        if min(size(dat)) == 1, dat = dat(:)'; end
-                        for rw=1:size(dat,1)
-                            if rw == 1
-                                fprintf(handles.fid,['  ','properties.',fnamesprop{fpropcount}, ': ', num2str(dat(rw,:)),'\n']);
-                            else
-                                fprintf(handles.fid,['                ',num2str(dat(rw,:)),'\n']);
-                            end
-                        end
-                    end
-                else
-                    fprintf(handles.fid,['  ','properties.',fnamesprop{fpropcount}, ': data is large or multidimensional \n']);
-                end
-            catch
-                fprintf(handles.fid,['  ','properties.',fnamesprop{fpropcount}, ': data exists \n']);
-            end
-        end
-        fprintf(handles.fid,'~~~\n');
-    end
