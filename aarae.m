@@ -231,7 +231,10 @@ if ~isempty(getappdata(hMain,'testsignal'))
     handles.mytree.expand(handles.testsignals);
     handles.mytree.setSelectedNode(handles.(genvarname(newleaf)));
     set([handles.clrall_btn,handles.export_btn],'Enable','on')
-    fprintf(handles.fid, [' ' datestr(now,16) ' - Generated ' newleaf ': duration = ' num2str(length(signaldata.audio)/signaldata.fs) 's ; fs = ' num2str(signaldata.fs) 'Hz \n']);
+    % Log event
+    fprintf(handles.fid, [' ' datestr(now,16) ' - Generated ' newleaf ': duration = ' num2str(length(signaldata.audio)/signaldata.fs) 's ; fs = ' num2str(signaldata.fs) 'Hz; size = ' num2str(size(signaldata.audio)) '\n']);
+    % Log verbose metadata
+    logaudioleaffields(handles,signaldata);
 end
 guidata(hObject, handles);
 
@@ -445,6 +448,8 @@ for i = 1:length(filename)
             %handles.mytree.setSelectedNode(handles.(genvarname(newleaf{1,1})));
             set([handles.clrall_btn,handles.export_btn],'Enable','on')
             fprintf(handles.fid, [' ' datestr(now,16) ' - Loaded "' filename{i} '" to branch "' char(handles.(genvarname(signaldata.datatype)).getName) '"\n']);
+            % Log verbose metadata
+            logaudioleaffields(handles,signaldata);
         end
         guidata(hObject, handles);
     end
@@ -536,6 +541,8 @@ if ~isempty(audiodata)
     handles.mytree.setSelectedNode(handles.(genvarname(newleaf)));
     set([handles.clrall_btn,handles.export_btn],'Enable','on')
     fprintf(handles.fid, [' ' datestr(now,16) ' - Recorded "' newleaf '": duration = ' num2str(length(audiodata.audio)/audiodata.fs) 's\n']);
+    % Log verbose metadata
+    logaudioleaffields(handles,audiodata);
 end
 guidata(hObject, handles);
 
@@ -925,7 +932,13 @@ if ~isempty(getappdata(hMain,'testsignal'))
     signaldata.audio = IR;
     signaldata.fs = fs;
     %signaldata.nbits = 16;
-    signaldata.chanID = cellstr([repmat('Chan',size(signaldata.audio,2),1) num2str((1:size(signaldata.audio,2))')]);
+    if isfield(signaldata,'chanID')
+        if length(signaldata.chanID) ~= size(signaldata.audio,2)
+            signaldata.chanID = cellstr([repmat('Chan',size(signaldata.audio,2),1) num2str((1:size(signaldata.audio,2))')]);
+        end
+    else
+        signaldata.chanID = cellstr([repmat('Chan',size(signaldata.audio,2),1) num2str((1:size(signaldata.audio,2))')]);
+    end
     signaldata.datatype = 'measurements';
     iconPath = fullfile(matlabroot,'/toolbox/fixedpoint/fixedpointtool/resources/plot.png');
     
@@ -940,6 +953,8 @@ if ~isempty(getappdata(hMain,'testsignal'))
     handles.mytree.setSelectedNode(handles.(genvarname(newleaf)));
     set([handles.clrall_btn,handles.export_btn],'Enable','on')
     fprintf(handles.fid, [' ' datestr(now,16) ' - Processed "' char(selectedNodes(1).getName) '" to generate an impulse response of ' num2str(IRlength) ' points\n']);
+    % Log verbose metadata (not necessary here)
+    % logaudioleaffields(handles,signaldata);
 end
 
 set(hObject,'BackgroundColor',[0.94 0.94 0.94]);
@@ -1073,7 +1088,9 @@ for nleafs = 1:length(selectedNodes)
                     set([handles.clrall_btn,handles.export_btn],'Enable','on')
                 end
                 fprintf(handles.fid, [' ' datestr(now,16) ' - Analyzed "' char(selectedNodes(1).getName) '" using ' funname ' in ' handles.funcat '\n']);% In what category???
-
+                % Log verbose metadata
+                logaudioleaffields(handles,signaldata);
+    
                 h = findobj('type','figure','-not','tag','aarae');
                 index = 1;
                 filename = dir([cd '/Utilities/Temp/' char(selectedNodes(nleafs).getName) funname num2str(index) '.fig']);
@@ -1327,6 +1344,8 @@ for nleafs = 1:length(selectedNodes)
                     set([handles.clrall_btn,handles.export_btn],'Enable','on')
                 end
                 fprintf(handles.fid, [' ' datestr(now,16) ' - Processed "' name '" using ' funname ' in ' category '\n']);
+                % Log verbose metadata
+                logaudioleaffields(handles,newdata);
             else
                 newleaf{1,1} = [];
             end
@@ -2993,3 +3012,76 @@ function analyser_help_btn_Callback(~, ~, handles) %#ok : Executed when help but
 contents = cellstr(get(handles.fun_box,'String'));
 selection = contents{get(handles.fun_box,'Value')};
 eval(['doc ' selection])
+
+% --- Writes verbose data to the log file for an audio leaf
+function logaudioleaffields(handles,signaldata)
+    % Log of function callback
+    if isfield(signaldata,'funcallback')
+        if isfield(signaldata.funcallback,'name')
+            fprintf(handles.fid, ['  ','funcallback.name: ',signaldata.funcallback.name,'\n']); 
+        end
+        if isfield(signaldata.funcallback,'inarg')
+            for inargcount = 1:length(signaldata.funcallback.inarg)
+                if ~ischar(signaldata.funcallback.inarg{inargcount})
+                    fprintf(handles.fid,['  ','input argument ', num2str(inargcount),': ',num2str(signaldata.funcallback.inarg{inargcount}),'\n']);
+                else
+                    fprintf(handles.fid,['  ','input argument ', num2str(inargcount),': ',signaldata.funcallback.inarg{inargcount},'\n']);
+                end
+            end
+        end
+    end
+    
+    % Log of chan, band and audio2 fields if they exist
+    if isfield(signaldata,'cal')
+        fprintf(handles.fid,['  ','Channel calibration offset (dB): ', num2str(signaldata.cal(:)'),'\n']);
+    end
+    if isfield(signaldata,'chanID')
+        fprintf(handles.fid,['  ','ChanID: ']);
+        for ch = 1:length(signaldata.chanID)
+            fprintf(handles.fid,[signaldata.chanID{ch},'; ']);
+        end
+        fprintf(handles.fid,'\n');
+    end
+    if isfield(signaldata,'bandID')
+        fprintf(handles.fid,['  ','BandID: ', num2str(signaldata.bandID(:)'),'\n']);
+    end
+    if isfield(signaldata,'audio2')
+        fprintf(handles.fid,'  audio2 exists \n');
+    end
+    
+    % Log of properties subfields
+    if isfield(signaldata,'properties')
+        fnamesprop = fieldnames(signaldata.properties);
+        for fpropcount = 1:length(fnamesprop)
+            dat = signaldata.properties.(fnamesprop{fpropcount});
+            try
+                if length(size(dat)) <=2 || numel(dat)<=100 % filter out multidimensional and big data
+                    if ischar(dat)
+                        fprintf(handles.fid,['  ','properties.',fnamesprop{fpropcount}, ': ', dat,'\n']);
+                    elseif iscell(dat)
+                        for rw=1:size(dat,1)
+                            if rw == 1
+                                fprintf(handles.fid,['  ','properties.',fnamesprop{fpropcount}, ': ', dat{rw,:},'\n']);
+                            else
+                                fprintf(handles.fid,['                ', dat{rw,:},'\n']);
+                            end
+                        end
+                    else
+                        if min(size(dat)) == 1, dat = dat(:)'; end
+                        for rw=1:size(dat,1)
+                            if rw == 1
+                                fprintf(handles.fid,['  ','properties.',fnamesprop{fpropcount}, ': ', num2str(dat(rw,:)),'\n']);
+                            else
+                                fprintf(handles.fid,['                ',num2str(dat(rw,:)),'\n']);
+                            end
+                        end
+                    end
+                else
+                    fprintf(handles.fid,['  ','properties.',fnamesprop{fpropcount}, ': data is large or multidimensional \n']);
+                end
+            catch
+                fprintf(handles.fid,['  ','properties.',fnamesprop{fpropcount}, ': data exists \n']);
+            end
+        end
+        fprintf(handles.fid,'~~~\n');
+    end
