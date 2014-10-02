@@ -16,10 +16,11 @@ if isfield(signaldata,'funcallback')
         if ~callbackaudioin
             callbackstring = ['OUT = ',callbackstring(1:end-2),'('];
         else
-            callbackstring = ['OUT = ',callbackstring(1:end-2),'(IN,'];
+            callbackstring = ['OUT = ',callbackstring(1:end-2),'(IN'];
         end
     end
     if isfield(signaldata.funcallback,'inarg')
+        callbackstring = [callbackstring,','];
         for inargcount = 1:length(signaldata.funcallback.inarg)
             try
             if ischar(signaldata.funcallback.inarg{inargcount})
@@ -60,9 +61,11 @@ end
 % describe audio
 if isfield(signaldata,'audio')
     fprintf(fid,['%%  audio field size: ',num2str(size(signaldata.audio)),'\n']);
-    fprintf(fid,['%%  fs: ',(signaldata.fs),' Hz\n']);
 else
     fprintf(fid,'%%  No audio field\n');
+end
+if isfield(signaldata,'fs')
+    fprintf(fid,['%%  fs: ',num2str(signaldata.fs),' Hz\n']);
 end
 
 % Log of chan, band and audio2 fields if they exist
