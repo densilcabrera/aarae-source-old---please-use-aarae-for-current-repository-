@@ -651,9 +651,10 @@ if ~isempty(processed)
     %selectedNodes = mainHandles.mytree.getSelectedNodes;
     audiodatatext = evalc('audiodata');
     set(handles.audiodatatext,'String',audiodatatext);
-    fprintf(handles.fid, ['%% ' datestr(now,16) ' - Processed in edit window using ' handles.funname '\n']);
-    % Log verbose metadata need handles.fid
-    logaudioleaffields(handles.fid,audiodata);
+    fprintf(handles.fid, ['%% ' datestr(now,16) ' - Processed in Edit window using ' handles.funname '\n']);
+    %fprintf(handles.fid,[audiodatatext,'\n']);
+    % Log verbose metadata
+    logaudioleaffields(handles.fid,processed);
 else
     handles.version = handles.version - 1;
 end

@@ -563,13 +563,14 @@ else
     % Call editing window
     selectedNodes = handles.mytree.getSelectedNodes;
     selectedNodes = selectedNodes(1);
-    fprintf(handles.fid, ['%% ' datestr(now,16) ' - Opened edit window with "' char(selectedNodes.getName) '"\n\n']);
+    fprintf(handles.fid, '%% ***********************************************\n');
+    fprintf(handles.fid, ['%% ' datestr(now,16) ' - Opened Edit window with "' char(selectedNodes.getName) '"\n\n']);
     [xi,xf] = edit_signal('main_stage1', handles.aarae,'fid',handles.fid);
     % Update tree with edited signal
     if ~isempty(xi) && ~isempty(xf)
-         selectedNodes = handles.mytree.getSelectedNodes;
-         selectedNodes = selectedNodes(1);
-        fprintf(handles.fid, ['%% ' datestr(now,16) ' - Edited "' char(selectedNodes.getName) '": cropped from %fs to %fs; new duration = ' num2str(length(signaldata.audio)/signaldata.fs) ' s\n\n'],xi,xf);
+        signaldata = getappdata(hMain,'testsignal');
+        fprintf(handles.fid, ['%% ' datestr(now,16) ' - Edited "' char(selectedNodes.getName) '": cropped from %fs to %fs (at input fs); new duration = ' num2str(length(signaldata.audio)/signaldata.fs) ' s\n\n'],xi,xf);
+        fprintf(handles.fid, '%% ***********************************************\n');
     else
         handles.mytree.setSelectedNode(handles.root);
     end
