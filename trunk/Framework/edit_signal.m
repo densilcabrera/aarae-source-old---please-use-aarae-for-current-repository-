@@ -66,8 +66,8 @@ if (isempty(mainGuiInput)) ...
 else
     % Remember the handle, and adjust our position
     handles.main_stage1 = varargin{mainGuiInput+1};
-
-    handles.fid = varargin{mainGuiInput+3};
+    mainHandles = guidata(handles.main_stage1);
+    handles.fid = mainHandles.fid;
 
     fontsize
 
