@@ -166,7 +166,9 @@ if ~isempty(handles.testsignal(handles.version))
     removefield = genvarname(selectedNodes(1).getName.char);
     
     % Save as you go
-    delete([cd '/Utilities/Backup/' selectedNodes(1).getName.char '.mat'])
+    if exist([cd '/Utilities/Backup/' selectedNodes(1).getName.char '.mat'],'file')
+        delete([cd '/Utilities/Backup/' selectedNodes(1).getName.char '.mat'])
+    end
     signaldata = handles.testsignal(handles.version); %#ok : Used in following line
     save([cd '/Utilities/Backup/' handles.selNodeName '.mat'], 'signaldata');
     
