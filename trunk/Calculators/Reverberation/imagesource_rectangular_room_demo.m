@@ -176,9 +176,10 @@ OUT.fs = fs;
 
 
 
-OUT.chanID = cellstr([repmat('HOA ',[size(OUT.audio,2),1]),num2str(hoaFmt.index)]);
+OUT.chanID = makechanID(nchans,1);
 
-
+OUT.funcallback.name = 'imagesource_rectangular_room_demo.m';
+OUT.funcallback.inarg = {Lx,Ly,Lz,xs,ys,zs,xr,yr,zr,c,jitter,maxorder,ambiorder};
 
 
 
