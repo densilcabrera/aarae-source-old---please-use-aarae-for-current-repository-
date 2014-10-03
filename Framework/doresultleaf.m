@@ -41,10 +41,17 @@ out.datainfo.dimensions = varargin{3};
 hasleafname = find(strcmp(varargin,'name'));
 if ~isempty(hasleafname), leafname = varargin{hasleafname+1}; end
 
+varstring = cell(ndims(out.data),1); % used for logging
 for n = 1:4:4*ndims(out.data)
     out.(genvarname(input{n})) = input{n+1};
     out.(genvarname([input{n} 'info'])).units = input{n+2};
     out.(genvarname([input{n} 'info'])).axistype = input{n+3};
+    varstring((n+3)/4) = {['DIMENSION ',num2str((n+3)/4),': ', char(input{n}),...
+        ', LENGTH: ', num2str(length(out.(genvarname(input{n})))),...
+        ', UNITS: ',...
+        (out.(genvarname([input{n} 'info'])).units),...
+        ', AXIS TYPE: ',...
+        num2str(out.(genvarname([input{n} 'info'])).axistype)]};
 end
 out.datatype = 'results';
 aarae_fig = findobj('Tag','aarae');
@@ -68,6 +75,10 @@ iconPath = fullfile(matlabroot,'/toolbox/matlab/icons/help_fx.png');
 
 % Save as you go
 save([cd '/Utilities/Backup/' leafname '.mat'], 'out');
+fprintf(handles.fid, ['%% ' datestr(now,16) ' - Generated AARAE Results leaf  ''', leafname ''':\n']);
+for n = 1:length(varstring)
+    fprintf(handles.fid, ['%% ', char(varstring(n)),'\n']);
+end
 
 handles.(genvarname(leafname)) = uitreenode('v0', leafname,  leafname, iconPath, true);
 handles.(genvarname(leafname)).UserData = out;
