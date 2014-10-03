@@ -1,7 +1,7 @@
 % --- Writes verbose data to the log file for an audio leaf
 function logaudioleaffields(fid,signaldata,callbackaudioin)
 % This function is called from aarae.m, to write to the log file
-% The third input argument callbackaudioin should be 0 is the function call
+% The third input argument callbackaudioin should be 0 if the function call
 % back does not have audio in, or 1 (default) if it does.
 
 if ~exist('callbackaudioin','var')
@@ -24,7 +24,7 @@ if isfield(signaldata,'funcallback')
         for inargcount = 1:length(signaldata.funcallback.inarg)
             try
             if ischar(signaldata.funcallback.inarg{inargcount})
-                callbackstring = [callbackstring,',''',signaldata.funcallback.inarg{inargcount},''''];
+                callbackstring = [callbackstring,'''',signaldata.funcallback.inarg{inargcount},''''];
             elseif iscell(signaldata.funcallback.inarg{inargcount})
                     callbackstring = [callbackstring,'''CELL_INPUT_NOT_INTERPRETED'''];
             else
