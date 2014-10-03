@@ -20,7 +20,9 @@ if isfield(signaldata,'funcallback')
         end
     end
     if isfield(signaldata.funcallback,'inarg')
+        if callbackaudioin ==1
         callbackstring = [callbackstring,','];
+        end
         for inargcount = 1:length(signaldata.funcallback.inarg)
             try
                 if numel(signaldata.funcallback.inarg{inargcount})>1000

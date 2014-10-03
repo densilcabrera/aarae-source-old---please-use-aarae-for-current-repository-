@@ -23,6 +23,10 @@ end
 if ~isempty(param) || nargin ~= 0
     OUT.audio = forest_reverb(N_trees,N_sc_max,forestwidth,minradius,maxradius,fs);
     OUT.fs = fs;
+    % Note that the following callback is for the main function rather than
+    % for this calling function. This callback is mainly done for logging.
+    OUT.funcallback.name = 'forest_reverb.m';
+    OUT.funcallback.inarg = {N_trees,N_sc_max,forestwidth,minradius,maxradius,fs};
 else
     OUT = [];
 end

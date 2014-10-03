@@ -117,33 +117,35 @@ if nargout(handles.funname) == 1
         else
             iconPath = fullfile(matlabroot,'/toolbox/matlab/icons/notesicon.gif');
         end
-        signaldata.datatype = 'results';
-        leafname = isfield(mainHandles,genvarname(handles.funname));
-        if leafname == 1
-            index = 1;
-            % This while cycle is just to make sure no signals are
-            % overwriten
-            if length(genvarname(handles.funname)) >= namelengthmax, handles.funname = handles.funname(1:round(end/2)); end
-            while isfield(handles,genvarname([handles.funname,'_',num2str(index)])) == 1
-                index = index + 1;
+        if length(fieldnames(signaldata)) ~= 1
+            signaldata.datatype = 'results';
+            leafname = isfield(mainHandles,genvarname(handles.funname));
+            if leafname == 1
+                index = 1;
+                % This while cycle is just to make sure no signals are
+                % overwriten
+                if length(genvarname(handles.funname)) >= namelengthmax, handles.funname = handles.funname(1:round(end/2)); end
+                while isfield(handles,genvarname([handles.funname,'_',num2str(index)])) == 1
+                    index = index + 1;
+                end
+                handles.funname = [handles.funname,'_',num2str(index)];
             end
-            handles.funname = [handles.funname,'_',num2str(index)];
+            
+            % Save as you go
+            save([cd '/Utilities/Backup/' handles.funname '.mat'], 'signaldata');
+            
+            mainHandles.(genvarname(handles.funname)) = uitreenode('v0', handles.funname,  handles.funname,  iconPath, true);
+            mainHandles.(genvarname(handles.funname)).UserData = signaldata;
+            mainHandles.results.add(mainHandles.(genvarname(handles.funname)));
+            mainHandles.mytree.reloadNode(mainHandles.results);
+            mainHandles.mytree.expand(mainHandles.results);
+            mainHandles.mytree.setSelectedNode(mainHandles.(genvarname(handles.funname)));
+            set([mainHandles.clrall_btn,mainHandles.export_btn],'Enable','on')
         end
-        
-        % Save as you go
-        save([cd '/Utilities/Backup/' handles.funname '.mat'], 'signaldata');
-        
-        mainHandles.(genvarname(handles.funname)) = uitreenode('v0', handles.funname,  handles.funname,  iconPath, true);
-        mainHandles.(genvarname(handles.funname)).UserData = signaldata;
-        mainHandles.results.add(mainHandles.(genvarname(handles.funname)));
-        mainHandles.mytree.reloadNode(mainHandles.results);
-        mainHandles.mytree.expand(mainHandles.results);
-        mainHandles.mytree.setSelectedNode(mainHandles.(genvarname(handles.funname)));
-        set([mainHandles.clrall_btn,mainHandles.export_btn],'Enable','on')
         fprintf(mainHandles.fid, [' ' datestr(now,16) ' - Used calculator ' handles.funname '\n']);
         
         % Log verbose metadata
-        logaudioleaffields(mainHandles.fid,signaldata);
+        logaudioleaffields(mainHandles.fid,signaldata,0);
         % Log contents of results tables
         if isfield(signaldata,'tables')
             for tt = 1:size(signaldata.tables,2)

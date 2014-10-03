@@ -42,6 +42,7 @@ if nargin == 0
     filterlen = 100;
     minphase = 1;
     
+    
     param = inputdlg({'Audio sampling rate (Hz)';...
         'Distance (m)'; ...
         'Temperature (deg C)'; ...
@@ -111,11 +112,16 @@ if nargin == 0
     end
     OUT.audio = h;
     OUT.fs = fs;
+    
+    
+    
 else
     OUT = alpha;
 end
 
-
+OUT.funcallback.name = 'dissipation.m';
+OUT.funcallback.inarg = {frequencies, temperatures, relhumidities, pressures, doplot};
+    
 
 % PLOTTING
 if doplot

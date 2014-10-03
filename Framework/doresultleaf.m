@@ -50,7 +50,9 @@ out.datatype = 'results';
 aarae_fig = findobj('Tag','aarae');
 handles = guidata(aarae_fig);
 selectedNodes = handles.mytree.getSelectedNodes;
-leafname = [char(selectedNodes(handles.nleafs).getName) '_' leafname];
+if isfield(handles,'nleafs')
+    leafname = [char(selectedNodes(handles.nleafs).getName) '_' leafname];
+end
 leafnameexist = isfield(handles,genvarname(leafname));
 if leafnameexist == 1
     index = 1;

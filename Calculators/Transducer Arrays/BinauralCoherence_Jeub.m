@@ -1,4 +1,4 @@
-function OUT = BinauralCoherence_Jeub
+function OUT = BinauralCoherence_Jeub(d_head,r_head,d_mic,c)
 % This function ports Marco Jeub's Binaural Coherence of Noise Fields
 % calculator to AARAE. The following is a quote from the Matlab file
 % exchange site:
@@ -91,15 +91,45 @@ if ~isempty(param) || nargin ~= 0
     %--------------------------------------------------------------------------
     
     % Create output structure
-    if nargin == 0
-        OUT.f = frq_vec;
-        OUT.bin_coh_3d = bin_coh_3d.^2;
-        OUT.bin_coh_2d = bin_coh_2d.^2;
-        OUT.coh_3d = coh_3d.^2;
-        OUT.coh_2d = coh_2d.^2;
-    end
+%     if nargin == 0
+%         OUT.f = frq_vec;
+%         OUT.bin_coh_3d = bin_coh_3d.^2;
+%         OUT.bin_coh_2d = bin_coh_2d.^2;
+%         OUT.coh_3d = coh_3d.^2;
+%         OUT.coh_2d = coh_2d.^2;
+%     end
     
-    
+
+doresultleaf([bin_coh_3d.^2',bin_coh_2d.^2',coh_3d.^2',coh_2d.^2'],'BinauralCoherence',{'Frequency','CoherenceType'},...
+                 'Frequency',      frq_vec,                'Hz',           true,...
+                 'CoherenceType',  [{'bin_coh_3d'},{'bin_coh_2d'},{'coh_3d'},{'coh_2d'}],           'categorical', [],...
+                 'name','BinCohereJeub');
+    %
+    % Input arguments:
+    % #1: Your data variable. It can be multidimensional, make sure you
+    %     specify what each dimension is.
+    % #2: What is your data variable representing? is it level? is it
+    %     reverb time? make sure you label it appropriately and assign
+    %     units to it, this second argument is a single string.
+    % #3: This is a cell array where each cell contains the name of each
+    %     dimension.
+    %
+    % #4: Name of your first dimension. (String)
+    % #5: Matrix that matches your first dimension, in this case time.
+    % #6: Units of your first dimension. (String)
+    % #7: Can this dimension be used as a category? (true, false, [])
+    %
+    % Replicate arguments 4 to 7 for as many dimensions as your data
+    % variable has.
+    %
+    % The second last input argument is the string 'name', this helps the
+    % function identify that the last input argument is the name that will
+    % be displayed in AARAEs categorical tree under the results leaf.
+
+
+
+    OUT.funcallback.name = 'BinauralCoherence_Jeub.m';
+    OUT.funcallback.inarg = {d_head,r_head,d_mic,c};
 else
     OUT = [];
 end
