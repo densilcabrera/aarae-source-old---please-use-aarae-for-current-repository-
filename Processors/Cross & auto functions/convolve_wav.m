@@ -6,7 +6,6 @@ function OUT = convolve_wav(in,fs,wave2,fs2,more_options)
 % version 1.01 (15 December 2013)
 if nargin < 5, more_options = 0; end
 % Use a dialog box to select a wav file.
-% The variable speechrec is used to store the file name.
 if nargin < 4
     selection = choose_audio;
     if ~isempty(selection)
@@ -31,7 +30,8 @@ end
 
 if ~isempty(wave1) && ~isempty(fs) && ~isempty(wave2) && ~isempty(fs2)
     if ~(fs2 == fs)
-        wave2 = resample(wave2,fs,fs2);
+        gcd_fs = gcd(fs,fs2); % greatest common denominator
+        wave2 = resample(wave2,fs/gcd_fs,fs2/gcd_fs);
     end
     [len1, chans1] = size(wave1);
     [len2, chans2] = size(wave2);

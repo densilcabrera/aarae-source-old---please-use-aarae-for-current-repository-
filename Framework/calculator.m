@@ -112,7 +112,7 @@ if nargout(handles.funname) == 1
     if ~isempty(signaldata)
         mainHandles.mytree.setSelectedNode(mainHandles.root);
         if isfield(signaldata,'audio')
-            signaldata.nbits = 16;
+            %signaldata.nbits = 16;
             iconPath = fullfile(matlabroot,'/toolbox/fixedpoint/fixedpointtool/resources/plot.png');
         else
             iconPath = fullfile(matlabroot,'/toolbox/matlab/icons/notesicon.gif');
@@ -141,6 +141,31 @@ if nargout(handles.funname) == 1
         mainHandles.mytree.setSelectedNode(mainHandles.(genvarname(handles.funname)));
         set([mainHandles.clrall_btn,mainHandles.export_btn],'Enable','on')
         fprintf(mainHandles.fid, [' ' datestr(now,16) ' - Used calculator ' handles.funname '\n']);
+        
+        % Log verbose metadata
+        logaudioleaffields(mainHandles.fid,signaldata);
+        % Log contents of results tables
+        if isfield(signaldata,'tables')
+            for tt = 1:size(signaldata.tables,2)
+                try
+                    fprintf(mainHandles.fid, ['%%  RESULTS TABLE: ', signaldata.tables(tt).Name,'\n']);
+                    fprintf(mainHandles.fid, '%% ColumNames, ');
+                    for cl = 1:length(signaldata.tables(tt).ColumnName)
+                        if cl < length(signaldata.tables(tt).ColumnName)
+                            fprintf(mainHandles.fid, [char(signaldata.tables(tt).ColumnName(cl)),',  ']);
+                        else
+                            fprintf(mainHandles.fid, [char(signaldata.tables(tt).ColumnName(cl)),'\n']);
+                        end
+                    end
+                    for rw = 1:length(signaldata.tables(tt).RowName)
+                        fprintf(mainHandles.fid, ['%% ', char(signaldata.tables(tt).RowName(rw)),',  ', num2str(signaldata.tables(tt).Data(rw,:)),'\n']);
+                    end
+                catch
+                    fprintf(mainHandles.fid,'Table format not interpreted for logging');
+                end
+                fprintf(mainHandles.fid,'\n');
+            end
+        end
     end
 else
     feval(handles.funname);

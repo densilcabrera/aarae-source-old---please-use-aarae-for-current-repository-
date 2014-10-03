@@ -152,6 +152,8 @@ end
 
 handles.alternate = 0;
 fprintf(handles.fid, ['%% AARAE session started ' datestr(now) ' \n\n']);
+% Consider adding blurb here to log file, or randomly selected messages of
+% encouragement...
 guidata(hObject, handles);
 
 
@@ -565,7 +567,7 @@ else
     selectedNodes = selectedNodes(1);
     fprintf(handles.fid, '%% ***********************************************\n');
     fprintf(handles.fid, ['%% ' datestr(now,16) ' - Opened Edit window with "' char(selectedNodes.getName) '"\n\n']);
-    [xi,xf] = edit_signal('main_stage1', handles.aarae,'fid',handles.fid);
+    [xi,xf] = edit_signal('main_stage1', handles.aarae);
     % Update tree with edited signal
     if ~isempty(xi) && ~isempty(xf)
         signaldata = getappdata(hMain,'testsignal');
@@ -780,7 +782,7 @@ end
 guidata(hObject, handles);
 
 
-% --- Executes on button press in IR_btn.
+% --- Executes on button press in IR_btn (convolve audio with audio2).
 function IR_btn_Callback(hObject, ~, handles) %#ok
 % hObject    handle to IR_btn (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
@@ -879,12 +881,14 @@ if method == 1 || method == 2 || method == 3
     if numel(S) <= maxsize
         S_pad = [S; zeros(size(invS))];
         invS_pad = [invS; zeros(size(S))];
-        IR = convolvedemo(S_pad, invS_pad, 2, fs); % Calls convolvedemo.m
+        IR = ifft(fft(S_pad) .* fft(invS_pad)); % this replaces the old function call in the next line, which seems to do twice the zero-padding necessary
+        %IR = convolvedemo(S_pad, invS_pad, 2, fs); % Calls convolvedemo.m
     else
         % use nested for-loops instead of doing everything at once (could
         % be very slow!) if the audio is too big for vectorized processing
         [~,chans,bands,dim4,dim5,dim6] = size(S);
-        IR = zeros(2*(length(S)+length(invS))-1,chans,bands,dim4,dim5,dim6);
+        %IR = zeros(2*(length(S)+length(invS))-1,chans,bands,dim4,dim5,dim6);
+        IR = zeros(length(S)+length(invS),chans,bands,dim4,dim5,dim6);
         for ch = 1:chans
             for b = 1:bands
                 for d4 = 1:dim4
@@ -892,8 +896,9 @@ if method == 1 || method == 2 || method == 3
                         for d6 = 1:dim6
                             S_pad = [S(:,ch,b,d4,d5,d6);zeros(length(invS),1)];
                             invS_pad = [invS(:,ch,b,d4,d5,d6); zeros(length(S),1)];
-                            IR(:,ch,b,d4,d5,d6) =...
-                                convolvedemo(S_pad, invS_pad, 2, fs);
+                            IR(:,ch,b,d4,d5,d6) = ifft(fft(S_pad) .* fft(invS_pad));
+%                             IR(:,ch,b,d4,d5,d6) =...
+%                                 convolvedemo(S_pad, invS_pad, 2, fs);
                         end
                     end
                 end
@@ -1091,7 +1096,7 @@ for nleafs = 1:length(selectedNodes)
                     %handles.mytree.setSelectedNode(handles.(genvarname(newleaf)));
                     set([handles.clrall_btn,handles.export_btn],'Enable','on')
                 end
-                fprintf(handles.fid, ['%% ' datestr(now,16) ' - Analyzed "' char(selectedNodes(nleafs).getName) '" using ' funname ' in ' handles.funcat '\n']);% In what category???
+                fprintf(handles.fid, ['%% ' datestr(now,16) ' - Analysed "' char(selectedNodes(nleafs).getName) '" using ' funname ' in ' handles.funcat '\n']);% In what category???
                 % Log verbose metadata
                 logaudioleaffields(handles.fid,signaldata);
                 % Log contents of results tables
