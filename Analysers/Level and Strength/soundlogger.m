@@ -241,7 +241,7 @@ if ~isempty(audio) && ~isempty(fs)
         'RowName', rowname);
     
     colname = {'Power mean';'Mean';'Median';'Minimum';'Maximum';'Range';...
-        '90th prctile';'10th prctile';'90-10% range'};
+        '90th prctile';'10th prctile';'90-10 percent range'};
     rowname = {'Leq';'Lmax';'L5';'L10';'L50';'L90';'Lmin'};
     table2 = [];
     if bands == 1, table2name = 'Soundlogger summary'; else table2name = cell(length(bands),1); end
