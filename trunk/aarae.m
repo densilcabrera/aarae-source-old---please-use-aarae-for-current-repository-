@@ -1091,9 +1091,31 @@ for nleafs = 1:length(selectedNodes)
                     %handles.mytree.setSelectedNode(handles.(genvarname(newleaf)));
                     set([handles.clrall_btn,handles.export_btn],'Enable','on')
                 end
-                fprintf(handles.fid, ['%% ' datestr(now,16) ' - Analyzed "' char(selectedNodes(1).getName) '" using ' funname ' in ' handles.funcat '\n']);% In what category???
+                fprintf(handles.fid, ['%% ' datestr(now,16) ' - Analyzed "' char(selectedNodes(nleafs).getName) '" using ' funname ' in ' handles.funcat '\n']);% In what category???
                 % Log verbose metadata
                 logaudioleaffields(handles.fid,signaldata);
+                % Log contents of results tables
+                if isfield(signaldata,'tables')
+                    for tt = 1:size(signaldata.tables,2)
+                        try
+                        fprintf(handles.fid, ['%%  RESULTS TABLE: ', signaldata.tables(tt).Name,'\n']);
+                        fprintf(handles.fid, '%% ColumNames, ');
+                        for cl = 1:length(signaldata.tables(tt).ColumnName)
+                            if cl < length(signaldata.tables(tt).ColumnName)
+                            fprintf(handles.fid, [char(signaldata.tables(tt).ColumnName(cl)),',  ']);
+                            else
+                                fprintf(handles.fid, [char(signaldata.tables(tt).ColumnName(cl)),'\n']);
+                            end
+                        end
+                        for rw = 1:length(signaldata.tables(tt).RowName)
+                            fprintf(handles.fid, ['%% ', char(signaldata.tables(tt).RowName(rw)),',  ', num2str(signaldata.tables(tt).Data(rw,:)),'\n']);
+                        end
+                        catch
+                            fprintf(handles.fid,'Table format not interpreted for logging');
+                        end
+                        fprintf(handles.fid,'\n');
+                    end
+                end
     
                 h = findobj('type','figure','-not','tag','aarae');
                 index = 1;
