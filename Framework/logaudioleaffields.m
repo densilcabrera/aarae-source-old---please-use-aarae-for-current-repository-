@@ -1,5 +1,5 @@
 % --- Writes verbose data to the log file for an audio leaf
-function logaudioleaffields(fid,signaldata,callbackaudioin)
+function logaudioleaffields(signaldata,callbackaudioin)
 % This function is called from aarae.m, to write to the log file
 % The third input argument callbackaudioin should be 0 if the function call
 % back does not have audio in, or 1 (default) if it does.
@@ -8,7 +8,12 @@ if ~exist('callbackaudioin','var')
     callbackaudioin = 1;
 end
 
+handles = guidata(findobj('Tag','aarae'));
+
 % Generate the function callback (if possible) and write to log file
+
+
+
 
 if isfield(signaldata,'funcallback')
     if isfield(signaldata.funcallback,'name')
@@ -51,7 +56,7 @@ if isfield(signaldata,'funcallback')
                         end
                     end
                 catch
-                    %fprintf(fid,['%%  ','input argument ', num2str(inargcount),': format not interpreted for logging \n']);
+                    %fprintf(handles.fid,['%%  ','input argument ', num2str(inargcount),': format not interpreted for logging \n']);
                     callbackstring = [callbackstring,'''INPUT_NOT_INTERPRETED'''];
                 end
                 if inargcount < length(signaldata.funcallback.inarg)
@@ -61,35 +66,61 @@ if isfield(signaldata,'funcallback')
         end
     end
     callbackstring = [callbackstring,');'];
-    fprintf(fid,[callbackstring,'\n']);
+    fprintf(handles.fid,[callbackstring,'\n']);
 end
+
+% Deal with partial selection in processors
+if isfield(handles,'partialselindices')
+    indices = handles.partialselindices;
+    selectionstring = [];
+            for i = 1:length(indices)
+                dimstring = char(indices{i});
+                if ~isempty(regexp(dimstring,',','once')) || ~isempty(regexp(dimstring,' ','once'))
+                    dimstring = ['[', dimstring, ']'];
+                end
+                if i<length(indices)
+                    selectionstring = [selectionstring, dimstring,','];
+                else
+                    selectionstring = [selectionstring, dimstring,')'];
+                end
+            end
+        selectionstring = ['COMPLETE.audio(',selectionstring,' = COMPLETE.audio(',selectionstring,'+OUT.audio;\n'];
+            fprintf(handles.fid,'OUT.audio = COMPLETE.audio;\n');
+            fprintf(handles.fid,'clear COMPLETE\n\n');
+    handles = rmfield(handles,'partialselindices');
+    guidata(findobj('Tag','aarae'),handles); % maybe this is dangerous!
+else
+    fprintf(handles.fid,'\n');
+end
+
+
 
 % describe audio
 if isfield(signaldata,'audio')
-    fprintf(fid,['%%  audio field size: ',num2str(size(signaldata.audio)),'\n']);
+    fprintf(handles.fid,['%%  audio field size: ',num2str(size(signaldata.audio)),'\n']);
 else
-    fprintf(fid,'%%  No audio field\n');
+    fprintf(handles.fid,'%%  No audio field\n');
 end
 if isfield(signaldata,'fs')
-    fprintf(fid,['%%  fs: ',num2str(signaldata.fs),' Hz\n']);
+    fprintf(handles.fid,['%%  fs: ',num2str(signaldata.fs),' Hz\n']);
 end
 
 % Log of chan, band and audio2 fields if they exist
 if isfield(signaldata,'audio2')
-    fprintf(fid,['%%  audio2 field size: ',num2str(size(signaldata.audio2)),'\n']);
+    fprintf(handles.fid,['%%  audio2 field size: ',num2str(size(signaldata.audio2)),'\n']);
 end
 if isfield(signaldata,'cal')
-    fprintf(fid,['%%  ','Channel calibration offset (dB): ', num2str(signaldata.cal(:)'),'\n']);
+    fprintf(handles.fid,['%%  ','Channel calibration offset (dB): ', num2str(signaldata.cal(:)'),'\n']);
 end
 if isfield(signaldata,'chanID')
-    fprintf(fid,['%%  ','ChanID: ']);
+    fprintf(handles.fid,['%%  ','ChanID: ']);
     for ch = 1:length(signaldata.chanID)
-        fprintf(fid,[' ',signaldata.chanID{ch},'; ']);
+        fprintf(handles.fid,[' ',signaldata.chanID{ch},'; ']);
     end
-    fprintf(fid,'\n');
+    fprintf(handles.fid,'\n');
 end
 if isfield(signaldata,'bandID')
-    fprintf(fid,['%%  ','BandID: ', num2str(signaldata.bandID(:)'),'\n']);
+    fprintf(handles.fid,['%%  ','BandID: ', num2str(signaldata.bandID(:)'),'\n']);
 end
 
 
@@ -104,31 +135,31 @@ if isfield(signaldata,'properties')
         try
             if length(size(dat)) <=2 || numel(dat)<=100 % filter out multidimensional and big data
                 if ischar(dat)
-                    fprintf(fid,['%%  ','properties.',fnamesprop{fpropcount}, ': ', dat,'\n']);
+                    fprintf(handles.fid,['%%  ','properties.',fnamesprop{fpropcount}, ': ', dat,'\n']);
                 elseif iscell(dat)
                     for rw=1:size(dat,1)
                         if rw == 1
-                            fprintf(fid,['%%  ','properties.',fnamesprop{fpropcount}, ': ', dat{rw,:},'\n']);
+                            fprintf(handles.fid,['%%  ','properties.',fnamesprop{fpropcount}, ': ', dat{rw,:},'\n']);
                         else
-                            fprintf(fid,['%%                ', dat{rw,:},'\n']);
+                            fprintf(handles.fid,['%%                ', dat{rw,:},'\n']);
                         end
                     end
                 else
                     if min(size(dat)) == 1, dat = dat(:)'; end
                     for rw=1:size(dat,1)
                         if rw == 1
-                            fprintf(fid,['%%  ','properties.',fnamesprop{fpropcount}, ': ', num2str(dat(rw,:)),'\n']);
+                            fprintf(handles.fid,['%%  ','properties.',fnamesprop{fpropcount}, ': ', num2str(dat(rw,:)),'\n']);
                         else
-                            fprintf(fid,['%%                ',num2str(dat(rw,:)),'\n']);
+                            fprintf(handles.fid,['%%                ',num2str(dat(rw,:)),'\n']);
                         end
                     end
                 end
             else
-                fprintf(fid,['%%  ','properties.',fnamesprop{fpropcount}, ': data is large or multidimensional \n']);
+                fprintf(handles.fid,['%%  ','properties.',fnamesprop{fpropcount}, ': data is large or multidimensional \n']);
             end
         catch
-            fprintf(fid,['%%  ','properties.',fnamesprop{fpropcount}, ': format not interpreted for logging \n']);
+            fprintf(handles.fid,['%%  ','properties.',fnamesprop{fpropcount}, ': format not interpreted for logging \n']);
         end
     end
 end
-fprintf(fid,'\n');
+fprintf(handles.fid,'\n');

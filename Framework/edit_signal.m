@@ -656,7 +656,7 @@ if ~isempty(processed)
     fprintf(handles.fid, ['%% ' datestr(now,16) ' - Processed in Edit window using ' handles.funname '\n']);
     %fprintf(handles.fid,[audiodatatext,'\n']);
     % Log verbose metadata
-    logaudioleaffields(handles.fid,processed);
+    logaudioleaffields(processed);
 else
     handles.version = handles.version - 1;
 end
