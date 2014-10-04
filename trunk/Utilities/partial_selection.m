@@ -1,5 +1,7 @@
 function indices = partial_selection(in)
 
+handles = guidata(findobj('Tag','aarae'));
+
 audiosize = size(in.audio);
 prompt = cell(1,ndims(in.audio));
 def = cell(1,ndims(in.audio));
@@ -24,6 +26,20 @@ else
     indices = cell(size(answer));
     for i = 1:length(answer), indices{i,1} = ['[' answer{i,1} ']']; end
     indices = cellfun(@eval,indices,'UniformOutput',false);
+    selectionstring = 'IN = IN(';
+    for i = 1:length(answer)
+        dimstring = char(answer{i});
+        if ~isempty(regexp(dimstring,',','once')) || ~isempty(regexp(dimstring,' ','once'))
+            dimstring = ['[', dimstring, ']'];
+        end
+        if i<length(answer)
+        selectionstring = [selectionstring, dimstring,','];
+        else
+            selectionstring = [selectionstring, dimstring,');'];
+        end
+    end
+    fprintf(handles.fid,'%% Selected audio indices for processing using AARAE''s partial_selection.m utility function:\n');
+    fprintf(handles.fid,[selectionstring,'\n']);
     try
         in.audio(indices{:});
     catch
