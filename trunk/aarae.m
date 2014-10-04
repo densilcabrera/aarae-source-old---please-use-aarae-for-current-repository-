@@ -156,8 +156,10 @@ fprintf(handles.fid, ['%% AARAE session started ' datestr(now) ' \n\n']);
 % encouragement...
 guidata(hObject, handles);
 
-
+% AARAE function for dealing with differences between Windows and Mac font
+% size
 fontsize
+
 % Set waiting flag in appdata
 setappdata(handles.aarae,'waiting',1)
 % UIWAIT makes aarae wait for user response (see UIRESUME)
@@ -236,7 +238,7 @@ if ~isempty(getappdata(hMain,'testsignal'))
     % Log event
     fprintf(handles.fid, ['%% ' datestr(now,16) ' - Generated ' newleaf ': duration = ' num2str(length(signaldata.audio)/signaldata.fs) ' s ; fs = ' num2str(signaldata.fs) ' Hz; size = ' num2str(size(signaldata.audio)) '\n']);
     % Log verbose metadata
-    logaudioleaffields(handles.fid,signaldata,0);
+    logaudioleaffields(signaldata,0);
 end
 guidata(hObject, handles);
 
@@ -451,7 +453,7 @@ for i = 1:length(filename)
             set([handles.clrall_btn,handles.export_btn],'Enable','on')
             fprintf(handles.fid, ['%% ' datestr(now,16) ' - Loaded "' filename{i} '" to branch "' char(handles.(genvarname(signaldata.datatype)).getName) '"\n']);
             % Log verbose metadata
-            logaudioleaffields(handles.fid,signaldata);
+            logaudioleaffields(signaldata);
         end
         guidata(hObject, handles);
     end
@@ -544,7 +546,7 @@ if ~isempty(audiodata)
     set([handles.clrall_btn,handles.export_btn],'Enable','on')
     fprintf(handles.fid, ['%% ' datestr(now,16) ' - Recorded "' newleaf '": duration = ' num2str(length(audiodata.audio)/audiodata.fs) 's\n']);
     % Log verbose metadata
-    logaudioleaffields(handles.fid,audiodata);
+    logaudioleaffields(audiodata);
 end
 guidata(hObject, handles);
 
@@ -976,7 +978,7 @@ if ~isempty(getappdata(hMain,'testsignal'))
     end
     fprintf(handles.fid,'\n');
     % Log verbose metadata (not necessary here)
-    % logaudioleaffields(handles.fid,signaldata);
+    % logaudioleaffields(signaldata);
 end
 
 set(hObject,'BackgroundColor',[0.94 0.94 0.94]);
@@ -1111,7 +1113,7 @@ for nleafs = 1:length(selectedNodes)
                 end
                 fprintf(handles.fid, ['%% ' datestr(now,16) ' - Analysed "' char(selectedNodes(nleafs).getName) '" using ' funname ' in ' handles.funcat '\n']);% In what category???
                 % Log verbose metadata
-                logaudioleaffields(handles.fid,signaldata);
+                logaudioleaffields(signaldata);
                 % Log contents of results tables
                 if isfield(signaldata,'tables')
                     for tt = 1:size(signaldata.tables,2)
@@ -1389,7 +1391,7 @@ for nleafs = 1:length(selectedNodes)
                 end
                 fprintf(handles.fid, ['%% ' datestr(now,16) ' - Processed "' name '" using ' funname ' in ' category '\n']);
                 % Log verbose metadata
-                logaudioleaffields(handles.fid,newdata);
+                logaudioleaffields(newdata);
             else
                 newleaf{1,1} = [];
             end
