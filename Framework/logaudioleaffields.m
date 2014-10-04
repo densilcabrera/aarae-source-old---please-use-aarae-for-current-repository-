@@ -20,41 +20,43 @@ if isfield(signaldata,'funcallback')
         end
     end
     if isfield(signaldata.funcallback,'inarg')
-        if callbackaudioin ==1
-        callbackstring = [callbackstring,','];
-        end
-        for inargcount = 1:length(signaldata.funcallback.inarg)
-            try
-                if numel(signaldata.funcallback.inarg{inargcount})>1000
-                    callbackstring = [callbackstring,'''DATA_TOO_BIG_TO_LOG'''];
-                elseif ischar(signaldata.funcallback.inarg{inargcount})
-                    callbackstring = [callbackstring,'''',signaldata.funcallback.inarg{inargcount},''''];
-                elseif iscell(signaldata.funcallback.inarg{inargcount})
-                    callbackstring = [callbackstring,'''CELL_INPUT_NOT_INTERPRETED'''];
-                else
-                    if length(signaldata.funcallback.inarg{inargcount}) == 1
-                        callbackstring = [callbackstring,num2str(signaldata.funcallback.inarg{inargcount})];
+        if ~isempty(signaldata.funcallback.inarg)
+            if callbackaudioin ==1
+                callbackstring = [callbackstring,','];
+            end
+            for inargcount = 1:length(signaldata.funcallback.inarg)
+                try
+                    if numel(signaldata.funcallback.inarg{inargcount})>1000
+                        callbackstring = [callbackstring,'''DATA_TOO_BIG_TO_LOG'''];
+                    elseif ischar(signaldata.funcallback.inarg{inargcount})
+                        callbackstring = [callbackstring,'''',signaldata.funcallback.inarg{inargcount},''''];
+                    elseif iscell(signaldata.funcallback.inarg{inargcount})
+                        callbackstring = [callbackstring,'''CELL_INPUT_NOT_INTERPRETED'''];
                     else
-                        if length(size(signaldata.funcallback.inarg{inargcount})) <= 2
-                            callbackstring = [callbackstring,'['];
-                            for rw = 1:size(signaldata.funcallback.inarg{inargcount},1)
-                                callbackstring = [callbackstring,num2str(signaldata.funcallback.inarg{inargcount}(rw,:))];
-                                if rw <size(signaldata.funcallback.inarg{inargcount},1)
-                                    callbackstring = [callbackstring,';'];
-                                end
-                            end
-                            callbackstring = [callbackstring,']'];
+                        if length(signaldata.funcallback.inarg{inargcount}) == 1
+                            callbackstring = [callbackstring,num2str(signaldata.funcallback.inarg{inargcount})];
                         else
-                            callbackstring = [callbackstring,'''MULTIDIMENSIONAL_INPUT_NOT_INTERPRETED'''];
+                            if length(size(signaldata.funcallback.inarg{inargcount})) <= 2
+                                callbackstring = [callbackstring,'['];
+                                for rw = 1:size(signaldata.funcallback.inarg{inargcount},1)
+                                    callbackstring = [callbackstring,num2str(signaldata.funcallback.inarg{inargcount}(rw,:))];
+                                    if rw <size(signaldata.funcallback.inarg{inargcount},1)
+                                        callbackstring = [callbackstring,';'];
+                                    end
+                                end
+                                callbackstring = [callbackstring,']'];
+                            else
+                                callbackstring = [callbackstring,'''MULTIDIMENSIONAL_INPUT_NOT_INTERPRETED'''];
+                            end
                         end
                     end
+                catch
+                    %fprintf(fid,['%%  ','input argument ', num2str(inargcount),': format not interpreted for logging \n']);
+                    callbackstring = [callbackstring,'''INPUT_NOT_INTERPRETED'''];
                 end
-            catch
-                %fprintf(fid,['%%  ','input argument ', num2str(inargcount),': format not interpreted for logging \n']);
-                callbackstring = [callbackstring,'''INPUT_NOT_INTERPRETED'''];
-            end
-            if inargcount < length(signaldata.funcallback.inarg)
-                callbackstring = [callbackstring,','];
+                if inargcount < length(signaldata.funcallback.inarg)
+                    callbackstring = [callbackstring,','];
+                end
             end
         end
     end
