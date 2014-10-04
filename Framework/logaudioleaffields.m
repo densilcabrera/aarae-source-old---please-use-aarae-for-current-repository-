@@ -84,7 +84,7 @@ if isfield(handles,'partialselindices')
                     selectionstring = [selectionstring, dimstring,')'];
                 end
             end
-        selectionstring = ['COMPLETE.audio(',selectionstring,' = COMPLETE.audio(',selectionstring,'+OUT.audio;\n'];
+        selectionstring = ['COMPLETE.audio(',selectionstring,' = OUT.audio;\n'];
             fprintf(handles.fid,'OUT.audio = COMPLETE.audio;\n');
             fprintf(handles.fid,'clear COMPLETE\n\n');
     handles = rmfield(handles,'partialselindices');
