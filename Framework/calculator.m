@@ -142,10 +142,10 @@ if nargout(handles.funname) == 1
             mainHandles.mytree.setSelectedNode(mainHandles.(genvarname(handles.funname)));
             set([mainHandles.clrall_btn,mainHandles.export_btn],'Enable','on')
         end
-        fprintf(mainHandles.fid, [' ' datestr(now,16) ' - Used calculator ' handles.funname '\n']);
+        fprintf(mainHandles.fid, ['%% ' datestr(now,16) ' - Used calculator ' handles.funname '\n']);
         
         % Log verbose metadata
-        logaudioleaffields(mainHandles.fid,signaldata,0);
+        logaudioleaffields(signaldata,0);
         % Log contents of results tables
         if isfield(signaldata,'tables')
             for tt = 1:size(signaldata.tables,2)
@@ -185,6 +185,7 @@ if ~isempty(filename)
 end
 for i = 1:length(h)
     saveas(h(i),[cd '/Utilities/Temp/' handles.funname num2str(index) '.fig']);
+    fprintf(mainHandles.fid,['%% Result figure name: ', handles.funname num2str(index), '.fig, temporarily stored in /Utilities/Temp/\n']);
     index = index + 1;
 end
 results = dir([cd '/Utilities/Temp']);

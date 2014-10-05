@@ -48,11 +48,11 @@ else
                 end
             end
             
-            fprintf(handles.fid,'%% Selected audio indices for processing using AARAE''s partial_selection.m utility function:\n');
+            fprintf(handles.fid,'%% Partial selection of audio using AARAE''s partial_selection.m utility function - the following code is equivalent:\n');
             fprintf(handles.fid,'COMPLETE.audio = IN.audio;\n');
             fprintf(handles.fid,[selectionstring,'\n']);
-           handles.partialselindices=answer;
-           guidata(findobj('Tag','aarae'),handles); % maybe this is dangerous!
+            handles.partialselindices=answer;
+            guidata(findobj('Tag','aarae'),handles); % maybe this is dangerous!
         end
     catch
         warndlg('Invalid selection, process will be applied to the whole audio file.','AARAE info','modal')
