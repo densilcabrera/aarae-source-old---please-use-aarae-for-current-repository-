@@ -171,4 +171,48 @@ if isfield(signaldata,'properties')
 end
 fprintf(handles.fid,'\n');
 
+
+% Log contents of results tables
+if isfield(signaldata,'tables')
+    for tt = 1:size(signaldata.tables,2)
+        try
+            fprintf(handles.fid, ['%%  RESULTS TABLE: ', signaldata.tables(tt).Name,'\n']);
+            rownamelen = zeros(length(signaldata.tables(tt).RowName),1);
+            for rw = 1:length(signaldata.tables(tt).RowName)
+                rownamelen(rw) = length(signaldata.tables(tt).RowName{rw});
+            end
+            maxrownamelen = max(rownamelen);
+            if maxrownamelen < 15, maxrownamelen =15; end
+            fprintf(handles.fid, ['%%,', repmat(' ',[1,maxrownamelen+1])]);
+            for cl = 1:length(signaldata.tables(tt).ColumnName)
+                if cl < length(signaldata.tables(tt).ColumnName)
+                    colnamestring = char(signaldata.tables(tt).ColumnName(cl));
+                    if length(colnamestring)>14,colnamestring = colnamestring(1:14); end
+                    fprintf(handles.fid, [colnamestring,',',repmat(' ',[1,15-length(colnamestring)])]);
+                else
+                    colnamestring = char(signaldata.tables(tt).ColumnName(cl));
+                    if length(colnamestring)>14,colnamestring = colnamestring(1:14); end
+                    fprintf(handles.fid, [colnamestring,'\n']);
+                end
+            end
+            
+            for rw = 1:length(signaldata.tables(tt).RowName)
+                fprintf(handles.fid, ['%% ', char(signaldata.tables(tt).RowName(rw)),',',repmat(' ',[1,maxrownamelen-rownamelen(rw)+1])]);
+                for cl = 1:size(signaldata.tables(tt).Data,2)
+                    if cl < size(signaldata.tables(tt).Data,2)
+                        fprintf(handles.fid, [num2str(signaldata.tables(tt).Data(rw,cl)),',',repmat(' ',[1,15-length(num2str(signaldata.tables(tt).Data(rw,cl)))])]);
+                    else
+                        fprintf(handles.fid, [num2str(signaldata.tables(tt).Data(rw,cl)),'\n']);
+                    end
+                end
+            end
+        catch
+            fprintf(handles.fid,'Table format not interpreted for logging');
+        end
+        fprintf(handles.fid,'\n');
+    end
+end
+
+
+
 guidata(findobj('Tag','aarae'),handles); % return changes in aarae handles
