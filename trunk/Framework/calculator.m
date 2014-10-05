@@ -146,28 +146,6 @@ if nargout(handles.funname) == 1
         
         % Log verbose metadata
         logaudioleaffields(signaldata,0);
-        % Log contents of results tables
-        if isfield(signaldata,'tables')
-            for tt = 1:size(signaldata.tables,2)
-                try
-                    fprintf(mainHandles.fid, ['%%  RESULTS TABLE: ', signaldata.tables(tt).Name,'\n']);
-                    fprintf(mainHandles.fid, '%% ColumNames, ');
-                    for cl = 1:length(signaldata.tables(tt).ColumnName)
-                        if cl < length(signaldata.tables(tt).ColumnName)
-                            fprintf(mainHandles.fid, [char(signaldata.tables(tt).ColumnName(cl)),',  ']);
-                        else
-                            fprintf(mainHandles.fid, [char(signaldata.tables(tt).ColumnName(cl)),'\n']);
-                        end
-                    end
-                    for rw = 1:length(signaldata.tables(tt).RowName)
-                        fprintf(mainHandles.fid, ['%% ', char(signaldata.tables(tt).RowName(rw)),',  ', num2str(signaldata.tables(tt).Data(rw,:)),'\n']);
-                    end
-                catch
-                    fprintf(mainHandles.fid,'Table format not interpreted for logging');
-                end
-                fprintf(mainHandles.fid,'\n');
-            end
-        end
     end
 else
     feval(handles.funname);
