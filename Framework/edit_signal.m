@@ -657,6 +657,9 @@ if ~isempty(processed)
     %fprintf(handles.fid,[audiodatatext,'\n']);
     % Log verbose metadata
     logaudioleaffields(processed);
+    if isfield(handles,'choosefromhigherdims')
+         handles.choosefromhigherdims = [];
+    end
 else
     handles.version = handles.version - 1;
 end

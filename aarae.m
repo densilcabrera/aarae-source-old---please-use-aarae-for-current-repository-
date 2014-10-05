@@ -1114,6 +1114,9 @@ for nleafs = 1:length(selectedNodes)
                 fprintf(handles.fid, ['%% ' datestr(now,16) ' - Analysed "' char(selectedNodes(nleafs).getName) '" using ' funname ' in ' handles.funcat '\n']);% In what category???
                 % Log verbose metadata
                 logaudioleaffields(signaldata);
+                if isfield(handles,'choosefromhigherdims')
+                    handles.choosefromhigherdims = [];
+                end
                 % Log contents of results tables
                 if isfield(signaldata,'tables')
                     for tt = 1:size(signaldata.tables,2)
@@ -1393,6 +1396,9 @@ for nleafs = 1:length(selectedNodes)
                 fprintf(handles.fid, ['%% ' datestr(now,16) ' - Processed "' name '" using ' funname ' in ' category '\n']);
                 % Log verbose metadata
                 logaudioleaffields(newdata);
+                if isfield(handles,'choosefromhigherdims')
+                    handles.choosefromhigherdims = [];
+                end
             else
                 newleaf{1,1} = [];
             end

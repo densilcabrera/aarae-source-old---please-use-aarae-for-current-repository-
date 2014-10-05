@@ -24,10 +24,11 @@ if isfield(signaldata,'funcallback')
             callbackstring = ['OUT = ',callbackstring(1:end-2),'(IN'];
             if isfield(handles,'choosefromhigherdims')
                 callbackstring = [callbackstring,handles.choosefromhigherdims];
-                % THE FOLLOWING IS NOT WORKING YET - NEED TO FIX
-                handles.choosefromhigherdims = [];
-                %handles = rmfield(handles,'choosefromhigherdims');
-                guidata(findobj('Tag','aarae'),handles); % return changes in aarae handles
+                % THE FOLLOWING DOES NOT WORK, SO THE FIELD IS ZAPPED IN
+                % THE CALLING FUNCTION WHERE RELEVANT INSTEAD
+                %handles.choosefromhigherdims = [];
+                %%handles = rmfield(handles,'choosefromhigherdims');
+                %guidata(findobj('Tag','aarae'),handles); % return changes in aarae handles
             end
         end
     end
