@@ -140,6 +140,7 @@ activity = dir([cd '/Log' '/activity log.txt']);
 if isempty(activity)
     activitylog = '/activity log.txt';
     handles.fid = fopen([cd '/Log' activitylog], 'w');
+    handles.activitylog = activitylog; % used for export all
 else
     index = 1;
     % This while cycle is just to make sure no files are overwriten
@@ -676,8 +677,10 @@ else
             nfigs = dir([cd '/Utilities/Temp/*.fig']);
             copyfile([cd '/Utilities/Temp'],[folder '/figures']);
         end
-        if isdir([cd '/Log'])
-            copyfile([cd '/Log' handles.activitylog],folder);
+        if isfield(handles,'activitylog')
+            if isdir([cd '/Log'])
+                copyfile([cd '/Log' handles.activitylog],folder);
+            end
         end
         addpath(genpath([cd '/Projects']))
         fprintf(handles.fid, ['%% ' datestr(now,16) ' - Exported ' num2str(size(leaves,1)) ' data files and ' num2str(size(nfigs,1)) ' figures to "%s" \n\n'],folder);
