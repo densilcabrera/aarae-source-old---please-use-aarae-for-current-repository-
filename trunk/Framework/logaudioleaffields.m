@@ -22,6 +22,13 @@ if isfield(signaldata,'funcallback')
             callbackstring = ['OUT = ',callbackstring(1:end-2),'('];
         else
             callbackstring = ['OUT = ',callbackstring(1:end-2),'(IN'];
+            if isfield(handles,'choosefromhigherdims')
+                callbackstring = [callbackstring,handles.choosefromhigherdims];
+                % THE FOLLOWING IS NOT WORKING YET - NEED TO FIX
+                handles.choosefromhigherdims = [];
+                %handles = rmfield(handles,'choosefromhigherdims');
+                guidata(findobj('Tag','aarae'),handles); % return changes in aarae handles
+            end
         end
     end
     if isfield(signaldata.funcallback,'inarg')
@@ -88,7 +95,6 @@ if isfield(handles,'partialselindices')
             fprintf(handles.fid,'OUT.audio = COMPLETE.audio;\n');
             fprintf(handles.fid,'clear COMPLETE\n\n');
     handles = rmfield(handles,'partialselindices');
-    guidata(findobj('Tag','aarae'),handles); % maybe this is dangerous!
 else
     fprintf(handles.fid,'\n');
 end
@@ -163,3 +169,5 @@ if isfield(signaldata,'properties')
     end
 end
 fprintf(handles.fid,'\n');
+
+guidata(findobj('Tag','aarae'),handles); % return changes in aarae handles

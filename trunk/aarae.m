@@ -1147,6 +1147,7 @@ for nleafs = 1:length(selectedNodes)
                 end
                 for i = 1:length(h)
                     saveas(h(i),[cd '/Utilities/Temp/' char(selectedNodes(nleafs).getName) funname num2str(index) '.fig']);
+                    fprintf(handles.fid,['%% Result figure name: ', char(selectedNodes(nleafs).getName), funname num2str(index), '.fig, temporarily stored in /Utilities/Temp/\n']);
                     index = index + 1;
                 end
                 results = dir([cd '/Utilities/Temp']);
@@ -1408,6 +1409,7 @@ for nleafs = 1:length(selectedNodes)
         end
         for i = 1:length(h)
             saveas(h(i),[cd '/Utilities/Temp/' handles.funname num2str(index) '.fig']);
+            fprintf(handles.fid,['%% Result figure name: ', handles.funname num2str(index), '.fig, temporarily stored in /Utilities/Temp/\n']);
             index = index + 1;
         end
         results = dir([cd '/Utilities/Temp']);

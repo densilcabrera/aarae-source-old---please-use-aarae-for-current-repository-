@@ -108,6 +108,7 @@ end
     
 
 % If we get here, then we do need to do something
+handles = guidata(findobj('Tag','aarae')); % for activity logging
 nonsingleton = Sz>1; % non singleton dimensions
 nonsingleton = [nonsingleton,zeros(1,6-length(Sz))];
 nonsingleton(1:maxdim) = 0; % don't worry about dims <= maxdim
@@ -116,6 +117,7 @@ if method == 0
     % take the first index of each excess dimension, except dimension 4,
     % where we take the last index (because of its use for variable gain in
     % multicycle tests - including the silent cycle which is always first)
+    indexstring = '(:,';
     if nonsingleton(2)
         audio = audio(:,1,:,:,:,:);
         if exist('chanID','var')
@@ -124,12 +126,18 @@ if method == 0
         if exist('cal','var')
             cal = cal(1);
         end
+        indexstring = [indexstring,'1,'];
+    else
+        indexstring = [indexstring,':,'];
     end
     if nonsingleton(3)
         audio = audio(:,:,1,:,:,:);
         if exist('bandID','var')
             bandID = bandID(1);
         end
+        indexstring = [indexstring,'1,'];
+    else
+        indexstring = [indexstring,':,'];
     end
     if nonsingleton(4)
         audio = audio(:,:,:,end,:,:);
@@ -139,13 +147,23 @@ if method == 0
         if exist('relgain','var')
             relgain = relgain(end); % should be 0 dB
         end
+        indexstring = [indexstring,'1,'];
+    else
+        indexstring = [indexstring,':,'];
     end
     if nonsingleton(5)
         audio = audio(:,:,:,:,1,:);
+        indexstring = [indexstring,'1,'];
+    else
+        indexstring = [indexstring,':,'];
     end
     if nonsingleton(6)
         audio = audio(:,:,:,:,:,1);
+        indexstring = [indexstring,'1,'];
+    else
+        indexstring = [indexstring,':)'];
     end
+    
     
     
 elseif method ==-1
@@ -169,6 +187,7 @@ elseif method ==-1
             if isfield(IN,'bandID')
                 IN = rmfield(IN,'bandID');
             end
+            indexstring = '(DATA_RESHAPED_TO_1_DIMENSION)';
             
         case 2
             % This also is usually not a good idea for multiband audio!!
@@ -184,6 +203,7 @@ elseif method ==-1
             if isfield(IN,'bandID')
                 IN = rmfield(IN,'bandID');
             end
+            indexstring = '(DATA_RESHAPED_TO_2_DIMENSIONS)';
         case 3
             % reshape into channels
             audio = reshape(audio,[d1,d2*d4*d5*d6,d3]);
@@ -195,6 +215,7 @@ elseif method ==-1
             if isfield(IN,'cal')
                 cal = repmat(cal(:),[d4*d5*d6,1])';
             end
+            indexstring = '(DATA_RESHAPED_TO_3_DIMENSIONS)';
         case 4
             % reshape into channels
             audio = reshape(audio,[d1,d2*d5*d6,d3,d4]);
@@ -204,6 +225,7 @@ elseif method ==-1
             if isfield(IN,'cal')
                 cal = repmat(cal(:),[d5*d6,1])';
             end
+            indexstring = '(DATA_RESHAPED_TO_4_DIMENSIONS)';
         case 5
             % reshape into channels
             audio = reshape(audio,[d1,d2*d6,d3,d4,d5]);
@@ -213,10 +235,13 @@ elseif method ==-1
             if isfield(IN,'cal')
                 cal = repmat(cal(:),[d6,1])';
             end
+            indexstring = '(DATA_RESHAPED_TO_5_DIMENSIONS)';
         case 6
             % everything is fine - no need to do anything
+            indexstring = [];
         otherwise
             disp('Unrecognized maxdim value in choose_from_higher_dimensions (AARAE utility)')
+            indexstring = [];
     end
     
     
@@ -247,12 +272,15 @@ else % method = 1 (or anything else)
         prompt{1,m} = ['Select one dim6 index (1-',num2str(size(audio,6)),')'];
     end
     answer = inputdlg(prompt,dlgtitle,[1 90],def); 
+    indexstring = '(:,';
     m=1;
     if nonsingleton(2)
         if isempty(answer{m})
             selection = 1;
+            indexstring = [indexstring,'1,'];
         else
             selection = str2double(answer{m});
+            indexstring = [indexstring,char(answer{m}),','];
         end
         audio = audio(:,selection,:,:,:,:);
         if exist('chanID','var')
@@ -262,24 +290,32 @@ else % method = 1 (or anything else)
             cal = cal(selection);
         end
         m=m+1;
+    else
+        indexstring = [indexstring,':,'];
     end
     if nonsingleton(3)
         if isempty(answer{m})
             selection = 1;
+            indexstring = [indexstring,'1,'];
         else
             selection = str2double(answer{m});
+            indexstring = [indexstring,char(answer{m}),','];
         end
         audio = audio(:,:,selection,:,:,:);
         if exist('bandID','var')
             bandID = bandID(selection);
         end
         m=m+1;
+    else
+        indexstring = [indexstring,':,'];
     end
     if nonsingleton(4)
         if isempty(answer{m})
             selection = 1;
+            indexstring = [indexstring,'1,'];
         else
             selection = str2double(answer{m});
+            indexstring = [indexstring,char(answer{m}),','];
         end
         audio = audio(:,:,:,selection,:,:);
         if exist('startflag','var')
@@ -289,23 +325,33 @@ else % method = 1 (or anything else)
             relgain = relgain(selection);
         end
         m=m+1;
+    else
+        indexstring = [indexstring,':,'];
     end
     if nonsingleton(5)
         if isempty(answer{m})
             selection = 1;
+            indexstring = [indexstring,'1,'];
         else
             selection = str2double(answer{m});
+            indexstring = [indexstring,char(answer{m}),','];
         end
         audio = audio(:,:,:,:,selection,:);
         m=m+1;
+    else
+        indexstring = [indexstring,':,'];
     end
     if nonsingleton(6)
         if isempty(answer{m})
             selection = 1;
+            indexstring = [indexstring,'1)'];
         else
             selection = str2double(answer{m});
+            indexstring = [indexstring,char(answer{m}),')'];
         end
         audio = audio(:,:,:,:,:,selection);
+    else
+        indexstring = [indexstring,':)'];
     end
 end
 
@@ -333,3 +379,6 @@ if isstruct(IN)
 else
     OUT = audio;
 end
+
+handles.choosefromhigherdims = indexstring;
+guidata(findobj('Tag','aarae'),handles); % write to aarae handles
