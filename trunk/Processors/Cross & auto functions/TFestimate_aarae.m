@@ -44,7 +44,7 @@ if nargin < 3
         end
         bandID = [];
     end
-    [len,chans,bands] = size(S);
+    [len,chans,bands,dim4,dim5,dim6] = size(S);
     
     
     maxDuration = floor(0.25*(len) / in.fs);
@@ -80,7 +80,7 @@ if RefChan == 0
             refaudio = resample(refaudio,fs,fs2);
             disp('Sampling rate mis-match - reference audio has been re-sampled.')
         end
-        [len2, chans2, bands2] = size(refaudio); % new wave dimensions
+        [len2, chans2, bands2,dim42,dim52,dim62] = size(refaudio); % new wave dimensions
         %fftlen = max([len len2]);
     else
         OUT = [];
@@ -113,7 +113,7 @@ if RefChan == 0
                 disp('Invalid reference channel entered - Channel 1 will be used instead')
                 RefChan2 = 1;
             end
-            refaudio = refaudio(:,RefChan2,:);
+            refaudio = refaudio(:,RefChan2,:,1,1,1); % Need to select in all available dimensions
         else
             OUT = [];
             return
@@ -124,7 +124,7 @@ else
         disp('Invalid reference channel entered - Channel 1 will be used instead')
         RefChan = 1;
     end
-    refaudio = S(:,RefChan,:);
+    refaudio = S(:,RefChan,:); % need to modify!
     %fftlen = len;
 end
 
@@ -174,14 +174,14 @@ end
 TF(COH < Threshold) = 0; % zero all values below coherence threshold
 
 % Include values above Nyquist frequency for the ifft.
-TF = [TF;conj(flipdim(TF(2:end-1,:,:),1))];
+TF = [TF;conj(flipdim(TF(2:end-1,:,:,:,:,:),1))];
 
 
 % Return to time domain
 out = ifft(TF);
 
 % Truncate to the desired length
-out = out(1:outlen,:,:);
+out = out(1:outlen,:,:,:,:,:);
 
 if isstruct(in)
     OUT = in; % replicate input structure
