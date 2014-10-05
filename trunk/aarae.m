@@ -1171,6 +1171,7 @@ for nleafs = 1:length(selectedNodes)
                     fprintf(handles.fid,['%% Result figure name: ', char(selectedNodes(nleafs).getName), funname num2str(index), '.fig, temporarily stored in /Utilities/Temp/\n']);
                     index = index + 1;
                 end
+                fprintf(handles.fid,'\n');
                 results = dir([cd '/Utilities/Temp']);
                 set(handles.result_box,'String',[' ';cellstr({results(3:length(results)).name}')]);
                 if length(selectedNodes) > 1 || size(file,1) > 1, delete(h); end

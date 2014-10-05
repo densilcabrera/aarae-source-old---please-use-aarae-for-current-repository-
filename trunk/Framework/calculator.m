@@ -166,6 +166,7 @@ for i = 1:length(h)
     fprintf(mainHandles.fid,['%% Result figure name: ', handles.funname num2str(index), '.fig, temporarily stored in /Utilities/Temp/\n']);
     index = index + 1;
 end
+fprintf(mainHandles.fid,'\n');
 results = dir([cd '/Utilities/Temp']);
 set(mainHandles.result_box,'String',[' ';cellstr({results(3:length(results)).name}')]);
 guidata(aarae_fig, mainHandles);
