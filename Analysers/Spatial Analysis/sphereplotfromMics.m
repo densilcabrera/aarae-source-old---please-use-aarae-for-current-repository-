@@ -11,7 +11,7 @@ function OUT = sphereplotfromMics(IN,percentilethreshold,valuescale)
 % processor MicArraysSpecialProcess (e.g., when making sequential
 % measurements using a turntable). Note that you will need to define a
 % microphone array (as a structure within the MicArraysSpecial folder
-% withing Processors/Beamforming) to use MicArraysSpecialProcess.
+% within Processors/Beamforming) to use MicArraysSpecialProcess.
 %
 % Input can be multiband, and it is assumed that the intput is limited to 3
 % dimensions (time, channels, bands).
@@ -20,7 +20,7 @@ function OUT = sphereplotfromMics(IN,percentilethreshold,valuescale)
 % sphere, in practice that is often not possible. Therefore this function
 % provides some extra points in the mesh by interpolation (so that large
 % separations between points are not joined by a straight line, but instead
-% by an interpolated radius).
+% by a bent line following an interpolated radius).
 %
 % Code by Densil Cabrera
 % version 1 (26 September 2014)
@@ -54,7 +54,7 @@ end
 
 if nargin == 1
     param = inputdlg({'Percentile mesh distance threshold for interpolation (100 means no interpolation)';...
-        'Scale: Amplitude (0), squared amplitude (1) or decibels (2)'},...
+        'Scale: Amplitude (1), squared amplitude (2) or decibels (3)'},...
         'Mango plot settings',... % This is the dialog window title.
         [1 60],...
         {'90';'0'}); % preset answers
@@ -72,8 +72,9 @@ if nargin == 1
     end
 end
 percentilethreshold = abs(percentilethreshold);
-valuescale = round(mod(valuescale,3));
-
+valuescale = round(valuescale);
+if valuescale > 3, valuescale = 3; end
+if valuescale < 1, valuescale = 1; end
 
 
 
@@ -81,9 +82,9 @@ valuescale = round(mod(valuescale,3));
 
 % values to plot
 values = permute(rms(audio),[2,3,1]);
-if valuescale == 1
+if valuescale == 2
     values = values.^2;
-elseif valuescale == 2
+elseif valuescale == 3
     values = 20*log10(values);
     values = values - max(max(values)) + 40;
     values(values<0) = 0;
@@ -192,13 +193,13 @@ if percentilethreshold < 100
                 neighborinvdist = 1./neighbordist;
                 %  values(n,:) = mean(neighborvals);
                 switch valuescale
-                    case 0
+                    case 1
                         values(n,:) = (sum(neighborvals.^2 .* repmat(neighborinvdist,[1,size(values,2)]))...
                             ./sum(repmat(neighborinvdist,[1,size(values,2)]))).^0.5;
-                    case 1
+                    case 2
                         values(n,:) = (sum(neighborvals .* repmat(neighborinvdist,[1,size(values,2)]))...
                             ./sum(repmat(neighborinvdist,[1,size(values,2)])));
-                    case 2
+                    case 3
                         values(n,:) = 10*log10(sum(10.^(neighborvals./10) .* repmat(neighborinvdist,[1,size(values,2)]))...
                             ./sum(repmat(neighborinvdist,[1,size(values,2)])));
                         
@@ -218,11 +219,11 @@ for b = 1:size(values,2)
     
 
     switch valuescale
-        case 0
-            figure('Name','Polar plot of magnitude')
         case 1
-            figure('Name','Polar plot of energy')
+            figure('Name','Polar plot of magnitude')
         case 2
+            figure('Name','Polar plot of energy')
+        case 3
             figure('Name','Polar plot of level (40 dB scale)')
     end
     
