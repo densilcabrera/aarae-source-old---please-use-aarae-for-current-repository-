@@ -65,7 +65,7 @@ P=2^N;
 if (impalign)
     impulset = zeros(1,length(signal(1,:)));
     for i=1:length(signal(1,:)) % Go through all channels
-        k=findpeaks(signal(:,i),'',2^N);
+        k=findpeaks_mls(signal(:,i),'',2^N);
         impulset(i) = k(1);
     end
     impulseindex = min(impulset)
