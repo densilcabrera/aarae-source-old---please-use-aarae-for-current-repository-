@@ -931,8 +931,9 @@ if ishandle(h), close(h); end
 if method == 1
     if ~ismatrix(IR), tempIR(:,:) = IR(:,1,:); else tempIR = IR; end
     [trimsamp_low,trimsamp_high] = window_signal('main_stage1', handles.aarae,'IR',tempIR); % Calls the trimming GUI window to trim the IR
-    indices{1,1} = trimsamp_low:trimsamp_high;
-    IR = IR(indices{:});
+    %indices{1,1} = trimsamp_low:trimsamp_high;
+    %IR = IR(indices{:}); % this seems to cause a bug!
+    IR = IR(trimsamp_low:trimsamp_high,:,:,:,:,:);
     IRlength = length(IR);
 else
     IRlength = length(IR);
