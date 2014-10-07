@@ -43,6 +43,10 @@ if nargin == 0 % If the function is called within the AARAE environment it
         % inputs to your function's input parameters.
         input_1 = param(1);
         input_2 = param(2);
+    else
+        % get out of here if the user presses 'cancel'
+        OUT = [];
+        return
     end
 else
     param = [];
