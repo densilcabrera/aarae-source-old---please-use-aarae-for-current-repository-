@@ -59,6 +59,13 @@ end
 if isstruct(IN) % You should check that the function is being called within
     % the AARAE environment, if so, you can extract the
     % information you need to run your processor.
+    
+    % Ideally you should be able to process up to 6 dimensions of audio,
+    % but if your processor cannot, then you can limit the number of
+    % dimensions with the following function call:
+    maxdim = 6;  % change '6' to the maximum number dimensions
+    IN = choose_from_higher_dimensions(IN,maxdim,1);
+    
     audio = IN.audio; % Extract the audio data
     fs = IN.fs;       % Extract the sampling frequency of the audio data
     
@@ -103,7 +110,12 @@ if ~isempty(audio) && ~isempty(fs)
     % new in the lines below, such as:
     
     % It is often important to know the dimensions of your audio
-    [len,chans,bands] = size(audio);
+    % Ideally your processor should be able to work with audio of up to 6
+    % dimensions - where dimension 1 is time, dimension 2 is channels,
+    % dimension 3 is bands, dimension 4 is used for multicycle test signal
+    % analysis, dimension 5 is used for measurement with sequential
+    % multichannel output from AARAE.
+    [len,chans,bands,dim4,dim5,dim6] = size(audio);
     
     % Sometimes you might want to mixdown multiband audio
     if bands > 1
