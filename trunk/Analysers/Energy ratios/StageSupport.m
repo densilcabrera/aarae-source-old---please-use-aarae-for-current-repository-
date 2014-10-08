@@ -26,8 +26,9 @@ function out = StageSupport(data, fs, startthresh,threshmethod, bpo, doplot)
 % Version 1.01 (7 September 2014)
 
 
-if nargin < 5, doplot = 1; end
-if nargin < 4, bpo = 1; end
+if nargin < 6, doplot = 1; end
+if nargin < 5, bpo = 1; end
+if nargin < 4, threshmethod = 0; end
 if nargin < 3
     startthresh = -20;
     %dialog box for settings
