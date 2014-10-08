@@ -164,9 +164,7 @@ end
 
 
 
-% To make your function work as standalone you can check that the user has
-% either entered at least an audio variable and its sampling frequency, and
-% potentially check for other required data.
+% Check that the required data exists for analysis to run
 if ~isempty(audio) && ~isempty(fs) && ~isempty(cal)
     % If the requirements are met, your code can be executed!
     % You may copy and paste some code you've written or write something 
@@ -188,6 +186,9 @@ if ~isempty(audio) && ~isempty(fs) && ~isempty(cal)
     maximum = max(audio);
     minimum = min(audio);
     
+    
+    
+    % *** EXAMPLES OF CALLING OTHER AARAE FUNCTIONS ***
     % AARAE has many functions in it, some of which may be particularly
     % useful when writing a processor or analyser. Here are a few examples
     % of potentially useful AARAE functions:
@@ -218,6 +219,9 @@ if ~isempty(audio) && ~isempty(fs) && ~isempty(cal)
     [audio,bandID] = octbandfilter_viaFFT(audio,fs,...
         [125,250,500,1000,2000,4000]);
     
+    
+    
+    % *** CREATING A TABLE OR MULTIPLE TABLES ***
     % You may include tables to display your results using AARAE's
     % disptables.m function - this is just an easy way to display the
     % built-in uitable function in MATLAB. It has several advantages,
@@ -226,8 +230,12 @@ if ~isempty(audio) && ~isempty(fs) && ~isempty(cal)
     %   * allowing multiple tables to be concatenated;
     %   * allowing concatenated tables to be copied to the clipboard
     %     by clicking on the grey space between the tables in the figure;
-    %   * and, if its output is used as described below, returning data to
+    %   * if its output is used as described below, returning data to
     %     the AARAE GUI in a format that can be browsed using a bar-plots.
+    %   * and values from tables created this way are written into the log
+    %     file for the AARAE session, which provides another way of
+    %     accessing the results together with a complete record of the
+    %     processing that led to the results.
     
     fig1 = figure('Name','My results table');
     table1 = uitable('Data',[duration maximum minimum],...
@@ -255,16 +263,19 @@ if ~isempty(audio) && ~isempty(fs) && ~isempty(cal)
     % different barplot, there is no need to generate more than one .tables
     % field to display all your tables.
     
+    
+    
+    % *** MAKING PLOTS ***
     % You may also include figures to display your results as plots.
     t = linspace(0,duration,length(audio));
     figure;
     plot(t,audio);
     % All figures created by your function are stored in the AARAE
-    % environment under the results box. If your function outputs a
-    % structure in OUT this saved under the 'Results' branch in AARAE and
-    % it's treated as an audio signal if it has both .audio and .fs fields,
-    % otherwise it's displayed as data.
-
+    % environment under the results box. 
+    
+    
+    
+    % *** CREATING A RESULTS LEAF (FOR BIG NON-AUDIO DATA) ***
     % You may output data to be plotted in a variety of charts, including
     % lines, mesh, surf, imagesc, loglog, and others depending on the
     % number of dimensions of your data using the doresultleaf.m function:
@@ -297,34 +308,70 @@ if ~isempty(audio) && ~isempty(fs) && ~isempty(cal)
     % function identify that the last input argument is the name that will
     % be displayed in AARAEs categorical tree under the results leaf.
     
+    
+    
     % And once you have your result, you should set it up in an output form
     % that AARAE can understand.
     if isstruct(IN)
+        
+        % *** OUTPUTTING AUDIO ***
+        % Most analysers do not output audio. If you wish to output audio,
+        % first consider whether your analyser should be a processor
+        % instead. If it should be an analyser, then audio can be output as
+        % follows:
         OUT = IN; % You can replicate the input structure for your output
         OUT.audio = audio; % And modify the fields you processed
         % However, for an analyser, you might not wish to output audio (in
         % which case the two lines above might not be wanted.
-        %
+        
+        
+        
+        % *** OUTPUTTING NEW FIELDS ***
         % Or simply output the fields you consider necessary after
         % processing the input audio data, AARAE will figure out what has
         % changed and complete the structure. But remember, it HAS TO BE a
         % structure if you're returning more than one field:
         
-        OUT.duration = duration;
-        OUT.maximum = maximum;
-        OUT.minimum = minimum;
-        % (Note that the above outputs might be considered to be redundant
-        % if OUT.tables is used, as described above).
+        OUT.properties.duration = duration;
+        OUT.properties.maximum = maximum;
+        OUT.properties.minimum = minimum;
+        % The advantages of providing outputs as subfields of properties
+        % are that AARAE has a button that opens a window to display
+        % properties, and that properties are also written to the log file
+        % of the AARAE session. Outputing fields without making them
+        % subfields of properties is possible, but this makes the output
+        % data harder to access.
+        % Note that the above outputs might be considered to be redundant
+        % if OUT.tables is used, as described above. Generally the
+        % properties fields output is suitable for small data only (e.g.
+        % single values). Tables is best for small and medium data, while a
+        % results leaf is is best for big data.
         
-        % The following outputs are needed so that AARAE can repeat the
-        % analysis without user interaction (e.g. for batch processing).
+        
+        
+        % *** FUNCTION CALLBACKS ***
+        % The following outputs are required so that AARAE can repeat the
+        % analysis without user interaction (e.g. for batch processing),
+        % and for writing the log file.
         OUT.funcallback.name = 'analyser_template.m'; % Provide AARAE
         % with the name of your function 
         OUT.funcallback.inarg = {input_1,input_2,input_3,input_4}; 
-        % assign all of the 
-        % input parameters that could be used to call the function 
-        % without dialog box to the output field param (as a cell
-        % array) in order to allow batch analysing.
+        % assign all of the input parameters that could be used to call the
+        % function without dialog box to the output field param (as a cell
+        % array) in order to allow batch analysing. Do not include the
+        % first (audio) input here. If there are no input arguments (apart
+        % from the audio input), then use: 
+        % OUT.funcallback.inarg = {};
+        
+        
+        
+        % AARAE will only display the output in the main GUI if it includes
+        % tables, audio or other fields. It will not display if only
+        % function callbacks are returned. Result leaves are not created by
+        % the functions main output, but instead are created by calling
+        % AARAE's doresultleaf as described above, and these will be
+        % displayed in AARAE's main GUI regardless of the function's main 
+        % outputs.
     else
         % You may increase the functionality of your code by allowing the
         % output to be used as standalone and returning individual
@@ -334,10 +381,6 @@ if ~isempty(audio) && ~isempty(fs) && ~isempty(cal)
     varargout{1} = duration;
     varargout{2} = maximum;
     varargout{3} = minimum;
-% The processed audio data will be automatically displayed in AARAE's main
-% window as long as your output contains audio stored either as a single
-% variable: OUT = audio;, or it's stored in a structure along with any other
-% parameters: OUT.audio = audio;
 else
     % AARAE requires that in case that the user doesn't input enough
     % arguments to generate audio to output an empty variable.
