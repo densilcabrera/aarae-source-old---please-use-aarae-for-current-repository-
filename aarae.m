@@ -2574,11 +2574,11 @@ if handles.compareaudio == 1
             if isfield(signaldata,'cal') && handles.Settings.calibrationtoggle == 1
                 if size(linea,2) == length(signaldata.cal)
                     signaldata.cal(isnan(signaldata.cal)) = 0;
-                    linea = linea.*repmat(10.^(signaldata.cal./20),length(linea),1);
+                    linea = linea.*repmat(10.^(signaldata.cal(:)'./20),length(linea),1);
                 elseif ~ismatrix(signaldata.audio) && size(signaldata.audio,2) == length(signaldata.cal)
                     signaldata.cal(isnan(signaldata.cal)) = 0;
                     cal = repmat(signaldata.cal(str2double(get(handles.IN_nchannel,'String'))),1,size(linea,2));
-                    linea = linea.*repmat(10.^(cal./20),length(linea),1);
+                    linea = linea.*repmat(10.^(cal(:)'./20),length(linea),1);
                 end
             end
             switch handles.Settings.specmagscale;
