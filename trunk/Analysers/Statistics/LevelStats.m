@@ -1,9 +1,9 @@
-function out = LevelStats(inputwave,tau,cal,weight)
+function out = LevelStats(inputwave,tau,cal,weight,doplot)
 % This function calculates sound level values from the input audio, taking
 % calibration offset into account.
 %
 % code by Densil Cabrera
-% version 1.01 (21 March 2014)
+% version 1.02 (11 October 2014)
 
 if isstruct(inputwave)
     inputwave = choose_from_higher_dimensions(inputwave,3,1);
@@ -33,20 +33,23 @@ if ~isreal(audio)
     audio = abs(audio).* cos(angle(audio));
 end
 
+if nargin < 5, doplot = 0; end
 if nargin < 4, weight = 'z'; end
 if nargin < 3, tau = 0.125; end % default temporal integration constant in seconds
 if nargin < 2
     param = inputdlg({...
         'Integration time constant (s)'; ...
         'Calibration offset (dB)'; ...
-        'Weighting (a,b,c,d,z)'}, ...
+        'Weighting (a,b,c,d,z)';
+        'Generate plots [0 | 1]'}, ...
         'Analysis parameters',1, ...
-        {num2str(tau); num2str(cal); weight});
-    if length(param) < 3, param = []; end
-    if ~isempty(param) 
+        {num2str(tau); num2str(cal); weight; num2str(doplot)});
+    if length(param) < 4, param = []; end
+    if ~isempty(param)
         tau = str2num(char(param(1)));
         cal = str2num(char(param(2)));
         weight = char(param(3));
+        doplot = str2num(char(param(4)));
     else
         out = [];
         return
@@ -67,7 +70,7 @@ if tau > 0
     b = 1 - E; % filter numerator (adjusts gain to compensate for denominator)
     a = [1, -E];% filter denominator
     
-    % rectify, integrate and square    
+    % rectify, integrate and square
     audio=filter(b,a,abs(audio)).^2;
     
 else
@@ -140,7 +143,7 @@ else
 end
 
 
-    [~,tables] = disptables(fig,tables);
+[~,tables] = disptables(fig,tables);
 
 out.tables = tables;
 out.funcallback.name = 'LevelStats.m';
@@ -151,61 +154,63 @@ t = ((1:len)'-1)./fs; % time vector
 if isstruct(inputwave)
     if ~ismatrix(10*log10(sort(audio)))
         doresultleaf(10*log10(sort(audio)),'Level [dB]',{'Duration'},...
-                     'Duration', t,                's',           true,...
-                     'channels', chanID,           'categorical', [],...
-                     'bands',    num2cell(bandID), 'Hz',          false,...
-                     'name','cumulative_distrib_level');
+            'Duration', t,                's',           true,...
+            'channels', chanID,           'categorical', [],...
+            'bands',    num2cell(bandID), 'Hz',          false,...
+            'name','cumulative_distrib_level');
     else
         doresultleaf(10*log10(sort(audio)),'Level [dB]',{'Duration'},...
-                     'Duartion', t,      's',           true,...
-                     'channels', chanID, 'categorical', [],...
-                     'name','cumulative_distrib_level');
+            'Duartion', t,      's',           true,...
+            'channels', chanID, 'categorical', [],...
+            'name','cumulative_distrib_level');
     end
 end
 
-for ch = 1:chans
-    if exist('chanID','var')
-        chanstring = char(chanID(ch));
-    else
-        chanstring = ['ch ',num2str(ch)];
-    end
-    for b = 1:bands
-        if bands > 1
-            if exist('bandID','var')
-                figure('Name',...
-                    ['Level Statistics, ',chanstring,', ',...
-                    num2str(bandID(b))])
-            else
-                figure('Name',...
-                    ['Level Statistics, ',chanstring,', ',num2str(b)])
-                
-            end
+if doplot == 1
+    for ch = 1:chans
+        if exist('chanID','var')
+            chanstring = char(chanID(ch));
         else
-            figure('Name',['Level Statistics, ',chanstring])
+            chanstring = ['ch ',num2str(ch)];
         end
-        y = sort(audio(:,ch,b));
-        plot(t,10*log10(audio_original(:,ch,b).^2),'Color',[0.7 0.9 0.9],...
-            'DisplayName','Raw audio')       
-        hold on
-        plot(t,10*log10(audio(:,ch,b)),'Color',[0 0.5 0],...
-            'DisplayName','Processed audio')   
-        plot(t,10*log10(y),'r','DisplayName','Cumulative Distribution')
-        plot(t(round(length(t)*0.95)),10*log10(y(round(length(t)*0.95))),...
-            'r*','DisplayName',['L5: ',num2str(L5(b,ch)),' dB'])
-        plot(t(round(length(t)*0.9)),10*log10(y(round(length(t)*0.9))),...
-            'ro','DisplayName',['L10: ',num2str(L10(b,ch)),' dB'])
-        plot(t(round(length(t)*0.5)),10*log10(y(round(length(t)*0.5))),...
-            'r+','DisplayName',['L50: ',num2str(L50(b,ch)),' dB'])
-        plot(t(round(length(t)*0.1)),10*log10(y(round(length(t)*0.1))),...
-            'rx','DisplayName',['L90: ',num2str(L90(b,ch)),' dB'])
-        ylabel('Level (dB)')
-        xlabel('Duration (s)')
-        ylim([ymin ymax])
-        text(0.05*(len-1)/fs,ymin+0.9*(ymax-ymin),...
-            ['Leq = ',num2str(Leq(b,ch)),' dB'])
-        text(0.05*(len-1)/fs,ymin+0.8*(ymax-ymin),...
-            ['Lenergy = ',num2str(Lenergy(b,ch)),' dB'])
-        legend('show','Location','EastOutside');
-        title(['Integration time constant = ', num2str(tau),' s'])
+        for b = 1:bands
+            if bands > 1
+                if exist('bandID','var')
+                    figure('Name',...
+                        ['Level Statistics, ',chanstring,', ',...
+                        num2str(bandID(b))])
+                else
+                    figure('Name',...
+                        ['Level Statistics, ',chanstring,', ',num2str(b)])
+                    
+                end
+            else
+                figure('Name',['Level Statistics, ',chanstring])
+            end
+            y = sort(audio(:,ch,b));
+            plot(t,10*log10(audio_original(:,ch,b).^2),'Color',[0.7 0.9 0.9],...
+                'DisplayName','Raw audio')
+            hold on
+            plot(t,10*log10(audio(:,ch,b)),'Color',[0 0.5 0],...
+                'DisplayName','Processed audio')
+            plot(t,10*log10(y),'r','DisplayName','Cumulative Distribution')
+            plot(t(round(length(t)*0.95)),10*log10(y(round(length(t)*0.95))),...
+                'r*','DisplayName',['L5: ',num2str(L5(b,ch)),' dB'])
+            plot(t(round(length(t)*0.9)),10*log10(y(round(length(t)*0.9))),...
+                'ro','DisplayName',['L10: ',num2str(L10(b,ch)),' dB'])
+            plot(t(round(length(t)*0.5)),10*log10(y(round(length(t)*0.5))),...
+                'r+','DisplayName',['L50: ',num2str(L50(b,ch)),' dB'])
+            plot(t(round(length(t)*0.1)),10*log10(y(round(length(t)*0.1))),...
+                'rx','DisplayName',['L90: ',num2str(L90(b,ch)),' dB'])
+            ylabel('Level (dB)')
+            xlabel('Duration (s)')
+            ylim([ymin ymax])
+            text(0.05*(len-1)/fs,ymin+0.9*(ymax-ymin),...
+                ['Leq = ',num2str(Leq(b,ch)),' dB'])
+            text(0.05*(len-1)/fs,ymin+0.8*(ymax-ymin),...
+                ['Lenergy = ',num2str(Lenergy(b,ch)),' dB'])
+            legend('show','Location','EastOutside');
+            title(['Integration time constant = ', num2str(tau),' s'])
+        end
     end
 end
