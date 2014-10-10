@@ -178,6 +178,7 @@ if ok == 1 && isstruct(IN) && nargin < 4
         orderin = param1(1);
         orderout = param1(2);
         zeropad = param1(3);
+        phasemode = param1(4);
         test = param1(5);
     end
 end
