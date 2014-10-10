@@ -185,6 +185,7 @@ fclose('all');
 if ~isempty(handles.aarae)
     delete(handles.aarae);
 end
+java.lang.Runtime.getRuntime.gc % Java 'garbage collection'
 % Get default command line output from handles structure
 varargout{1} = [];
 
@@ -242,7 +243,7 @@ if ~isempty(getappdata(hMain,'testsignal'))
     % Log verbose metadata
     logaudioleaffields(signaldata,0);
 end
-java.lang.Runtime.getRuntime.gc
+java.lang.Runtime.getRuntime.gc % Java garbage collection
 guidata(hObject, handles);
 
 
@@ -551,7 +552,7 @@ if ~isempty(audiodata)
     % Log verbose metadata
     logaudioleaffields(audiodata);
 end
-java.lang.Runtime.getRuntime.gc
+java.lang.Runtime.getRuntime.gc % Java garbage collection
 guidata(hObject, handles);
 
 
@@ -756,7 +757,7 @@ switch deleteans
     case 'No'
         guidata(hObject, handles);
 end
-java.lang.Runtime.getRuntime.gc
+java.lang.Runtime.getRuntime.gc % Java garbage collection
 
 
 % --- Executes on button press in play_btn.
@@ -994,7 +995,7 @@ end
 
 set(hObject,'BackgroundColor',[0.94 0.94 0.94]);
 set(hObject,'Enable','on');
-java.lang.Runtime.getRuntime.gc
+java.lang.Runtime.getRuntime.gc % Java garbage collection
 guidata(hObject, handles);
 
 
@@ -1192,7 +1193,7 @@ for nleafs = 1:length(selectedNodes)
         set(hObject,'Enable','on');
     end
 end
-java.lang.Runtime.getRuntime.gc
+java.lang.Runtime.getRuntime.gc % Java garbage collection
 %handles.mytree.setSelectedNode(handles.(genvarname(newleaf)));
 guidata(hObject,handles)
 
@@ -1459,7 +1460,7 @@ for nleafs = 1:length(selectedNodes)
         handles.mytree.setSelectedNode(handles.(genvarname(newleaf{1,1})));
     end
 end
-java.lang.Runtime.getRuntime.gc
+java.lang.Runtime.getRuntime.gc % Java garbage collection
 guidata(hObject,handles);
 
 
