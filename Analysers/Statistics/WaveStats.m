@@ -1,4 +1,4 @@
-function WS = WaveStats(IN)
+function OUT = WaveStats(IN)
 % returns simple overall statistics of the input wave(s)
 if isstruct(IN)
     IN = choose_from_higher_dimensions(IN,3,1);
@@ -86,12 +86,12 @@ if  ~exist('chanID','var')
         chanID = 1:chans;
 end
 
-
-
+tables = [];
+f = figure('Name','Wave Statistics','Visible','on');
 if bands > 1
     for ch = 1:chans
-        f = figure('Name',['Wave statistics, channel: ', chanID{ch}], ...
-            'Position',[200 200 620 360]);
+%         f = figure('Name',['Wave statistics, channel: ', chanID{ch}], ...
+%             'Position',[200 200 620 360]);
         %[left bottom width height]
         dat1 = [permute(WS.max(1,ch,:),[1,3,2]); ...
             permute(WS.min(1,ch,:),[1,3,2]); ...
@@ -114,7 +114,7 @@ if bands > 1
             permute(WS.kurtsq(1,ch,:),[1,3,2]);...
             permute(WS.sumsq(1,ch,:),[1,3,2])];
         cnames1 = num2cell(bandID);
-        rnames1 = {'Maximum', 'Minimum', 'Range', 'Maximum absolute value', ...
+        rnames1 = {['CHANNEL ',num2str(ch),': Maximum'], 'Minimum', 'Range', 'Maximum absolute value', ...
             'Median', 'Median absolute value', 'Mean', 'Standard deviation', ...
             'Kurtosis', 'Root mean square', 'Crest factor', ...
             'Peak to average power ratio',...
@@ -122,13 +122,17 @@ if bands > 1
             'Range of squared wave', 'Median of squared wave',...
             'Mean squared wave (power)', 'Standard dev of squared wave',...
             'Kurtosis of squared wave','Sum of squared wave (energy)'};
-        t1 =uitable('Data',dat1,'ColumnName',cnames1,'RowName',rnames1);
+        t1 =uitable('Data',dat1,'ColumnName',cnames1,'RowName',rnames1,...
+            'Parent',f);
         set(t1,'ColumnWidth',{60});
-        disptables(f,t1);
+        tables = [tables t1];
+        
     end
+    [~,tables] = disptables(f,tables);
+        
 else
-    f = figure('Name','Wave statistics', ...
-            'Position',[200 200 620 360]);
+%     f = figure('Name','Wave statistics', ...
+%             'Position',[200 200 620 360]);
         %[left bottom width height]
         dat1 = [WS.max; ...
             WS.min; ...
@@ -161,5 +165,6 @@ else
             'Kurtosis of squared wave','Sum of squared wave (energy)'};
         t1 =uitable('Data',dat1,'ColumnName',cnames1,'RowName',rnames1);
         set(t1,'ColumnWidth',{60});
-        disptables(f,t1);
+        [~,tables] = disptables(f,t1);
 end
+OUT.tables = tables;
