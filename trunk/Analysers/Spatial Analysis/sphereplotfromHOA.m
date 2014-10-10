@@ -51,7 +51,7 @@ if nargin < 9, plottype = 0; end
 if nargin < 8, lof = 0; end
 if nargin < 7, hif = fs/2; end
 if nargin < 6, max_order=round(size(hoaSignals,2).^0.5-1); end
-if nargin < 5, end_time = length(hoaSignals)/fs; end
+if nargin < 5, end_time = min([0.1, length(hoaSignals)/fs]); end
 if nargin < 4, start_time = 0; end
 if nargin < 3, sphere_cover = 1; end
 if isstruct(IN)
