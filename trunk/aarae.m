@@ -242,6 +242,7 @@ if ~isempty(getappdata(hMain,'testsignal'))
     % Log verbose metadata
     logaudioleaffields(signaldata,0);
 end
+java.lang.Runtime.getRuntime.gc
 guidata(hObject, handles);
 
 
@@ -550,6 +551,7 @@ if ~isempty(audiodata)
     % Log verbose metadata
     logaudioleaffields(audiodata);
 end
+java.lang.Runtime.getRuntime.gc
 guidata(hObject, handles);
 
 
@@ -754,6 +756,7 @@ switch deleteans
     case 'No'
         guidata(hObject, handles);
 end
+java.lang.Runtime.getRuntime.gc
 
 
 % --- Executes on button press in play_btn.
@@ -991,7 +994,7 @@ end
 
 set(hObject,'BackgroundColor',[0.94 0.94 0.94]);
 set(hObject,'Enable','on');
-
+java.lang.Runtime.getRuntime.gc
 guidata(hObject, handles);
 
 
@@ -1189,6 +1192,7 @@ for nleafs = 1:length(selectedNodes)
         set(hObject,'Enable','on');
     end
 end
+java.lang.Runtime.getRuntime.gc
 %handles.mytree.setSelectedNode(handles.(genvarname(newleaf)));
 guidata(hObject,handles)
 
@@ -1455,6 +1459,7 @@ for nleafs = 1:length(selectedNodes)
         handles.mytree.setSelectedNode(handles.(genvarname(newleaf{1,1})));
     end
 end
+java.lang.Runtime.getRuntime.gc
 guidata(hObject,handles);
 
 
