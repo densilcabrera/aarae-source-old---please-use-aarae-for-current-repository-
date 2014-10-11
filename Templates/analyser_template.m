@@ -241,9 +241,13 @@ if ~isempty(audio) && ~isempty(fs) && ~isempty(cal)
     table1 = uitable('Data',[duration maximum minimum],...
                 'ColumnName',{'Duration','Maximum','Minimum'},...
                 'RowName',{'Results'});
-    disptables(fig1,table1);
-    % You may want to display your tables as barplots in the AARAE
-    % environment, in order to do this simply use the output of the
+    disptables(fig1,table1); % see below for a better alternative!
+    % It is usually a very good idea to return your table(s) data to AARAE
+    % as a function output field. Doing this creates a table leaf in the
+    % Results section of the GUI, which can be explored as bar plots within
+    % the GUI, and also writes the table contents to the log file (as a
+    % comma delimited table that can easily be interpreted by a
+    % spreadsheet). To do this, simply use the output of the
     % disptables funtion as follows:
     %       [~,table] = disptables(fig1,table1);
     % And include your table in the output data structure
@@ -252,11 +256,14 @@ if ~isempty(audio) && ~isempty(fs) && ~isempty(cal)
     %
     % If you have multiple tables to combine in the figure, you can
     % concatenate them:
-    %       disptables(fig1,[table1 table2 table3]);
-    % 
+    %       disptables(fig1,[table3 table2 table1]);
+    % (Note that the concatenation is in descending order - i.e. the first
+    % listed table in the square brackets will be displayed at the bottom,
+    % and the last listed table will be displayed at the top.)
+    %
     % You may export these tables to be displayed as bar plots as if you
     % were doing it for a single table:
-    %       [~,tables] = disptables(fig1,[table1 table2 table3]);
+    %       [~,tables] = disptables(fig1,[table3 table2 table1]);
     %       OUT.tables = tables;
     %
     % The disptables function will take care of allocating each table to a
