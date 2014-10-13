@@ -90,10 +90,11 @@ else
     end
 end
 
-TOOBIG = 1e6;
+TOOBIG = 1e7;
 if numel(audio) >= TOOBIG;
     warndlg('This audio input is probably too big for thirdoctbandfilter_viaFFT. Try AARAE''s thirdoctbandfilter processor instead.')
     OUT = [];
+    varargout = {};
     return
 end
 
