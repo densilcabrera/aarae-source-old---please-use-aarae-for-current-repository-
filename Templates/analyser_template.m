@@ -105,7 +105,8 @@ if isstruct(IN) % You should check that the function is being called within
     if isfield(IN,'chanID') % Get the channel ID if it exists
         chanID = IN.chanID;
     else
-        chanID = cellstr([repmat('Chan',size(audio,2),1) num2str((1:size(audio,2))')]);
+        % or make a chanID using AARAE's utility function
+        chanID = makechanID(size(audio,2),0);
     end
     
     % bandID is a vector, usually listing the centre frequencies of the
