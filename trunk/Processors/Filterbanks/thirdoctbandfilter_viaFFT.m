@@ -102,10 +102,10 @@ if numel(audio) >= TOOBIG;
         if ~exist('param','var')
             param = [25,31.5,40,50,63,80,100,125,160,200,250,315,400,500,630,800,1000,1250,1600,2000,2500,3150,4000,5000,6300,8000,10000,12500,16000,20000];
         end
-%         if ~exist('phasemode','var')
-%             phasemode = 1;
-%         end
-        [OUT,centerf] = thirdoctbandfilter(audio,fs,param);
+        if ~exist('phasemode','var')
+            phasemode = 1;
+        end
+        [OUT,centerf] = thirdoctbandfilter(audio,fs,param,phasemode);
         varargout = {centerf};
         return
     end
