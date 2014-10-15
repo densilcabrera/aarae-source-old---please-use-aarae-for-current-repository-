@@ -103,10 +103,23 @@ end
 
 TOOBIG = 1e7;
 if numel(audio) >= TOOBIG;
-    warndlg('This audio input is probably too big for octbandfilter_viaFFT. Try AARAE''s octbandfilter processor instead.')
-    OUT = [];
-    varargout = {};
-    return
+    if nargin == 1
+        warndlg('This audio input is probably too big for octbandfilter_viaFFT. Try AARAE''s octbandfilter processor instead.')
+        OUT = [];
+        varargout = {};
+        return
+    else
+        % automatically use octbandfilter instead if this function was called by another
+        if ~exist('param','var')
+            param = [31.5 63 125 250 500 1000 2000 4000 8000 16000];
+        end
+        if ~exist('phasemode','var')
+            phasemode = 1;
+        end
+        [OUT,centerf] = octbandfilter(audio,fs,param,phasemode);
+        varargout = {centerf};
+        return
+    end
 end
 
 
