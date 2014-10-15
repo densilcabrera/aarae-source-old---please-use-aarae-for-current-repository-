@@ -244,6 +244,7 @@ for b = 1:size(values,2)
     plot3([-polelength, polelength],[0,0],[0,0],'LineWidth',2,'Color',[0.8,0.8,0]);
     plot3([-polelength, polelength],[0,0],[0,0],'LineWidth',2,'Color',[0,0,0],'LineStyle','--','Marker','>');
     
+    spheregrid(polelength,30,0.5,[0,0,1],':'); % spheregrid is an aarae utility function
     grid on
     xlabel('x')
     ylabel('y')
