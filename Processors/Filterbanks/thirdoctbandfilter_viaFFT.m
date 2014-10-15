@@ -92,10 +92,23 @@ end
 
 TOOBIG = 1e7;
 if numel(audio) >= TOOBIG;
+    if nargin == 1
     warndlg('This audio input is probably too big for thirdoctbandfilter_viaFFT. Try AARAE''s thirdoctbandfilter processor instead.')
     OUT = [];
     varargout = {};
     return
+    else
+        % automatically use thirdoctbandfilter instead if this function was called by another
+        if ~exist('param','var')
+            param = [25,31.5,40,50,63,80,100,125,160,200,250,315,400,500,630,800,1000,1250,1600,2000,2500,3150,4000,5000,6300,8000,10000,12500,16000,20000];
+        end
+%         if ~exist('phasemode','var')
+%             phasemode = 1;
+%         end
+        [OUT,centerf] = thirdoctbandfilter(audio,fs,param);
+        varargout = {centerf};
+        return
+    end
 end
 
 
