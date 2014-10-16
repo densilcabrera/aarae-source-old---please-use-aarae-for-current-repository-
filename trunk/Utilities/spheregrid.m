@@ -1,5 +1,4 @@
 function spheregrid(varargin)
-%spheregrid(radius,degstep,gridtype,LineWidth,Color,LineStyle)
 % This function plots a spherical grid to help with 3D plots.
 %
 % This function can be used to add to an existing figure (that is how it
