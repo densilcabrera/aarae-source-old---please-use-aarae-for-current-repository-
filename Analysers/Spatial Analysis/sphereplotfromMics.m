@@ -1,4 +1,4 @@
-function OUT = sphereplotfromMics(IN,percentilethreshold,valuescale)
+function OUT = sphereplotfromMics(IN,percentilethreshold,valuescale,cartgrid,sphgrid)
 % This function creates a spherical polar plot based on measurements from
 % micrphones surrounding a sound source. Plotting is done by meshing the
 % microphone positions (usually with some interpolation - see below). The
@@ -54,10 +54,12 @@ end
 
 if nargin == 1
     param = inputdlg({'Percentile mesh distance threshold for interpolation (100 means no interpolation)';...
-        'Scale: Amplitude (1), squared amplitude (2) or decibels (3)'},...
+        'Scale: Amplitude (1), squared amplitude (2) or decibels (3)';...
+        'Cartesian grid (0 | 1)';...
+        'Spherical grid: None (0), outer sphere (1), circles (2) outer sphere and circles (3)';},...
         'Mango plot settings',... % This is the dialog window title.
         [1 60],...
-        {'90';'0'}); % preset answers
+        {'90';'0';'1';'2'}); % preset answers
     
     param = str2num(char(param));
     
@@ -65,7 +67,9 @@ if nargin == 1
     if ~isempty(param) % If they have, you can then assign the dialog's
         % inputs to your function's input parameters.
         percentilethreshold = param(1);
-        valuescale = param(2);
+        valuescale = round(param(2));
+        cartgrid = round(param(3));
+        sphgrid = round(param(4));
     else
         OUT = [];
         return
@@ -244,8 +248,20 @@ for b = 1:size(values,2)
     plot3([-polelength, polelength],[0,0],[0,0],'LineWidth',2,'Color',[0.8,0.8,0]);
     plot3([-polelength, polelength],[0,0],[0,0],'LineWidth',2,'Color',[0,0,0],'LineStyle','--','Marker','>');
     
-    spheregrid(polelength,30,0.5,[0,0,1],':'); % spheregrid is an aarae utility function
-    grid on
+    if sphgrid > 0 && sphgrid <= 4
+        spheregrid('radius',max(max(abs([x;y;z]))),...
+            'degstep',30,...
+            'gridtype',sphgrid-1,...
+            'radiusdiv',4,...
+            'LineWidth', 0.5,...
+            'Color',[0,0,1],...
+            'LineStyle',':'); % spheregrid is an aarae utility function
+    end
+    if cartgrid == 1
+        grid on
+    else
+        grid off
+    end
     xlabel('x')
     ylabel('y')
     zlabel('z')
@@ -263,7 +279,7 @@ end
 
 
 OUT.funcallback.name = 'sphereplotfromMics.m';
-OUT.funcallback.inarg = {percentilethreshold,valuescale};
+OUT.funcallback.inarg = {percentilethreshold,valuescale,cartgrid,sphgrid};
 
 
 
