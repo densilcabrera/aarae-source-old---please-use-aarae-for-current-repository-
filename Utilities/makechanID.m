@@ -5,8 +5,8 @@ function chanID = makechanID(nchan,format,param)
 % The following formats are supported:
 % 0: numbered channels in the form Chan1;Chan2;...
 % 1: spherical harmonic order and degree, Y 0 0; Y 1 1; Y 1 -1; Y 1 0;...
-% 2: spherical coordinates using degrees, e.g., 90 deg,  45 deg, 1.4142 m
-% 3: spherical coordinates using radians, e.g., 0 rad,  1.3 rad, 1.4142 m
+% 2: polar coordinates using degrees, e.g., 90 deg,  45 deg, 1.4142 m
+% 3: polar coordinates using radians, e.g., 0 rad,  1.3 rad, 1.4142 m
 % 4: Cartesian coordinates using metres, e.g., 1 m, 3 m, -4 m
 %
 % If format 0 is used, the param argument can optionally be used to provide

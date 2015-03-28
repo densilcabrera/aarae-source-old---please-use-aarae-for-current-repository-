@@ -21,7 +21,7 @@ function spheregrid(varargin)
 % gridtype of 2 plots a combination of 0 and 1
 %
 % LineWidth, Color and LineStyle are Matlab line properties (as defined by
-% Matlab
+% Matlab)
 %
 %
 % EXAMPLE
