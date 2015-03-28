@@ -41,7 +41,7 @@ else
 end
 
 if abs(size(hoaSignals,2)^0.5 - round(size(hoaSignals,2)^0.5)) >1e-20
-    h=warndlg('This audio does not appear to be in HOA format. Unable to analyse with rippleplotfromHOA.','AARAE info','modal');
+    h=warndlg('This audio does not appear to be in HOA format. Unable to analyse with sphereplotfromHOA.','AARAE info','modal');
     uiwait(h)
     OUT = [];
     return
