@@ -169,7 +169,7 @@ if filename ~= 0
     xlabel(handles.dispaxes,'Time [s]');
     recrms = (mean(handles.audio.^2))^0.5/2;
     handles.calthresh = line([0 length(t)/handles.mainHandles.fs],[recrms recrms],'Color','k');
-    set(handles.threshold_IN,'String',num2str(recrms))
+    set(handles.threshold_IN,'String',num2str(recrms*0.5))
     set([handles.sperframe_IN,handles.percentage_IN,handles.threshold_IN,handles.tonelevel_IN,handles.evalcal_btn,handles.filter_btn],'Enable','on')
 else
     return
@@ -488,7 +488,7 @@ else
 end
 recrms = (mean(handles.audio.^2))^0.5;
 handles.calthresh = line([0 length(t)/handles.mainHandles.fs],[recrms recrms],'Color','k');
-set(handles.threshold_IN,'String',num2str(recrms))
+set(handles.threshold_IN,'String',num2str(recrms*0.5))
 set(hObject,'BackgroundColor',[0.94 0.94 0.94]);
 set(hObject,'Enable','on');
 guidata(hObject,handles)
@@ -562,7 +562,7 @@ if ~isempty(rec)
     xlabel(handles.dispaxes,'Time [s]');
     recrms = (mean(rec.^2))^0.5/2;
     handles.calthresh = line([0 length(time)/handles.mainHandles.fs],[recrms recrms],'Color','k');
-    set(handles.threshold_IN,'String',num2str(recrms))
+    set(handles.threshold_IN,'String',num2str(recrms*0.5))
     set([handles.sperframe_IN,handles.percentage_IN,handles.threshold_IN,handles.tonelevel_IN,handles.evalcal_btn,handles.filter_btn],'Enable','on')
 end
 set(handles.record_btn,'BackgroundColor',[0.94 0.94 0.94]);

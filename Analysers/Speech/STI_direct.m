@@ -497,7 +497,6 @@ if length(startindex) == 98
         for j = 1:14
             Intensity(startindex(j):startindex(j+1)-1,:,k) = ...
                 audio(startindex((j-1)*7+k):startindex((j-1)*7+k)+startindex(2)-2,:);
-                %audio(startindex((k-1)*7+j):startindex((k-1)*7+j)+startindex(2)-2,:);
         end
         % Even though the data are already in octave bands, we will filter to
         % remove out-of-band noise. We do this within the for-loop because the
