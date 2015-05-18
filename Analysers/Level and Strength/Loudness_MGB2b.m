@@ -822,8 +822,8 @@ if ~isempty(signal) && ~isempty(fs)
             imagesc(times(1:nwindows),ERBS,SpecLoud_t)
             set(gca,'YDir','normal');
             xlabel('Time (s)')
-            ylabel('Instantaneous specific loudness (sones/erb)')
-            title('Time-varying specific loudness pattern')
+            ylabel('Auditory filter (erb)')
+            title('Time-varying instantaneous specific loudness pattern')
             
         case 2
             % just plot loudness
