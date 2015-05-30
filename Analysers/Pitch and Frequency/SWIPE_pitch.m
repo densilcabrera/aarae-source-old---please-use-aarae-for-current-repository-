@@ -1,8 +1,20 @@
 function [OUT, varargout] = SWIPE_pitch(IN,doSWIPEP,hicut,locut,plim,dt,dlog2p,dERBs,sTHR,MIXDOWN,fs)
-% 
+% This function calls Arturo Camacho's SWIPE and SWIPEP pitch estimation
+% functions. The processing is done using Camacho's code (this function
+% merely provides an interface between his code and the AARAE project).
+%
+% SWIPE and SWIPEP are described in:
+% Camacho A, Harris JG. A sawtooth waveform inspired pitch estimator
+% for speech and music. J. Acoust Soc. Am. 2008;124(3):1638-1652.
+% see also:
+% http://www.cise.ufl.edu/~acamacho/publications/dissertation.pdf
+%
+% The output of this function is pitch and pitch strength (the algorithm is
+% not designed for sound that evokes multiple simultaneous pitches).
 
 
-if nargin ==1 
+
+if nargin == 1 
    
     
     param = inputdlg({'Do SWIPE [0] or SWIPEP [1]?';...
@@ -15,10 +27,8 @@ if nargin ==1
         'Mixdown multichannel audio? [0 | 1]?'},...
         'SWIPE pitch analysis settings',... % This is the dialog window title.
         [1 60],...
-        {'1';'5000';'30';'0.01';'96';'0.1';'-inf';'1'}); % And the preset answers for your dialog.
-    
-    param = str2num(char(param)); 
-    
+        {'1';'5000';'30';'0.01';'96';'0.1';'-inf';'1'}); % default values.    
+    param = str2num(char(param));     
     if length(param) < 8, param = []; end 
     if ~isempty(param) 
         doSWIPEP = param(1);
@@ -41,25 +51,10 @@ end
 
 
 % *************************************************************************
-if isstruct(IN) % You should check that the function is being called within
-    % the AARAE environment, if so, you can extract the
-    % information you need to run your processor. Audio in
-    % AARAE is in a Matlab structure (hence the isstruct test).
-    
-    % AARAE audio data can have up to 6 dimension, but most analysers cannot
-    % handle all of those dimensions. The following utility function call
-    % reduces the number of dimensions in the audio field of the input
-    % structure if they are greater than the second input argument (3 in
-    % the example below). For further information see the comments in
-    % choose_from_higher_dimensions in AARAE's utilities directory. Unless
-    % there is a reason not to, it is usually a good idea to support
-    % analysis of the first three dimensions.
+if isstruct(IN) 
     IN = choose_from_higher_dimensions(IN,3,1);
-    
     audio = IN.audio; % Extract the audio data
     fs = IN.fs;       % Extract the sampling frequency of the audio data
-    
-    
     
     % chanID is a cell array of strings describing each channel
     if isfield(IN,'chanID') % Get the channel ID if it exists
@@ -69,25 +64,17 @@ if isstruct(IN) % You should check that the function is being called within
         chanID = makechanID(size(audio,2),0);
     end
     
-    
-    
-    
-    
 elseif ~isempty(param) || nargin > 1
-    
     audio = IN;
-    
 end
+
+
+
+
 % *************************************************************************
 
-
-
-
-
-% Check that the required data exists for analysis to run
 if ~isempty(audio) && ~isempty(fs) 
-    
-    
+
     % the audio's length, number of channels, and number of bands
     [len,chans,bands] = size(audio);
     
@@ -95,13 +82,16 @@ if ~isempty(audio) && ~isempty(fs)
         audio = sum(audio,3); % mixdown bands if multiband
     end
     
-
-    
     if MIXDOWN
         audio = mean(audio,2);
         chans = 1;
     end
     
+    
+    
+    
+    % ***************************
+    % This is the important part!  
     time = (0: dt: len/fs)'; % Times
     [pitch, strength] = deal(zeros(length(time),chans));
     
@@ -112,6 +102,9 @@ if ~isempty(audio) && ~isempty(fs)
             [pitch(:,ch),~,strength(:,ch)] = swipep(audio(:,ch),fs,plim,dt,dlog2p,dERBs,sTHR);
         end
     end
+    % ***************************
+    
+    
     
     
     % Pitch Statistics
@@ -239,85 +232,21 @@ if ~isempty(audio) && ~isempty(fs)
     % function identify that the last input argument is the name that will
     % be displayed in AARAEs categorical tree under the results leaf.
     
-    
-    
-    % And once you have your result, you should set it up in an output form
-    % that AARAE can understand.
+
     if isstruct(IN)
-        
-        % *** OUTPUTTING AUDIO ***
-        % Most analysers do not output audio. If you wish to output audio,
-        % first consider whether your analyser should be a processor
-        % instead. If it should be an analyser, then audio can be output as
-        % follows:
-        %         OUT = IN; % You can replicate the input structure for your output
-        %         OUT.audio = audio; % And modify the fields you processed
-        % However, for an analyser, you might not wish to output audio (in
-        % which case the two lines above might not be wanted.
-        
-        
-        
-        % *** OUTPUTTING NEW FIELDS ***
-        % Or simply output the fields you consider necessary after
-        % processing the input audio data, AARAE will figure out what has
-        % changed and complete the structure. But remember, it HAS TO BE a
-        % structure if you're returning more than one field:
-        
-        
-        % The advantages of providing outputs as subfields of properties
-        % are that AARAE has a button that opens a window to display
-        % properties, and that properties are also written to the log file
-        % of the AARAE session. Outputing fields without making them
-        % subfields of properties is possible, but this makes the output
-        % data harder to access.
-        % Note that the above outputs might be considered to be redundant
-        % if OUT.tables is used, as described above. Generally the
-        % properties fields output is suitable for small data only (e.g.
-        % single values). Tables is best for small and medium data, while a
-        % results leaf is is best for big data.
-        
-        
-        
-        % *** FUNCTION CALLBACKS ***
-        % The following outputs are required so that AARAE can repeat the
-        % analysis without user interaction (e.g. for batch processing),
-        % and for writing the log file.
-        OUT.funcallback.name = 'SWIPE_pitch.m'; % Provide AARAE
-        % with the name of your function
+        OUT.funcallback.name = 'SWIPE_pitch.m'; 
         OUT.funcallback.inarg = {doSWIPEP,hicut,locut,plim,dt,dlog2p,dERBs,sTHR,MIXDOWN,fs};
-        % assign all of the input parameters that could be used to call the
-        % function without dialog box to the output field param (as a cell
-        % array) in order to allow batch analysing. Do not include the
-        % first (audio) input here. If there are no input arguments (apart
-        % from the audio input), then use:
-        % OUT.funcallback.inarg = {};
-        
-        
-        
-        % AARAE will only display the output in the main GUI if it includes
-        % tables, audio or other fields. It will not display if only
-        % function callbacks are returned. Result leaves are not created by
-        % the functions main output, but instead are created by calling
-        % AARAE's doresultleaf as described above, and these will be
-        % displayed in AARAE's main GUI regardless of the function's main
-        % outputs.
     else
-        % You may increase the functionality of your code by allowing the
-        % output to be used as standalone and returning individual
-        % arguments instead of a structure.
         OUT = pitch;
     end
     varargout{1} = time;
-    varargout{2} = strength;
-    
+    varargout{2} = strength;    
 else
-    % AARAE requires that in case that the user doesn't input enough
-    % arguments to generate audio to output an empty variable.
     OUT = [];
 end
 
 %**************************************************************************
-% Copyright (c) <YEAR>, <OWNER>
+% Copyright (c) 2015, Densil Cabrera
 % All rights reserved.
 %
 % Redistribution and use in source and binary forms, with or without
@@ -329,7 +258,7 @@ end
 %  * Redistributions in binary form must reproduce the above copyright
 %    notice, this list of conditions and the following disclaimer in the
 %    documentation and/or other materials provided with the distribution.
-%  * Neither the name of the <ORGANISATION> nor the names of its contributors
+%  * Neither the name of the University of Sydney nor the names of its contributors
 %    may be used to endorse or promote products derived from this software
 %    without specific prior written permission.
 %
