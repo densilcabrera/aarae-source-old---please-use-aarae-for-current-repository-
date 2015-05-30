@@ -1,5 +1,5 @@
 function [OUT, varargout] = Loudness_MGB2b(IN,fs,filtermethod,cal,faster,decay,doplot)
-% This function cacluclates loudness based on models by Moore, Glasberg and
+% This function calculates loudness based on models by Moore, Glasberg and
 % Baer, including Glasberg and Moore's 2002 time-varying loudness model.
 %
 % It is a port and extension of code from PsySound3. See code comments for
@@ -599,12 +599,13 @@ if ~isempty(signal) && ~isempty(fs)
         
         % 40 dB 1 kHz pure tone should
         % yield 1 sone -  for testing purposes
-        % call the function using "faster" , 1 chan, if you wish to test this
-        % the line below overwrites the "faster" intensity spectrum with a 1 kHz
+        % call the function using "faster" , 1 chan, if you wish to test
+        % this.
+        % The line below overwrites the "faster" intensity spectrum with a 1 kHz
         % tone at 40 dB
         %   I=[zeros(63,1);10^(40/10);zeros(282,1)];
         
-        %     To test 31.25 Hz at 100 dB (without Middle and outer ear trasnfer
+        %     To test 31.25 Hz at 100 dB (without middle and outer ear transfer
         %     function), you can use the following line
         
         %     I=[zeros(1,1);10^(100/10);zeros(282+62,1)];
@@ -671,21 +672,21 @@ if ~isempty(signal) && ~isempty(fs)
         end %switch filtermethod
         
         % use if you wish to monitor the sound pressure level here
-        % level = 10*log10(sum(I)+eps)
+        % level = 10*log10(sum(I)+1e-99)
         for channel=1:nchan
             % roex component levels
             % this is slow due to the large number of spectrum components
             %tic
             intensity = zeros(nfreq,nfreq);
             intensity(indg) = (1+p(col)'.*(g(indg))).* exp(-p(col)'.*(g(indg))) .* I(row,channel);
-            RoexL = 10.*log10(sum(intensity,1)+eps);
+            RoexL = 10.*log10(sum(intensity,1)+1e-99);
             %toc
             
             % excitation pattern
             p2(g2neg) = p51(g2neg)-0.35.*(p51(g2neg)./p511k) .* (RoexL(row_g2_neg(:))-51)';
             if p2(g2lessthan2) <0.1, p2(g2lessthan2) = 0.1; end
             Imat = repmat(I(:,channel),1,nERBS);
-            Esig = sum(g2lessthan2.*Imat .* (1+p2.*abs(g2)).*exp(-p2.*abs(g2)))'+eps;
+            Esig = sum(g2lessthan2.*Imat .* (1+p2.*abs(g2)).*exp(-p2.*abs(g2)))'+1e-99;
             Elevel = 10*log10(Esig);
             
             % loudness
@@ -767,7 +768,7 @@ if ~isempty(signal) && ~isempty(fs)
     
     % additional silence at the end, to calculate loudness decay
     if decay > 0
-        InstantaneousLoudness = [InstantaneousLoudness;zeros(decay,1).*minloud];
+        InstantaneousLoudness = [InstantaneousLoudness;ones(decay,1).*minloud];
         ShortTermLoudness = [ShortTermLoudness;zeros(decay,1)];
         LongTermLoudness = [LongTermLoudness;zeros(decay,1)];
         for k=1:decay+1
@@ -796,7 +797,7 @@ if ~isempty(signal) && ~isempty(fs)
         case 1
         % plot of loudness and specific loudness
             figure('Name','Loudness')
-            subplot(2,2,1)
+            subplot(2,2,1:2)
             plot(times,InstantaneousLoudness,'k','DisplayName','Instantaneous');
             hold on
             plot(times,ShortTermLoudness,'r','DisplayName','Short term');
