@@ -1,4 +1,4 @@
-function [OUT] = Terhardt_VirtualPitch(IN,timestep,PitchShift,MINWEIGHT,MMAX,SPWEIGHT,maxfrequency,ATune,cal,fs)
+function [OUT] = Terhardt_VirtualPitch(IN,timestep,PitchShift,MINWEIGHT,MMAX,SPWEIGHT,maxfrequency,ATune,chromaorder,cal,fs)
 % This function analyses the input audio waveform in terms of pitch. It can
 % predict multiple simultaneous pitch sensations, including spectral and
 % virtual pitches, and their respective pitch strengths (salience).
@@ -46,14 +46,15 @@ if nargin ==1
         'Spectral weight multiplier';...
         'Maximum frequency for pitch calculation';...
         'Tuning A in Hz';...
-        'Calibration offset (dB)'},...
+        'Calibration offset (dB)';...
+        'Chroma in ascending order [0] or cycle-of-fifths order [1]'},...
         'Terhardt Virtual Pitch Analysis Settings',... % This is the dialog window title.
         [1 60],...
-        {'20';'1';'0.1';'12';'0.5';'5000';'440';num2str(cal)}); % And the preset answers for your dialog.
+        {'20';'1';'0.1';'12';'0.5';'5000';'440';num2str(cal);'1'}); % And the preset answers for your dialog.
     
     param = str2num(char(param));
     
-    if length(param) < 8, param = []; end
+    if length(param) < 1, param = []; end
     if ~isempty(param)
         timestep = param(1);
         PitchShift = param(2);
@@ -64,6 +65,7 @@ if nargin ==1
         maxfrequency = param(6);
         ATune = param(7);
         cal = param(8);
+        chromaorder = param(9);
     else
         % get out of here if the user presses 'cancel'
         OUT = [];
@@ -126,7 +128,7 @@ if ~isempty(audio) && ~isempty(fs) && ~isempty(cal)
     freq = freq_all(4:maxfrequencyindex);
     Offset = round(fs*timestep/1000);
     nwin = round((len-WindowLength)/Offset); % number of windows
-    fftgain = 2^0.5 * rms(hann(WindowLength)) / WindowLength;
+    fftgain = 2^0.5 * rms(hann(WindowLength)) / WindowLength; % gain to be applied based on the FFT length
     t = ((0:nwin-1)' * Offset + 0.5 * WindowLength) ./ fs; % time vector for windows
     
     PitchPattern = zeros(nwin,MAXTONES);
@@ -152,7 +154,10 @@ if ~isempty(audio) && ~isempty(fs) && ~isempty(cal)
             * fftgain)).^2;
         L = pow2db(Intensity_all+1e-99);
         
-
+        % The following peak identification and interpolation is the method
+        % described in Terhardt et al.'s paper. We could introduce a better
+        % approach here as an alternative.
+        
         % Find peaks
         peakindex = (L(4:maxfrequencyindex) > L(3:maxfrequencyindex-1)) ...
             & (L(4:maxfrequencyindex) >= L(5:maxfrequencyindex+1)) ...
@@ -177,8 +182,8 @@ if ~isempty(audio) && ~isempty(fs) && ~isempty(cal)
         % (port from PsySound2 Pascal code)
         
         NTonesM = 0;
-        toneBark = 13 * atan(0.76 * ToneF/1000) + 3.5 * atan ((ToneF/7500).^2);
-        spectrumBark = 13 * atan(0.76 * freq/1000) + 3.5 * atan ((freq/7500).^2);
+        toneBark = 13*atan(0.76*ToneF/1000) + 3.5*atan((ToneF/7500).^2);
+        spectrumBark = 13*atan(0.76*freq/1000) + 3.5*atan((freq/7500).^2);
         % assume no more than 1000 tones...
         [LX, WS, FX, V] = deal(zeros(1000,1));
         for i = 1:NTones
@@ -189,20 +194,17 @@ if ~isempty(audio) && ~isempty(fs) && ~isempty(cal)
                 & (abs(ToneRef(i) - (1:length(spectrumBark))') > 2)));
             
             
-            
-            
             % the following should be vectorized!
             sumlo = 1e-99;
             sumhi = 1e-99;
             for j = 1:NTones
                 if (j < i)
-                    s = -24 - (0.23 / (ToneF(j)/1000)) + (0.2 * ToneL(j)); %eq 7b
+                    s = -24 - (0.23 / (ToneF(j)/1000)) + (0.2*ToneL(j)); %eq 7b
                     Lji = ToneL(j) - s * (spectrumBark(j) - toneBark(i));
                     sumlo = sumlo + 10.^(Lji/20);
                 elseif (j > i)
                     Lji = ToneL(j) - 27 * (Fq2Bark(ToneF(j)) - toneBark(i));
                     sumhi = sumhi + 10.^(Lji/20);
-                    
                 end; %if (ToneF [i] < ToneF [j]) then begin
             end; %for j := 1 to NTones do begin
             
@@ -217,11 +219,11 @@ if ~isempty(audio) && ~isempty(fs) && ~isempty(cal)
                     * (1 + 0.07 * (ToneF(i)/700 - 700/ToneF(i)).^2).^-0.5;
                 FX(NTonesM) = ToneF(i);
                 if PitchShift
-                    LXid = ToneL(i) - 20 * log10(sumlo);
-                    LXidd = ToneL(i) - 20 * log10(sumhi);
-                    V(NTonesM) = 2e-4 * (ToneL(i) - 60) * ((ToneF(i) / 1000) - 2) ...
-                        + 1.5e-2 * exp(LXid / -20) * (3 - log(ToneF(i) / 1000)) ...
-                        + 3.0e-2 * exp(LXidd / -20) * (0.36 + log(ToneF(i) / 1000)); %eq 10
+                    LXid = ToneL(i) - 20*log10(sumlo);
+                    LXidd = ToneL(i) - 20*log10(sumhi);
+                    V(NTonesM) = 2e-4 * (ToneL(i) - 60) * ((ToneF(i)/1000) - 2) ...
+                        + 1.5e-2 * exp(LXid/-20) * (3 - log(ToneF(i)/1000)) ...
+                        + 3.0e-2 * exp(LXidd/-20) * (0.36 + log(ToneF(i)/1000)); %eq 10
                     FX(NTonesM) = ToneF(i) * (1 + V(NTonesM)); %eq 9
                 end %if PitchShift
             end %if LXi > 0 then begin
@@ -241,7 +243,7 @@ if ~isempty(audio) && ~isempty(fs) && ~isempty(cal)
             % Find virtual pitches
             delta = 0.08;
             MaxPitches = 0;
-            while ~((MaxPitches+1 == NTonesM) || (WS(MaxPitches+1) < 0.7 * WS(1)))
+            while ~((MaxPitches+1 == NTonesM) || (WS(MaxPitches+1) < 0.7*WS(1)))
                 MaxPitches = MaxPitches + 1;
             end
             
@@ -267,18 +269,18 @@ if ~isempty(audio) && ~isempty(fs) && ~isempty(cal)
                         end; %{if (j <> i then begin}
                         Wim = Wim + Cij;
                     end; %{for j := 1 to R do begin}
-                    VPitch(i, m) = FX (i) / m;
+                    VPitch(i,m) = FX (i) / m;
                     if PitchShift
-                        VPitch(i, m) = (VPitch(i, m)) * (1 + V(i) ...
+                        VPitch(i,m) = (VPitch(i,m)) * (1 + V(i) ...
                             - sign(m - 1) * 1e-3 * (18 + 2.5 * m ...
-                            - (50 - 7 * m) * (VPitch(i, m) / 1000) ...
-                            + 0.1 / (VPitch(i, m) / 1000)/(VPitch(i, m) / 1000)));
+                            - (50 - 7 * m) * (VPitch(i,m) / 1000) ...
+                            + 0.1 / (VPitch(i,m) / 1000)/(VPitch(i,m) / 1000)));
                         VW(i, m) = Wim / (1 + (((FX(i)/1000) / 0.8 / m).^4));
                     end
                 end; %{for m:= 1 to MMAX do begin}
             end %{for i := 1 to MaxPitches do begin}
             
-            isvirtual = 0;
+            isvirtual = 0; % whether or not there are any virtual pitches
             % Make compound pitch pattern
             CompoundPitch = zeros(MAXTONES,1);
             CompoundWeight = zeros(MAXTONES,1);
@@ -325,7 +327,8 @@ if ~isempty(audio) && ~isempty(fs) && ~isempty(cal)
                 SpectralVirtual(x,1:PitchCount) = Compoundsv(1:PitchCount);
                 
                 % Calculate Parncutt Measures
-                Salience(x,1:PitchCount) = CompoundWeight(1:PitchCount) / (CompoundWeight(1) * sum(CompoundWeight(1:PitchCount))).^0.5;
+                Salience(x,1:PitchCount) = CompoundWeight(1:PitchCount) / ...
+                    (CompoundWeight(1) * sum(CompoundWeight(1:PitchCount))).^0.5;
                 PureTonalness(x) = (sum(CompoundWeight.^2)/5.2).^0.5;
                 if isvirtual
                     ComplexTonalness(x) = max(CompoundWeight(~Compoundsv)/6.2);
@@ -375,15 +378,33 @@ if ~isempty(audio) && ~isempty(fs) && ~isempty(cal)
     
     % Salience of chroma
     
-    
+    % Time-averaged MIDI salience
     MIDISalienceMean = mean(MIDISalience);
     
     ChromaSalience = zeros(nwin,12);
     for c = 1:12
         ChromaSalience(:,c) = ...
             sum(MIDISalience(:,c+[9,21,33,45,57,69,81,93,105]),2);
+        % 'A' 'A#' 'B' 'C' 'C#' 'D' 'D#' 'E' 'F' 'F#' 'G' 'G#'
     end
+   
+    if chromaorder
+         % change to cycle-of-fifths order
+        ChromaSalienceTemp = ChromaSalience;
+        ChromaSalience(:,2) = ChromaSalienceTemp(:,8);
+        ChromaSalience(:,4) = ChromaSalienceTemp(:,10);
+        ChromaSalience(:,6) = ChromaSalienceTemp(:,12);
+        ChromaSalience(:,8) = ChromaSalienceTemp(:,2);
+        ChromaSalience(:,10) = ChromaSalienceTemp(:,4);
+        ChromaSalience(:,12) = ChromaSalienceTemp(:,6);
+        chomalabel = {'A' 'E' 'B' 'F#' 'C#' 'G#' 'D#' 'A#' 'F' 'C' 'G' 'D'};
+    else
+        chromalabel = {'A' 'A#' 'B' 'C' 'C#' 'D' 'D#' 'E' 'F' 'F#' 'G' 'G#'};
+    end
+    
+    % Time-averaged chroma salience
     ChromaSalienceMean = mean(ChromaSalience);
+    
     
     
     % MIDI salience plots
@@ -407,16 +428,19 @@ if ~isempty(audio) && ~isempty(fs) && ~isempty(cal)
     subplot(2,1,1)
     imagesc(t,1:12,ChromaSalience')
     xlabel('Time (s)');
-    ylabel('Chroma number')
+    ylabel('Chroma')
+    set(gca,'YTick',1:12)
+    set(gca,'YTickLabel',chomalabel)
     set(gca,'TickDir', 'out');
     set(gca,'YDir','normal')
     %legend('show');
     ylim([1 12]);
+    
     subplot(2,1,2)
     bar(1:12,ChromaSalienceMean)
     xlabel('Chroma number')
     %xlim([1 12])
-    set(gca,'XTickLabel',{'A' 'A#' 'B' 'C' 'C#' 'D' 'D#' 'E' 'F' 'F#' 'G' 'G#'})
+    set(gca,'XTickLabel',chomalabel)
     
     
     
@@ -462,6 +486,28 @@ if ~isempty(audio) && ~isempty(fs) && ~isempty(cal)
     plot(t,Multiplicity,'r')
     xlabel('Time (s)');
     ylabel('Multiplicity')
+    
+    
+    % Tables of means
+    fig1 = figure('Name','Virtual Pitch Time-averaged Values');
+    
+    % Pitch parameter stats
+    [PureTonalnessStats,labels] = pitchstats(PureTonalness);
+    ComplexTonalnessStats = pitchstats(ComplexTonalness);
+    MultiplicityStats = pitchstats(Multiplicity);
+    data = [PureTonalnessStats ComplexTonalnessStats MultiplicityStats];
+    
+    table1 =  uitable('Data',data,...
+                      'RowName',labels,...
+                      'ColumnName',{'Pure Tonalness' 'Complex Tonalness' 'Multiplicity'});
+    
+    
+    table2 = uitable('Data',ChromaSalienceMean',...
+                     'RowName',chomalabel,...
+                     'ColumnName',{'Chroma Salience'});
+    
+    [~,table] = disptables(fig1,[table1 table2]);
+    OUT.tables = table;
     
     %disp('hello')
     % *** CREATING A TABLE OR MULTIPLE TABLES ***
@@ -605,7 +651,7 @@ if ~isempty(audio) && ~isempty(fs) && ~isempty(cal)
         % and for writing the log file.
         OUT.funcallback.name = 'Terhardt_VirtualPitch.m'; % Provide AARAE
         % with the name of your function
-        OUT.funcallback.inarg = {timestep,PitchShift,MINWEIGHT,MMAX,SPWEIGHT,maxfrequency,ATune,cal,fs};
+        OUT.funcallback.inarg = {timestep,PitchShift,MINWEIGHT,MMAX,SPWEIGHT,maxfrequency,ATune,chromaorder,cal,fs};
         % assign all of the input parameters that could be used to call the
         % function without dialog box to the output field param (as a cell
         % array) in order to allow batch analysing. Do not include the
@@ -726,6 +772,33 @@ for j = 1:length(notespectrum)
     out(1:12,1) = chromapattern(1:12,2);
 end %end createChromaPattern
 end
+
+
+
+function [data,meaning] = pitchstats(in)
+meaning = {'mean','standard deviation','maximum','99%','98%','97%','96%','95%',...
+    '90%','80%','70%','60%','median','40%','30%','20%','10%','minimum'};
+data = [mean(in);...
+        std(in);...
+    max(in);...
+    prctile(in,99);...
+    prctile(in,98);...
+    prctile(in,97);...
+    prctile(in,96);...
+    prctile(in,95);...
+    prctile(in,90);...
+    prctile(in,80);...
+    prctile(in,70);...
+    prctile(in,60);...
+    median(in);...
+    prctile(in,40);...
+    prctile(in,30);...
+    prctile(in,20);...
+    prctile(in,10);...
+    min(in)];
+
+end
+
 
 %**************************************************************************
 % Copyright (c) 2015, Densil Cabrera
