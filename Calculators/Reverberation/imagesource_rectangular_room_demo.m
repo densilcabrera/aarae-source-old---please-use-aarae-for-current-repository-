@@ -1,21 +1,18 @@
 function OUT = imagesource_rectangular_room_demo(Lx,Ly,Lz,xs,ys,zs,xr,yr,zr,c,jitter,maxorder,ambiorder)
-% image-source model for a rectangular room, by Densil Cabrera
-% written for demonstration purposes
+% image-source model for a rectangular room, by Densil Cabrera written for
+% demonstration purposes in 2009, and adapted for AARAE in 2014.
 %
 % creates an impulse response of a rectangular room that has dimensions of
-% Lx, Ly and Lz.
-% the coordinate system's origin is in a corner of the room, and all
-% coordinates within the room are positive
-% (xs,ys,zs) are the coordinates of the source
-% (xr,yr,zr) are the coordinates of the receiver
-% If source and receiver are co-located, then the direct sound is not included
-% in the impulse response.
-% c is the speed of sound
-% jitter introduces a random offset to each reflection time (and consequently amplitude)
-% (try a value of 0.1 m). Jitter is not applied to the direct sound.
-% maxorder is the maximum order of the image source calculations
+% Lx, Ly and Lz. the coordinate system's origin is in a corner of the room,
+% and all coordinates within the room are positive (xs,ys,zs) are the
+% coordinates of the source (xr,yr,zr) are the coordinates of the receiver
+% If source and receiver are co-located, then the direct sound is not
+% included in the impulse response. c is the speed of sound jitter
+% introduces a random offset to each reflection time (and consequently
+% amplitude) (try a value of 0.1 m). Jitter is not applied to the direct
+% sound. maxorder is the maximum order of the image source calculations
 % ambiorder is the ambisonics order (0 - 7). A value of 0 yields a single
-% (omnidirectional) channel.
+% (omnidirectional) channel. A value of 7 yields 64 channels.
 %
 % Edit the absorption coefficients directly in the code (filtHzalpha). The
 % absorption coefficient values are applied to all surfaces.
@@ -31,8 +28,8 @@ function OUT = imagesource_rectangular_room_demo(Lx,Ly,Lz,xs,ys,zs,xr,yr,zr,c,ji
 % This function has been adapted to use Nicolas Epain's HOAToolbox within
 % the AARAE project for higher order Ambisonics encoding of the impulse
 % response. Currently this makes the function VERY SLOW if high order
-% reflections and high order ambisonics are generated - hopefully a speed-up
-% will be added in a future revision.
+% reflections and high order ambisonics are generated - hopefully a
+% speed-up will be added in a future revision.
 
 if nargin < 13, ambiorder = 0; end % ambisonics order of 0 yields 1 omnidirectional channel
 if nargin < 12, maxorder = 50; end % maximum reflection order calculated
@@ -159,6 +156,8 @@ for o = 1:maxorder + 1
                     if nchans == 1
                         out(k) = out(k) + 1/r;
                     else
+                        % This is the slowest part of the loop (calling the
+                        % HOA Toolbox)
                     out(k,:) = out(k,:)+ SphericalHarmonicMatrix(hoaFmt,theta,phi)'/r;
                     end
                 end % if k>=1
@@ -201,7 +200,7 @@ T30end = find(decay <= -35, 1, 'first'); % -35 dB
 p = polyfit((Tstart:T20end)', decay(Tstart:T20end),1); %linear regression
 T20 = 3*((p(2)-25)/p(1)-(p(2)-5)/p(1))/fs; % reverberation time, T20
 q = polyfit((Tstart:T30end)', decay(Tstart:T30end),1); %linear regression
-T30 = 2*((q(2)-35)/q(1)-(q(2)-5)/q(1))/fs; % reverberation time, T20
+T30 = 2*((q(2)-35)/q(1)-(q(2)-5)/q(1))/fs; % reverberation time, T30
 IRstart = find(decay < 0, 1, 'first'); % direct sound
 C50 = 10*log10(1-10^(decay(IRstart+0.05*fs))/10)-decay(IRstart+0.05*fs); % clarity index
 %disp(['G ',num2str(G,3),' dB    T20 ',num2str(T20,3),' s    T30 ',num2str(T30,3),' s    C50 ',num2str(C50,3),' dB'])
