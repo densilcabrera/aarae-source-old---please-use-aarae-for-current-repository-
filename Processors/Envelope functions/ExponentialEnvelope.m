@@ -12,6 +12,7 @@ function OUT = ExponentialEnvelope(in, fs, exponent, normalize, starttime)
 %
 % In other words, the exponent is equal to -6ln(10) / (2RT)
 %
+%
 % Code by Densil Cabrera
 % version 1.00 (4 November 2013)
 
