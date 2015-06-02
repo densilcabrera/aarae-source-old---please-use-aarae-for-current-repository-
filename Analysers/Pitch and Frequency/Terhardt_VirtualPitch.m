@@ -140,7 +140,8 @@ if ~isempty(audio) && ~isempty(fs) && ~isempty(cal)
     MIDISalience = zeros(nwin,128); % Quantized-pitch salience pattern using MIDI note numbers
     
     
-    [PureTonalness, ComplexTonalness, Multiplicity] = ...
+    [PureTonalness, ComplexTonalness, Multiplicity, SumCompoundWeight,...
+        SumSpectralWeight, SumVirtualWeight] = ...
             deal(zeros(nwin,1));
     
     % Process window loop
@@ -337,6 +338,10 @@ if ~isempty(audio) && ~isempty(fs) && ~isempty(cal)
                 end
                 Multiplicity(x) = (sum(CompoundWeight)/CompoundWeight(1)).^0.5;
                 
+                SumCompoundWeight(x) = sum(CompoundWeight);
+                SumSpectralWeight(x) = sum(CompoundWeight(Compoundsv));
+                SumVirtualWeight(x) = sum(CompoundWeight(~Compoundsv));
+                
                 % Quantized pitch profile
                 
                 % MIDI = 12*log2(f/ATune) + 69;
@@ -358,17 +363,7 @@ if ~isempty(audio) && ~isempty(fs) && ~isempty(cal)
                         end
                     end
                 end
-            else
-                % No pitches found
-                PureTonalness(x) = 0;
-                ComplexTonalness(x) = 0;
-                Multiplicity(x) = 0;
             end % PitchCount > 0
-        else
-            % No pitches found
-            PureTonalness(x) = 0;
-            ComplexTonalness(x) = 0;
-            Multiplicity(x) = 0;
         end
         
         %disp('hello')
@@ -404,7 +399,10 @@ if ~isempty(audio) && ~isempty(fs) && ~isempty(cal)
     
     % Time-averaged chroma salience
     ChromaSalienceMean = mean(ChromaSalience);
-    
+    ChromaStats = zeros(18,12);
+    for n = 1:12
+        ChromaStats(:,n) = pitchstats(ChromaSalience(:,n));
+    end
     
     
     % MIDI salience plots
@@ -489,22 +487,28 @@ if ~isempty(audio) && ~isempty(fs) && ~isempty(cal)
     
     
     % Tables of means
-    fig1 = figure('Name','Virtual Pitch Time-averaged Values');
+    fig1 = figure('Name','Virtual Pitch Statistics over Time');
     
     % Pitch parameter stats
     [PureTonalnessStats,labels] = pitchstats(PureTonalness);
     ComplexTonalnessStats = pitchstats(ComplexTonalness);
     MultiplicityStats = pitchstats(Multiplicity);
-    data = [PureTonalnessStats ComplexTonalnessStats MultiplicityStats];
+    PeakSalienceStats = pitchstats(max(Salience,[],2));
+    SumSalienceStats = pitchstats(sum(Salience,2));
+    SumPitchWeightStats = pitchstats(SumCompoundWeight);
+    SumSpectralWeightStats = pitchstats(SumSpectralWeight);
+    SumVirtualWeightStats = pitchstats(SumVirtualWeight);
+    
+    data = [PureTonalnessStats ComplexTonalnessStats MultiplicityStats PeakSalienceStats SumSalienceStats SumPitchWeightStats SumSpectralWeightStats SumVirtualWeightStats];
     
     table1 =  uitable('Data',data,...
                       'RowName',labels,...
-                      'ColumnName',{'Pure Tonalness' 'Complex Tonalness' 'Multiplicity'});
+                      'ColumnName',{'Pure Tonalness' 'Complex Tonalness' 'Multiplicity' 'Highest Salience' 'Salience Sum' 'Compound Weight Sum' 'Spectral Weight Sum' 'Virtual Weight Sum'});
     
     
-    table2 = uitable('Data',ChromaSalienceMean',...
-                     'RowName',chomalabel,...
-                     'ColumnName',{'Chroma Salience'});
+    table2 = uitable('Data',ChromaStats,...
+                     'RowName',labels,...
+                     'ColumnName',chomalabel);
     
     [~,table] = disptables(fig1,[table1 table2]);
     OUT.tables = table;
