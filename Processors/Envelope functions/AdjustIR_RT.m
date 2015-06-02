@@ -1,8 +1,8 @@
-function OUT = AdjustIR_RT(IN,T,freq,iterations,autocrop,openclosed,fs)
+function [OUT, varargout] = AdjustIR_RT(IN,T,freq,iterations,autocrop,openclosed,Tevalrange,filterstrength,fs)
 % This function is designed to change the reverberation time of an impulse
-% response (probably a room impulse response) to target values using octave
-% or 1/3-octave band processing (or other bandwidths if the audio is
-% pre-filtered).
+% response (probably a room impulse response) to desired target band values
+% using octave or 1/3-octave band processing (or other bandwidths if the
+% audio is pre-filtered).
 %
 % Some background to this function is given in: D. Cabrera, D. Lee, M.
 % Yadav and W.L. Martens, "Decay envelope manipulation of room impulse
@@ -10,22 +10,26 @@ function OUT = AdjustIR_RT(IN,T,freq,iterations,autocrop,openclosed,fs)
 % Acoustics 2011 (Australian Acoustical Society Conference), Gold Coast,
 % Australia, 2011.
 %
-% INPUTS: IN is an impulse response (either an AARAE audio structure, or a
-% vector or matrix). If dimension 3 of the audio data is non-singleton, it
-% is assumed that the audio has been pre-filtered, and so this function
-% does not filter the audio in that case. The function is fully compatible
-% with AARAE's audio dimension conventions (allowing up to 6-dimensional
-% audio). In the case of dimensions 2, 4, 5, and/or 6 being non-singleton,
-% reverberation time is calculated based on the power-sum of the
-% simultaneous decays. This ensures that multi-channel impulse responses 
-% have the same adjustment made to all channels (and the target
-% reverberation time represents the reverberation time of the combined
-% channels).
+%
+% INPUTS: 
+% IN is an impulse response (either an AARAE audio structure, or a vector
+% or matrix). If dimension 3 of the audio data is non-singleton, it is
+% assumed that the audio has been pre-filtered (with bands in dimension 3),
+% and so this function does not filter the audio in that case. The function
+% is fully compatible with AARAE's audio dimension conventions (allowing up
+% to 6-dimensional audio). In the case of dimensions 2, 4, 5, and/or 6
+% being non-singleton, reverberation time is calculated based on the
+% power-sum of the simultaneous decays. This ensures that multi-channel
+% impulse responses have the same adjustment made to all channels (and the
+% target reverberation time represents the reverberation time of the
+% combined channels).
 %
 % Other inputs are entered via a dialog box if only the first input
 % argument is present.
 %
 % T is a vector containing the target reverberation times (T20) in seconds.
+% Note that if T values are unreasonably long (for the input impulse
+% response) then the processing might not succeed.
 %
 % freq is a vector containing the band centre frequencies corresponding to
 % the target reverberation times. Please only use standard nominal centre
@@ -35,23 +39,40 @@ function OUT = AdjustIR_RT(IN,T,freq,iterations,autocrop,openclosed,fs)
 % iterations specifies the number of iterations used to refine the
 % reverberation time adjustment. Usually more than 1 iteration is required
 % because the changing the reverberation time changes the length of the
-% vector used for T20 evaluation.
+% vector used for T evaluation.
 %
 % autocrop specifies whether AARAE's autocropstart_aarae function is run
 % (to remove samples before the start of the impulse response). Usually
-% this is a helpful operation.
+% this is a helpful operation. Autocrop is done using 'method' 3, where the
+% same shift is applied to all columns, based on the earliest arival.
 %
 % openclosed specifies whether the lowest and highest filters are bandpass
 % filters (closed, 1) or, respectively, lopass and hipass filters (open,
 % 0). Using closed-end filters provides more control, but bandpasses the
 % frequency range of the adjusted impulse response.
 %
+% Tevalrange is the evaluation range in decibels over which reverberation
+% time is evaluated (at all stages of the processing). It can be dangerous
+% to use a large evaluation range (unless signal to noise ratio is
+% excellent), and 20 dB is the suggested value for Tevalrange.
+%
+% filterstrength is a factor controling the frequency selectivity of the
+% filters. A value of 1 give the equivalent of 12th order filters, a value
+% of 2 gives the equivalent of 24th order filters. If there are large
+% changes in target reverberation time between bands, then greater filter
+% strength may be beneficial. Furthermore, 1/3-octave band filters will
+% may often be better with a high filterstrength. However, if reverberation
+% time is short, then the filters' own impulse response may introduce
+% unwanted artefacts if the filterstrength is too great.
+%
 %
 %
 % This version does filtering in the frequency domain (whereas the version
 % described in the paper did time domain filtering). The frequency domain
 % filters are adapted from AARAE's fft-based filterbanks, which are very 
-% well behaved even at very high equivalent orders.
+% well behaved even at very high equivalent orders. Filtering is zero
+% phase so that the impulse response can be reconstructed from the bands
+% with minimal loss of its fine temporal structure.
 %
 % The function will only be effective if it is used intelligently. The
 % input impulse response should have a high signal-to-noise ratio,
@@ -61,36 +82,40 @@ function OUT = AdjustIR_RT(IN,T,freq,iterations,autocrop,openclosed,fs)
 % required to achieve useful results.
 %
 % The reverberation times displayed by this function are indicative -
-% please check the results with a more comprehensive reverberation time 
-% analyser.
+% please check the results with a more comprehensive reverberation time
+% analyser. However, don't forget that the analysis introduces its own
+% artefacts (e.g. bandpass filter selectivity) which may cause apparent
+% differences from the expected values.
 %
 % Code by Densil Cabrera
+% version 1, 2 June 2015
 
 if nargin == 1
     if size(IN.audio,3)==1 % if audio is multiband already, then we don't have to filter
-        param = inputdlg({'Octave band [1] or 1/3-octave band [0] processing';...
+        param = inputdlg({'Bands per octave [1 | 3]';...
             'Highest centre frequency (Hz)';...
             'Lowest centre frequency (Hz)';...
             'Number of iterations';...
             'Auto-crop start? [0 | 1]';...
-            'Open [0] or closed [1] end filters at the extremes'},...
+            'Open [0] or closed [1] end filters at the extremes';...
+            'Reverberation time evaluation range (dB)';...
+            'Filter strength factor'},...
             'Reverberation Time Adjustment Settings',... % dialog window title.
             [1 60],...
-            {'1';'8000';'125';'4';'1';'0'}); % preset answers.
+            {'1';'8000';'125';'4';'1';'0';'20';'2'}); % preset answers.
         
         param = str2num(char(param));
         
-        if length(param) < 6, param = []; end % You should check that the user
-        % has input all the required
-        % fields.
-        if ~isempty(param) % If they have, you can then assign the dialog's
-            % inputs to your function's input parameters.
+        if length(param) < 8, param = []; end 
+        if ~isempty(param) 
             bandwidths = param(1);
             fhigh = param(2);
             flow = param(3);
             iterations = param(4);
             autocrop = param(5);
             openclosed = param(6);
+            Tevalrange = abs(param(7));
+            filterstrength = param(8);
             noctaves = log2(fhigh/flow); % number of octaves
             if bandwidths == 1
                 % octave bands
@@ -102,43 +127,37 @@ if nargin == 1
             end
             
             if length(freq) < 3
-                disp('Not enough bands to do the processing (at least three bands are needed)')
-                OUT = [];
-                return
+                openclosed = 1;
+                % closed-ended filters are used if there are less than 3
+                % bands. (Maybe this is not necessary)
             end
-            
-            
-            
-            
         else
             % get out of here if the user presses 'cancel'
             OUT = [];
             return
         end
     else
-        
-        if size(IN.audio,3)<3
-            disp('Not enough bands to do the processing (at least three bands are needed)')
-            OUT = [];
-            return
-        end
-        
+        % audio has been pre-filtered
         
         param = inputdlg({'Number of iterations';...
             'Auto-crop start? [0 | 1]';...
-            'Open [0] or closed [1] end filters at the extremes'},...
+            'Open [0] or closed [1] end filters at the extremes';...
+            'Reverberation time evaluation range (dB)';...
+            'Filter strength factor'},...
             'Reverberation Time Adjustment Settings',... % dialog window title.
             [1 60],...
-            {'4';'1';'0'}); % preset answers.
+            {'4';'1';'0';'20'}); % preset answers.
         
         param = str2num(char(param));
         
-        if length(param) < 3, param = []; end
+        if length(param) < 5, param = []; end
         if ~isempty(param)
             
             iterations = param(1);
             autocrop = param(2);
             openclosed = param(3);
+            Tevalrange = abs(param(4));
+            filterstrength = param(5);
         else
             % get out of here if the user presses 'cancel'
             OUT = [];
@@ -168,14 +187,23 @@ else
 end
 
 if autocrop
-    audio = autocropstart_aarae(audio,-20,2);
+    % autocrop method 3 crops based on the shortest latency channel
+    % autocrop method 2 (not used) crops based on the mix of channels
+    audio = autocropstart_aarae(audio,-20,3);
 end
 
-[len,chans,bands,dim4,dim5,dim6] = size(audio);
+bands = size(audio,3);
 
 if bands ==1
-    freqnom = exact2nom_oct(freq);
+    freqnom = exact2nom_oct(freq); % this is an AARAE utility
     bands = length(freqnom);
+end
+
+if isempty(bands)
+    h=warndlg('Input error: no frequency bands specified by input settings.','AARAE info','modal');
+        uiwait(h)
+        OUT = []; % you need to return an empty output
+        return % get out of here!
 end
 
 
@@ -231,7 +259,7 @@ if ~exist('T','var')
         
         if length(param) < (bands-maxfield), param = []; end
         if ~isempty(param)
-            T(maxfield+1:bands-maxfield) = param;
+            T(maxfield+1:maxfield+length(param)) = param;
         end
     end
     if bands>=2*maxfield
@@ -257,6 +285,7 @@ end
 
 
 
+
 if ~isempty(audio) && ~isempty(fs) && ~isempty(T)
     
     [len,chans,bandsin,dim4,dim5,dim6] = size(audio);
@@ -264,9 +293,16 @@ if ~isempty(audio) && ~isempty(fs) && ~isempty(T)
     
     
     % If bands > 1, then we will process using these instead of filtering.
-    % otherwise, filter bands here
+    % otherwise, filter into bands here
     if bandsin == 1
-        audio = filterbankwithopenends(audio,fs,bandwidths,freqnom,openclosed);
+        if ~exist('bandwidths','var')
+            if round(mean(diff(log2(freqnom)))) == 1
+                bandwidths = 1;
+            else
+                bandwidths = 3;
+            end
+        end
+        audio = filterbankwithopenends(audio,fs,bandwidths,freqnom,openclosed,filterstrength);
     end
     
     
@@ -332,14 +368,14 @@ if ~isempty(audio) && ~isempty(fs) && ~isempty(T)
     end
     
     
-    
+    tabledata = zeros(iterations+1,bands);
     
     % adjust reverberation times
     for i = 1:iterations
         
-        % CALCULATE T20
+        % CALCULATE Tx
         RT = zeros(1,bands);
-        x = 20;
+        x = Tevalrange;
         %Schroeder reverse integration
         for band = 1:bands
             decaycurve = flipud(10*log10(cumsum(flipud(...
@@ -352,7 +388,8 @@ if ~isempty(audio) && ~isempty(fs) && ~isempty(T)
             p = polyfit((Tstart:Tend)', decaycurve(Tstart:Tend),1); %linear regression
             RT(band) = 60/x*((p(2)-x-5)/p(1) - (p(2)-5)/p(1))/fs; % reverberation time
         end
-        if i ==1, disp(['T20            (s)  ', num2str(RT)]); end
+        %if i ==1, disp(['T20            (s)  ', num2str(RT)]); end
+        tabledata(i,:) = RT;
         tau1 = RT ./ (log(60)); % exponential decay constants of original
         tau2 = T ./ (log(60)); % desired exponential decay constants
         
@@ -363,29 +400,38 @@ if ~isempty(audio) && ~isempty(fs) && ~isempty(T)
     end
     
     
-    RIRoct = permute(mean(mean(mean(mean(audio,2),4),5),6),[1 3 2]);
-    % CALCULATE T20 OF CHANGED WAVE
-    T20 = zeros(bands,1);
+   % RIRoct = permute(mean(mean(mean(mean(audio,2),4),5),6),[1 3 2]);
+    % CALCULATE T OF CHANGED WAVE
+    Tfinal = zeros(bands,1);
     %Schroeder reverse integration
     for band = 1:bands
-        decaycurve = flipud(10*log10(cumsum(flipud(RIRoct(:,band).^2))+1e-300));
+        %decaycurve = flipud(10*log10(cumsum(flipud(RIRoct(:,band).^2))+1e-300));
+        decaycurve = flipud(10*log10(cumsum(flipud(...
+                mean(mean(mean(mean(audio(:,:,band,:,:,:),2),4),5),6).^2))+1e-300));
         % make IR start time 0 dB
         decaycurve = decaycurve - decaycurve(1);
         Tstart = find(decaycurve <= -5, 1, 'first'); % -5 dB
-        T20end = find(decaycurve <= -25, 1, 'first'); % -25 dB
-        p = polyfit((Tstart:T20end)', decaycurve(Tstart:T20end),1); %linear regression
-        T20(band) = 3*((p(2)-25)/p(1) - (p(2)-5)/p(1))/fs; % reverberation time, T20
+        Tend = find(decaycurve <= -x-5, 1, 'first'); % -x dB
+        p = polyfit((Tstart:Tend)', decaycurve(Tstart:Tend),1); %linear regression
+        Tfinal(band) = 60/x*((p(2)-x-5)/p(1) - (p(2)-5)/p(1))/fs; % reverberation time
     end
-    disp(['T20 adjusted   (s)  ', num2str(T20')])
+    %disp(['T',num2str(x),' adjusted   (s)  ', num2str(Tfinal')])
+    tabledata(end,:) = Tfinal';
     
-    
+    fig1 = figure('Name','Reverberation time evolution from original to final');
+    table1 =  uitable('Data',tabledata,...
+                      'RowName',cellstr(num2str((1:iterations+1)')),...
+                      'ColumnName',cellstr(num2str(freqnom')));
+%       disptables(fig1,table1);
+    [~,table] = disptables(fig1,table1);
     
     
     if isstruct(IN)
         OUT = IN;
         OUT.audio = sum(audio,3);
+        OUT.tables = table;
         OUT.funcallback.name = 'AdjustIR_RT.m';
-        OUT.funcallback.inarg = {T,freq,iterations,autocrop,openclosed,fs};
+        OUT.funcallback.inarg = {T,freq,iterations,autocrop,openclosed,Tevalrange,filterstrength,fs};
     else
         OUT = sum(audio,3);
     end
@@ -404,12 +450,14 @@ end
 
 
 
-function filtered = filterbankwithopenends(audio,fs,bpo,frequencies,openclosed)
+function filtered = filterbankwithopenends(audio,fs,bpo,frequencies,openclosed,filterstrength)
 % adapted from AARAE's octbandfilter_viaFFT.m, but with open ended top and
-% bottom bands
+% bottom bands.
+
+
 phasemode = 0; % zero phase filter
-orderin = 16;
-orderout = 16;
+orderin = 12*filterstrength;  % almost flat passband
+orderout = 12*filterstrength; % high filter selectivity
 zeropad = 0;
 base = 10;
 

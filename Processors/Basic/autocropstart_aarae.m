@@ -13,7 +13,7 @@ function out = autocropstart_aarae(in,threshold,method)
 % The threshold can be used in two ways:
 % * a negative value is interpreted as a value in decibels relative to the
 %       peak value (e.g. -20 dB relative to the peak).
-% * a positive value is interpreted directly as a wave absolute amplitude 
+% * a positive value is interpreted directly as a wave absolute amplitude
 %
 % Code by Densil Cabrera
 % version 1.01 (2 June 2014)
@@ -33,14 +33,13 @@ if isstruct(in)
     end
 else
     audio = in;
-%     disp('autocropstart_aarae requires a structure as input 1')
-%     out = [];
-%     return
 end
 
 
 if ~isempty(threshold) && ~isempty(method)
     [len,chans,bands,dim4,dim5,dim6] = size(audio);
+    
+    
     switch method
         case 1
             % individual start truncation (with loss of synchrony)
@@ -76,6 +75,9 @@ if ~isempty(threshold) && ~isempty(method)
             else
                 out = audio;
             end
+            
+            
+            
         case 2
             % use mixed signal to find truncation point
             mixed = mean(mean(mean(mean(mean(audio,6),5),4),3),2);
@@ -92,10 +94,23 @@ if ~isempty(threshold) && ~isempty(method)
                     else
                         out = audio(threshind:end,:,:,:,:,:);
                     end
+                else
+                    if isstruct(in)
+                        out.audio = audio;
+                    else
+                        out = audio;
+                    end
                 end
             else
-                out = audio; % find failed
+                % find failed
+                if isstruct(in)
+                    out.audio = audio;
+                else
+                    out = audio; 
+                end
             end
+            
+            
             
         case 3
             % find threshold index in each column, but use the smallest one
@@ -126,16 +141,31 @@ if ~isempty(threshold) && ~isempty(method)
                     end
                 end
             end
-            
-            if threshind > 1 && threshind <=len
-                if isstruct(in)
-                    out.audio = audio(threshind:end,:,:,:,:,:);
+            if ~isempty(threshind)
+                if threshind > 1 && threshind <=len
+                    if isstruct(in)
+                        out.audio = audio(threshind:end,:,:,:,:,:);
+                    else
+                        out = audio(threshind:end,:,:,:,:,:);
+                    end
                 else
-                    out = audio(threshind:end,:,:,:,:,:);
+                    if isstruct(in)
+                        out.audio = audio;
+                    else
+                        out = audio;
+                    end
+                end
+            else
+                % find failed
+                if isstruct(in)
+                    out.audio = audio;
+                else
+                    out = audio;
                 end
             end
-            
     end
+    
+    
     
     if isstruct(in)
         out.funcallback.name = 'autocropstart_aarae.m';
