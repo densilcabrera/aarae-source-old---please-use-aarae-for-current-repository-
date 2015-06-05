@@ -984,9 +984,9 @@ if ~isempty(getappdata(hMain,'testsignal'))
     handles.mytree.setSelectedNode(handles.(genvarname(newleaf)));
     set([handles.clrall_btn,handles.export_btn],'Enable','on')
     fprintf(handles.fid, ['%% ' datestr(now,16) ' - Processed "' char(selectedNodes(1).getName) '" to generate an impulse response of ' num2str(IRlength) ' points\n']);
-    fprintf(handles.fid,['OUT = convolveaudiowithaudio2(IN,',num2str(method),');\n']);
+    fprintf(handles.fid,['X = convolveaudiowithaudio2(X,',num2str(method),');\n']);
     if method == 1
-        fprintf(handles.fid,['OUT.audio = OUT.audio(',num2str(trimsamp_low),':',num2str(trimsamp_high),',:,:,:,:,:);\n']);
+        fprintf(handles.fid,['X.audio = X.audio(',num2str(trimsamp_low),':',num2str(trimsamp_high),',:,:,:,:,:);\n']);
     end
     fprintf(handles.fid,'\n');
     % Log verbose metadata (not necessary here)
@@ -1397,7 +1397,9 @@ for nleafs = 1:length(selectedNodes)
                         newdata = signaldata;
                         newdata.audio = processed;
                     end
-                    newdata.datatype = 'processed';
+                    if ~strcmp(funname,'aarae_workflow_processor') || ~isfield(newdata,'datatype')
+                        newdata.datatype = 'processed';
+                    end
                     iconPath = fullfile(matlabroot,'/toolbox/fixedpoint/fixedpointtool/resources/plot.png');
                     leafname = isfield(handles,genvarname(newleaf{1,1}));
                     if leafname == 1
@@ -1420,10 +1422,36 @@ for nleafs = 1:length(selectedNodes)
                     
                     handles.(genvarname(newleaf{1,1})) = uitreenode('v0', newleaf{1,1},  newleaf{1,1},  iconPath, true);
                     handles.(genvarname(newleaf{1,1})).UserData = newdata;
-                    handles.processed.add(handles.(genvarname(newleaf{1,1})));
-                    handles.mytree.reloadNode(handles.processed);
-                    handles.mytree.expand(handles.processed);
-                    set([handles.clrall_btn,handles.export_btn],'Enable','on')
+                    if strcmp(newdata.datatype,'testsignals')
+                        handles.testsignals.add(handles.(genvarname(newleaf{1,1})));
+                        handles.mytree.reloadNode(handles.testsignals);
+                        handles.mytree.expand(handles.testsignals);
+                        set([handles.clrall_btn,handles.export_btn],'Enable','on')
+                    elseif strcmp(newdata.datatype,'measurements')
+                        handles.measurements.add(handles.(genvarname(newleaf{1,1})));
+                        handles.mytree.reloadNode(handles.measurements);
+                        handles.mytree.expand(handles.measurements);
+                        set([handles.clrall_btn,handles.export_btn],'Enable','on')
+                    elseif strcmp(newdata.datatype,'results')
+                        if isfield(newdata,'audio')
+                            iconPath = fullfile(matlabroot,'/toolbox/fixedpoint/fixedpointtool/resources/plot.png');
+                        elseif isfield(newdata,'tables')
+                            iconPath = fullfile(matlabroot,'/toolbox/matlab/icons/HDF_grid.gif');
+                        else
+                            iconPath = fullfile(matlabroot,'/toolbox/matlab/icons/notesicon.gif');
+                        end
+                        % associate iconPath with leaf (ask Daniel how to do this)
+                       % handles.(genvarname(newleaf{1,1})) = uitreenode('v0', newleaf{1,1},  newleaf{1,1},  iconPath, true);
+                        handles.results.add(handles.(genvarname(newleaf{1,1})));
+                        handles.mytree.reloadNode(handles.results);
+                        handles.mytree.expand(handles.results);
+                        set([handles.clrall_btn,handles.export_btn],'Enable','on')
+                    else
+                        handles.processed.add(handles.(genvarname(newleaf{1,1})));
+                        handles.mytree.reloadNode(handles.processed);
+                        handles.mytree.expand(handles.processed);
+                        set([handles.clrall_btn,handles.export_btn],'Enable','on')
+                    end
                 end
                 fprintf(handles.fid, ['%% ' datestr(now,16) ' - Processed "' name '" using ' funname ' in ' category '\n']);
                 % Log verbose metadata

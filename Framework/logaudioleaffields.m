@@ -19,9 +19,9 @@ if isfield(signaldata,'funcallback')
     if isfield(signaldata.funcallback,'name')
         callbackstring = signaldata.funcallback.name;
         if ~callbackaudioin
-            callbackstring = ['OUT = ',callbackstring(1:end-2),'('];
+            callbackstring = ['X = ',callbackstring(1:end-2),'('];
         else
-            callbackstring = ['OUT = ',callbackstring(1:end-2),'(IN'];
+            callbackstring = ['X = ',callbackstring(1:end-2),'(X'];
             if isfield(handles,'choosefromhigherdims')
                 callbackstring = [callbackstring,handles.choosefromhigherdims];
                 % THE FOLLOWING DOES NOT WORK, SO THE FIELD IS ZAPPED IN
@@ -92,8 +92,8 @@ if isfield(handles,'partialselindices')
                     selectionstring = [selectionstring, dimstring,')'];
                 end
             end
-        selectionstring = ['COMPLETE.audio(',selectionstring,' = OUT.audio;\n'];
-            fprintf(handles.fid,'OUT.audio = COMPLETE.audio;\n');
+        selectionstring = ['COMPLETE.audio(',selectionstring,' = X.audio;\n'];
+            fprintf(handles.fid,'X.audio = COMPLETE.audio;\n');
             fprintf(handles.fid,'clear COMPLETE\n\n');
     handles = rmfield(handles,'partialselindices');
 else
