@@ -9,7 +9,7 @@ function OUT = AARAE_workflow_processor(IN,filename)
 % One purpose of using a workflow might be to avoid (or reduce instances
 % of) dialog boxes, which can sometimes be an inefficient way of entering
 % function parameters. Hence the parameters can be written in (and read
-% from) the workflow file code instead. THis can greatly speed up
+% from) the workflow file code instead. This can greatly speed up
 % processing if you are doing the same thing repeatedly.
 %
 % Another purpose of using a workflow might be to concatenate a sequence of
@@ -46,10 +46,13 @@ try
     OUT = functionhandle(IN);
     OUT.funcallback.name = 'AARAE_workflow_processor.m';
     OUT.funcallback.inarg = {filename};
-catch
-    h=warndlg('Error in workflow. Unable to process.','AARAE info','modal');
+catch err
+    h=warndlg('AARAE workflow abandoned either because of an error in the workflow function or because the selected input data was inappropriate for the workflow function. Please refer to the Matlab error report in the Command Window.','AARAE info','modal');
+    msgString = getReport(err);
+    disp('AARAE workflow abandoned either because of an error in the workflow function or because the selected input data was inappropriate for the workflow function (see below).');
+    disp(msgString); % displays the error message without creating an error.
     uiwait(h)
-    OUT = []; 
+    OUT = [];
     return
 end
 
