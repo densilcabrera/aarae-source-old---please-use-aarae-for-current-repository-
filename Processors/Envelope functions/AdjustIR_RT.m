@@ -57,7 +57,7 @@ function [OUT, varargout] = AdjustIR_RT(IN,T,freq,iterations,autocrop,openclosed
 % excellent), and 20 dB is the suggested value for Tevalrange.
 %
 % filterstrength is a factor controling the frequency selectivity of the
-% filters. A value of 1 give the equivalent of 12th order filters, a value
+% filters. A value of 1 gives the equivalent of 12th order filters, a value
 % of 2 gives the equivalent of 24th order filters. If there are large
 % changes in target reverberation time between bands, then greater filter
 % strength may be beneficial. Furthermore, 1/3-octave band filters will
@@ -292,7 +292,7 @@ if ~isempty(audio) && ~isempty(fs) && ~isempty(T)
     
     
     
-    % If bands > 1, then we will process using these instead of filtering.
+    % If bandsin > 1, then we will process using these instead of filtering.
     % otherwise, filter into bands here
     if bandsin == 1
         if ~exist('bandwidths','var')
