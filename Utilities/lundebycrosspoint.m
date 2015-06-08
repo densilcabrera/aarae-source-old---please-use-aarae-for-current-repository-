@@ -27,7 +27,7 @@ function [crosspoint, Tlate, ok] = lundebycrosspoint(IR2, fs, fc)
 % curve fitting.
 %
 % Code by Densil Cabrera
-% version 0.02 (15 February 2014) - Beta
+% version 0.03 (9 June 2015)
 
 
 %**************************************************************************
@@ -100,7 +100,7 @@ IR2smooth = IR2; %just for preallocation
 for b = 1:bands
     IR2smooth(:,:,b) = fftfilt(ones(winlen(1,1,b),1)./winlen(1,1,b),IR2(:,:,b));
 end
-IR2smooth(IR2smooth<=0)=1e-99;
+IR2smooth(IR2smooth<=0)=1e-300;
 IR2smoothdB =  10*log10(IR2smooth);
 maxIR2smoothdB = max(IR2smoothdB);
 maxind = ones(1,chans,bands);
@@ -121,11 +121,15 @@ IR2taildB = 10*log10(IR2tail) - maxIR2smoothdB;
 
 % 3. ESTIMATE SLOPE OF DECAY FROM 0 dB TO NOISE LEVEL
 o = zeros(2,chans, bands);
-[crosspoint,tend] = deal(zeros(1,chans,bands));
+[crosspoint,tend] = deal(len*ones(1,chans,bands));
 for ch = 1:chans
     for b = 1:bands
-        tend(1,ch,b) = find(IR2smoothdB(maxind(1,ch,b):end,ch,b) ...
+        
+        index = find(IR2smoothdB(maxind(1,ch,b):end,ch,b) ...
             <= IR2taildB(1,ch,b), 1, 'first')+maxind(1,ch,b)-1;
+        if ~isempty(index)
+            tend(1,ch,b) = index;
+        end
         
         o(:,ch,b) = polyfit((maxind(1,ch,b):tend(1,ch,b))', ...
             IR2smoothdB(maxind(1,ch,b):tend(1,ch,b),ch,b),1)';
@@ -183,13 +187,16 @@ for ch = 1:chans
         IR2smooth(:,ch,b) = fftfilt(ones(winlen(1,ch,b),1)./winlen(1,ch,b),IR2(:,ch,b));
     end
 end
-IR2smooth(IR2smooth<=0)=1e-99;
+IR2smooth(IR2smooth<=0)=1e-300;
 IR2smoothdB =  10*log10(IR2smooth);
 maxIR2smoothdB = max(IR2smoothdB);
 maxind = ones(1,chans,bands);
 for ch = 1:chans
     for b = 1:bands
-        maxind(1,ch,b) = find(IR2smoothdB(:,ch,b) == maxIR2smoothdB(1,ch,b),1,'first');
+        index = find(IR2smoothdB(:,ch,b) == maxIR2smoothdB(1,ch,b),1,'first');
+        if ~isempty(index)
+            maxind(1,ch,b) = index;
+        end
         IR2smoothdB(:,ch,b) = IR2smoothdB(:,ch,b) - maxIR2smoothdB(1,ch,b);
     end
 end
@@ -249,15 +256,17 @@ for iter = 1:5
             if ok(1,ch,b)
                 tend = find(IR2smoothdB(maxind(1,ch,b):end,ch,b) <= LateSlopeEnddB, 1, 'first')+maxind(1,ch,b)-1; %
                 tstart = find(IR2smoothdB(maxind(1,ch,b):end,ch,b) <= LateSlopeStartdB, 1, 'first')+maxind(1,ch,b)-1; %
-                
-                o(:,ch,b) = polyfit((tstart:tend)', ...
-                    IR2smoothdB(tstart:tend,ch,b),1)';
-                Tlate(1,ch,b) = 2*((o(2,ch,b)-60)/o(1,ch,b) ...
-                    -(o(2,ch,b))/ ...
-                    o(1,ch,b))/fs; % Late reverberation time
-                
-                % 9. FIND NEW CROSSPOINT
-                crosspoint(1,ch,b) = -round((o(2,ch,b)-IR2taildB(1,ch,b))/o(1,ch,b));
+                if ~(isempty(tend) || isempty(tstart))
+                    
+                    o(:,ch,b) = polyfit((tstart:tend)', ...
+                        IR2smoothdB(tstart:tend,ch,b),1)';
+                    Tlate(1,ch,b) = 2*((o(2,ch,b)-60)/o(1,ch,b) ...
+                        -(o(2,ch,b))/ ...
+                        o(1,ch,b))/fs; % Late reverberation time
+                    
+                    % 9. FIND NEW CROSSPOINT
+                    crosspoint(1,ch,b) = -round((o(2,ch,b)-IR2taildB(1,ch,b))/o(1,ch,b));
+                end
             end
         end
     end
