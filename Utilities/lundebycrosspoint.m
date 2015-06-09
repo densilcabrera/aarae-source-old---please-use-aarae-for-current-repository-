@@ -117,7 +117,7 @@ end
 IR2tail = mean(IR2(round(0.9*end):end,:,:));
 IR2taildB = 10*log10(IR2tail) - maxIR2smoothdB;
 
-
+ok = true(1,chans,bands);
 
 % 3. ESTIMATE SLOPE OF DECAY FROM 0 dB TO NOISE LEVEL
 o = zeros(2,chans, bands);
@@ -129,6 +129,8 @@ for ch = 1:chans
             <= IR2taildB(1,ch,b), 1, 'first')+maxind(1,ch,b)-1;
         if ~isempty(index)
             tend(1,ch,b) = index;
+        else
+            ok(1,ch,b) = false;
         end
         
         o(:,ch,b) = polyfit((maxind(1,ch,b):tend(1,ch,b))', ...
@@ -171,7 +173,7 @@ for ch = 1:chans
     end
 end
 
-ok = true(1,chans,bands);
+
 
 % Fix out-of-range winlen
 winlen(isinf(winlen)) = round(0.001*fs*25); %25 ms
@@ -196,6 +198,8 @@ for ch = 1:chans
         index = find(IR2smoothdB(:,ch,b) == maxIR2smoothdB(1,ch,b),1,'first');
         if ~isempty(index)
             maxind(1,ch,b) = index;
+        else
+            ok(1,ch,b) = false;
         end
         IR2smoothdB(:,ch,b) = IR2smoothdB(:,ch,b) - maxIR2smoothdB(1,ch,b);
     end
@@ -278,6 +282,7 @@ for ch = 1:chans
         if crosspoint(1,ch,b) <= maxIR2smoothdB(1,ch,b)+0.05*fs || ... % at least 50 ms decay
                 crosspoint(1,ch,b) > len 
             crosspoint(1,ch,b) = len; % give up - no crosspoint found
+            ok(1,ch,b) = false;
         end
     end
 end
