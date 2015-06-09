@@ -1065,17 +1065,29 @@ for nleafs = 1:length(selectedNodes)
         set(hObject,'Enable','off');
         contents = cellstr(get(handles.fun_box,'String'));
         file = contents(get(handles.fun_box,'Value'));
+        errorflag = false;
         for multi = 1:size(file,1)
             [~,funname] = fileparts(char(file(multi,:)));
             if nargout(funname) == 1 || nargout(funname) == -2
-                if ~isempty(funcallback) && strcmp(funname,funcallback.name)
-                    out = feval(funname,audiodata,funcallback.inarg{:});
-                else
-                    out = feval(funname,audiodata);
-                end
-                if isfield(out,'funcallback')
-                    funcallback = out.funcallback;
-                    [~,funcallback.name] = fileparts(funcallback.name);
+                try
+                    if ~isempty(funcallback) && strcmp(funname,funcallback.name)
+                        out = feval(funname,audiodata,funcallback.inarg{:});
+                    else
+                        out = feval(funname,audiodata);
+                    end
+                    if isfield(out,'funcallback')
+                        funcallback = out.funcallback;
+                        [~,funcallback.name] = fileparts(funcallback.name);
+                    end
+                catch err
+                    out = [];
+                    msgString = getReport(err);
+                    disp(['AARAE analyser error running ' funname '.']);
+                    disp(msgString); % displays the error message without creating an error.
+                    fprintf(handles.fid,['AARAE analyser error running ' funname '.\n']);
+                    fprintf(handles.fid,msgString);
+                    fprintf(handles.fid,'.\n');
+                    errorflag = true;
                 end
             else
                 out = [];
@@ -1188,6 +1200,10 @@ for nleafs = 1:length(selectedNodes)
                 set(handles.result_box,'String',[' ';cellstr({results(3:length(results)).name}')]);
                 if length(selectedNodes) > 1 || size(file,1) > 1, delete(h); end
             end
+        end
+        if errorflag
+            h=warndlg('One or more attempts to run an analyser failed due to an error. Please refer to the error report in the Matlab Command Window.','AARAE info','modal');
+            uiwait(h)
         end
         set(hObject,'BackgroundColor',[0.94 0.94 0.94]);
         set(hObject,'Enable','on');
@@ -1344,6 +1360,7 @@ for nleafs = 1:length(selectedNodes)
         contents = cellstr(get(handles.proc_box,'String'));
         file = contents(get(handles.proc_box,'Value'));
         name = selectedNodes(nleafs).getName.char;
+        errorflag = false;
         for multi = 1:size(file,1)
             processed = [];
             [~,~,ext] = fileparts(file{multi,1});
@@ -1364,6 +1381,7 @@ for nleafs = 1:length(selectedNodes)
 %                end
             elseif strcmp(ext,'.m')
                 [~,funname] = fileparts(char(file(multi,:)));
+                try
                 if ~isempty(funcallback) && strcmp(funname,funcallback.name)
                     processed = feval(funname,signaldata,funcallback.inarg{:});
                 else
@@ -1372,6 +1390,16 @@ for nleafs = 1:length(selectedNodes)
                 if isfield(processed,'funcallback')
                     funcallback = processed.funcallback;
                     [~,funcallback.name] = fileparts(funcallback.name);
+                end
+                catch err
+                    out = [];
+                    msgString = getReport(err);
+                    disp(['AARAE processor error running ' funname '.']);
+                    disp(msgString); % displays the error message without creating an error.
+                    fprintf(handles.fid,['AARAE processor error running ' funname '.\n']);
+                    fprintf(handles.fid,msgString);
+                    fprintf(handles.fid,'.\n');
+                    errorflag = true;
                 end
             else
                 processed = [];
@@ -1462,6 +1490,10 @@ for nleafs = 1:length(selectedNodes)
             else
                 newleaf{1,1} = [];
             end
+        end
+        if errorflag
+            h=warndlg('One or more attempts to run a processor failed due to an error. Please refer to the error report in the Matlab Command Window.','AARAE info','modal');
+            uiwait(h)
         end
     end
     h = findobj('type','figure','-not','tag','aarae');
