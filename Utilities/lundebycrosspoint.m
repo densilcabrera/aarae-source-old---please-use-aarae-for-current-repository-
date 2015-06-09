@@ -18,13 +18,14 @@ function [crosspoint, Tlate, ok] = lundebycrosspoint(IR2, fs, fc)
 % Tlate is the late reverberation time.
 %
 % ok indicates whether the algorithm was fully executed (for each
-% band/channel) - in some cases it may not be possible to reasonably
+% band/channel etc) - in some cases it may not be possible to reasonably
 % execute it (e.g. due to poor signal-to-noise ratio).
 %
 % The main difference in this implementation is that the windows used for
 % smoothing the squared decay are implemented with a fftfilt (and so do not
 % involve any downsampling). Presumably this should slightly improve the
 % curve fitting.
+%
 %
 % Code by Densil Cabrera
 % version 0.03 (9 June 2015)
@@ -61,228 +62,263 @@ function [crosspoint, Tlate, ok] = lundebycrosspoint(IR2, fs, fc)
 %**************************************************************************
 
 
-[len,chans,bands] = size(IR2);
+[len,chans,bands,dim4,dim5,dim6] = size(IR2);
 
-% clear fc if it is just a count of bands
+% clear fc if it does not match bands or is just a count of bands
 if exist('fc','var')
     if length(fc)>1
-        if fc(2)-fc(1)==1
+        if length(fc) ~= bands
+            clear fc;
+        elseif fc(2)-fc(1)==1
             clear fc;
         end
     elseif fc == 1
-            clear fc;
-    end
-end
-
-% window length for step 1
-if ~exist('fc','var') && bands > 1
-    winlen = round(0.001*fs*linspace(50,10,bands));
-elseif exist('fc','var') && bands > 1
-    winlen = zeros(1,bands);
-    fc_low = fc<=125;
-    winlen(fc_low) = round(0.001*fs*50);
-    fc_hi = fc>=8000;
-    winlen(fc_hi) = round(0.001*fs*10);
-    fc_mid = ~(fc_low | fc_hi);
-    if sum(fc_mid) >1
-        winlen(fc_mid) = round(0.001*fs*linspace(50,10,sum(fc_mid)));
-    elseif sum(fc_mid) ==1
-        winlen(fc_mid) = round(0.001*fs*25);
-    end
-else
-    winlen(1:bands) = round(0.001*fs*25);
-end
-winlen = repmat(permute(winlen,[1,3,2]),[1,chans,1]);
-
-
-% 1. AVERAGE SQUARED IR IN LOCAL TIME INTERVALS
-IR2smooth = IR2; %just for preallocation
-for b = 1:bands
-    IR2smooth(:,:,b) = fftfilt(ones(winlen(1,1,b),1)./winlen(1,1,b),IR2(:,:,b));
-end
-IR2smooth(IR2smooth<=0)=1e-300;
-IR2smoothdB =  10*log10(IR2smooth);
-maxIR2smoothdB = max(IR2smoothdB);
-maxind = ones(1,chans,bands);
-for ch = 1:chans
-    for b = 1:bands
-        maxind(1,ch,b) = find(IR2smoothdB(:,ch,b) == maxIR2smoothdB(1,ch,b),1,'first');
-        IR2smoothdB(:,ch,b) = IR2smoothdB(:,ch,b) - maxIR2smoothdB(1,ch,b);
+        clear fc;
     end
 end
 
 
+Tlate = zeros(1,chans,bands,dim4,dim5,dim6);
+ok = true(1,chans,bands,dim4,dim5,dim6);
+crosspoint = round(0.9*len)*ones(1,chans,bands,dim4,dim5,dim6);
 
-% 2. ESTIMATE BACKGROUND NOISE LEVEL USING THE TAIL
-IR2tail = mean(IR2(round(0.9*end):end,:,:));
-IR2taildB = 10*log10(IR2tail) - maxIR2smoothdB;
-
-ok = true(1,chans,bands);
-
-% 3. ESTIMATE SLOPE OF DECAY FROM 0 dB TO NOISE LEVEL
-o = zeros(2,chans, bands);
-[crosspoint,tend] = deal(len*ones(1,chans,bands));
-for ch = 1:chans
-    for b = 1:bands
-        
-        index = find(IR2smoothdB(maxind(1,ch,b):end,ch,b) ...
-            <= IR2taildB(1,ch,b), 1, 'first')+maxind(1,ch,b)-1;
-        if ~isempty(index)
-            tend(1,ch,b) = index;
-        else
-            ok(1,ch,b) = false;
-        end
-        
-        o(:,ch,b) = polyfit((maxind(1,ch,b):tend(1,ch,b))', ...
-            IR2smoothdB(maxind(1,ch,b):tend(1,ch,b),ch,b),1)';
-        
-        % 4. FIND PRELIMINARY CROSSPOINT
-        crosspoint(1,ch,b) = ...
-            -round((o(2,ch,b)-IR2taildB(1,ch,b))/o(1,ch,b));
-        
-    end
-end
-
-for ch=1:chans
-    for b = 1:bands
-        if crosspoint(1,ch,b) < round(maxind(1,ch,b)+0.05*fs)
-            crosspoint(1,ch,b) = round(maxind(1,ch,b)+0.05*fs);
-        end
-    end
-end
-crosspoint(crosspoint>round(0.9*len)) = round(0.9*len);
-
-
-% 5. FIND NEW LOCAL TIME INTERVAL LENGTH
-slopelength = crosspoint - maxind;
-
-winlen = zeros(1,chans,bands);
-for ch = 1:chans
-    if ~exist('fc','var') && bands > 1
-        winlen(1,ch,:) = round(slopelength(1,ch,:) ./ (-IR2taildB(1,ch,:) ./permute(linspace(3,10,bands),[1,3,2])));
-    elseif exist('fc','var') && bands > 1
-        winlen(1,ch,fc_low) = round(slopelength(1,ch,fc_low) ./ (-IR2taildB(1,ch,fc_low) ./3));
-        winlen(1,ch,fc_hi) = round(slopelength(1,ch,fc_hi) ./ (-IR2taildB(1,ch,fc_hi) ./10));
-        if sum(fc_mid) >1
-            winlen(1,ch,fc_mid) = round(slopelength(1,ch,fc_mid) ./ (-IR2taildB(1,ch,fc_mid) ./permute(linspace(3,10,sum(fc_mid)),[1,3,2])));
-        elseif sum(fc_mid) ==1
-            winlen(1,ch,fc_mid) = round(slopelength(1,ch,fc_mid) ./ (-IR2taildB(1,ch,fc_mid) ./6));
-        end
-    else
-        winlen(1,ch,:) = round(slopelength(1,ch,:) ./ (-IR2taildB(1,ch,:) ./6));
-    end
-end
-
-
-
-% Fix out-of-range winlen
-winlen(isinf(winlen)) = round(0.001*fs*25); %25 ms
-winlen(isnan(winlen)) = round(0.001*fs*25);
-winlen(winlen>0.2*len) = round(0.2*len);
-winlen(winlen<10) = 10;
-
-
-
-% 6. AVERAGE SQUARED IR IN NEW LOCAL TIME INTERVALS
-for ch = 1:chans
-    for b = 1:bands
-        IR2smooth(:,ch,b) = fftfilt(ones(winlen(1,ch,b),1)./winlen(1,ch,b),IR2(:,ch,b));
-    end
-end
-IR2smooth(IR2smooth<=0)=1e-300;
-IR2smoothdB =  10*log10(IR2smooth);
-maxIR2smoothdB = max(IR2smoothdB);
-maxind = ones(1,chans,bands);
-for ch = 1:chans
-    for b = 1:bands
-        index = find(IR2smoothdB(:,ch,b) == maxIR2smoothdB(1,ch,b),1,'first');
-        if ~isempty(index)
-            maxind(1,ch,b) = index;
-        else
-            ok(1,ch,b) = false;
-        end
-        IR2smoothdB(:,ch,b) = IR2smoothdB(:,ch,b) - maxIR2smoothdB(1,ch,b);
-    end
-end
-
-
-
-
-% ITERATE STEPS 7-9
-for iter = 1:5
-    
-    
-    % 7. ESTIMATE THE BACKGROUND NOISE LEVEL
-    noisefloorindex = zeros(1,chans,bands);
-    for ch = 1:chans
-        for b = 1:bands
-            if ok(1,ch,b)
-                noisefloorindex(1,ch,b) = round((o(2,ch,b)+IR2taildB(1,ch,b)-10)/o(1,ch,b));
+% The following nested for-loops are a quick and dirty way of making this
+% function compatible with up to 6 dimensional audio input. (Originally the
+% function was written just for 3 dimensional audio input.)
+for d4 = 1:dim4
+    for d5 = 1:dim5
+        for d6 = 1:dim6
+            IR2a = IR2(:,:,:,d4,d5,d6);
+            
+            
+            % window length for step 1
+            if ~exist('fc','var') && bands > 1
+                winlen = round(0.001*fs*linspace(50,10,bands));
+            elseif exist('fc','var') && bands > 1
+                winlen = zeros(1,bands);
+                fc_low = fc<=125;
+                winlen(fc_low) = round(0.001*fs*50);
+                fc_hi = fc>=8000;
+                winlen(fc_hi) = round(0.001*fs*10);
+                fc_mid = ~(fc_low | fc_hi);
+                if sum(fc_mid) >1
+                    winlen(fc_mid) = round(0.001*fs*linspace(50,10,sum(fc_mid)));
+                elseif sum(fc_mid) ==1
+                    winlen(fc_mid) = round(0.001*fs*25);
+                end
+            else
+                winlen(1:bands) = round(0.001*fs*25);
             end
-        end
-    end
-    noisefloorindex(noisefloorindex > round(0.9*len)) = round(0.9*len);
-    
-    for ch = 1:chans
-        for b = 1:bands
-            if ok(1,ch,b)
-                IR2tail(1,ch,b) = mean(IR2(noisefloorindex(1,ch,b):end,ch,b));
-                IR2taildB(1,ch,b) = 10*log10(IR2tail(1,ch,b))- maxIR2smoothdB(1,ch,b);
+            winlen = repmat(permute(winlen,[1,3,2]),[1,chans,1]);
+            
+            
+            % 1. AVERAGE SQUARED IR IN LOCAL TIME INTERVALS
+            IR2smooth = IR2a; %just for preallocation
+            for b = 1:bands
+                IR2smooth(:,:,b) = fftfilt(ones(winlen(1,1,b),1)./winlen(1,1,b),IR2a(:,:,b));
             end
-        end
-    end
-    
-    
-    Tlate = zeros(1,chans,bands);
-    % 8. ESTIMATE THE LATE DECAY SLOPE
-    for ch = 1:chans
-        for b = 1:bands
-            if ok(1,ch,b)
-                if IR2taildB(1,ch,b) < -35
-                    LateSlopeEnddB = IR2taildB(1,ch,b) + 10;
-                    LateSlopeStartdB = IR2taildB(1,ch,b) + 30;
-                elseif IR2taildB(1,ch,b) < -30
-                    LateSlopeEnddB = IR2taildB(1,ch,b) + 8.5;
-                    LateSlopeStartdB = IR2taildB(1,ch,b) + 25;
-                elseif IR2taildB(1,ch,b) < -25
-                    LateSlopeEnddB = IR2taildB(1,ch,b) + 7;
-                    LateSlopeStartdB = IR2taildB(1,ch,b) + 20;
-                elseif IR2taildB(1,ch,b) < -20
-                    LateSlopeEnddB = IR2taildB(1,ch,b) + 6;
-                    LateSlopeStartdB = IR2taildB(1,ch,b) + 16;
-                elseif IR2taildB(1,ch,b) < -15
-                    LateSlopeEnddB = IR2taildB(1,ch,b) + 5;
-                    LateSlopeStartdB = IR2taildB(1,ch,b) + 15;
+            IR2smooth(IR2smooth<=0)=1e-300;
+            IR2smoothdB =  10*log10(IR2smooth);
+            maxIR2smoothdB = max(IR2smoothdB);
+            maxind = ones(1,chans,bands);
+            for ch = 1:chans
+                for b = 1:bands
+                    maxind(1,ch,b) = find(IR2smoothdB(:,ch,b) == maxIR2smoothdB(1,ch,b),1,'first');
+                    IR2smoothdB(:,ch,b) = IR2smoothdB(:,ch,b) - maxIR2smoothdB(1,ch,b);
+                end
+            end
+            
+            
+            
+            % 2. ESTIMATE BACKGROUND NOISE LEVEL USING THE TAIL
+            IR2tail = mean(IR2a(round(0.9*end):end,:,:));
+            IR2taildB = 10*log10(IR2tail) - maxIR2smoothdB;
+            
+            
+            
+            % 3. ESTIMATE SLOPE OF DECAY FROM 0 dB TO NOISE LEVEL
+            o = zeros(2,chans, bands);
+            [crosspoint1,tend] = deal(len*ones(1,chans,bands));
+            for ch = 1:chans
+                for b = 1:bands
+                    
+                    index = find(IR2smoothdB(maxind(1,ch,b):end,ch,b) ...
+                        <= IR2taildB(1,ch,b), 1, 'first')+maxind(1,ch,b)-1;
+                    if ~isempty(index)
+                        tend(1,ch,b) = index;
+                    else
+                        ok(1,ch,b,d4,d5,d6) = false;
+                    end
+                    
+                    o(:,ch,b) = polyfit((maxind(1,ch,b):tend(1,ch,b))', ...
+                        IR2smoothdB(maxind(1,ch,b):tend(1,ch,b),ch,b),1)';
+                    
+                    % 4. FIND PRELIMINARY crosspoint1
+                    crosspoint1(1,ch,b) = ...
+                        -round((o(2,ch,b)-IR2taildB(1,ch,b))/o(1,ch,b));
+                    
+                end
+            end
+            
+            for ch=1:chans
+                for b = 1:bands
+                    if crosspoint1(1,ch,b) < round(maxind(1,ch,b)+0.05*fs)
+                        crosspoint1(1,ch,b) = round(maxind(1,ch,b)+0.05*fs);
+                    end
+                end
+            end
+            crosspoint1(crosspoint1>round(0.9*len)) = round(0.9*len);
+            
+            
+            % 5. FIND NEW LOCAL TIME INTERVAL LENGTH
+            slopelength = crosspoint1 - maxind;
+            
+            winlen = zeros(1,chans,bands);
+            for ch = 1:chans
+                if ~exist('fc','var') && bands > 1
+                    winlen(1,ch,:) = round(slopelength(1,ch,:) ./ (-IR2taildB(1,ch,:) ./permute(linspace(3,10,bands),[1,3,2])));
+                elseif exist('fc','var') && bands > 1
+                    winlen(1,ch,fc_low) = round(slopelength(1,ch,fc_low) ./ (-IR2taildB(1,ch,fc_low) ./3));
+                    winlen(1,ch,fc_hi) = round(slopelength(1,ch,fc_hi) ./ (-IR2taildB(1,ch,fc_hi) ./10));
+                    if sum(fc_mid) >1
+                        winlen(1,ch,fc_mid) = round(slopelength(1,ch,fc_mid) ./ (-IR2taildB(1,ch,fc_mid) ./permute(linspace(3,10,sum(fc_mid)),[1,3,2])));
+                    elseif sum(fc_mid) ==1
+                        winlen(1,ch,fc_mid) = round(slopelength(1,ch,fc_mid) ./ (-IR2taildB(1,ch,fc_mid) ./6));
+                    end
                 else
-                    ok(1,ch,b) = false; % give up - insufficient SNR
+                    winlen(1,ch,:) = round(slopelength(1,ch,:) ./ (-IR2taildB(1,ch,:) ./6));
                 end
             end
-            if ok(1,ch,b)
-                tend = find(IR2smoothdB(maxind(1,ch,b):end,ch,b) <= LateSlopeEnddB, 1, 'first')+maxind(1,ch,b)-1; %
-                tstart = find(IR2smoothdB(maxind(1,ch,b):end,ch,b) <= LateSlopeStartdB, 1, 'first')+maxind(1,ch,b)-1; %
-                if ~(isempty(tend) || isempty(tstart))
-                    
-                    o(:,ch,b) = polyfit((tstart:tend)', ...
-                        IR2smoothdB(tstart:tend,ch,b),1)';
-                    Tlate(1,ch,b) = 2*((o(2,ch,b)-60)/o(1,ch,b) ...
-                        -(o(2,ch,b))/ ...
-                        o(1,ch,b))/fs; % Late reverberation time
-                    
-                    % 9. FIND NEW CROSSPOINT
-                    crosspoint(1,ch,b) = -round((o(2,ch,b)-IR2taildB(1,ch,b))/o(1,ch,b));
+            
+            
+            
+            % Fix out-of-range winlen
+            winlen(isinf(winlen)) = round(0.001*fs*25); %25 ms
+            winlen(isnan(winlen)) = round(0.001*fs*25);
+            winlen(winlen>0.2*len) = round(0.2*len);
+            winlen(winlen<10) = 10;
+            
+            
+            
+            % 6. AVERAGE SQUARED IR IN NEW LOCAL TIME INTERVALS
+            for ch = 1:chans
+                for b = 1:bands
+                    IR2smooth(:,ch,b) = fftfilt(ones(winlen(1,ch,b),1)./winlen(1,ch,b),IR2a(:,ch,b));
                 end
             end
+            IR2smooth(IR2smooth<=0)=1e-300;
+            IR2smoothdB =  10*log10(IR2smooth);
+            maxIR2smoothdB = max(IR2smoothdB);
+            maxind = ones(1,chans,bands);
+            for ch = 1:chans
+                for b = 1:bands
+                    index = find(IR2smoothdB(:,ch,b) == maxIR2smoothdB(1,ch,b),1,'first');
+                    if ~isempty(index)
+                        maxind(1,ch,b) = index;
+                    else
+                        ok(1,ch,b,d4,d5,d6) = false;
+                    end
+                    IR2smoothdB(:,ch,b) = IR2smoothdB(:,ch,b) - maxIR2smoothdB(1,ch,b);
+                end
+            end
+            
+            
+            
+            
+            % ITERATE STEPS 7-9
+            for iter = 1:5
+                
+                
+                % 7. ESTIMATE THE BACKGROUND NOISE LEVEL
+                noisefloorindex = zeros(1,chans,bands);
+                for ch = 1:chans
+                    for b = 1:bands
+                        if ok(1,ch,b,d4,d5,d6)
+                            try
+                            noisefloorindex(1,ch,b) = ...
+                                round((o(2,ch,b)+IR2taildB(1,ch,b)-10)/o(1,ch,b));
+                            catch
+                                noisefloorindex(1,ch,b) = round(0.9*len);
+                            end
+                        end
+                    end
+                end
+                noisefloorindex(noisefloorindex > round(0.9*len)) = round(0.9*len);
+                %noisefloorindex(noisefloorindex < round(0.05*fs)) = round(0.05*fs);
+                
+                for ch = 1:chans
+                    for b = 1:bands
+                        if ok(1,ch,b,d4,d5,d6)
+                            try
+                                IR2tail(1,ch,b) = mean(IR2a(noisefloorindex(1,ch,b):end,ch,b));
+                                IR2taildB(1,ch,b) = 10*log10(IR2tail(1,ch,b))- maxIR2smoothdB(1,ch,b);
+                            catch
+                                ok(1,ch,b,d4,d5,d6) = false;
+                            end
+                        end
+                    end
+                end
+                
+                
+                
+                % 8. ESTIMATE THE LATE DECAY SLOPE
+                for ch = 1:chans
+                    for b = 1:bands
+                        if ok(1,ch,b,d4,d5,d6)
+                            if IR2taildB(1,ch,b) < -35
+                                LateSlopeEnddB = IR2taildB(1,ch,b) + 10;
+                                LateSlopeStartdB = IR2taildB(1,ch,b) + 30;
+                            elseif IR2taildB(1,ch,b) < -30
+                                LateSlopeEnddB = IR2taildB(1,ch,b) + 8.5;
+                                LateSlopeStartdB = IR2taildB(1,ch,b) + 25;
+                            elseif IR2taildB(1,ch,b) < -25
+                                LateSlopeEnddB = IR2taildB(1,ch,b) + 7;
+                                LateSlopeStartdB = IR2taildB(1,ch,b) + 20;
+                            elseif IR2taildB(1,ch,b) < -20
+                                LateSlopeEnddB = IR2taildB(1,ch,b) + 6;
+                                LateSlopeStartdB = IR2taildB(1,ch,b) + 16;
+                            elseif IR2taildB(1,ch,b) < -15
+                                LateSlopeEnddB = IR2taildB(1,ch,b) + 5;
+                                LateSlopeStartdB = IR2taildB(1,ch,b) + 15;
+                            else
+                                ok(1,ch,b,d4,d5,d6) = false; % give up - insufficient SNR
+                            end
+                        end
+                        if ok(1,ch,b,d4,d5,d6)
+                            tend = find(IR2smoothdB(maxind(1,ch,b):end,ch,b) <= LateSlopeEnddB, 1, 'first')+maxind(1,ch,b)-1; %
+                            tstart = find(IR2smoothdB(maxind(1,ch,b):end,ch,b) <= LateSlopeStartdB, 1, 'first')+maxind(1,ch,b)-1; %
+                            if ~(isempty(tend) || isempty(tstart))
+                                
+                                o(:,ch,b) = polyfit((tstart:tend)', ...
+                                    IR2smoothdB(tstart:tend,ch,b),1)';
+                                Tlate(1,ch,b,d4,d5,d6) = 2*((o(2,ch,b)-60)/o(1,ch,b) ...
+                                    -(o(2,ch,b))/ ...
+                                    o(1,ch,b))/fs; % Late reverberation time
+                                
+                                % 9. FIND NEW crosspoint1
+                                crosspoint1(1,ch,b) = -round((o(2,ch,b)-IR2taildB(1,ch,b))/o(1,ch,b));
+                            else
+                                ok(1,ch,b,d4,d5,d6) = false;
+                            end
+                        end
+                    end
+                end
+            end
+            
+            % DOUBLE-CHECK THAT crosspoint1 IS REALLY OK
+            for ch = 1:chans
+                for b = 1:bands
+                    if crosspoint1(1,ch,b) <= maxIR2smoothdB(1,ch,b)+0.05*fs || ... % at least 50 ms decay
+                            crosspoint1(1,ch,b) > len
+                        crosspoint1(1,ch,b) = len; % give up - no crosspoint1 found
+                        ok(1,ch,b,d4,d5,d6) = false;
+                    end
+                end
+            end
+            crosspoint(:,:,:,d4,d5,d6) = crosspoint1;
         end
     end
 end
 
-% DOUBLE-CHECK THAT CROSSPOINT IS REALLY OK
-for ch = 1:chans
-    for b = 1:bands
-        if crosspoint(1,ch,b) <= maxIR2smoothdB(1,ch,b)+0.05*fs || ... % at least 50 ms decay
-                crosspoint(1,ch,b) > len 
-            crosspoint(1,ch,b) = len; % give up - no crosspoint found
-            ok(1,ch,b) = false;
-        end
-    end
-end
+%crosspoint(~ok) = round(0.9*len);
+crosspoint(~ok) = len;
