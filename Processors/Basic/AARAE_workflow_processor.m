@@ -43,7 +43,11 @@ filename = C{1};
     
 try
     functionhandle = str2func(filename);
-    OUT = functionhandle(IN);
+    if nargin(functionhandle) == 1
+        OUT = functionhandle(IN);
+    else
+        OUT = functionhandle;
+    end
     OUT.funcallback.name = 'AARAE_workflow_processor.m';
     OUT.funcallback.inarg = {filename};
     % classify as 'results' if the output does not have audio, or does have
