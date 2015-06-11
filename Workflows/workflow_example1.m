@@ -116,14 +116,6 @@ end
 % empty output to the AARAE workspace, then use logaudioleaffields (as
 % described above) after each analysis.
 
-% *************************************************************************
-% The following is a way of changing the audio (or result) leaf's category
-% in the uitree (on the left of the AARAE main GUI). 
-% datatype = 1; % 'testsignals' 
-% datatype = 2; % 'measurements' 
-% datatype = 3; % 'processed'
-% datatype = 4; % 'results'
-datatype = 4; % if you have used an analyser, it may be best to do this
-X.datatype = datatypefield(datatype);
+
 
 end
