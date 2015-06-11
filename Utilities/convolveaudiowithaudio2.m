@@ -1,4 +1,4 @@
-function [OUT,method] = convolveaudiowithaudio2(IN,method)
+function [OUT,method,scalingmethod] = convolveaudiowithaudio2(IN,method,scalingmethod)
 % This function is used by AARAE's convolve audio with audio2 button
 % (called from aarae.m). It can also be called with two input arguments to
 % replicate most of what is done by the GUI button (apart from truncation
@@ -20,9 +20,16 @@ end
 %fs = IN.fs;
 %nbits = audiodata.nbits;
 
-
 if isfield(IN,'properties') && isfield(IN.properties,'startflag')
-    if nargin == 1
+    if ~exist('method','var')
+        methoddialog = true;
+    elseif isempty(method)
+        methoddialog = true;
+    else
+        methoddialog = false;
+    end
+    
+    if methoddialog
         [method,ok] = listdlg('ListString',{'Synchronous average','Stack IRs in dimension 4','Convolve without separating'},...
             'PromptString','Select the convolution method',...
             'Name','AARAE options',...
@@ -126,9 +133,38 @@ if method == 1 || method == 2 || method == 3
     IR = IR(indices{:});
 end
 
+% Currently the scaling method is not used by aarae.m, but it may be useful
+% in future (perhaps with modification).
+% One option would be for generators to output a properties.scalingfactor
+% field value to be used here.
 
-% MIRROR FUNCTION ENDS HERE
-% ****************************
+% scaling
+if ~exist('scalingmethod','var')
+    scalingmethod = 0; % no scaling
+    %scalingfactor = 1;
+else
+    switch scalingmethod
+        case 1
+            % scale based on length of inverse filter
+            scalingfactor = 1/size(IN.audio2,1);
+        case 2
+            % scale based on squared length of inverse filter
+            scalingfactor = 1/size(IN.audio2,1).^2;
+        case 3
+            % or what about this method?
+            scalingfactor = 1/(sum(IN.audio2(:,1,1,1,1,1))*size(IN.audio2,1));
+        case 4
+            % normalize the IR
+            scalingfactor = 1/(max(max(max(max(max(max(abs(IR))))))));
+        otherwise
+            scalingmethod = 0;
+            scalingfactor = 1;
+    end
+    IR = scalingfactor * IR;
+end
+
+
+
 
 if nargin == 1
     % output audio only

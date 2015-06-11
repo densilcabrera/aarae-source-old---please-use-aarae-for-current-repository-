@@ -925,7 +925,7 @@ selectedNodes = handles.mytree.getSelectedNodes;
 %     IR = IR(indices{:});
 % end
 % % THE FOLLOWING LINE REPLACES ALL OF THE ABOVE
-[IR,method] = convolveaudiowithaudio2(audiodata);
+[IR,method,scalingmethod] = convolveaudiowithaudio2(audiodata);
 % ****************************
 
 
@@ -984,7 +984,7 @@ if ~isempty(getappdata(hMain,'testsignal'))
     handles.mytree.setSelectedNode(handles.(genvarname(newleaf)));
     set([handles.clrall_btn,handles.export_btn],'Enable','on')
     fprintf(handles.fid, ['%% ' datestr(now,16) ' - Processed "' char(selectedNodes(1).getName) '" to generate an impulse response of ' num2str(IRlength) ' points\n']);
-    fprintf(handles.fid,['X = convolveaudiowithaudio2(X,',num2str(method),');\n']);
+    fprintf(handles.fid,['X = convolveaudiowithaudio2(X,',num2str(method),',',num2str(scalingmethod),');\n']);
     if method == 1
         fprintf(handles.fid,['X.audio = X.audio(',num2str(trimsamp_low),':',num2str(trimsamp_high),',:,:,:,:,:);\n']);
     end
@@ -1392,7 +1392,7 @@ for nleafs = 1:length(selectedNodes)
                     [~,funcallback.name] = fileparts(funcallback.name);
                 end
                 catch err
-                    out = [];
+                    processed = [];
                     msgString = getReport(err);
                     disp(['AARAE processor error running ' funname '.']);
                     disp(msgString); % displays the error message without creating an error.
