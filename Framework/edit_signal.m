@@ -163,7 +163,7 @@ mainHandles = guidata(handles.main_stage1);
 if ~isempty(handles.testsignal(handles.version))
     aarae_fig = findobj('type','figure','tag','aarae');
     selectedNodes = mainHandles.mytree.getSelectedNodes;
-    removefield = genvarname(selectedNodes(1).getName.char);
+    removefield = matlab.lang.makeValidName(selectedNodes(1).getName.char);
     
     % Save as you go
     if exist([cd '/Utilities/Backup/' selectedNodes(1).getName.char '.mat'],'file')
@@ -172,13 +172,13 @@ if ~isempty(handles.testsignal(handles.version))
     signaldata = handles.testsignal(handles.version); %#ok : Used in following line
     save([cd '/Utilities/Backup/' handles.selNodeName '.mat'], 'signaldata');
     
-    set(mainHandles.(genvarname(removefield)),'Name',handles.selNodeName);
-    set(mainHandles.(genvarname(removefield)),'Value',handles.selNodeName);
-    mainHandles.(genvarname(handles.selNodeName)) = mainHandles.(genvarname(removefield));
+    set(mainHandles.(matlab.lang.makeValidName(removefield)),'Name',handles.selNodeName);
+    set(mainHandles.(matlab.lang.makeValidName(removefield)),'Value',handles.selNodeName);
+    mainHandles.(matlab.lang.makeValidName(handles.selNodeName)) = mainHandles.(matlab.lang.makeValidName(removefield));
     if ~strcmp(selectedNodes(1).getName.char,handles.selNodeName), mainHandles = rmfield(mainHandles,removefield); end
-    mainHandles.(genvarname(handles.selNodeName)).UserData = handles.testsignal(handles.version);
-    mainHandles.mytree.reloadNode(mainHandles.(genvarname(handles.selNodeName)).getParent);
-    mainHandles.mytree.setSelectedNode(mainHandles.(genvarname(handles.selNodeName)));
+    mainHandles.(matlab.lang.makeValidName(handles.selNodeName)).UserData = handles.testsignal(handles.version);
+    mainHandles.mytree.reloadNode(mainHandles.(matlab.lang.makeValidName(handles.selNodeName)).getParent);
+    mainHandles.mytree.setSelectedNode(mainHandles.(matlab.lang.makeValidName(handles.selNodeName)));
     guidata(aarae_fig, mainHandles);
 end
 guidata(hObject,handles);
@@ -940,7 +940,7 @@ if ~isempty(handles.testsignal(handles.version))
         iconPath = fullfile(matlabroot,'/toolbox/fixedpoint/fixedpointtool/resources/plot.png');
     end
     handles.selNodeName = [handles.selNodeName '_edit'];
-    mainHandles.(genvarname(handles.selNodeName)) = uitreenode('v0', handles.selNodeName, handles.selNodeName,  iconPath, true);
+    mainHandles.(matlab.lang.makeValidName(handles.selNodeName)) = uitreenode('v0', handles.selNodeName, handles.selNodeName,  iconPath, true);
     switch handles.testsignal(handles.version).datatype
         case 'testsignals', ivalue = 1;
         case 'measurements', ivalue = 2;
@@ -951,12 +951,12 @@ if ~isempty(handles.testsignal(handles.version))
     [branch,ok] = listdlg('ListString',{'Test signals','Measurements','Processed','Results'},'SelectionMode','single','PromptString','Save edited audio in:','InitialValue',ivalue);
     datatype = handles.testsignal(handles.version).datatype;
     if ok == 0
-        mainHandles.(genvarname(handles.testsignal(handles.version).datatype)).add(mainHandles.(genvarname(handles.selNodeName)));
+        mainHandles.(matlab.lang.makeValidName(handles.testsignal(handles.version).datatype)).add(mainHandles.(matlab.lang.makeValidName(handles.selNodeName)));
     else
-        if branch == 1, mainHandles.testsignals.add(mainHandles.(genvarname(handles.selNodeName))); handles.testsignal(handles.version).datatype = 'testsignals'; end
-        if branch == 2, mainHandles.measurements.add(mainHandles.(genvarname(handles.selNodeName))); handles.testsignal(handles.version).datatype = 'measurements'; end
-        if branch == 3, mainHandles.processed.add(mainHandles.(genvarname(handles.selNodeName))); handles.testsignal(handles.version).datatype = 'processed'; end
-        if branch == 4, mainHandles.results.add(mainHandles.(genvarname(handles.selNodeName))); handles.testsignal(handles.version).datatype = 'results'; end
+        if branch == 1, mainHandles.testsignals.add(mainHandles.(matlab.lang.makeValidName(handles.selNodeName))); handles.testsignal(handles.version).datatype = 'testsignals'; end
+        if branch == 2, mainHandles.measurements.add(mainHandles.(matlab.lang.makeValidName(handles.selNodeName))); handles.testsignal(handles.version).datatype = 'measurements'; end
+        if branch == 3, mainHandles.processed.add(mainHandles.(matlab.lang.makeValidName(handles.selNodeName))); handles.testsignal(handles.version).datatype = 'processed'; end
+        if branch == 4, mainHandles.results.add(mainHandles.(matlab.lang.makeValidName(handles.selNodeName))); handles.testsignal(handles.version).datatype = 'results'; end
     end
     if strcmp(datatype,'syscal'), handles.testsignal(handles.version).datatype = 'syscal'; end
     
@@ -964,9 +964,9 @@ if ~isempty(handles.testsignal(handles.version))
     signaldata = handles.testsignal(handles.version); %#ok : Used in following line
     save([cd '/Utilities/Backup/' handles.selNodeName '.mat'], 'signaldata');
     
-    mainHandles.(genvarname(handles.selNodeName)).UserData = handles.testsignal(handles.version);
-    mainHandles.mytree.reloadNode(mainHandles.(genvarname(handles.selNodeName)).getParent);
-    mainHandles.mytree.setSelectedNode(mainHandles.(genvarname(handles.selNodeName)));
+    mainHandles.(matlab.lang.makeValidName(handles.selNodeName)).UserData = handles.testsignal(handles.version);
+    mainHandles.mytree.reloadNode(mainHandles.(matlab.lang.makeValidName(handles.selNodeName)).getParent);
+    mainHandles.mytree.setSelectedNode(mainHandles.(matlab.lang.makeValidName(handles.selNodeName)));
     guidata(aarae_fig, mainHandles);
     fprintf(handles.fid,'%% WRITE TO NEW\n');
 end

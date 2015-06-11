@@ -152,8 +152,8 @@ function filltable(audiodata,cattable)
     catunits = cell(size(categories));
     catorcont = cell(size(categories));
     for n = 1:length(categories)
-        catunits{n,1} = audiodata.(genvarname([categories{n,1} 'info'])).units;
-        catorcont{n,1} = audiodata.(genvarname([categories{n,1} 'info'])).axistype;
+        catunits{n,1} = audiodata.(matlab.lang.makeValidName([categories{n,1} 'info'])).units;
+        catorcont{n,1} = audiodata.(matlab.lang.makeValidName([categories{n,1} 'info'])).axistype;
         if islogical(catorcont{n,1}) && catorcont{n,1} == true
             catdata{n,1} = ':';
         else
@@ -211,7 +211,7 @@ try
         swappedA = false;
         swappedB = false;
         if isequal(size(y1),size(y2'))
-            if size(y1,1) == eval(['length(nodeA.(genvarname(cattable1.Data{mainaxA,1}))(' cattable1.Data{mainaxA,2} '))'])
+            if size(y1,1) == eval(['length(nodeA.(matlab.lang.makeValidName(cattable1.Data{mainaxA,1}))(' cattable1.Data{mainaxA,2} '))'])
                 y2 = y2';
                 swappedB = true;
             else
@@ -222,7 +222,7 @@ try
         splitselA = strsplit(selA,',');
         mainaxA = [];
         for i = 1:length(splitselA)
-            if ~isempty(find(size(y2) == eval(['length(nodeA.(genvarname(cattable1.Data{i,1}))(' splitselA{1,i} '))']),1))
+            if ~isempty(find(size(y2) == eval(['length(nodeA.(matlab.lang.makeValidName(cattable1.Data{i,1}))(' splitselA{1,i} '))']),1))
                 mainaxA = [mainaxA i];
             end
         end
@@ -230,7 +230,7 @@ try
         splitselB = strsplit(selB,',');
         mainaxB = [];
         for i = 1:length(splitselB)
-            if ~isempty(find(size(y2) == eval(['length(nodeB.(genvarname(cattable2.Data{i,1}))(' splitselB{1,i} '))']),1))
+            if ~isempty(find(size(y2) == eval(['length(nodeB.(matlab.lang.makeValidName(cattable2.Data{i,1}))(' splitselB{1,i} '))']),1))
                 mainaxB = [mainaxB i];
             end
         end
@@ -243,25 +243,25 @@ try
     end
     
     if dochartlabels
-        eval(['z1 = nodeA.(genvarname(cattable1.Data{mainaxA(1,2),1}))(' cattable1.Data{mainaxA(1,2),2} ');'])
+        eval(['z1 = nodeA.(matlab.lang.makeValidName(cattable1.Data{mainaxA(1,2),1}))(' cattable1.Data{mainaxA(1,2),2} ');'])
         if ~isnumeric(z1)
             if iscell(z1) && ~iscellstr(z1), z1 = cell2mat(z1); end
             if size(z1,1) < size(z1,2), z1 = z1'; end
         end
-        eval(['z2 = nodeA.(genvarname(cattable2.Data{mainaxB(1,2),1}))(' cattable2.Data{mainaxB(1,2),2} ');'])
+        eval(['z2 = nodeA.(matlab.lang.makeValidName(cattable2.Data{mainaxB(1,2),1}))(' cattable2.Data{mainaxB(1,2),2} ');'])
         if ~isnumeric(z2)
             if iscell(z2) && ~iscellstr(z2), z2 = cell2mat(z2); end
             if size(z2,1) < size(z2,2), z2 = z2'; end
         end
     end
     
-    eval(['x1 = nodeA.(genvarname(cattable1.Data{mainaxA(1,1),1}))(' cattable1.Data{mainaxA(1,1),2} ');'])
+    eval(['x1 = nodeA.(matlab.lang.makeValidName(cattable1.Data{mainaxA(1,1),1}))(' cattable1.Data{mainaxA(1,1),2} ');'])
     if ~isnumeric(x1)
         if iscell(x1), x1 = cell2mat(x1); end
     end
     if isequal(size(x1),size(nodeA.data)), eval(['x1 = squeeze(x1(' selA '));']); end
     
-    eval(['x2 = nodeB.(genvarname(cattable2.Data{mainaxB(1,1),1}))(' cattable2.Data{mainaxB(1,1),2} ');'])
+    eval(['x2 = nodeB.(matlab.lang.makeValidName(cattable2.Data{mainaxB(1,1),1}))(' cattable2.Data{mainaxB(1,1),2} ');'])
     if ~isnumeric(x2)
         if iscell(x2), x2 = cell2mat(x2); end
     end
@@ -271,7 +271,7 @@ try
         case 'Double axis'
             line(x1,y1,'Parent',haxes)
             set(haxes,'XColor','b','YColor','b')
-            xlabel(haxes,strrep([cattable1.Data{mainaxA(1,1),1} ' [' nodeA.(genvarname([cattable1.Data{mainaxA(1,1),1} 'info'])).units ']'],'_',' '),'HandleVisibility','on')
+            xlabel(haxes,strrep([cattable1.Data{mainaxA(1,1),1} ' [' nodeA.(matlab.lang.makeValidName([cattable1.Data{mainaxA(1,1),1} 'info'])).units ']'],'_',' '),'HandleVisibility','on')
             ylabel(haxes,strrep(nodeA.datainfo.units,'_',' '),'HandleVisibility','on')
             compaxes_pos = get(haxes,'Position');
             if strcmp(get(get(haxes,'Parent'),'tag'),'comparedata')
@@ -286,7 +286,7 @@ try
                     'ColorOrder',colormap(hsv(size(y2,2))),...
                     'Parent',get(haxes,'Parent'));
                 line(x2,y2,'Parent',handles.compaxes2)
-                xlabel(handles.compaxes2,strrep([cattable2.Data{mainaxB(1,1),1} ' [' nodeB.(genvarname([cattable2.Data{mainaxB(1,1),1} 'info'])).units ']'],'_',' '),'HandleVisibility','on')
+                xlabel(handles.compaxes2,strrep([cattable2.Data{mainaxB(1,1),1} ' [' nodeB.(matlab.lang.makeValidName([cattable2.Data{mainaxB(1,1),1} 'info'])).units ']'],'_',' '),'HandleVisibility','on')
                 ylabel(handles.compaxes2,strrep(nodeB.datainfo.units,'_',' '),'HandleVisibility','on')
             else
                 compaxes2 = axes(...
@@ -300,14 +300,14 @@ try
                     'ColorOrder',colormap(hsv(size(y2,2))),...
                     'Parent',get(haxes,'Parent'));
                 line(x2,y2,'Parent',compaxes2)
-                xlabel(compaxes2,strrep([cattable2.Data{mainaxB(1,1),1} ' [' nodeB.(genvarname([cattable2.Data{mainaxB(1,1),1} 'info'])).units ']'],'_',' '))
+                xlabel(compaxes2,strrep([cattable2.Data{mainaxB(1,1),1} ' [' nodeB.(matlab.lang.makeValidName([cattable2.Data{mainaxB(1,1),1} 'info'])).units ']'],'_',' '))
                 ylabel(compaxes2,strrep(nodeB.datainfo.units,'_',' '))
             end
             set(handles.name1txt,'ForegroundColor','b')
             set(handles.name2txt,'ForegroundColor','r')
         case 'Two Y axis'
             ax = plotyy(x1,y1,x2,y2);
-            xlabel(haxes,strrep(['Units: [' nodeA.(genvarname([cattable1.Data{mainaxA(1,1),1} 'info'])).units ']'],'_',' '))
+            xlabel(haxes,strrep(['Units: [' nodeA.(matlab.lang.makeValidName([cattable1.Data{mainaxA(1,1),1} 'info'])).units ']'],'_',' '))
             ylabel(ax(1),strrep(nodeA.datainfo.units,'_',' '))
             ylabel(ax(2),strrep(nodeB.datainfo.units,'_',' '))
             set(handles.name1txt,'ForegroundColor',get(ax(1),'YColor'))
@@ -326,11 +326,11 @@ try
                 if ~iscellstr(z1), set(haxes,'XTickLabel',num2str(z1(get(haxes,'XTick'))));
                 else set(haxes,'XTickLabel',z1(get(haxes,'XTick'))); 
                 end
-                xlabel(haxes,strrep([cattable1.Data{mainaxA(1,2),1} ' [' nodeA.(genvarname([cattable1.Data{mainaxA(1,2),1} 'info'])).units ']'],'_',' '))
+                xlabel(haxes,strrep([cattable1.Data{mainaxA(1,2),1} ' [' nodeA.(matlab.lang.makeValidName([cattable1.Data{mainaxA(1,2),1} 'info'])).units ']'],'_',' '))
             else
                 xlabel(haxes,strrep([cattable1.Data{mainaxA(1,2),1} ' selection index'],'_',' '))
             end
-            ylabel(haxes,strrep([cattable1.Data{mainaxA(1,1),1} ' [' nodeA.(genvarname([cattable1.Data{mainaxA(1,1),1} 'info'])).units ']'],'_',' '))
+            ylabel(haxes,strrep([cattable1.Data{mainaxA(1,1),1} ' [' nodeA.(matlab.lang.makeValidName([cattable1.Data{mainaxA(1,1),1} 'info'])).units ']'],'_',' '))
             set(haxes,'YDir','normal')
             cmaplim = max(max(ydif(isfinite(abs(ydif)))));
             if cmaplim ~= 0, set(haxes,'CLim',[-cmaplim cmaplim]); end
@@ -345,11 +345,11 @@ try
                 if ~iscellstr(z1), set(haxes,'XTickLabel',num2str(z1(get(haxes,'XTick'))));
                 else set(haxes,'XTickLabel',z1(get(haxes,'XTick'))); 
                 end
-                xlabel(haxes,strrep([cattable1.Data{mainaxA(1,2),1} ' [' nodeA.(genvarname([cattable1.Data{mainaxA(1,2),1} 'info'])).units ']'],'_',' '))
+                xlabel(haxes,strrep([cattable1.Data{mainaxA(1,2),1} ' [' nodeA.(matlab.lang.makeValidName([cattable1.Data{mainaxA(1,2),1} 'info'])).units ']'],'_',' '))
             else
                 xlabel(haxes,strrep([cattable1.Data{mainaxA(1,2),1} ' selection index'],'_',' '))
             end
-            ylabel(haxes,strrep([cattable1.Data{mainaxA(1,1),1} ' [' nodeA.(genvarname([cattable1.Data{mainaxA(1,1),1} 'info'])).units ']'],'_',' '))
+            ylabel(haxes,strrep([cattable1.Data{mainaxA(1,1),1} ' [' nodeA.(matlab.lang.makeValidName([cattable1.Data{mainaxA(1,1),1} 'info'])).units ']'],'_',' '))
             set(haxes,'YDir','normal')
             cmaplim = max(max(ydif(isfinite(abs(ydif)))));
             if cmaplim ~= 0, set(haxes,'CLim',[-cmaplim cmaplim]); end
@@ -364,11 +364,11 @@ try
                 if ~iscellstr(z1), set(haxes,'XTickLabel',num2str(z1(get(haxes,'XTick'))));
                 else set(haxes,'XTickLabel',z1(get(haxes,'XTick'))); 
                 end
-                xlabel(haxes,strrep([cattable1.Data{mainaxA(1,2),1} ' [' nodeA.(genvarname([cattable1.Data{mainaxA(1,2),1} 'info'])).units ']'],'_',' '))
+                xlabel(haxes,strrep([cattable1.Data{mainaxA(1,2),1} ' [' nodeA.(matlab.lang.makeValidName([cattable1.Data{mainaxA(1,2),1} 'info'])).units ']'],'_',' '))
             else
                 xlabel(haxes,strrep([cattable1.Data{mainaxA(1,2),1} ' selection index'],'_',' '))
             end
-            ylabel(haxes,strrep([cattable1.Data{mainaxA(1,1),1} ' [' nodeA.(genvarname([cattable1.Data{mainaxA(1,1),1} 'info'])).units ']'],'_',' '))
+            ylabel(haxes,strrep([cattable1.Data{mainaxA(1,1),1} ' [' nodeA.(matlab.lang.makeValidName([cattable1.Data{mainaxA(1,1),1} 'info'])).units ']'],'_',' '))
             set(haxes,'YDir','normal')
             cmaplim = max(max(ydif(isfinite(abs(ydif)))));
             if cmaplim ~= 0, set(haxes,'CLim',[-cmaplim cmaplim]); end
@@ -383,11 +383,11 @@ try
                 if ~iscellstr(z1), set(haxes,'XTickLabel',num2str(z1(get(haxes,'XTick'))));
                 else set(haxes,'XTickLabel',z1(get(haxes,'XTick'))); 
                 end
-                xlabel(haxes,strrep([cattable1.Data{mainaxA(1,2),1} ' [' nodeA.(genvarname([cattable1.Data{mainaxA(1,2),1} 'info'])).units ']'],'_',' '))
+                xlabel(haxes,strrep([cattable1.Data{mainaxA(1,2),1} ' [' nodeA.(matlab.lang.makeValidName([cattable1.Data{mainaxA(1,2),1} 'info'])).units ']'],'_',' '))
             else
                 xlabel(haxes,strrep([cattable1.Data{mainaxA(1,2),1} ' selection index'],'_',' '))
             end
-            ylabel(haxes,strrep([cattable1.Data{mainaxA(1,1),1} ' [' nodeA.(genvarname([cattable1.Data{mainaxA(1,1),1} 'info'])).units ']'],'_',' '))
+            ylabel(haxes,strrep([cattable1.Data{mainaxA(1,1),1} ' [' nodeA.(matlab.lang.makeValidName([cattable1.Data{mainaxA(1,1),1} 'info'])).units ']'],'_',' '))
             set(haxes,'YDir','normal')
             cmaplim = max(max(ydif(isfinite(abs(ydif)))));
             if cmaplim ~= 0, set(haxes,'CLim',[-cmaplim cmaplim]); end
@@ -402,11 +402,11 @@ try
                 if ~iscellstr(z1), set(haxes,'XTickLabel',num2str(z1(get(haxes,'XTick'))));
                 else set(haxes,'XTickLabel',z1(get(haxes,'XTick'))); 
                 end
-                xlabel(haxes,strrep([cattable1.Data{mainaxA(1,2),1} ' [' nodeA.(genvarname([cattable1.Data{mainaxA(1,2),1} 'info'])).units ']'],'_',' '))
+                xlabel(haxes,strrep([cattable1.Data{mainaxA(1,2),1} ' [' nodeA.(matlab.lang.makeValidName([cattable1.Data{mainaxA(1,2),1} 'info'])).units ']'],'_',' '))
             else
                 xlabel(haxes,strrep([cattable1.Data{mainaxA(1,2),1} ' selection index'],'_',' '))
             end
-            ylabel(haxes,strrep([cattable1.Data{mainaxA(1,1),1} ' [' nodeA.(genvarname([cattable1.Data{mainaxA(1,1),1} 'info'])).units ']'],'_',' '))
+            ylabel(haxes,strrep([cattable1.Data{mainaxA(1,1),1} ' [' nodeA.(matlab.lang.makeValidName([cattable1.Data{mainaxA(1,1),1} 'info'])).units ']'],'_',' '))
             set(haxes,'YDir','normal')
             cmaplim = max(max(ydif(isfinite(abs(ydif)))));
             if cmaplim ~= 0, set(haxes,'CLim',[-cmaplim cmaplim]); end
@@ -439,7 +439,7 @@ try
                         if ~iscellstr(z1), set(haxes,'XTickLabel',num2str(z1(get(haxes,'XTick'))));
                         else set(haxes,'XTickLabel',z1(get(haxes,'XTick'))); 
                         end
-                        xlabel(haxes,strrep([cattable1.Data{mainaxA(1,2),1} ' [' nodeA.(genvarname([cattable1.Data{mainaxA(1,2),1} 'info'])).units ']'],'_',' '))
+                        xlabel(haxes,strrep([cattable1.Data{mainaxA(1,2),1} ' [' nodeA.(matlab.lang.makeValidName([cattable1.Data{mainaxA(1,2),1} 'info'])).units ']'],'_',' '))
                     else
                         xlabel(haxes,strrep([cattable1.Data{mainaxA(1,2),1} ' selection index'],'_',' '))
                     end
@@ -471,7 +471,7 @@ try
                         if ~iscellstr(x1), set(haxes,'XTickLabel',num2str(x1(get(haxes,'XTick'))));
                         else set(haxes,'XTickLabel',x1(get(haxes,'XTick'))); 
                         end
-                        xlabel(haxes,strrep([cattable1.Data{mainaxA(1,1),1} ' [' nodeA.(genvarname([cattable1.Data{mainaxA(1,1),1} 'info'])).units ']'],'_',' '))
+                        xlabel(haxes,strrep([cattable1.Data{mainaxA(1,1),1} ' [' nodeA.(matlab.lang.makeValidName([cattable1.Data{mainaxA(1,1),1} 'info'])).units ']'],'_',' '))
                     else
                         xlabel(haxes,strrep([cattable1.Data{mainaxA(1,1),1} ' selection index'],'_',' '))
                     end
@@ -505,7 +505,7 @@ if size(eventdata.Indices,1) ~= 0 && eventdata.Indices(1,2) == 2
     if isempty(chkbox), chkbox = false; end
     if chkbox == false
         catname = tabledata{eventdata.Indices(1,1),1};
-        liststr = handles.nodeA.(genvarname(catname));
+        liststr = handles.nodeA.(matlab.lang.makeValidName(catname));
         if size(liststr,1) < size(liststr,2), liststr = liststr'; end
         if ~iscellstr(liststr) && ~isnumeric(liststr), liststr = cellstr(num2str(cell2mat(liststr)));
         elseif isnumeric(liststr), liststr = cellstr(num2str(liststr)); end
@@ -537,7 +537,7 @@ if size(eventdata.Indices,1) ~= 0 && eventdata.Indices(1,2) == 2
     if isempty(chkbox), chkbox = false; end
     if chkbox == false
         catname = tabledata{eventdata.Indices(1,1),1};
-        liststr = handles.nodeB.(genvarname(catname));
+        liststr = handles.nodeB.(matlab.lang.makeValidName(catname));
         if size(liststr,1) < size(liststr,2), liststr = liststr'; end
         if ~iscellstr(liststr) && ~isnumeric(liststr), liststr = cellstr(num2str(cell2mat(liststr)));
         elseif isnumeric(liststr), liststr = cellstr(num2str(liststr)); end
@@ -642,21 +642,21 @@ function setplottingoptions(handles)
         splitselA = strsplit(selA,',');
         mainaxA = [];
         for i = 1:length(splitselA)
-            if ~isempty(find(size(y1) == eval(['length(nodeA.(genvarname(cattable1{i,1}))(' splitselA{1,i} '))']),1))
+            if ~isempty(find(size(y1) == eval(['length(nodeA.(matlab.lang.makeValidName(cattable1{i,1}))(' splitselA{1,i} '))']),1))
                 mainaxA = [mainaxA i];
             end
         end
         splitselB = strsplit(selB,',');
         mainaxB = [];
         for i = 1:length(splitselB)
-            if ~isempty(find(size(y2) == eval(['length(nodeB.(genvarname(cattable2{i,1}))(' splitselB{1,i} '))']),1))
+            if ~isempty(find(size(y2) == eval(['length(nodeB.(matlab.lang.makeValidName(cattable2{i,1}))(' splitselB{1,i} '))']),1))
                 mainaxB = [mainaxB i];
             end
         end
     end
-    iunitsA = handles.nodeA.(genvarname([cattable1{mainaxA(1,1),1} 'info'])).units;
-    iunitsB = handles.nodeB.(genvarname([cattable2{mainaxB(1,1),1} 'info'])).units;
-    if strcmp(iunitsA,iunitsB) && length(handles.nodeA.(genvarname(cattable1{mainaxA(1,1),1}))) == length(handles.nodeB.(genvarname(cattable2{mainaxB(1,1),1})))
+    iunitsA = handles.nodeA.(matlab.lang.makeValidName([cattable1{mainaxA(1,1),1} 'info'])).units;
+    iunitsB = handles.nodeB.(matlab.lang.makeValidName([cattable2{mainaxB(1,1),1} 'info'])).units;
+    if strcmp(iunitsA,iunitsB) && length(handles.nodeA.(matlab.lang.makeValidName(cattable1{mainaxA(1,1),1}))) == length(handles.nodeB.(matlab.lang.makeValidName(cattable2{mainaxB(1,1),1})))
         set(handles.compfunc_popup,'String',{'Double axis','Two Y axis','X-Y'},'Value',1)
         if isvector(y1) && isvector(y2), set(handles.compfunc_popup,'String',cat(1,get(handles.compfunc_popup,'String'),{'correlation - XCorr'})); end
     elseif strcmp(iunitsA,iunitsB)
@@ -666,8 +666,8 @@ function setplottingoptions(handles)
         set(handles.compfunc_popup,'String',{'Double axis'},'Value',1)
     end
     if ~isvector(y1) && ~isvector(y2) && isequal(size(y1),size(y2))
-        iunitsA2 = handles.nodeA.(genvarname([cattable1{mainaxA(1,2),1} 'info'])).units;
-        iunitsB2 = handles.nodeB.(genvarname([cattable2{mainaxB(1,2),1} 'info'])).units;
+        iunitsA2 = handles.nodeA.(matlab.lang.makeValidName([cattable1{mainaxA(1,2),1} 'info'])).units;
+        iunitsB2 = handles.nodeB.(matlab.lang.makeValidName([cattable2{mainaxB(1,2),1} 'info'])).units;
         hasunitsA = strfind(handles.nodeA.datainfo.units,'[');
         if ~isempty(hasunitsA)
             dataunitsA = handles.nodeA.datainfo.units(strfind(handles.nodeA.datainfo.units,'[')+1:strfind(handles.nodeA.datainfo.units,']')-1);
@@ -677,8 +677,8 @@ function setplottingoptions(handles)
             dataunitsB = handles.nodeB.datainfo.units(strfind(handles.nodeB.datainfo.units,'[')+1:strfind(handles.nodeB.datainfo.units,']')-1);
         end
         if strcmp(iunitsA,iunitsB) && strcmp(iunitsA2,iunitsB2) &&...
-                isequal(handles.nodeA.(genvarname(cattable1{mainaxA(1,1),1})),handles.nodeB.(genvarname(cattable2{mainaxB(1,1),1}))) &&...
-                isequal(handles.nodeA.(genvarname(cattable1{mainaxA(1,2),1})),handles.nodeB.(genvarname(cattable2{mainaxB(1,2),1})))
+                isequal(handles.nodeA.(matlab.lang.makeValidName(cattable1{mainaxA(1,1),1})),handles.nodeB.(matlab.lang.makeValidName(cattable2{mainaxB(1,1),1}))) &&...
+                isequal(handles.nodeA.(matlab.lang.makeValidName(cattable1{mainaxA(1,2),1})),handles.nodeB.(matlab.lang.makeValidName(cattable2{mainaxB(1,2),1})))
             if ~isempty(hasunitsA) && ~isempty(hasunitsB) && strcmp(dataunitsA,'dB') && strcmp(dataunitsB,'dB')
                 set(handles.compfunc_popup,'String',cat(1,get(handles.compfunc_popup,'String'),{'difference'}))
             else
@@ -824,8 +824,8 @@ fieldsA = fieldsA(3:end-1);
 categoriesA = fieldsA(mod(1:length(fieldsA),2) == 1);
 nn = 1;
 for n = 1:length(fieldsA)
-    if isnumeric(nodeA.(genvarname(fieldsA{n,1})))
-        catunitsA{nn,1} = nodeA.(genvarname([fieldsA{n,1} 'info'])).units;
+    if isnumeric(nodeA.(matlab.lang.makeValidName(fieldsA{n,1})))
+        catunitsA{nn,1} = nodeA.(matlab.lang.makeValidName([fieldsA{n,1} 'info'])).units;
         nn = nn + 1;
     end
 end
@@ -835,8 +835,8 @@ fieldsB = fieldsB(3:end-1);
 categoriesB = fieldsB(mod(1:length(fieldsB),2) == 1);
 nn = 1;
 for n = 1:length(fieldsB)
-    if isnumeric(nodeB.(genvarname(fieldsB{n,1})))
-        catunitsB{nn,1} = nodeB.(genvarname([fieldsB{n,1} 'info'])).units;
+    if isnumeric(nodeB.(matlab.lang.makeValidName(fieldsB{n,1})))
+        catunitsB{nn,1} = nodeB.(matlab.lang.makeValidName([fieldsB{n,1} 'info'])).units;
         nn = nn + 1;
     end
 end
@@ -845,14 +845,14 @@ AandB = intersect(catunitsA,catunitsB);
 if ~isempty(AandB)
     for i = 1:length(AandB)
         for j = 1:length(categoriesA)
-            if strcmp(nodeA.(genvarname([categoriesA{j,1} 'info'])).units,AandB{i,1})
-                tofixA = nodeA.(genvarname(categoriesA{j,1}));
+            if strcmp(nodeA.(matlab.lang.makeValidName([categoriesA{j,1} 'info'])).units,AandB{i,1})
+                tofixA = nodeA.(matlab.lang.makeValidName(categoriesA{j,1}));
                 dimNA = j;
             end
         end
         for j = 1:length(categoriesB)
-            if strcmp(nodeB.(genvarname([categoriesB{j,1} 'info'])).units,AandB{i,1})
-                tofixB = nodeB.(genvarname(categoriesB{j,1}));
+            if strcmp(nodeB.(matlab.lang.makeValidName([categoriesB{j,1} 'info'])).units,AandB{i,1})
+                tofixB = nodeB.(matlab.lang.makeValidName(categoriesB{j,1}));
                 dimNB = j;
             end
         end
@@ -885,21 +885,21 @@ if ~isempty(AandB)
                 end
             end
             if length(tofixA) < length(tofixB)
-                nodeB.(genvarname(categoriesB{dimNB,1})) = tofixB(1:length(tofixA));
+                nodeB.(matlab.lang.makeValidName(categoriesB{dimNB,1})) = tofixB(1:length(tofixA));
                 rsmB = repmat({':'},ndims(nodeB.data),1);
                 rsmB{dimNB,1} = '1:length(tofixA)';
                 rsmB = strjoin(rsmB',',');
                 eval(['nodeB.data = nodeB.data(' rsmB ');'])
                 set(handles.name2txt,'String',[get(handles.name2txt,'String') ', truncated'])
-                nodeA.(genvarname(categoriesA{dimNA,1})) = tofixA;
+                nodeA.(matlab.lang.makeValidName(categoriesA{dimNA,1})) = tofixA;
             else
-                nodeA.(genvarname(categoriesA{dimNA,1})) = tofixA(1:length(tofixB));
+                nodeA.(matlab.lang.makeValidName(categoriesA{dimNA,1})) = tofixA(1:length(tofixB));
                 rsmA = repmat({':'},ndims(nodeA.data),1);
                 rsmA{dimNA,1} = '1:length(tofixB)';
                 rsmA = strjoin(rsmA',',');
                 eval(['nodeA.data = nodeA.data(' rsmA ');'])
                 set(handles.name1txt,'String',[get(handles.name1txt,'String') ', truncated'])
-                nodeB.(genvarname(categoriesB{dimNB,1})) = tofixB;
+                nodeB.(matlab.lang.makeValidName(categoriesB{dimNB,1})) = tofixB;
             end
         end
     end

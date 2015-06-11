@@ -11,18 +11,18 @@ end
 if size(linea,2) > handles.Settings.maxlines
     linea = linea(:,1:handles.Settings.maxlines);
 end
-plottype = get(handles.(genvarname([axes '_popup'])),'Value');
+plottype = get(handles.(matlab.lang.makeValidName([axes '_popup'])),'Value');
 %if plottype == 4 || plottype == 5 || plottype > 7
-    set(handles.(genvarname(['To_' axes])),'Visible','on')
-    To_s = str2double(get(handles.(genvarname(['To_' axes])),'String'));
+    set(handles.(matlab.lang.makeValidName(['To_' axes])),'Visible','on')
+    To_s = str2double(get(handles.(matlab.lang.makeValidName(['To_' axes])),'String'));
     To = floor(To_s*signaldata.fs)+1;
-    set(handles.(genvarname(['Tf_' axes])),'Visible','on')
-    Tf_s = str2double(get(handles.(genvarname(['Tf_' axes])),'String'));
+    set(handles.(matlab.lang.makeValidName(['Tf_' axes])),'Visible','on')
+    Tf_s = str2double(get(handles.(matlab.lang.makeValidName(['Tf_' axes])),'String'));
     Tf = floor(Tf_s*signaldata.fs);
     if Tf > length(linea), Tf = length(linea); end
     linea = linea(To:Tf,:);
 %else
-%    set([handles.(genvarname(['To_' axes])),handles.(genvarname(['Tf_' axes]))],'Visible','off')
+%    set([handles.(matlab.lang.makeValidName(['To_' axes])),handles.(matlab.lang.makeValidName(['Tf_' axes]))],'Visible','off')
 %end
 if isfield(signaldata,'cal') && handles.Settings.calibrationtoggle == 1
     if size(linea,2) == length(signaldata.cal)
@@ -35,7 +35,7 @@ if isfield(signaldata,'cal') && handles.Settings.calibrationtoggle == 1
     end
 end
 fftlength = length(linea);
-set(handles.(genvarname(['smooth' axes '_popup'])),'Visible','off');
+set(handles.(matlab.lang.makeValidName(['smooth' axes '_popup'])),'Visible','off');
 switch handles.Settings.specmagscale;
     case {'Divided by length'}
         spectscale = 1./length(linea);
@@ -61,8 +61,8 @@ if plottype == 14, linea = unwrap(angle(fft(linea))); end
 if plottype == 15, linea = angle(fft(linea)) .* 180/pi; end
 if plottype == 16, linea = unwrap(angle(fft(linea))) ./(2*pi); end
 if plottype == 17, spec = fft(linea,fftlength); linea = -diff(unwrap(angle(spec))).*length(spec)/(signaldata.fs*2*pi).*1000; end
-if strcmp(get(handles.(genvarname(['smooth' axes '_popup'])),'Visible'),'on')
-    smoothfactor = get(handles.(genvarname(['smooth' axes '_popup'])),'Value');
+if strcmp(get(handles.(matlab.lang.makeValidName(['smooth' axes '_popup'])),'Visible'),'on')
+    smoothfactor = get(handles.(matlab.lang.makeValidName(['smooth' axes '_popup'])),'Value');
     if smoothfactor == 2, octsmooth = 1; end
     if smoothfactor == 3, octsmooth = 3; end
     if smoothfactor == 4, octsmooth = 6; end
@@ -74,25 +74,25 @@ t = (linspace(To_s,Tf_s,length(linea))).';
 f = (signaldata.fs .* ((1:fftlength)-1) ./ fftlength).';
 if plottype <= 7
     if ~isreal(signaldata.audio)
-        set(handles.(genvarname(['complex' axes])),'Visible','on');
+        set(handles.(matlab.lang.makeValidName(['complex' axes])),'Visible','on');
     else
-        set(handles.(genvarname(['complex' axes])),'Visible','off');
+        set(handles.(matlab.lang.makeValidName(['complex' axes])),'Visible','off');
     end
-    set(handles.(genvarname(['log' axes '_chk'])),'Visible','off');
-    pixels = get_axes_width(handles.(genvarname(['axes' axes])));
+    set(handles.(matlab.lang.makeValidName(['log' axes '_chk'])),'Visible','off');
+    pixels = get_axes_width(handles.(matlab.lang.makeValidName(['axes' axes])));
     [t, linea] = reduce_to_width(t, real(linea), pixels, [-inf inf]);
     t = t(:,1);
-    plot(handles.(genvarname(['axes' axes])),t,real(linea)); % Plot signal in time domain
-    xlabel(handles.(genvarname(['axes' axes])),'Time [s]');
-    %xlim(handles.(genvarname(['axes' axes])),[0 length(signaldata.audio)/signaldata.fs])
-    xlim(handles.(genvarname(['axes' axes])),[To_s Tf_s])
-    set(handles.(genvarname(['axes' axes])),'XScale','linear','XTickLabelMode','auto')
-    set(handles.(genvarname(['axes' axes])),'XTickLabel',num2str(get(handles.(genvarname(['axes' axes])),'XTick').'))
+    plot(handles.(matlab.lang.makeValidName(['axes' axes])),t,real(linea)); % Plot signal in time domain
+    xlabel(handles.(matlab.lang.makeValidName(['axes' axes])),'Time [s]');
+    %xlim(handles.(matlab.lang.makeValidName(['axes' axes])),[0 length(signaldata.audio)/signaldata.fs])
+    xlim(handles.(matlab.lang.makeValidName(['axes' axes])),[To_s Tf_s])
+    set(handles.(matlab.lang.makeValidName(['axes' axes])),'XScale','linear','XTickLabelMode','auto')
+    set(handles.(matlab.lang.makeValidName(['axes' axes])),'XTickLabel',num2str(get(handles.(matlab.lang.makeValidName(['axes' axes])),'XTick').'))
 end
 if plottype >= 8
-    set(handles.(genvarname(['complex' axes])),'Visible','off')
-    pixels = get_axes_width(handles.(genvarname(['axes' axes])));
-    log_check = get(handles.(genvarname(['log' axes '_chk'])),'Value');
+    set(handles.(matlab.lang.makeValidName(['complex' axes])),'Visible','off')
+    pixels = get_axes_width(handles.(matlab.lang.makeValidName(['axes' axes])));
+    log_check = get(handles.(matlab.lang.makeValidName(['log' axes '_chk'])),'Value');
     if log_check == 0
         [f1, linea1] = reduce_to_width(f(1:length(linea)), linea, pixels, [-inf inf]);
         f1 = f1(:,1);
@@ -101,19 +101,19 @@ if plottype >= 8
         f1 = f1(:,1);
         f1 = (10.^f1)./max(10.^f1).*signaldata.fs;
     end
-    plot(handles.(genvarname(['axes' axes])),f1,linea1);% Plot signal in frequency domain
-    xlabel(handles.(genvarname(['axes' axes])),'Frequency [Hz]');
+    plot(handles.(matlab.lang.makeValidName(['axes' axes])),f1,linea1);% Plot signal in frequency domain
+    xlabel(handles.(matlab.lang.makeValidName(['axes' axes])),'Frequency [Hz]');
     if ischar(handles.Settings.frequencylimits)
-        xlim(handles.(genvarname(['axes' axes])),[f1(2) signaldata.fs/2])
+        xlim(handles.(matlab.lang.makeValidName(['axes' axes])),[f1(2) signaldata.fs/2])
     else
-        xlim(handles.(genvarname(['axes' axes])),handles.Settings.frequencylimits)
+        xlim(handles.(matlab.lang.makeValidName(['axes' axes])),handles.Settings.frequencylimits)
     end
-    set(handles.(genvarname(['log' axes '_chk'])),'Visible','on');
+    set(handles.(matlab.lang.makeValidName(['log' axes '_chk'])),'Visible','on');
     if log_check == 1
-        set(handles.(genvarname(['axes' axes])),'XScale','log')
-        set(handles.(genvarname(['axes' axes])),'XTickLabel',num2str(get(handles.(genvarname(['axes' axes])),'XTick').'))
+        set(handles.(matlab.lang.makeValidName(['axes' axes])),'XScale','log')
+        set(handles.(matlab.lang.makeValidName(['axes' axes])),'XTickLabel',num2str(get(handles.(matlab.lang.makeValidName(['axes' axes])),'XTick').'))
     else
-        set(handles.(genvarname(['axes' axes])),'XScale','linear','XTickLabelMode','auto')
-        set(handles.(genvarname(['axes' axes])),'XTickLabel',num2str(get(handles.(genvarname(['axes' axes])),'XTick').'))
+        set(handles.(matlab.lang.makeValidName(['axes' axes])),'XScale','linear','XTickLabelMode','auto')
+        set(handles.(matlab.lang.makeValidName(['axes' axes])),'XTickLabel',num2str(get(handles.(matlab.lang.makeValidName(['axes' axes])),'XTick').'))
     end
 end

@@ -215,13 +215,13 @@ if ~isempty(getappdata(hMain,'testsignal'))
     else
         iconPath = fullfile(matlabroot,'/toolbox/matlab/icons/notesicon.gif');
     end
-    leafname = isfield(handles,genvarname(newleaf));
+    leafname = isfield(handles,matlab.lang.makeValidName(newleaf));
     if leafname == 1
         index = 1;
         % This while cycle is just to make sure no signals are
         % overwriten
-        if length(genvarname([newleaf,'_',num2str(index)])) >= namelengthmax, newleaf = newleaf(1:round(end/2)); end
-        while isfield(handles,genvarname([newleaf,'_',num2str(index)])) == 1
+        if length(matlab.lang.makeValidName([newleaf,'_',num2str(index)])) >= namelengthmax, newleaf = newleaf(1:round(end/2)); end
+        while isfield(handles,matlab.lang.makeValidName([newleaf,'_',num2str(index)])) == 1
             index = index + 1;
         end
         newleaf = [newleaf,'_',num2str(index)];
@@ -231,12 +231,12 @@ if ~isempty(getappdata(hMain,'testsignal'))
     save([cd '/Utilities/Backup/' newleaf '.mat'], 'signaldata','-v7.3');
     
     % Generate new leaf
-    handles.(genvarname(newleaf)) = uitreenode('v0', newleaf,  newleaf,  iconPath, true);
-    handles.(genvarname(newleaf)).UserData = signaldata;
-    handles.testsignals.add(handles.(genvarname(newleaf)));
+    handles.(matlab.lang.makeValidName(newleaf)) = uitreenode('v0', newleaf,  newleaf,  iconPath, true);
+    handles.(matlab.lang.makeValidName(newleaf)).UserData = signaldata;
+    handles.testsignals.add(handles.(matlab.lang.makeValidName(newleaf)));
     handles.mytree.reloadNode(handles.testsignals);
     handles.mytree.expand(handles.testsignals);
-    handles.mytree.setSelectedNode(handles.(genvarname(newleaf)));
+    handles.mytree.setSelectedNode(handles.(matlab.lang.makeValidName(newleaf)));
     set([handles.clrall_btn,handles.export_btn],'Enable','on')
     % Log event
     fprintf(handles.fid, ['%% ' datestr(now,16) ' - Generated ' newleaf ': duration = ' num2str(length(signaldata.audio)/signaldata.fs) ' s ; fs = ' num2str(signaldata.fs) ' Hz; size = ' num2str(size(signaldata.audio)) '\n']);
@@ -433,12 +433,12 @@ for i = 1:length(filename)
             else
                 iconPath = fullfile(matlabroot,'/toolbox/matlab/icons/notesicon.gif');
             end
-            leafname = isfield(handles,genvarname(newleaf{1,1}));
+            leafname = isfield(handles,matlab.lang.makeValidName(newleaf{1,1}));
             if leafname == 1
                 index = 1;
                 % This while cycle is just to make sure no duplicate names
-                if length(genvarname([newleaf{1,1},'_',num2str(index)])) >= namelengthmax, newleaf{1,1} = newleaf{1,1}(1:round(end/2)); end
-                while isfield(handles,genvarname([newleaf{1,1},'_',num2str(index)])) == 1
+                if length(matlab.lang.makeValidName([newleaf{1,1},'_',num2str(index)])) >= namelengthmax, newleaf{1,1} = newleaf{1,1}(1:round(end/2)); end
+                while isfield(handles,matlab.lang.makeValidName([newleaf{1,1},'_',num2str(index)])) == 1
                     index = index + 1;
                 end
                 newleaf{1,1} = [newleaf{1,1},'_',num2str(index)];
@@ -447,15 +447,15 @@ for i = 1:length(filename)
             % Save as you go
             save([cd '/Utilities/Backup/' newleaf{1,1} '.mat'], 'signaldata','-v7.3');            
             
-            handles.(genvarname(newleaf{1,1})) = uitreenode('v0', newleaf{1,1},  newleaf{1,1},  iconPath, true);
-            handles.(genvarname(newleaf{1,1})).UserData = signaldata;
+            handles.(matlab.lang.makeValidName(newleaf{1,1})) = uitreenode('v0', newleaf{1,1},  newleaf{1,1},  iconPath, true);
+            handles.(matlab.lang.makeValidName(newleaf{1,1})).UserData = signaldata;
             if strcmp(signaldata.datatype,'syscal'), signaldata.datatype = 'measurements'; end
-            handles.(genvarname(signaldata.datatype)).add(handles.(genvarname(newleaf{1,1})));
-            handles.mytree.reloadNode(handles.(genvarname(signaldata.datatype)));
-            handles.mytree.expand(handles.(genvarname(signaldata.datatype)));
-            %handles.mytree.setSelectedNode(handles.(genvarname(newleaf{1,1})));
+            handles.(matlab.lang.makeValidName(signaldata.datatype)).add(handles.(matlab.lang.makeValidName(newleaf{1,1})));
+            handles.mytree.reloadNode(handles.(matlab.lang.makeValidName(signaldata.datatype)));
+            handles.mytree.expand(handles.(matlab.lang.makeValidName(signaldata.datatype)));
+            %handles.mytree.setSelectedNode(handles.(matlab.lang.makeValidName(newleaf{1,1})));
             set([handles.clrall_btn,handles.export_btn],'Enable','on')
-            fprintf(handles.fid, ['%% ' datestr(now,16) ' - Loaded "' filename{i} '" to branch "' char(handles.(genvarname(signaldata.datatype)).getName) '"\n']);
+            fprintf(handles.fid, ['%% ' datestr(now,16) ' - Loaded "' filename{i} '" to branch "' char(handles.(matlab.lang.makeValidName(signaldata.datatype)).getName) '"\n']);
             % Log verbose metadata
             logaudioleaffields(signaldata);
         end
@@ -469,7 +469,7 @@ for i = 1:length(filename)
     end
 end
 if i == steps, close(h); end
-handles.mytree.setSelectedNode(handles.(genvarname(newleaf{1,1})));
+handles.mytree.setSelectedNode(handles.(matlab.lang.makeValidName(newleaf{1,1})));
 
 
 % --- Executes on button press in rec_btn.
@@ -496,12 +496,12 @@ if savenewsyscalstats == 1
     iconPath = fullfile(matlabroot,'/toolbox/matlab/icons/boardicon.gif');
     handles.syscalstats.datatype = 'syscal';
     funname = ['System_calibration ' strrep(datestr(rem(now,1)),':','_')];
-    leafname = isfield(handles,genvarname(funname));
+    leafname = isfield(handles,matlab.lang.makeValidName(funname));
     if leafname == 1
         index = 1;
         % This while cycle is just to make sure no signals are
         % overwriten
-        while isfield(handles,genvarname([funname,'_',num2str(index)])) == 1
+        while isfield(handles,matlab.lang.makeValidName([funname,'_',num2str(index)])) == 1
             index = index + 1;
         end
         funname = [funname,'_',num2str(index)];
@@ -511,24 +511,24 @@ if savenewsyscalstats == 1
     tempsyscalstats = handles.syscalstats; %#ok : Used in followring line
     save([cd '/Utilities/Backup/' funname '.mat'], 'tempsyscalstats','-v7.3');
     
-    handles.(genvarname(funname)) = uitreenode('v0', funname,  funname,  iconPath, true);
-    handles.(genvarname(funname)).UserData = handles.syscalstats;
-    handles.measurements.add(handles.(genvarname(funname)));
+    handles.(matlab.lang.makeValidName(funname)) = uitreenode('v0', funname,  funname,  iconPath, true);
+    handles.(matlab.lang.makeValidName(funname)).UserData = handles.syscalstats;
+    handles.measurements.add(handles.(matlab.lang.makeValidName(funname)));
     handles.mytree.reloadNode(handles.measurements);
     handles.mytree.expand(handles.measurements);
-    handles.mytree.setSelectedNode(handles.(genvarname(funname)));
+    handles.mytree.setSelectedNode(handles.(matlab.lang.makeValidName(funname)));
     set([handles.clrall_btn,handles.export_btn],'Enable','on')
     fprintf(handles.fid, ['%% ' datestr(now,16) ' - Saved system calibration data ' handles.funname '\n\n']);
 end
 if ~isempty(audiodata)
     audiodata.datatype = 'measurements';
     iconPath = fullfile(matlabroot,'/toolbox/fixedpoint/fixedpointtool/resources/plot.png');
-    leafname = isfield(handles,genvarname(newleaf));
+    leafname = isfield(handles,matlab.lang.makeValidName(newleaf));
     if leafname == 1
         index = 1;
         % This while cycle is just to make sure no signals are
         % overwriten
-        while isfield(handles,genvarname([newleaf,'_',num2str(index)])) == 1
+        while isfield(handles,matlab.lang.makeValidName([newleaf,'_',num2str(index)])) == 1
             index = index + 1;
         end
         newleaf = [newleaf,'_',num2str(index)];
@@ -541,12 +541,12 @@ if ~isempty(audiodata)
     % Save as you go
     save([cd '/Utilities/Backup/' newleaf '.mat'], 'audiodata','-v7.3');
     
-    handles.(genvarname(newleaf)) = uitreenode('v0', newleaf,  newleaf,  iconPath, true);
-    handles.(genvarname(newleaf)).UserData = audiodata;
-    handles.measurements.add(handles.(genvarname(newleaf)));
+    handles.(matlab.lang.makeValidName(newleaf)) = uitreenode('v0', newleaf,  newleaf,  iconPath, true);
+    handles.(matlab.lang.makeValidName(newleaf)).UserData = audiodata;
+    handles.measurements.add(handles.(matlab.lang.makeValidName(newleaf)));
     handles.mytree.reloadNode(handles.measurements);
     handles.mytree.expand(handles.measurements);
-    handles.mytree.setSelectedNode(handles.(genvarname(newleaf)));
+    handles.mytree.setSelectedNode(handles.(matlab.lang.makeValidName(newleaf)));
     set([handles.clrall_btn,handles.export_btn],'Enable','on')
     fprintf(handles.fid, ['%% ' datestr(now,16) ' - Recorded "' newleaf '": duration = ' num2str(length(audiodata.audio)/audiodata.fs) 's\n']);
     % Log verbose metadata
@@ -599,11 +599,11 @@ nbranches = root.getChildCount;
 branches = cell(nbranches,1);
 branches{1,1} = char(first.getValue);
 nleaves = 0;
-nleaves = nleaves + handles.(genvarname(branches{1,1}))(1).getChildCount;
+nleaves = nleaves + handles.(matlab.lang.makeValidName(branches{1,1}))(1).getChildCount;
 next = first.getNextSibling;
 for n = 2:nbranches
     branches{n,1} = char(next.getValue);
-    nleaves = nleaves + handles.(genvarname(branches{n,1}))(1).getChildCount;
+    nleaves = nleaves + handles.(matlab.lang.makeValidName(branches{n,1}))(1).getChildCount;
     next = next.getNextSibling;
 end
 if nleaves == 0
@@ -612,7 +612,7 @@ else
 %    leaves = cell(nleaves,1);
 %    i = 0;
 %    for n = 1:size(branches,1)
-%        currentbranch = handles.(genvarname(branches{n,1}));
+%        currentbranch = handles.(matlab.lang.makeValidName(branches{n,1}));
 %        if currentbranch.getChildCount ~= 0
 %            i = i + 1;
 %            first = currentbranch.getFirstChild;
@@ -640,7 +640,7 @@ else
 %        h = waitbar(0,['1 of ' num2str(size(leaves,1))],'Name','Saving files...');
 %        steps = size(leaves,1);
 %        for i = 1:size(leaves,1)
-%            current = handles.(genvarname(leaves{i,:}));
+%            current = handles.(matlab.lang.makeValidName(leaves{i,:}));
 %            current = current(1);
 %            data = current.handle.UserData; %#ok : used in save
 %            if ~exist([folder '/' leaves{i,:} '.mat'],'file')
@@ -749,7 +749,7 @@ switch deleteans
                 handles.mytree.remove(selectedNodes(nleafs));
                 handles.mytree.reloadNode(selectedParent);
                 handles.mytree.setSelectedNode(handles.root);
-                handles = rmfield(handles,genvarname(char(selectedNodes(nleafs).getName)));
+                handles = rmfield(handles,matlab.lang.makeValidName(char(selectedNodes(nleafs).getName)));
                 fprintf(handles.fid, ['%% ' datestr(now,16) ' - Deleted "' char(selectedNodes(nleafs).getName) '" from branch "' char(selectedParent.getName) '"\n\n']);
             end
         end
@@ -946,13 +946,13 @@ end
 % Create new leaf and update the tree
 handles.mytree.setSelectedNode(handles.root);
 newleaf = ['IR_' selectedNodes(1).getName.char];
-leafname = isfield(handles,genvarname(newleaf));
+leafname = isfield(handles,matlab.lang.makeValidName(newleaf));
 if leafname == 1
     index = 1;
     % This while cycle is just to make sure no signals are
     % overwriten
-    if length(genvarname([newleaf,'_',num2str(index)])) >= namelengthmax, newleaf = newleaf(1:round(end/2)); end
-    while isfield(handles,genvarname([newleaf,'_',num2str(index)])) == 1
+    if length(matlab.lang.makeValidName([newleaf,'_',num2str(index)])) >= namelengthmax, newleaf = newleaf(1:round(end/2)); end
+    while isfield(handles,matlab.lang.makeValidName([newleaf,'_',num2str(index)])) == 1
         index = index + 1;
     end
     newleaf = [newleaf,'_',num2str(index)];
@@ -976,12 +976,12 @@ if ~isempty(getappdata(hMain,'testsignal'))
     % Save as you go
     save([cd '/Utilities/Backup/' newleaf '.mat'], 'signaldata','-v7.3');
     
-    handles.(genvarname(newleaf)) = uitreenode('v0', newleaf,  newleaf,  iconPath, true);
-    handles.(genvarname(newleaf)).UserData = signaldata;
-    handles.measurements.add(handles.(genvarname(newleaf)));
+    handles.(matlab.lang.makeValidName(newleaf)) = uitreenode('v0', newleaf,  newleaf,  iconPath, true);
+    handles.(matlab.lang.makeValidName(newleaf)).UserData = signaldata;
+    handles.measurements.add(handles.(matlab.lang.makeValidName(newleaf)));
     handles.mytree.reloadNode(handles.measurements);
     handles.mytree.expand(handles.measurements);
-    handles.mytree.setSelectedNode(handles.(genvarname(newleaf)));
+    handles.mytree.setSelectedNode(handles.(matlab.lang.makeValidName(newleaf)));
     set([handles.clrall_btn,handles.export_btn],'Enable','on')
     fprintf(handles.fid, ['%% ' datestr(now,16) ' - Processed "' char(selectedNodes(1).getName) '" to generate an impulse response of ' num2str(IRlength) ' points\n']);
     fprintf(handles.fid,['X = convolveaudiowithaudio2(X,',num2str(method),',',num2str(scalingmethod),');\n']);
@@ -1108,13 +1108,13 @@ for nleafs = 1:length(selectedNodes)
                     iconPath = fullfile(matlabroot,'/toolbox/matlab/icons/notesicon.gif');
                 end
                 if length(fieldnames(out)) ~= 1
-                    leafname = isfield(handles,genvarname(newleaf{1,1}));
+                    leafname = isfield(handles,matlab.lang.makeValidName(newleaf{1,1}));
                     if leafname == 1
                         index = 1;
                         % This while cycle is just to make sure no signals are
                         % overwriten
-                        if length(genvarname([newleaf{1,1},'_',num2str(index)])) >= namelengthmax, newleaf{1,1} = newleaf{1,1}(1:round(end/2)); end
-                        while isfield(handles,genvarname([newleaf{1,1},'_',num2str(index)])) == 1
+                        if length(matlab.lang.makeValidName([newleaf{1,1},'_',num2str(index)])) >= namelengthmax, newleaf{1,1} = newleaf{1,1}(1:round(end/2)); end
+                        while isfield(handles,matlab.lang.makeValidName([newleaf{1,1},'_',num2str(index)])) == 1
                             index = index + 1;
                         end
                         newleaf{1,1} = [newleaf{1,1},'_',num2str(index)];
@@ -1127,12 +1127,12 @@ for nleafs = 1:length(selectedNodes)
                     % Save as you go
                     save([cd '/Utilities/Backup/' newleaf{1,1} '.mat'], 'signaldata','-v7.3');
                     
-                    handles.(genvarname(newleaf{1,1})) = uitreenode('v0', newleaf{1,1},  newleaf{1,1},  iconPath, true);
-                    handles.(genvarname(newleaf{1,1})).UserData = signaldata;
-                    handles.results.add(handles.(genvarname(newleaf{1,1})));
+                    handles.(matlab.lang.makeValidName(newleaf{1,1})) = uitreenode('v0', newleaf{1,1},  newleaf{1,1},  iconPath, true);
+                    handles.(matlab.lang.makeValidName(newleaf{1,1})).UserData = signaldata;
+                    handles.results.add(handles.(matlab.lang.makeValidName(newleaf{1,1})));
                     handles.mytree.reloadNode(handles.results);
                     handles.mytree.expand(handles.results);
-                    %handles.mytree.setSelectedNode(handles.(genvarname(newleaf)));
+                    %handles.mytree.setSelectedNode(handles.(matlab.lang.makeValidName(newleaf)));
                     set([handles.clrall_btn,handles.export_btn],'Enable','on')
                 end
                 fprintf(handles.fid, ['%% ' datestr(now,16) ' - Analysed "' char(selectedNodes(nleafs).getName) '" using ' funname ' in ' handles.funcat '\n']);% In what category???
@@ -1210,7 +1210,7 @@ for nleafs = 1:length(selectedNodes)
     end
 end
 java.lang.Runtime.getRuntime.gc % Java garbage collection
-%handles.mytree.setSelectedNode(handles.(genvarname(newleaf)));
+%handles.mytree.setSelectedNode(handles.(matlab.lang.makeValidName(newleaf)));
 guidata(hObject,handles)
 
 
@@ -1429,13 +1429,13 @@ for nleafs = 1:length(selectedNodes)
                         newdata.datatype = 'processed';
                     end
                     iconPath = fullfile(matlabroot,'/toolbox/fixedpoint/fixedpointtool/resources/plot.png');
-                    leafname = isfield(handles,genvarname(newleaf{1,1}));
+                    leafname = isfield(handles,matlab.lang.makeValidName(newleaf{1,1}));
                     if leafname == 1
                         index = 1;
                         % This while cycle is just to make sure no signals are
                         % overwriten
-                        if length(genvarname([newleaf{1,1},'_',num2str(index)])) >= namelengthmax, newleaf{1,1} = newleaf{1,1}(1:round(end/2)); end
-                        while isfield(handles,genvarname([newleaf{1,1},'_',num2str(index)])) == 1
+                        if length(matlab.lang.makeValidName([newleaf{1,1},'_',num2str(index)])) >= namelengthmax, newleaf{1,1} = newleaf{1,1}(1:round(end/2)); end
+                        while isfield(handles,matlab.lang.makeValidName([newleaf{1,1},'_',num2str(index)])) == 1
                             index = index + 1;
                         end
                         newleaf{1,1} = [newleaf{1,1},'_',num2str(index)];
@@ -1448,15 +1448,15 @@ for nleafs = 1:length(selectedNodes)
                     % Save as you go
                     save([cd '/Utilities/Backup/' newleaf{1,1} '.mat'], 'newdata','-v7.3');
                     
-                    handles.(genvarname(newleaf{1,1})) = uitreenode('v0', newleaf{1,1},  newleaf{1,1},  iconPath, true);
-                    handles.(genvarname(newleaf{1,1})).UserData = newdata;
+                    handles.(matlab.lang.makeValidName(newleaf{1,1})) = uitreenode('v0', newleaf{1,1},  newleaf{1,1},  iconPath, true);
+                    handles.(matlab.lang.makeValidName(newleaf{1,1})).UserData = newdata;
                     if strcmp(newdata.datatype,'testsignals')
-                        handles.testsignals.add(handles.(genvarname(newleaf{1,1})));
+                        handles.testsignals.add(handles.(matlab.lang.makeValidName(newleaf{1,1})));
                         handles.mytree.reloadNode(handles.testsignals);
                         handles.mytree.expand(handles.testsignals);
                         set([handles.clrall_btn,handles.export_btn],'Enable','on')
                     elseif strcmp(newdata.datatype,'measurements')
-                        handles.measurements.add(handles.(genvarname(newleaf{1,1})));
+                        handles.measurements.add(handles.(matlab.lang.makeValidName(newleaf{1,1})));
                         handles.mytree.reloadNode(handles.measurements);
                         handles.mytree.expand(handles.measurements);
                         set([handles.clrall_btn,handles.export_btn],'Enable','on')
@@ -1469,13 +1469,13 @@ for nleafs = 1:length(selectedNodes)
                             iconPath = fullfile(matlabroot,'/toolbox/matlab/icons/notesicon.gif');
                         end
                         % associate iconPath with leaf (ask Daniel how to do this)
-                       % handles.(genvarname(newleaf{1,1})) = uitreenode('v0', newleaf{1,1},  newleaf{1,1},  iconPath, true);
-                        handles.results.add(handles.(genvarname(newleaf{1,1})));
+                       % handles.(matlab.lang.makeValidName(newleaf{1,1})) = uitreenode('v0', newleaf{1,1},  newleaf{1,1},  iconPath, true);
+                        handles.results.add(handles.(matlab.lang.makeValidName(newleaf{1,1})));
                         handles.mytree.reloadNode(handles.results);
                         handles.mytree.expand(handles.results);
                         set([handles.clrall_btn,handles.export_btn],'Enable','on')
                     else
-                        handles.processed.add(handles.(genvarname(newleaf{1,1})));
+                        handles.processed.add(handles.(matlab.lang.makeValidName(newleaf{1,1})));
                         handles.mytree.reloadNode(handles.processed);
                         handles.mytree.expand(handles.processed);
                         set([handles.clrall_btn,handles.export_btn],'Enable','on')
@@ -1517,7 +1517,7 @@ for nleafs = 1:length(selectedNodes)
     set(hObject,'BackgroundColor',[0.94 0.94 0.94]);
     set(hObject,'Enable','on');
     if ~isempty(newleaf{1,1})
-        handles.mytree.setSelectedNode(handles.(genvarname(newleaf{1,1})));
+        handles.mytree.setSelectedNode(handles.(matlab.lang.makeValidName(newleaf{1,1})));
     end
 end
 java.lang.Runtime.getRuntime.gc % Java garbage collection
@@ -1942,17 +1942,17 @@ switch method
         branches = cell(nbranches,1);
         branches{1,1} = char(first.getValue);
         nleaves = 0;
-        nleaves = nleaves + handles.(genvarname(branches{1,1}))(1).getChildCount;
+        nleaves = nleaves + handles.(matlab.lang.makeValidName(branches{1,1}))(1).getChildCount;
         next = first.getNextSibling;
         for n = 2:nbranches
             branches{n,1} = char(next.getValue);
-            nleaves = nleaves + handles.(genvarname(branches{n,1}))(1).getChildCount;
+            nleaves = nleaves + handles.(matlab.lang.makeValidName(branches{n,1}))(1).getChildCount;
             next = next.getNextSibling;
         end
         leaves = cell(nleaves,1);
         i = 0;
         for n = 1:size(branches,1)
-            currentbranch = handles.(genvarname(branches{n,1}));
+            currentbranch = handles.(matlab.lang.makeValidName(branches{n,1}));
             if currentbranch.getChildCount ~= 0
                 i = i + 1;
                 first = currentbranch.getFirstChild;
@@ -1973,7 +1973,7 @@ switch method
                 'SelectionMode','single',...
                 'ListString',leaves);
         if ok == 1
-            caldata = handles.(genvarname(leaves{s,1})).handle.UserData;
+            caldata = handles.(matlab.lang.makeValidName(leaves{s,1})).handle.UserData;
             if ~isfield(caldata,'audio')
                 warndlg('Incompatible calibration file','Warning!');
             else
@@ -2462,17 +2462,17 @@ nbranches = root.getChildCount;
 branches = cell(nbranches,1);
 branches{1,1} = char(first.getValue);
 nleaves = 0;
-nleaves = nleaves + handles.(genvarname(branches{1,1}))(1).getChildCount;
+nleaves = nleaves + handles.(matlab.lang.makeValidName(branches{1,1}))(1).getChildCount;
 next = first.getNextSibling;
 for n = 2:nbranches
     branches{n,1} = char(next.getValue);
-    nleaves = nleaves + handles.(genvarname(branches{n,1}))(1).getChildCount;
+    nleaves = nleaves + handles.(matlab.lang.makeValidName(branches{n,1}))(1).getChildCount;
     next = next.getNextSibling;
 end
 leaves = cell(nleaves,1);
 i = 0;
 for n = 1:size(branches,1)
-    currentbranch = handles.(genvarname(branches{n,1}));
+    currentbranch = handles.(matlab.lang.makeValidName(branches{n,1}));
     if currentbranch.getChildCount ~= 0
         i = i + 1;
         first = currentbranch.getFirstChild;
@@ -2502,9 +2502,9 @@ else
         set(hObject,'BackgroundColor','red');
         set(hObject,'Enable','off');
         for i = 1:size(leaves,1)
-            current = handles.(genvarname(leaves{i,1}));
+            current = handles.(matlab.lang.makeValidName(leaves{i,1}));
             handles.mytree.remove(current);
-            handles = rmfield(handles,genvarname(leaves{i,1}));
+            handles = rmfield(handles,matlab.lang.makeValidName(leaves{i,1}));
         end
         handles.mytree.reloadNode(handles.root);
         handles.mytree.setSelectedNode(handles.root);
@@ -2622,7 +2622,7 @@ if handles.compareaudio == 1
         axes = 'time';
         signaldata = selectedNodes(i).handle.UserData;
         if ~isempty(signaldata) && isfield(signaldata,'audio')
-            plottype = get(handles.(genvarname([axes '_popup'])),'Value');
+            plottype = get(handles.(matlab.lang.makeValidName([axes '_popup'])),'Value');
             t = linspace(0,length(signaldata.audio),length(signaldata.audio))./signaldata.fs;
             f = signaldata.fs .* ((1:length(signaldata.audio))-1) ./ length(signaldata.audio);
             if ~ismatrix(signaldata.audio)
@@ -2672,8 +2672,8 @@ if handles.compareaudio == 1
             if plottype == 15, linea = angle(fft(linea)) .* 180/pi; end
             if plottype == 16, linea = unwrap(angle(fft(linea))) ./(2*pi); end
             if plottype == 17, linea = -diff(unwrap(angle(fft(linea)))).*length(fft(linea))/(signaldata.fs*2*pi).*1000; end
-            if strcmp(get(handles.(genvarname(['smooth' axes '_popup'])),'Visible'),'on')
-                smoothfactor = get(handles.(genvarname(['smooth' axes '_popup'])),'Value');
+            if strcmp(get(handles.(matlab.lang.makeValidName(['smooth' axes '_popup'])),'Visible'),'on')
+                smoothfactor = get(handles.(matlab.lang.makeValidName(['smooth' axes '_popup'])),'Value');
                 if smoothfactor == 2, octsmooth = 1; end
                 if smoothfactor == 3, octsmooth = 3; end
                 if smoothfactor == 4, octsmooth = 6; end
@@ -2704,7 +2704,7 @@ if handles.compareaudio == 1
                         else
                             xlim(handles.Settings.frequencylimits)
                         end
-                        log_check = get(handles.(genvarname(['log' axes '_chk'])),'Value');
+                        log_check = get(handles.(matlab.lang.makeValidName(['log' axes '_chk'])),'Value');
                         if log_check == 1
                             set(h,'XScale','log')
                         else
@@ -2731,7 +2731,7 @@ if handles.compareaudio == 1
                     else
                         xlim(handles.Settings.frequencylimits)
                     end
-                    log_check = get(handles.(genvarname(['log' axes '_chk'])),'Value');
+                    log_check = get(handles.(matlab.lang.makeValidName(['log' axes '_chk'])),'Value');
                     if log_check == 1
                         set(h,'XScale','log')
                     else
@@ -3087,7 +3087,7 @@ if size(eventdata.Indices,1) ~= 0 && eventdata.Indices(1,2) == 2
         audiodata = selectedNodes(1).handle.UserData;
         handles.tabledata = tabledata;
         catname = tabledata{eventdata.Indices(1,1),1};
-        liststr = audiodata.(genvarname(catname));
+        liststr = audiodata.(matlab.lang.makeValidName(catname));
         if size(liststr,1) < size(liststr,2), liststr = liststr'; end
         if ~iscellstr(liststr) && ~isnumeric(liststr), liststr = cellstr(num2str(cell2mat(liststr)));
         elseif isnumeric(liststr), liststr = cellstr(num2str(liststr)); end
