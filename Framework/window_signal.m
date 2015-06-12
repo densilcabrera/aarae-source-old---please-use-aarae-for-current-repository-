@@ -23,16 +23,16 @@ function varargout = window_signal(varargin)
 
 % Edit the above text to modify the response to help window_signal
 
-% Last Modified by GUIDE v2.5 02-Apr-2014 10:45:25
+% Last Modified by GUIDE v2.5 12-Jun-2015 17:49:22
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
 gui_State = struct('gui_Name',       mfilename, ...
-                   'gui_Singleton',  gui_Singleton, ...
-                   'gui_OpeningFcn', @window_signal_OpeningFcn, ...
-                   'gui_OutputFcn',  @window_signal_OutputFcn, ...
-                   'gui_LayoutFcn',  [] , ...
-                   'gui_Callback',   []);
+    'gui_Singleton',  gui_Singleton, ...
+    'gui_OpeningFcn', @window_signal_OpeningFcn, ...
+    'gui_OutputFcn',  @window_signal_OutputFcn, ...
+    'gui_LayoutFcn',  [] , ...
+    'gui_Callback',   []);
 if nargin && ischar(varargin{1})
     gui_State.gui_Callback = str2func(varargin{1});
 end
@@ -59,48 +59,94 @@ axis([0 10 -1 1]);
 dontOpen = false;
 mainGuiInput = find(strcmp(varargin, 'main_stage1'));
 if (isempty(mainGuiInput)) ...
-    || (length(varargin) <= mainGuiInput) ...
-    || (~ishandle(varargin{mainGuiInput+1}))
+        || (length(varargin) <= mainGuiInput) ...
+        || (~ishandle(varargin{mainGuiInput+1}))
     dontOpen = true;
 else
     % Remember the handle, and adjust our position
     handles.main_stage1 = varargin{mainGuiInput+1};
-
+    
     fontsize
 end
 
 if dontOpen
-   disp('-----------------------------------------------------');
-   disp('This function is part of the AARAE framework, it is') 
-   disp('not a standalone function. To call this function,')
-   disp('click on the appropriate calling button on the main');
-   disp('Window. E.g.:');
-   disp('   Convolve with audio2');
-   disp('-----------------------------------------------------');
+    disp('-----------------------------------------------------');
+    disp('This function is part of the AARAE framework, it is')
+    disp('not a standalone function. To call this function,')
+    disp('click on the appropriate calling button on the main');
+    disp('Window. E.g.:');
+    disp('   Convolve with audio2');
+    disp('-----------------------------------------------------');
 else
+    hMain = getappdata(0,'hMain');
     % Find the IR signal being sent to window
     impulse = find(strcmp(varargin, 'IR'));
     handles.IR = varargin{impulse+1};
+    fs = find(strcmp(varargin, 'fs'));
+    handles.fs = varargin{fs+1};
     t = linspace(0,size(handles.IR,1),size(handles.IR,1));
-    plot(handles.IN_axes,t,handles.IR)
+    plot(handles.IN_axes,t,10*log10(handles.IR.^2))
     xlabel(handles.IN_axes,'Samples');
     set(handles.IN_axes,'XTickLabel',num2str(get(handles.IN_axes,'XTick').'))
     [~, id] = max(abs(handles.IR));
     IRlength = max(id);
     %handles.IRlength = IRlength;
     %set(handles.IN_length, 'string',num2str(max(id))); % Get the IR length from input
-    trimsamp_low = max(id)-round(IRlength./2);
-    trimsamp_high = trimsamp_low + IRlength -1;
+    set(handles.trimmethod_popup,'Value',getappdata(hMain,'trim_method_after_convolution'));
+    
+    trimmethod = get(handles.trimmethod_popup,'Value');
+    switch trimmethod
+        case 1
+            trimsamp_low = max(id)-round(IRlength./2);
+            trimsamp_high = trimsamp_low + IRlength -1;
+        case 2
+            trimsamp_low = round(size(handles.IR,1)/2);
+            trimsamp_high = size(handles.IR,1);
+        case 3
+            trimsamp_low = round(size(handles.IR,1)/2);
+            trimsamp_high = round(size(handles.IR,1)/2) + handles.fs*8;
+            if trimsamp_high > size(handles.IR,1)
+                trimsamp_high = size(handles.IR,1);
+            end
+        case 4
+            trimsamp_low = round(size(handles.IR,1)/2);
+            trimsamp_high = round(size(handles.IR,1)/2) + handles.fs*4;
+            if trimsamp_high > size(handles.IR,1)
+                trimsamp_high = size(handles.IR,1);
+            end
+        case 5
+            trimsamp_low = round(size(handles.IR,1)/2);
+            trimsamp_high = round(size(handles.IR,1)/2) + handles.fs*2;
+            if trimsamp_high > size(handles.IR,1)
+                trimsamp_high = size(handles.IR,1);
+            end
+        case 6
+            trimsamp_low = round(size(handles.IR,1)/2);
+            trimsamp_high = round(size(handles.IR,1)/2) + handles.fs;
+            if trimsamp_high > size(handles.IR,1)
+                trimsamp_high = size(handles.IR,1);
+            end
+        otherwise
+            trimsamp_low = 1;
+            trimsamp_high = size(handles.IR,1);
+    end
+    
+    
     handles.slow = trimsamp_low;
     handles.shigh = trimsamp_high;
+    
     set(handles.trimlow,'String',num2str(trimsamp_low))
     set(handles.trimhigh,'String',num2str(trimsamp_high))
-    B=interp1([0 trimsamp_low trimsamp_low+1 trimsamp_high-1 trimsamp_high t(end)],[0 0 max(handles.IR(:)) max(handles.IR(:)) 0 0],t,'linear');
+    L = 10*log10(handles.IR(:).^2);
+    minL = min(L);
+    maxL = max(L);
+    B=interp1([0 trimsamp_low trimsamp_low+1 trimsamp_high-2 trimsamp_high-1 t(end)],...
+        [minL minL maxL maxL minL minL],t,'linear');
     hold(handles.IN_axes,'on')
     handles.win = plot(handles.IN_axes,B,'r');
     hold(handles.IN_axes,'off')
     trimIR = handles.IR(trimsamp_low:trimsamp_high,:); % Crop IR
-    plot(handles.OUT_axes,trimIR) % Plot cropped IR
+    plot(handles.OUT_axes,10*log10(trimIR.^2)) % Plot cropped IR
     xlabel(handles.OUT_axes,'Samples');
     set(handles.OUT_axes,'XTickLabel',num2str(get(handles.OUT_axes,'XTick').'))
     guidata(hObject, handles);
@@ -112,7 +158,7 @@ end
 
 
 % --- Outputs from this function are returned to the command line.
-function varargout = window_signal_OutputFcn(hObject, ~, handles) 
+function varargout = window_signal_OutputFcn(hObject, ~, handles)
 % varargout  cell array for returning output args (see VARARGOUT);
 % hObject    handle to figure
 % eventdata  reserved - to be defined in a future version of MATLAB
@@ -161,12 +207,16 @@ else
     trimsamp_high = round(str2double(get(handles.trimhigh,'String')));
     handles.slow = trimsamp_low;
     t = linspace(0,size(handles.IR,1),size(handles.IR,1));
-    B=interp1([0 trimsamp_low trimsamp_low+1 trimsamp_high-1 trimsamp_high t(end)],[0 0 max(handles.IR(:)) max(handles.IR(:)) 0 0],t,'linear');
+    L = 10*log10(handles.IR(:).^2);
+    minL = min(L);
+    maxL = max(L);
+    B=interp1([0 trimsamp_low trimsamp_low+1 trimsamp_high-2 trimsamp_high-1 t(end)],...
+        [minL minL maxL maxL minL minL],t,'linear');
     hold(handles.IN_axes,'on')
     handles.win = plot(handles.IN_axes,B,'r');
     hold(handles.IN_axes,'off')
     trimIR = handles.IR(trimsamp_low:trimsamp_high,:);
-    plot(handles.OUT_axes,trimIR)
+    plot(handles.OUT_axes,10*log10(trimIR.^2))
     xlabel(handles.OUT_axes,'Samples');
     set(handles.OUT_axes,'XTickLabel',num2str(get(handles.OUT_axes,'XTick').'))
 end
@@ -205,12 +255,16 @@ else
     trimsamp_low = round(str2double(get(handles.trimlow,'String')));
     handles.shigh = trimsamp_high;
     t = linspace(0,size(handles.IR,1),size(handles.IR,1));
-    B=interp1([0 trimsamp_low trimsamp_low+1 trimsamp_high-1 trimsamp_high t(end)],[0 0 max(handles.IR(:)) max(handles.IR(:)) 0 0],t,'linear');
+    L = 10*log10(handles.IR(:).^2);
+    minL = min(L);
+    maxL = max(L);
+    B=interp1([0 trimsamp_low trimsamp_low+1 trimsamp_high-2 trimsamp_high-1 t(end)],...
+        [minL minL maxL maxL minL minL],t,'linear');
     hold(handles.IN_axes,'on')
     handles.win = plot(handles.IN_axes,B,'r');
     hold(handles.IN_axes,'off')
     trimIR = handles.IR(trimsamp_low:trimsamp_high,:);
-    plot(handles.OUT_axes,trimIR)
+    plot(handles.OUT_axes,10*log10(trimIR.^2))
     xlabel(handles.OUT_axes,'Samples');
     set(handles.OUT_axes,'XTickLabel',num2str(get(handles.OUT_axes,'XTick').'))
 end
@@ -223,6 +277,93 @@ function trimhigh_CreateFcn(hObject, ~, ~) %#ok : Higher limit input box creatio
 % handles    empty - handles not created until after all CreateFcns called
 
 % Hint: edit controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+
+% --- Executes on selection change in trimmethod_popup.
+function trimmethod_popup_Callback(hObject, eventdata, handles)
+% hObject    handle to trimmethod_popup (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: contents = cellstr(get(hObject,'String')) returns trimmethod_popup contents as cell array
+%        contents{get(hObject,'Value')} returns selected item from trimmethod_popup
+hMain = getappdata(0,'hMain');
+setappdata(hMain,'trim_method_after_convolution',get(hObject,'Value'));
+
+trimmethod = get(handles.trimmethod_popup,'Value');
+
+[~, id] = max(abs(handles.IR));
+IRlength = max(id);
+switch trimmethod
+    case 1
+        trimsamp_low = max(id)-round(IRlength./2);
+        trimsamp_high = trimsamp_low + IRlength -1;
+    case 2
+        trimsamp_low = round(size(handles.IR,1)/2);
+        trimsamp_high = size(handles.IR,1);
+    case 3
+        trimsamp_low = round(size(handles.IR,1)/2);
+        trimsamp_high = round(size(handles.IR,1)/2) + handles.fs*8;
+        if trimsamp_high > size(handles.IR,1)
+            trimsamp_high = size(handles.IR,1);
+        end
+    case 4
+        trimsamp_low = round(size(handles.IR,1)/2);
+        trimsamp_high = round(size(handles.IR,1)/2) + handles.fs*4;
+        if trimsamp_high > size(handles.IR,1)
+            trimsamp_high = size(handles.IR,1);
+        end
+    case 5
+        trimsamp_low = round(size(handles.IR,1)/2);
+        trimsamp_high = round(size(handles.IR,1)/2) + handles.fs*2;
+        if trimsamp_high > size(handles.IR,1)
+            trimsamp_high = size(handles.IR,1);
+        end
+    case 6
+        trimsamp_low = round(size(handles.IR,1)/2);
+        trimsamp_high = round(size(handles.IR,1)/2) + handles.fs;
+        if trimsamp_high > size(handles.IR,1)
+            trimsamp_high = size(handles.IR,1);
+        end
+    otherwise
+        trimsamp_low = 1;
+        trimsamp_high = size(handles.IR,1);
+end
+
+
+handles.slow = trimsamp_low;
+handles.shigh = trimsamp_high;
+delete(handles.win)
+handles = rmfield(handles,'win');
+% trimsamp_low = round(str2double(get(handles.trimlow,'String')));
+% handles.shigh = trimsamp_high;
+t = linspace(0,size(handles.IR,1),size(handles.IR,1));
+L = 10*log10(handles.IR(:).^2);
+minL = min(L);
+maxL = max(L);
+B=interp1([0 trimsamp_low trimsamp_low+1 trimsamp_high-2 trimsamp_high-1 t(end)],...
+    [minL minL maxL maxL minL minL],t,'linear');
+hold(handles.IN_axes,'on')
+handles.win = plot(handles.IN_axes,B,'r');
+hold(handles.IN_axes,'off')
+trimIR = handles.IR(trimsamp_low:trimsamp_high,:);
+plot(handles.OUT_axes,10*log10(trimIR.^2))
+xlabel(handles.OUT_axes,'Samples');
+set(handles.OUT_axes,'XTickLabel',num2str(get(handles.OUT_axes,'XTick').'))
+guidata(hObject, handles);
+
+
+% --- Executes during object creation, after setting all properties.
+function trimmethod_popup_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to trimmethod_popup (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: popupmenu controls usually have a white background on Windows.
 %       See ISPC and COMPUTER.
 if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
     set(hObject,'BackgroundColor','white');
