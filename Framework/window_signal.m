@@ -23,7 +23,7 @@ function varargout = window_signal(varargin)
 
 % Edit the above text to modify the response to help window_signal
 
-% Last Modified by GUIDE v2.5 12-Jun-2015 17:49:22
+% Last Modified by GUIDE v2.5 13-Jun-2015 09:04:22
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -95,42 +95,37 @@ else
     set(handles.trimmethod_popup,'Value',getappdata(hMain,'trim_method_after_convolution'));
     
     trimmethod = get(handles.trimmethod_popup,'Value');
+    trimpad = round(handles.fs*0.01);
     switch trimmethod
         case 1
             trimsamp_low = max(id)-round(IRlength./2);
             trimsamp_high = trimsamp_low + IRlength -1;
         case 2
-            trimsamp_low = round(size(handles.IR,1)/2);
+            %trimsamp_low = round(size(handles.IR,1)/2);
+            trimsamp_low = max(id)-trimpad;
             trimsamp_high = size(handles.IR,1);
         case 3
-            trimsamp_low = round(size(handles.IR,1)/2);
-            trimsamp_high = round(size(handles.IR,1)/2) + handles.fs*8;
-            if trimsamp_high > size(handles.IR,1)
-                trimsamp_high = size(handles.IR,1);
-            end
+            %trimsamp_low = round(size(handles.IR,1)/2);
+            trimsamp_low = max(id)-trimpad;
+            trimsamp_high = trimsamp_low + trimpad + handles.fs*8;
         case 4
-            trimsamp_low = round(size(handles.IR,1)/2);
-            trimsamp_high = round(size(handles.IR,1)/2) + handles.fs*4;
-            if trimsamp_high > size(handles.IR,1)
-                trimsamp_high = size(handles.IR,1);
-            end
+            %trimsamp_low = round(size(handles.IR,1)/2);
+            trimsamp_low = max(id)-trimpad;
+            trimsamp_high = trimsamp_low + trimpad + handles.fs*4;
         case 5
-            trimsamp_low = round(size(handles.IR,1)/2);
-            trimsamp_high = round(size(handles.IR,1)/2) + handles.fs*2;
-            if trimsamp_high > size(handles.IR,1)
-                trimsamp_high = size(handles.IR,1);
-            end
+            %trimsamp_low = round(size(handles.IR,1)/2);
+            trimsamp_low = max(id)-trimpad;
+            trimsamp_high = trimsamp_low + trimpad + handles.fs*2;
         case 6
-            trimsamp_low = round(size(handles.IR,1)/2);
-            trimsamp_high = round(size(handles.IR,1)/2) + handles.fs;
-            if trimsamp_high > size(handles.IR,1)
-                trimsamp_high = size(handles.IR,1);
-            end
+            %trimsamp_low = round(size(handles.IR,1)/2);
+            trimsamp_low = max(id)-trimpad;
+            trimsamp_high = trimsamp_low + trimpad + handles.fs;
         otherwise
             trimsamp_low = 1;
             trimsamp_high = size(handles.IR,1);
     end
-    
+    if trimsamp_low < 1, trimsamp_low = 1; end
+    if trimsamp_high > size(handles.IR,1), trimsamp_high = size(handles.IR,1); end
     
     handles.slow = trimsamp_low;
     handles.shigh = trimsamp_high;
@@ -298,41 +293,38 @@ trimmethod = get(handles.trimmethod_popup,'Value');
 
 [~, id] = max(abs(handles.IR));
 IRlength = max(id);
+
+trimpad = round(handles.fs*0.01);
 switch trimmethod
     case 1
         trimsamp_low = max(id)-round(IRlength./2);
         trimsamp_high = trimsamp_low + IRlength -1;
     case 2
-        trimsamp_low = round(size(handles.IR,1)/2);
+        %trimsamp_low = round(size(handles.IR,1)/2);
+        trimsamp_low = max(id)-trimpad;
         trimsamp_high = size(handles.IR,1);
     case 3
-        trimsamp_low = round(size(handles.IR,1)/2);
-        trimsamp_high = round(size(handles.IR,1)/2) + handles.fs*8;
-        if trimsamp_high > size(handles.IR,1)
-            trimsamp_high = size(handles.IR,1);
-        end
+        %trimsamp_low = round(size(handles.IR,1)/2);
+        trimsamp_low = max(id)-trimpad;
+        trimsamp_high = trimsamp_low + trimpad + handles.fs*8;
     case 4
-        trimsamp_low = round(size(handles.IR,1)/2);
-        trimsamp_high = round(size(handles.IR,1)/2) + handles.fs*4;
-        if trimsamp_high > size(handles.IR,1)
-            trimsamp_high = size(handles.IR,1);
-        end
+        %trimsamp_low = round(size(handles.IR,1)/2);
+        trimsamp_low = max(id)-trimpad;
+        trimsamp_high = trimsamp_low + trimpad + handles.fs*4;
     case 5
-        trimsamp_low = round(size(handles.IR,1)/2);
-        trimsamp_high = round(size(handles.IR,1)/2) + handles.fs*2;
-        if trimsamp_high > size(handles.IR,1)
-            trimsamp_high = size(handles.IR,1);
-        end
+        %trimsamp_low = round(size(handles.IR,1)/2);
+        trimsamp_low = max(id)-trimpad;
+        trimsamp_high = trimsamp_low + trimpad + handles.fs*2;
     case 6
-        trimsamp_low = round(size(handles.IR,1)/2);
-        trimsamp_high = round(size(handles.IR,1)/2) + handles.fs;
-        if trimsamp_high > size(handles.IR,1)
-            trimsamp_high = size(handles.IR,1);
-        end
+        %trimsamp_low = round(size(handles.IR,1)/2);
+        trimsamp_low = max(id)-trimpad;
+        trimsamp_high = trimsamp_low + trimpad + handles.fs;
     otherwise
         trimsamp_low = 1;
         trimsamp_high = size(handles.IR,1);
 end
+if trimsamp_low < 1, trimsamp_low = 1; end
+if trimsamp_high > size(handles.IR,1), trimsamp_high = size(handles.IR,1); end
 
 
 handles.slow = trimsamp_low;
