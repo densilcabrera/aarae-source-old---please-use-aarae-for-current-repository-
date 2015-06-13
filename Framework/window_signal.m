@@ -445,15 +445,15 @@ IRlength = max(id);
             trimsamp_low = handles.audio2len;
             trimsamp_high = trimsamp_low + handles.fs-1;
         case 17
-            % 17. Causal part, limited to 4 s duration
+            % 17. Causal part, limited to 0.5 s duration
             trimsamp_low = handles.audio2len;
             trimsamp_high = trimsamp_low + round(handles.fs/2)-1;
         case 18
-            % 18. Causal part, limited to 2 s duration
+            % 18. Causal part, limited to 0.25 s duration
             trimsamp_low = handles.audio2len;
             trimsamp_high = trimsamp_low + round(handles.fs/4)-1;
         case 19
-            % 19. Causal part, limited to 1 s duration
+            % 19. Causal part, limited to 0.125 s duration
             trimsamp_low = handles.audio2len;
             trimsamp_high = trimsamp_low + round(handles.fs/8)-1;
         otherwise

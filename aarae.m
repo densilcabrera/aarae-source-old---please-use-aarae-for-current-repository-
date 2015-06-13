@@ -155,6 +155,15 @@ end
 
 handles.alternate = 0;
 fprintf(handles.fid, ['%% AARAE session started ' datestr(now) ' \n\n']);
+fprintf(handles.fid, '%% The AARAE log file contains a record of activity, including:\n');
+fprintf(handles.fid, '%%   * descriptions of audio and other data;\n');
+fprintf(handles.fid, '%%   * descriptions of activity;\n');
+fprintf(handles.fid, '%%   * results tables from analysers;\n');
+fprintf(handles.fid, '%%   * names of exported files; and\n');
+fprintf(handles.fid, '%%   * function call equivalents to AARAE activity;\n\n');
+fprintf(handles.fid, '%% The code written to this log file may be useful for adpting in writing an AARAE workflow.\n\n');
+fprintf(handles.fid, 'handles = guidata(findobj(''Tag'',''aarae'')) %% Use this line within a workflow to access the AARAE handles.\n');
+fprintf(handles.fid, 'fprintf(handles.fid,''%% This is a test of using fprintf to write to the log file.''); %% Use this line within a workflow to write to the log file.\n\n');
 % Consider adding blurb here to log file, or randomly selected messages of
 % encouragement...
 guidata(hObject, handles);

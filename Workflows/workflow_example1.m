@@ -44,7 +44,7 @@ function X = workflow_example1(X)
 handles = guidata(findobj('Tag','aarae'));
 % the file identifier is handles.fid, which can be used, for example, as
 % follows:
-fprintf(handles.fid,['This is a test of using fprintf to write to the log file.','\n']);
+fprintf(handles.fid,['%% This is a test of using fprintf to write to the log file.','\n']);
 
 % USING AARAE's LOGAUDIOLEAFFIELDS FUNCTION
 % AARAE's logaudioleaffields is the function that is used in the AARAE

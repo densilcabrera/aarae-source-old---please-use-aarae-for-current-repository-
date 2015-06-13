@@ -76,8 +76,8 @@ function out = ReverberationTime_IR1(data,fs,startthresh,bpo,doplot,filterstreng
 % T20T30r = T20 to T30 ratio, as a percentage
 % T30mid = T30 average of 500 Hz and 1000 Hz octave bands
 %
-% C50 = Early (<50 ms) to late energy ratio, in decibals
-% C80 = Early (<80 ms) to late energy ratio, in decibals
+% C50 = Early (<50 ms) to late energy ratio, in decibels
+% C80 = Early (<80 ms) to late energy ratio, in decibels
 % D50 = Early (<50 ms) to total energy ratio, as a percentage
 % D80 = Early (<80 ms) to total energy ratio, as a percentage
 % Ts = Time of the centre of gravity of the squared IR, in seconds
