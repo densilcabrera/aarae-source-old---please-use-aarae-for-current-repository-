@@ -84,8 +84,10 @@ else
     handles.IR = varargin{impulse+1};
     fs = find(strcmp(varargin, 'fs'));
     handles.fs = varargin{fs+1};
+    audio2len = find(strcmp(varargin, 'audio2len'));
+    handles.audio2len = varargin{audio2len+1};
     t = linspace(0,size(handles.IR,1),size(handles.IR,1));
-    plot(handles.IN_axes,t,10*log10(handles.IR.^2))
+    plot(handles.IN_axes,t,10*log10(handles.IR.^2),'Color',[0 0.7 0])
     xlabel(handles.IN_axes,'Samples');
     set(handles.IN_axes,'XTickLabel',num2str(get(handles.IN_axes,'XTick').'))
     [~, id] = max(abs(handles.IR));
@@ -95,37 +97,107 @@ else
     set(handles.trimmethod_popup,'Value',getappdata(hMain,'trim_method_after_convolution'));
     
     trimmethod = get(handles.trimmethod_popup,'Value');
-    trimpad = round(handles.fs*0.01);
+    
+    
+    
+    
     switch trimmethod
         case 1
+            % 1. Symetrically trim to half length around peak
             trimsamp_low = max(id)-round(IRlength./2);
             trimsamp_high = trimsamp_low + IRlength -1;
         case 2
-            %trimsamp_low = round(size(handles.IR,1)/2);
+            % 2. Trim from 10 ms before peak to end
+            trimpad = round(handles.fs*0.01);
             trimsamp_low = max(id)-trimpad;
             trimsamp_high = size(handles.IR,1);
         case 3
-            %trimsamp_low = round(size(handles.IR,1)/2);
+            % 3. Trim from 10 ms before peak, limited to 8 s duration
+            trimpad = round(handles.fs*0.01);
             trimsamp_low = max(id)-trimpad;
             trimsamp_high = trimsamp_low + trimpad + handles.fs*8;
         case 4
-            %trimsamp_low = round(size(handles.IR,1)/2);
+            % 4. Trim from 10 ms before peak, limited to 4 s duration
+            trimpad = round(handles.fs*0.01);
             trimsamp_low = max(id)-trimpad;
             trimsamp_high = trimsamp_low + trimpad + handles.fs*4;
         case 5
-            %trimsamp_low = round(size(handles.IR,1)/2);
+            % 5. Trim from 10 ms before peak, limited to 2 s duration
+            trimpad = round(handles.fs*0.01);
             trimsamp_low = max(id)-trimpad;
             trimsamp_high = trimsamp_low + trimpad + handles.fs*2;
         case 6
-            %trimsamp_low = round(size(handles.IR,1)/2);
+            % 6. Trim from 10 ms before peak, limited to 1 s duration
+            trimpad = round(handles.fs*0.01);
             trimsamp_low = max(id)-trimpad;
             trimsamp_high = trimsamp_low + trimpad + handles.fs;
+        case 7
+            % 7. Trim from 1 ms before peak to end
+            trimpad = round(handles.fs*0.001);
+            trimsamp_low = max(id)-trimpad;
+            trimsamp_high = size(handles.IR,1);
+        case 8
+            % 8. Trim from 1 ms before peak, limited to 8 s duration
+            trimpad = round(handles.fs*0.001);
+            trimsamp_low = max(id)-trimpad;
+            trimsamp_high = trimsamp_low + trimpad + handles.fs*8;
+        case 9
+            % 9. Trim from 1 ms before peak, limited to 4 s duration
+            trimpad = round(handles.fs*0.001);
+            trimsamp_low = max(id)-trimpad;
+            trimsamp_high = trimsamp_low + trimpad + handles.fs*4;
+        case 10
+            % 10. Trim from 1 ms before peak, limited to 2 s duration
+            trimpad = round(handles.fs*0.001);
+            trimsamp_low = max(id)-trimpad;
+            trimsamp_high = trimsamp_low + trimpad + handles.fs*2;
+        case 11
+            % 11. Trim from 1 ms before peak, limited to 1 s duration
+            trimpad = round(handles.fs*0.001);
+            trimsamp_low = max(id)-trimpad;
+            trimsamp_high = trimsamp_low + trimpad + handles.fs;
+        case 12
+            % 12. Causal part to end
+            trimsamp_low = handles.audio2len;
+            trimsamp_high = size(handles.IR,1);
+        case 13
+            % 13. Causal part, limited to 8 s duration
+            trimsamp_low = handles.audio2len;
+            trimsamp_high = trimsamp_low + handles.fs*8-1;
+        case 14
+            % 14. Causal part, limited to 4 s duration
+            trimsamp_low = handles.audio2len;
+            trimsamp_high = trimsamp_low + handles.fs*4-1;
+        case 15
+            % 15. Causal part, limited to 2 s duration
+            trimsamp_low = handles.audio2len;
+            trimsamp_high = trimsamp_low + handles.fs*2-1;
+        case 16
+            % 16. Causal part, limited to 1 s duration
+            trimsamp_low = handles.audio2len;
+            trimsamp_high = trimsamp_low + handles.fs-1;
+        case 17
+            % 17. Causal part, limited to 0.5 s duration
+            trimsamp_low = handles.audio2len;
+            trimsamp_high = trimsamp_low + round(handles.fs/2)-1;
+        case 18
+            % 18. Causal part, limited to 0.25 s duration
+            trimsamp_low = handles.audio2len;
+            trimsamp_high = trimsamp_low + round(handles.fs/4)-1;
+        case 19
+            % 19. Causal part, limited to 0.125 s duration
+            trimsamp_low = handles.audio2len;
+            trimsamp_high = trimsamp_low + round(handles.fs/8)-1;
         otherwise
+            % 20. Do not trim
             trimsamp_low = 1;
             trimsamp_high = size(handles.IR,1);
     end
     if trimsamp_low < 1, trimsamp_low = 1; end
     if trimsamp_high > size(handles.IR,1), trimsamp_high = size(handles.IR,1); end
+
+    
+    
     
     handles.slow = trimsamp_low;
     handles.shigh = trimsamp_high;
@@ -141,7 +213,7 @@ else
     handles.win = plot(handles.IN_axes,B,'r');
     hold(handles.IN_axes,'off')
     trimIR = handles.IR(trimsamp_low:trimsamp_high,:); % Crop IR
-    plot(handles.OUT_axes,10*log10(trimIR.^2)) % Plot cropped IR
+    plot(handles.OUT_axes,10*log10(trimIR.^2),'Color',[0 0.7 0]) % Plot cropped IR
     xlabel(handles.OUT_axes,'Samples');
     set(handles.OUT_axes,'XTickLabel',num2str(get(handles.OUT_axes,'XTick').'))
     guidata(hObject, handles);
@@ -294,37 +366,103 @@ trimmethod = get(handles.trimmethod_popup,'Value');
 [~, id] = max(abs(handles.IR));
 IRlength = max(id);
 
-trimpad = round(handles.fs*0.01);
-switch trimmethod
-    case 1
-        trimsamp_low = max(id)-round(IRlength./2);
-        trimsamp_high = trimsamp_low + IRlength -1;
-    case 2
-        %trimsamp_low = round(size(handles.IR,1)/2);
-        trimsamp_low = max(id)-trimpad;
-        trimsamp_high = size(handles.IR,1);
-    case 3
-        %trimsamp_low = round(size(handles.IR,1)/2);
-        trimsamp_low = max(id)-trimpad;
-        trimsamp_high = trimsamp_low + trimpad + handles.fs*8;
-    case 4
-        %trimsamp_low = round(size(handles.IR,1)/2);
-        trimsamp_low = max(id)-trimpad;
-        trimsamp_high = trimsamp_low + trimpad + handles.fs*4;
-    case 5
-        %trimsamp_low = round(size(handles.IR,1)/2);
-        trimsamp_low = max(id)-trimpad;
-        trimsamp_high = trimsamp_low + trimpad + handles.fs*2;
-    case 6
-        %trimsamp_low = round(size(handles.IR,1)/2);
-        trimsamp_low = max(id)-trimpad;
-        trimsamp_high = trimsamp_low + trimpad + handles.fs;
-    otherwise
-        trimsamp_low = 1;
-        trimsamp_high = size(handles.IR,1);
-end
-if trimsamp_low < 1, trimsamp_low = 1; end
-if trimsamp_high > size(handles.IR,1), trimsamp_high = size(handles.IR,1); end
+
+
+
+    switch trimmethod
+        case 1
+            % 1. Symetrically trim to half length around peak
+            trimsamp_low = max(id)-round(IRlength./2);
+            trimsamp_high = trimsamp_low + IRlength -1;
+        case 2
+            % 2. Trim from 10 ms before peak to end
+            trimpad = round(handles.fs*0.01);
+            trimsamp_low = max(id)-trimpad;
+            trimsamp_high = size(handles.IR,1);
+        case 3
+            % 3. Trim from 10 ms before peak, limited to 8 s duration
+            trimpad = round(handles.fs*0.01);
+            trimsamp_low = max(id)-trimpad;
+            trimsamp_high = trimsamp_low + trimpad + handles.fs*8;
+        case 4
+            % 4. Trim from 10 ms before peak, limited to 4 s duration
+            trimpad = round(handles.fs*0.01);
+            trimsamp_low = max(id)-trimpad;
+            trimsamp_high = trimsamp_low + trimpad + handles.fs*4;
+        case 5
+            % 5. Trim from 10 ms before peak, limited to 2 s duration
+            trimpad = round(handles.fs*0.01);
+            trimsamp_low = max(id)-trimpad;
+            trimsamp_high = trimsamp_low + trimpad + handles.fs*2;
+        case 6
+            % 6. Trim from 10 ms before peak, limited to 1 s duration
+            trimpad = round(handles.fs*0.01);
+            trimsamp_low = max(id)-trimpad;
+            trimsamp_high = trimsamp_low + trimpad + handles.fs;
+        case 7
+            % 7. Trim from 1 ms before peak to end
+            trimpad = round(handles.fs*0.001);
+            trimsamp_low = max(id)-trimpad;
+            trimsamp_high = size(handles.IR,1);
+        case 8
+            % 8. Trim from 1 ms before peak, limited to 8 s duration
+            trimpad = round(handles.fs*0.001);
+            trimsamp_low = max(id)-trimpad;
+            trimsamp_high = trimsamp_low + trimpad + handles.fs*8;
+        case 9
+            % 9. Trim from 1 ms before peak, limited to 4 s duration
+            trimpad = round(handles.fs*0.001);
+            trimsamp_low = max(id)-trimpad;
+            trimsamp_high = trimsamp_low + trimpad + handles.fs*4;
+        case 10
+            % 10. Trim from 1 ms before peak, limited to 2 s duration
+            trimpad = round(handles.fs*0.001);
+            trimsamp_low = max(id)-trimpad;
+            trimsamp_high = trimsamp_low + trimpad + handles.fs*2;
+        case 11
+            % 11. Trim from 1 ms before peak, limited to 1 s duration
+            trimpad = round(handles.fs*0.001);
+            trimsamp_low = max(id)-trimpad;
+            trimsamp_high = trimsamp_low + trimpad + handles.fs;
+        case 12
+            % 12. Causal part to end
+            trimsamp_low = handles.audio2len;
+            trimsamp_high = size(handles.IR,1);
+        case 13
+            % 13. Causal part, limited to 8 s duration
+            trimsamp_low = handles.audio2len;
+            trimsamp_high = trimsamp_low + handles.fs*8-1;
+        case 14
+            % 14. Causal part, limited to 4 s duration
+            trimsamp_low = handles.audio2len;
+            trimsamp_high = trimsamp_low + handles.fs*4-1;
+        case 15
+            % 15. Causal part, limited to 2 s duration
+            trimsamp_low = handles.audio2len;
+            trimsamp_high = trimsamp_low + handles.fs*2-1;
+        case 16
+            % 16. Causal part, limited to 1 s duration
+            trimsamp_low = handles.audio2len;
+            trimsamp_high = trimsamp_low + handles.fs-1;
+        case 17
+            % 17. Causal part, limited to 4 s duration
+            trimsamp_low = handles.audio2len;
+            trimsamp_high = trimsamp_low + round(handles.fs/2)-1;
+        case 18
+            % 18. Causal part, limited to 2 s duration
+            trimsamp_low = handles.audio2len;
+            trimsamp_high = trimsamp_low + round(handles.fs/4)-1;
+        case 19
+            % 19. Causal part, limited to 1 s duration
+            trimsamp_low = handles.audio2len;
+            trimsamp_high = trimsamp_low + round(handles.fs/8)-1;
+        otherwise
+            % 20. Do not trim
+            trimsamp_low = 1;
+            trimsamp_high = size(handles.IR,1);
+    end
+    if trimsamp_low < 1, trimsamp_low = 1; end
+    if trimsamp_high > size(handles.IR,1), trimsamp_high = size(handles.IR,1); end
 
 
 handles.slow = trimsamp_low;
@@ -343,9 +481,11 @@ hold(handles.IN_axes,'on')
 handles.win = plot(handles.IN_axes,B,'r');
 hold(handles.IN_axes,'off')
 trimIR = handles.IR(trimsamp_low:trimsamp_high,:);
-plot(handles.OUT_axes,10*log10(trimIR.^2))
+plot(handles.OUT_axes,10*log10(trimIR.^2),'Color',[0 0.7 0])
 xlabel(handles.OUT_axes,'Samples');
 set(handles.OUT_axes,'XTickLabel',num2str(get(handles.OUT_axes,'XTick').'))
+set(handles.trimlow,'String',num2str(trimsamp_low))
+set(handles.trimhigh,'String',num2str(trimsamp_high))
 guidata(hObject, handles);
 
 
