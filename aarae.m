@@ -155,17 +155,27 @@ end
 
 handles.alternate = 0;
 fprintf(handles.fid, ['%% AARAE session started ' datestr(now) ' \n\n']);
-fprintf(handles.fid, '%% The AARAE log file contains a record of activity, including:\n');
+fprintf(handles.fid, '%% Audio and Acoustical Response Environment (AARAE) for Matlab\n');
+fprintf(handles.fid, '%% Release 7.\n');
+fprintf(handles.fid, '%% http://aarae.org\n\n');
+fprintf(handles.fid, '%% Reference:\n');
+fprintf(handles.fid, '%% Cabrera, D., Jimenez, D., & Martens, W. L. (2014, November).\n');
+fprintf(handles.fid, '%% Audio and Acoustical Response Analysis Environment (AARAE): \n');
+fprintf(handles.fid, '%% a tool to support education and research in acoustics. \n');
+fprintf(handles.fid, '%% In Proceedings of Internoise. Melbourne, Australia.\n\n');
+fprintf(handles.fid, '%% This AARAE log file contains a record of activity, including:\n');
 fprintf(handles.fid, '%%   * descriptions of audio and other data;\n');
 fprintf(handles.fid, '%%   * descriptions of activity;\n');
 fprintf(handles.fid, '%%   * results tables from analysers;\n');
 fprintf(handles.fid, '%%   * names of exported files; and\n');
-fprintf(handles.fid, '%%   * function call equivalents to AARAE activity;\n\n');
-fprintf(handles.fid, '%% The code written to this log file may be useful for adpting in writing an AARAE workflow.\n\n');
-fprintf(handles.fid, 'handles = guidata(findobj(''Tag'',''aarae'')) %% Use this line within a workflow to access the AARAE handles.\n');
+fprintf(handles.fid, '%%   * function call equivalents to AARAE activity.\n\n');
+fprintf(handles.fid, '%% When opening the log file in a spreadsheet program, use comma delimiting to distribute table data into the appropriate spreadsheet cells.\n');
+fprintf(handles.fid, '%% (However, bear in mind that the commas required in the lines of code will be removed when you do that.)\n\n');
+fprintf(handles.fid, '%% The code written to this log file may be useful for adapting in writing an AARAE workflow function.\n');
+fprintf(handles.fid, '%% Examples of workflows are in AARAE''s Workflows folder.\n\n');
+fprintf(handles.fid, 'handles = guidata(findobj(''Tag'',''aarae'')); %% Use this line within a workflow to retrieve the AARAE handles.\n');
 fprintf(handles.fid, 'fprintf(handles.fid,''%% This is a test of using fprintf to write to the log file.''); %% Use this line within a workflow to write to the log file.\n\n');
-% Consider adding blurb here to log file, or randomly selected messages of
-% encouragement...
+
 guidata(hObject, handles);
 
 % AARAE function for dealing with differences between Windows and Mac font
