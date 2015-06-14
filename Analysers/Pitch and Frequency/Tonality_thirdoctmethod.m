@@ -1,100 +1,76 @@
-function OUT = Tonality_thirdoctmethod(IN,fs)
-% This function can be used as a template for adapting your audio
-% analysing functions to work in the AARAE environment.
-%
-% AARAE analysers take the audio information stored in the AARAE tree
-% display and process the input to produce an output. Unlike generator and
-% calculator functions in AARAE, analyser functions require an input in
-% the form of a structure type variable (IN) and will output a structure
-% type variable with the analysis result (OUT). The input structure will
-% ALWAYS have at least the fields .audio, .fs and .datatype that you can
-% use to analyse the audio. Analysers may as well include additional
-% fields to the output structure in the .properies field (structure type)
-%
-% You can also use these first few lines to write a brief description of
-% what your function does. This will be displayed as a tooltip when the
-% user hoovers the mouse over the box where your function is displayed in
-% AARAE
-%
+function OUT = Tonality_thirdoctmethod(IN,fs,A_weighted,Criterion)
+
+% This function implements the one third octave band analysis methods
+% described in: ISO 1996-2 and AS/NZS 2107, which could analysis the input 
+% audio waveform in terms of tonality.
+% The difference between these two standards is :
+% In the ISO 1996-2 method, the input signal will be analyzed directly, 
+% however, in AS/NZS 2107 method, the input signal will be A-weighted first.
+% Moreover, there are two different criteria for tonality analysis, which
+% are "both adjacent bands" and "average level difference". 
+% User could select which method they want.
+% code by Jianyang Xun & Densil Cabrera
+% Version 1.00 May 2015
+% *************************************************************************
+% The next few lines is to call MATLAB's built-in inputdlg function to 
+% allow the user to select which method they want to use for tonality 
+% analysis.
+if nargin ==1 % If the function is called within the AARAE environment it
+              % will have at least one input parameter which is the audio
+              % data structure.
+    param = inputdlg({'Apply A-weighted [0|1]       ( 0 for ISO 1996-2 ,1 for AS/NZS 2107)';... % In ISO 1996-2 there is
+        % no need to apply A-weighting filter to signal need to be analysis, 
+        % however, in AS/NZS 2107 standard, it is necessary to apply 
+        % A-weighting filter first. 
+                      'Peak Criterion on: average level difference [0],both adjacent bands [1]'},...% inputdlg window.
+                      'One Third Octave Band Tonality Analysis Settings',... % This is the dialog window title.
+                      [1 30],... % Define the number of rows per
+                      ...        % input box and the number of character
+                      ...        % spaces that each box can display at once
+                      ...        % per row. 
+                      {'1';'1'}); % And the preset answers of the dialog.
+
+    param = str2num(char(param)); % Since inputs are usually numbers it's a
+                                  % good idea to turn strings into numbers.
+                             
+
+    if length(param) < 1, param = []; end % Check that the user 
+                                          % has input all the required
+                                          % fields.
+    if ~isempty(param) % If they have input something,  then assign the dialog's
+                       % inputs to this function's input parameters.
+        A_weighted = param(1);
+  
+        Criterion = param(2);
+        
+    else
+        % get out of here if the user presses 'cancel'
+        OUT = [];
+        return
+    end
+else
+    param = [];
+end
 
 % *************************************************************************
-% The next few lines show an example on how you may use MATLAB's built-in
-% inputdlg function to allow the user to type in the input arguments your
-% function requires to work.
-% if nargin ==1 % If the function is called within the AARAE environment it
-%               % will have at least one input parameter which is the audio
-%               % data structure that your function will process, therefore
-%               % you can check that the user has input all input parameters
-%               % if you want your function to work as standalone outside the
-%               % AARAE environment. You can use this input dialog to request
-%               % for the additional parameters that you require for your
-%               % function to work if they're not part of the AARAE structure
-%
-%     param = inputdlg({'Parameter 1';... % These are the input box titles in the
-%                       'Parameter 2'},...% inputdlg window.
-%                       'Window title',... % This is the dialog window title.
-%                       [1 30],... % You can define the number of rows per
-%                       ...        % input box and the number of character
-%                       ...        % spaces that each box can display at once
-%                       ...        % per row.
-%                       {'2';'3'}); % And the preset answers for your dialog.
-%
-%     param = str2num(char(param)); % Since inputs are usually numbers it's a
-%                                   % good idea to turn strings into numbers.
-%                                   % Note that str2double does not work
-%                                   % here.
-%
-%     if length(param) < 2, param = []; end % You should check that the user
-%                                           % has input all the required
-%                                           % fields.
-%     if ~isempty(param) % If they have, you can then assign the dialog's
-%                        % inputs to your function's input parameters.
-%         input_1 = param(1);
-%         input_2 = param(2);
-%     else
-%         % get out of here if the user presses 'cancel'
-%         OUT = [];
-%         return
-%     end
-% else
-%     param = [];
-% end
-
-
-% *************************************************************************
-if isstruct(IN) % You should check that the function is being called within
-    % the AARAE environment, if so, you can extract the
-    % information you need to run your processor. Audio in
-    % AARAE is in a Matlab structure (hence the isstruct test).
-    
-    % AARAE audio data can have up to 6 dimension, but most analysers cannot
-    % handle all of those dimensions. The following utility function call
+if isstruct(IN) % Because AARAE is a Matlab structure, hence we need to
+    % test whether this function is being called within AARAE environment.
+    %This step is being used to test whether it is struct.
+  
+    %The following utility function call
     % reduces the number of dimensions in the audio field of the input
-    % structure if they are greater than the second input argument (3 in
-    % the example below). For further information see the comments in
-    % choose_from_higher_dimensions in AARAE's utilities directory. Unless
-    % there is a reason not to, it is usually a good idea to support
-    % analysis of the first three dimensions.
+    % structure if they are greater than 3. For further information 
+    % see the comments in "choose_from_higher_dimensions"
+    %in AARAE's utilities directory.
     IN = choose_from_higher_dimensions(IN,3,1);
     
     audio = IN.audio; % Extract the audio data
     fs = IN.fs;       % Extract the sampling frequency of the audio data
     
     
-    % Calibration is unnecessary in this algorithm
-    %     if isfield(IN,'cal') % Get the calibration offset if it exists
-    %         cal = IN.cal;
-    %         % Note that the aarae basic processor cal_reset_aarae could be
-    %         % called here. However, in this template it is called later.
-    %     else
-    %         % Here is an example of how to exit the function with a warning
-    %         % message
-    %         h=warndlg('Calibration data missing - please calibrate prior to calling this function.','AARAE info','modal');
-    %         uiwait(h)
-    %         OUT = []; % you need to return an empty output
-    %         return % get out of here!
-    %     end
-    if isfield(IN,'cal')
+  
+    if isfield(IN,'cal') %If the user select Calibrate, it will be applied
+        %on the input signal 
         audio = cal_reset_aarae(audio, 0, IN.cal);
     end
     
@@ -107,9 +83,6 @@ if isstruct(IN) % You should check that the function is being called within
     end
     
     
-    
-    
-    
 elseif ~isempty(param) || nargin > 1
     % If for example you want to enable your function to
     % run as a standalone MATLAB function, you can use
@@ -120,74 +93,89 @@ elseif ~isempty(param) || nargin > 1
 end
 % *************************************************************************
 
-
-
-
-
 % Check that the required data exists for analysis to run
 if ~isempty(audio) && ~isempty(fs) 
-    % If the requirements are met, your code can be executed!
-    % You may copy and paste some code you've written or write something
-    % new in the lines below, such as:
-    
-    % the audio's length, number of channels, and number of bands
+
     bands = size(audio,3);
     
     if bands > 1
         audio = sum(audio,3); % mixdown bands if multiband
     end
     
-    
-    % Aweight, along with similar functions in the Processors>Filters
-    % folder, provides an easy way to implement a weighting filter.
+    if A_weighted == 1
     audio = Aweight(audio,fs);
+    % Aweight, use AARAE's A-weighting filter: in Processors/Filters
+    end %If user select to Apply A-weighting filter on input signal
     
     % Apply 1/3-octave band filterbank
     frequencies = [25,31.5,40,50,63,80,100,125,160,200,250,315,400,...
-        500,630,800,1000,1250,1600,2000,2500,3150,4000,5000,6300,8000,10000];
+      500,630,800,1000,1250,1600,2000,2500,3150,4000,5000,6300,8000,10000];
     
     audio = thirdoctbandfilter(audio,fs,frequencies,1);
-    
+   % call the function of "thirdoctbandfilter" in
+   % AARAE-processor-filterbanks
     L = 10*log10(mean(mean(audio.^2,1),2));
-    L = permute(L,[1,3,2]);
+    %transfer the filtered audio into dB domain
+    L = permute(L,[1,3,2]); % rearrange the dimension
     
     
     
-    % ****************** Start Paul's Code
-    
-    % According to AS/NZS 2107:2000,if the ....
-    Low_band = L(1:8);
-    Mid_band = L(9:13);
-    High_band = L(14:27);
+    % ****************** 
+    if Criterion ==1 
+    % if the user select the both adjacent band criterion
+    % According to AS/NZS 2107:2000 and IS0 1996-2.
+    % If a frequency component is a tonal component, 
+    % it should meet the requirement that the time-average sound pressure 
+    % level in the frequency band is higher than the time average sound     
+    % pressure levels of both adjacent one-third octave bands by 
+    % a certain level difference.
+
+    % 15 dB in the low-frequency one-third-octave bands (25 Hz to 125 Hz);
+    % 8 dB in middle-frequency bands (160 Hz to 400 Hz);
+    % 5 dB in high-frequency bands (500 Hz to 10 000 Hz).
+  
+    Low_band = L(1:8); % (25 Hz to 125 Hz)
+    Mid_band = L(9:13); %(160 Hz to 400 Hz)
+    High_band = L(14:27);%(500 Hz to 10 000 Hz)
+    % Hence these three lines above is to divide input signal to three
+    % freuqency bands
     [~,locs_low] = findpeaks(Low_band,'Threshold',15);
     [~,locs_mid] = findpeaks(Mid_band,'Threshold',8);
     [~,locs_high] = findpeaks(High_band,'Threshold',5);
-    
-    % This section will nevigate whether the first and the last values are
-    %higher than the second value(more than 15 dB in low frequency band)
-    % if so, the first value and the last valus should also be considered as
-    % peaks
+    % Matlab built-in fucntion "findpeaks" is used in this part, and the
+    % threshold is the level diferences according to the standard.
+ % ****************** ****************** ******************
+    % Because the Matlab built-in function "Findpeaks" can not detect
+    % whether the first and the last components are peaks. 
+    % Hence this section will navigate whether the first value and the last 
+    % value are tonal components.
+
+
     First_low = L(1)-L(2);
-    if First_low>=15
+    if First_low>=15    % if the first vlaue in low band is higher than
+        % the second value (more than 15 dB) 
         Final_locs_low(1) = 1;
-        
+        % the first component is a tonal component
         for ii=2:size(locs_low,2)+1
             Final_locs_low(ii) = locs_low(ii-1);
+            % and the locations found by "findpeaks" need to be changed
         end
     else
         Final_locs_low=locs_low;
+        % If not, it won't change anything
     end
     
-    %if the last is higher than the previous one
+    %if the last is higher than the previous one (more than 15 dB)
     
     Last_low = L(8)-L(7);
     if Last_low>=15
         Final_locs_low(size(Final_locs_low,2)+1)=8;
+        % the last component is a tonal component
     else
-        Final_locs_low=locs_low;
+        Final_locs_low=Final_locs_low;
     end
     %
-    if ~isempty(Final_locs_low)
+    if ~isempty(Final_locs_low) %if there exists peaks
     Final_pks_low = L(Final_locs_low);
     Final_lowpeak_frequency = frequencies (Final_locs_low);
     else
@@ -196,14 +184,9 @@ if ~isempty(audio) && ~isempty(fs)
     end
         
     
-    % 
-    %  Low_peak = [Final_pks_low;Final_lowpeak_frequency];
+
     
-    
-    
-    
-    
-    % mid
+    % same method to detect mid frequency band
     
     First_mid = L(9)-L(10);
     if First_mid>=8
@@ -222,7 +205,7 @@ if ~isempty(audio) && ~isempty(fs)
     if Last_mid>=8
         Final_locs_mid(size(Final_locs_mid,2)+1)=13;
     else
-        Final_locs_mid=locs_mid+8;
+        Final_locs_mid=Final_locs_mid;
     end
     %
     if ~isempty(Final_locs_mid)
@@ -233,10 +216,9 @@ if ~isempty(audio) && ~isempty(fs)
     Final_midpeak_frequency = [];
     end
     %
-    % Mid_peak = [Final_pks_mid;Final_midpeak_frequency];
-    
-    
-    % high
+ 
+      
+    % same method to detect high frequency band
     
     First_high = L(14)-L(15);
     if First_high>=5
@@ -255,7 +237,143 @@ if ~isempty(audio) && ~isempty(fs)
     if Last_high>=5
         Final_locs_high(size(Final_locs_high,2)+1)=27;
     else
-        Final_locs_high=locs_high+13;
+        Final_locs_high=Final_locs_high;
+    end
+    %
+    if ~isempty(Final_locs_high)
+        Final_pks_high = L(Final_locs_high);
+        Final_highpeak_frequency = frequencies (Final_locs_high);
+    else
+        Final_pks_high = [];
+        Final_highpeak_frequency = [];
+    end
+
+    % combine the peak components together
+    Final_pks = [Final_pks_low Final_pks_mid Final_pks_high];
+    Final_frequency = [Final_lowpeak_frequency Final_midpeak_frequency Final_highpeak_frequency];
+    Final_locs = [Final_locs_low Final_locs_mid Final_locs_high];
+    
+    else % if select the average level difference criterion
+    Low_band = L(1:8);
+    Mid_band = L(9:13);
+    High_band = L(14:27);
+    locs_low = [];
+    locs_mid = [];
+    locs_high = [];% set the initial peak location to be empty
+    
+    j=1; % initial location index is 1 
+    for i=2:7 % for low freuqency band, except 25 Hz and 125 Hz (the boundary£©
+
+      if [L(i)-L(i-1)+L(i)-L(i+1)]/2>=15 % for average method, if the componenet 
+        % is higher than the both adjacent average level for a certain
+        % value, it shoud be a tonal component.
+        locs_low(j) = [i]; % if it is a tonal component, it will be set to the peak location index 
+           j= j+1; 
+      end
+    end
+    
+    % same method above to detect the first value
+    First_low = L(1)-L(2);
+    if First_low>=15
+        Final_locs_low(1) = 1;
+        
+        for ii=2:size(locs_low,2)+1
+            Final_locs_low(ii) = locs_low(ii-1);
+        end
+    else
+        Final_locs_low=locs_low;
+    end
+    
+    %if the last is higher than the previous one
+    
+    Last_low = L(8)-L(7);
+    if Last_low>=15
+        Final_locs_low(size(Final_locs_low,2)+1)=8;
+    else
+        Final_locs_low=Final_locs_low;
+    end
+    %
+    if ~isempty(Final_locs_low)
+    Final_pks_low = L(Final_locs_low);
+    Final_lowpeak_frequency = frequencies (Final_locs_low);
+    else
+        Final_pks_low = [];
+        Final_lowpeak_frequency = [];
+    end
+
+    
+    % for mid frequency band 
+
+    jj=1;
+    for i=10:12
+    if [L(i)-L(i-1)+L(i)-L(i+1)]/2>=8
+        locs_mid (jj)= [i];
+        jj = jj+1;
+    end
+     end   
+  
+     First_mid = L(9)-L(10);
+    if First_mid>=8
+        Final_locs_mid(1) = 9;
+       
+        for ii=2:size(locs_mid,2)+1
+            Final_locs_mid(ii) = locs_mid(ii-1)
+            %+8;
+        end
+          else
+        Final_locs_mid=locs_mid;
+            end
+    
+    %if the last is higher than the previous one
+    
+    Last_mid = L(13)-L(12);
+    if Last_mid>=8
+        Final_locs_mid(size(Final_locs_mid,2)+1)=13;
+    else
+        Final_locs_mid=Final_locs_mid;
+    end
+    %
+    if ~isempty(Final_locs_mid)
+    Final_pks_mid = L(Final_locs_mid);
+    Final_midpeak_frequency = frequencies (Final_locs_mid);
+    else
+        Final_pks_mid = [];
+    Final_midpeak_frequency = [];
+    end
+
+  
+  % for high frequency band 
+  
+  jjj = 1
+  for i=15:26
+    if [L(i)-L(i-1)+L(i)-L(i+1)]/2>=5
+        locs_high(jjj) = [i];
+        jjj = jjj+1;
+    end
+  end    
+
+    % high
+    
+    First_high = L(14)-L(15);
+    if First_high>=5
+        Final_locs_high(1) = 14;
+        
+        for ii=2:size(locs_high,2)+1
+            Final_locs_high(ii) = locs_high(ii-1)
+            %+13;
+        end
+    else
+        Final_locs_high = locs_high
+        %+13;
+    end
+    
+    %if the last is higher than the previous one
+    
+    Last_high = L(27)-L(26);
+    if Last_high>=5
+        Final_locs_high(size(Final_locs_high,2)+1)=27;
+    else
+        Final_locs_high=Final_locs_high;
     end
     %
     if ~isempty(Final_locs_high)
@@ -268,33 +386,27 @@ if ~isempty(audio) && ~isempty(fs)
     % 
     % High_peak = [Final_pks_high;Final_highpeak_frequency];
     
+    % combine all the peaks together 
     Final_pks = [Final_pks_low Final_pks_mid Final_pks_high];
     Final_frequency = [Final_lowpeak_frequency Final_midpeak_frequency Final_highpeak_frequency];
     Final_locs = [Final_locs_low Final_locs_mid Final_locs_high];
+    end
+    % ****************** 
     
-    
-    % ****************** End Paul's Code
-    
-    
+    %plot the results
     
            figure('name', '1/3-Octave Band Tonality Analyisis')
            
            ymax = 10*ceil(max(L+5)/10);
-            ymin = 10*floor(min(L)/10);
+           ymin = 10*floor(min(L)/10);
 
             width = 0.5;
-            
-
-        
-
-            
-            
-            
+      
             
             
             bar(1:length(frequencies),L,width,'FaceColor',[0,0.7,0],...
-                'EdgeColor',[0,0,0],'DisplayName', 'Leq','BaseValue',ymin);
-            
+                'EdgeColor',[0,0,0],'DisplayName', 'Non-tonal components','BaseValue',ymin);
+            % plot the non-tonal components in green 
             hold on
             
             peakbars = nan(1,length(frequencies));
@@ -304,9 +416,9 @@ if ~isempty(audio) && ~isempty(fs)
                     peakbars(k) = L(k);
                 end
             end
-            
+             % plot the tonal components in red
             bar(1:length(frequencies),peakbars,width,'stacked','FaceColor',[1,0,0], ...
-                'EdgeColor',[0,0,0],'DisplayName', 'Peaks','BaseValue',ymin);
+                'EdgeColor',[0,0,0],'DisplayName', 'Tonal components','BaseValue',ymin);
             
             
             
@@ -325,7 +437,8 @@ if ~isempty(audio) && ~isempty(fs)
             ylim([ymin ymax])
 
 
-            legend 'off'
+          legend('show','Location','EastOutside');
+                  
             
 
             for k = 1:length(frequencies)
@@ -345,62 +458,11 @@ if ~isempty(audio) && ~isempty(fs)
     
     if isstruct(IN)
         
-        % *** OUTPUTTING AUDIO ***
-        % Most analysers do not output audio. If you wish to output audio,
-        % first consider whether your analyser should be a processor
-        % instead. If it should be an analyser, then audio can be output as
-        % follows:
-        %OUT = IN; % You can replicate the input structure for your output
-        %OUT.audio = audio; % And modify the fields you processed
-        % However, for an analyser, you might not wish to output audio (in
-        % which case the two lines above might not be wanted.
-        
-        
-        
-        % *** OUTPUTTING NEW FIELDS ***
-        % Or simply output the fields you consider necessary after
-        % processing the input audio data, AARAE will figure out what has
-        % changed and complete the structure. But remember, it HAS TO BE a
-        % structure if you're returning more than one field:
-        
-
-        % The advantages of providing outputs as subfields of properties
-        % are that AARAE has a button that opens a window to display
-        % properties, and that properties are also written to the log file
-        % of the AARAE session. Outputing fields without making them
-        % subfields of properties is possible, but this makes the output
-        % data harder to access.
-        % Note that the above outputs might be considered to be redundant
-        % if OUT.tables is used, as described above. Generally the
-        % properties fields output is suitable for small data only (e.g.
-        % single values). Tables is best for small and medium data, while a
-        % results leaf is is best for big data.
-        
-        
-        
-        % *** FUNCTION CALLBACKS ***
-        % The following outputs are required so that AARAE can repeat the
-        % analysis without user interaction (e.g. for batch processing),
-        % and for writing the log file.
+ 
         OUT.funcallback.name = 'Tonality_thirdoctmethod.m'; % Provide AARAE
         % with the name of your function
-        OUT.funcallback.inarg = {};
-        % assign all of the input parameters that could be used to call the
-        % function without dialog box to the output field param (as a cell
-        % array) in order to allow batch analysing. Do not include the
-        % first (audio) input here. If there are no input arguments (apart
-        % from the audio input), then use:
-        % OUT.funcallback.inarg = {};
-        
-        
-        
-        % AARAE will only display the output in the main GUI if it includes
-        % tables, audio or other fields. It will not display if only
-        % function callbacks are returned. Result leaves are not created by
-        % the functions main output, but instead are created by calling
-        % AARAE's doresultleaf as described above, and these will be
-        % displayed in AARAE's main GUI regardless of the function's main
-        % outputs.
+        OUT.funcallback.inarg = {fs,A_weighted,Criterion};
+
     else
         % You may increase the functionality of your code by allowing the
         % output to be used as standalone and returning individual
@@ -416,8 +478,8 @@ else
 end
 
 %**************************************************************************
-% Copyright (c) <YEAR>, <OWNER>
-% All rights reserved.
+% Copyright (c) <2015>, <Jianyang Xun & Densil Cabrera>
+% All rights reserved
 %
 % Redistribution and use in source and binary forms, with or without
 % modification, are permitted provided that the following conditions are
