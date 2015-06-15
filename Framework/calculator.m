@@ -119,27 +119,27 @@ if nargout(handles.funname) == 1
         end
         if length(fieldnames(signaldata)) ~= 1
             signaldata.datatype = 'results';
-            leafname = isfield(mainHandles,genvarname(handles.funname));
+            leafname = isfield(mainHandles,matlab.lang.makeValidName(handles.funname));
             if leafname == 1
                 index = 1;
                 % This while cycle is just to make sure no signals are
                 % overwriten
-                if length(genvarname(handles.funname)) >= namelengthmax, handles.funname = handles.funname(1:round(end/2)); end
-                while isfield(handles,genvarname([handles.funname,'_',num2str(index)])) == 1
+                if length(matlab.lang.makeValidName(handles.funname)) >= namelengthmax, handles.funname = handles.funname(1:round(end/2)); end
+                while isfield(handles,matlab.lang.makeValidName([handles.funname,'_',num2str(index)])) == 1
                     index = index + 1;
                 end
                 handles.funname = [handles.funname,'_',num2str(index)];
             end
-            
+            signaldata.AARAEname = handles.funname;
             % Save as you go
             save([cd '/Utilities/Backup/' handles.funname '.mat'], 'signaldata');
             
-            mainHandles.(genvarname(handles.funname)) = uitreenode('v0', handles.funname,  handles.funname,  iconPath, true);
-            mainHandles.(genvarname(handles.funname)).UserData = signaldata;
-            mainHandles.results.add(mainHandles.(genvarname(handles.funname)));
+            mainHandles.(matlab.lang.makeValidName(handles.funname)) = uitreenode('v0', handles.funname,  handles.funname,  iconPath, true);
+            mainHandles.(matlab.lang.makeValidName(handles.funname)).UserData = signaldata;
+            mainHandles.results.add(mainHandles.(matlab.lang.makeValidName(handles.funname)));
             mainHandles.mytree.reloadNode(mainHandles.results);
             mainHandles.mytree.expand(mainHandles.results);
-            mainHandles.mytree.setSelectedNode(mainHandles.(genvarname(handles.funname)));
+            mainHandles.mytree.setSelectedNode(mainHandles.(matlab.lang.makeValidName(handles.funname)));
             set([mainHandles.clrall_btn,mainHandles.export_btn],'Enable','on')
         end
         fprintf(mainHandles.fid, ['%% ' datestr(now,16) ' - Used calculator ' handles.funname '\n']);

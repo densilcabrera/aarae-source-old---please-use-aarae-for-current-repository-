@@ -169,7 +169,8 @@ if ~isempty(handles.testsignal(handles.version))
     if exist([cd '/Utilities/Backup/' selectedNodes(1).getName.char '.mat'],'file')
         delete([cd '/Utilities/Backup/' selectedNodes(1).getName.char '.mat'])
     end
-    signaldata = handles.testsignal(handles.version); %#ok : Used in following line
+    signaldata = handles.testsignal(handles.version);
+    signaldata.AARAEname = handles.selNodeName;
     save([cd '/Utilities/Backup/' handles.selNodeName '.mat'], 'signaldata');
     
     set(mainHandles.(matlab.lang.makeValidName(removefield)),'Name',handles.selNodeName);
@@ -493,7 +494,7 @@ guidata(hObject,handles);
 
 
 % --- Executes on button press in reset_btn.
-function reset_btn_Callback(hObject, ~, handles) %#ok : Executed when reser button is clicked
+function reset_btn_Callback(hObject, ~, handles) %#ok : Executed when reset button is clicked
 % hObject    handle to reset_btn (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
@@ -961,7 +962,8 @@ if ~isempty(handles.testsignal(handles.version))
     if strcmp(datatype,'syscal'), handles.testsignal(handles.version).datatype = 'syscal'; end
     
     % Save as you go
-    signaldata = handles.testsignal(handles.version); %#ok : Used in following line
+    signaldata = handles.testsignal(handles.version); 
+    signaldata.AARAEname = handles.selNodeName;
     save([cd '/Utilities/Backup/' handles.selNodeName '.mat'], 'signaldata');
     
     mainHandles.(matlab.lang.makeValidName(handles.selNodeName)).UserData = handles.testsignal(handles.version);

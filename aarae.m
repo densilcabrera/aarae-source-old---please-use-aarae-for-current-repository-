@@ -45,6 +45,13 @@ end
 % End initialization code - DO NOT EDIT
 
 
+
+
+
+% *************************************************************************
+% INITIALIZE AARAE THINGS
+% *************************************************************************
+
 % --- Executes just before aarae is made visible.
 function aarae_OpeningFcn(hObject, ~, handles, varargin)
 % This function has no output args, see OutputFcn.
@@ -156,7 +163,7 @@ end
 handles.alternate = 0;
 fprintf(handles.fid, ['%% AARAE session started ' datestr(now) ' \n\n']);
 fprintf(handles.fid, '%% Audio and Acoustical Response Environment (AARAE) for Matlab\n');
-fprintf(handles.fid, '%% Release 7.\n');
+fprintf(handles.fid, '%% Release 7 (July 2015).\n');
 fprintf(handles.fid, '%% http://aarae.org\n\n');
 fprintf(handles.fid, '%% Reference:\n');
 fprintf(handles.fid, '%% Cabrera, D., Jimenez, D., & Martens, W. L. (2014, November).\n');
@@ -210,6 +217,12 @@ java.lang.Runtime.getRuntime.gc % Java 'garbage collection'
 varargout{1} = [];
 
 
+
+
+% *************************************************************************
+% GENERATE AUDIO
+% *************************************************************************
+
 % --- Executes on button press in genaudio_btn.
 function genaudio_btn_Callback(hObject, ~, handles)
 % hObject    handle to genaudio_btn (see GCBO)
@@ -251,12 +264,13 @@ if ~isempty(getappdata(hMain,'testsignal'))
     save([cd '/Utilities/Backup/' newleaf '.mat'], 'signaldata','-v7.3');
     
     % Generate new leaf
-    handles.(matlab.lang.makeValidName(newleaf)) = uitreenode('v0', newleaf,  newleaf,  iconPath, true);
-    handles.(matlab.lang.makeValidName(newleaf)).UserData = signaldata;
-    handles.testsignals.add(handles.(matlab.lang.makeValidName(newleaf)));
+    signaldata.AARAEname = matlab.lang.makeValidName(newleaf);
+    handles.(signaldata.AARAEname) = uitreenode('v0', newleaf,  newleaf,  iconPath, true);
+    handles.(signaldata.AARAEname).UserData = signaldata;
+    handles.testsignals.add(handles.(signaldata.AARAEname));
     handles.mytree.reloadNode(handles.testsignals);
     handles.mytree.expand(handles.testsignals);
-    handles.mytree.setSelectedNode(handles.(matlab.lang.makeValidName(newleaf)));
+    handles.mytree.setSelectedNode(handles.(signaldata.AARAEname));
     set([handles.clrall_btn,handles.export_btn],'Enable','on')
     % Log event
     fprintf(handles.fid, ['%% ' datestr(now,16) ' - Generated ' newleaf ': duration = ' num2str(length(signaldata.audio)/signaldata.fs) ' s ; fs = ' num2str(signaldata.fs) ' Hz; size = ' num2str(size(signaldata.audio)) '\n']);
@@ -266,6 +280,12 @@ end
 java.lang.Runtime.getRuntime.gc % Java garbage collection
 guidata(hObject, handles);
 
+
+
+
+% *************************************************************************
+% CLOSE AARAE
+% *************************************************************************
 
 % --- Executes when user attempts to close aarae.
 function aarae_CloseRequestFcn(hObject,eventdata,handles) %#ok
@@ -312,6 +332,12 @@ end
 %    delete(hObject);
 %end
 
+
+
+
+% *************************************************************************
+% SAVE DATA FROM AARAE
+% *************************************************************************
 
 % --- Executes on button press in save_btn.
 function save_btn_Callback(hObject, ~, handles)
@@ -371,6 +397,12 @@ for nleafs = 1:length(selectedNodes)
 end
 guidata(hObject, handles);
 
+
+
+
+% *************************************************************************
+% LOAD DATA INTO AARAE
+% *************************************************************************
 
 % --- Executes on button press in load_btn.
 function load_btn_Callback(hObject, ~, handles)
@@ -463,12 +495,13 @@ for i = 1:length(filename)
                 end
                 newleaf{1,1} = [newleaf{1,1},'_',num2str(index)];
             end
+            signaldata.AARAEname = matlab.lang.makeValidName(newleaf{1,1});
             
             % Save as you go
             save([cd '/Utilities/Backup/' newleaf{1,1} '.mat'], 'signaldata','-v7.3');            
             
-            handles.(matlab.lang.makeValidName(newleaf{1,1})) = uitreenode('v0', newleaf{1,1},  newleaf{1,1},  iconPath, true);
-            handles.(matlab.lang.makeValidName(newleaf{1,1})).UserData = signaldata;
+            handles.(signaldata.AARAEname) = uitreenode('v0', newleaf{1,1},  newleaf{1,1},  iconPath, true);
+            handles.(signaldata.AARAEname).UserData = signaldata;
             if strcmp(signaldata.datatype,'syscal'), signaldata.datatype = 'measurements'; end
             handles.(matlab.lang.makeValidName(signaldata.datatype)).add(handles.(matlab.lang.makeValidName(newleaf{1,1})));
             handles.mytree.reloadNode(handles.(matlab.lang.makeValidName(signaldata.datatype)));
@@ -489,8 +522,14 @@ for i = 1:length(filename)
     end
 end
 if i == steps, close(h); end
-handles.mytree.setSelectedNode(handles.(matlab.lang.makeValidName(newleaf{1,1})));
+handles.mytree.setSelectedNode(handles.(signaldata.AARAEname));
 
+
+
+
+% *************************************************************************
+% RECORD AUDIO
+% *************************************************************************
 
 % --- Executes on button press in rec_btn.
 function rec_btn_Callback(hObject, ~, handles)
@@ -558,15 +597,16 @@ if ~isempty(audiodata)
     audiodata_emptyfields = structfun(@isempty,audiodata);
     audiodata = rmfield(audiodata,audiodata_fields(audiodata_emptyfields));
     
+    audiodata.AARAEname = matlab.lang.makeValidName(newleaf);
     % Save as you go
     save([cd '/Utilities/Backup/' newleaf '.mat'], 'audiodata','-v7.3');
     
-    handles.(matlab.lang.makeValidName(newleaf)) = uitreenode('v0', newleaf,  newleaf,  iconPath, true);
-    handles.(matlab.lang.makeValidName(newleaf)).UserData = audiodata;
-    handles.measurements.add(handles.(matlab.lang.makeValidName(newleaf)));
+    handles.(audiodata.AARAEname) = uitreenode('v0', newleaf,  newleaf,  iconPath, true);
+    handles.(audiodata.AARAEname).UserData = audiodata;
+    handles.measurements.add(handles.(audiodata.AARAEname));
     handles.mytree.reloadNode(handles.measurements);
     handles.mytree.expand(handles.measurements);
-    handles.mytree.setSelectedNode(handles.(matlab.lang.makeValidName(newleaf)));
+    handles.mytree.setSelectedNode(handles.(audiodata.AARAEname));
     set([handles.clrall_btn,handles.export_btn],'Enable','on')
     fprintf(handles.fid, ['%% ' datestr(now,16) ' - Recorded "' newleaf '": duration = ' num2str(length(audiodata.audio)/audiodata.fs) 's\n']);
     % Log verbose metadata
@@ -575,6 +615,12 @@ end
 java.lang.Runtime.getRuntime.gc % Java garbage collection
 guidata(hObject, handles);
 
+
+
+
+% *************************************************************************
+% EDIT AUDIO
+% *************************************************************************
 
 % --- Executes on button press in edit_btn.
 function edit_btn_Callback(~, ~, handles)
@@ -600,11 +646,19 @@ else
         signaldata = getappdata(hMain,'testsignal');
         fprintf(handles.fid, ['%% ' datestr(now,16) ' - Edited "' char(selectedNodes.getName) '": cropped from %fs to %fs (at input fs); new duration = ' num2str(length(signaldata.audio)/signaldata.fs) ' s\n\n'],xi,xf);
         fprintf(handles.fid, '%% ***********************************************\n');
+        %signaldata.AARAEname = selectedNodes.getName; % AARAEname is set
+        %within edit_signal, so we do not need to set it here.
     else
         handles.mytree.setSelectedNode(handles.root);
     end
 end
 
+
+
+
+% *************************************************************************
+% EXPORT ALL DATA FROM AARAE (CREATE A 'PROJECT')
+% *************************************************************************
 
 % --- Executes on button press in export_btn.
 function export_btn_Callback(hObject, ~, handles)
@@ -715,6 +769,13 @@ else
 end
 guidata(hObject,handles)
 
+
+
+
+% *************************************************************************
+% FINISH AARAE SESSION
+% *************************************************************************
+
 % --- Executes on button press in finish_btn.
 function finish_btn_Callback(~, eventdata, handles) %#ok
 % hObject    handle to finish_btn (see GCBO)
@@ -736,6 +797,12 @@ else
     uiresume(handles.aarae);
 end
 
+
+
+
+% *************************************************************************
+% DELETE DATA FROM AARAE
+% *************************************************************************
 
 % --- Executes on button press in delete_btn.
 function delete_btn_Callback(hObject, ~, handles)
@@ -780,6 +847,12 @@ end
 java.lang.Runtime.getRuntime.gc % Java garbage collection
 
 
+
+
+% *************************************************************************
+% PLAY AUDIO
+% *************************************************************************
+
 % --- Executes on button press in play_btn.
 function play_btn_Callback(hObject, ~, handles) %#ok
 % hObject    handle to play_btn (see GCBO)
@@ -815,6 +888,12 @@ end
 guidata(hObject, handles);
 
 
+
+
+% *************************************************************************
+% CONVOLVE AUDIO WITH AUDIO2
+% *************************************************************************
+
 % --- Executes on button press in IR_btn (convolve audio with audio2).
 function IR_btn_Callback(hObject, ~, handles) %#ok
 % hObject    handle to IR_btn (see GCBO)
@@ -828,127 +907,8 @@ hMain = getappdata(0,'hMain');
 audiodata = getappdata(hMain,'testsignal');
 selectedNodes = handles.mytree.getSelectedNodes;
 
-
-% ******* THE FOLLOWING COMMENTED CODE HAS BEEN REPLACED BY A FUNCTION CALL
-% S = audiodata.audio;
-% if ~isequal(size(audiodata.audio),size(audiodata.audio2))
-%     rmsize = size(audiodata.audio);
-%     if size(audiodata.audio,2) ~= size(audiodata.audio2,2)
-%         invS = repmat(audiodata.audio2,[1 rmsize(2:end)]);
-%     else
-%         invS = repmat(audiodata.audio2,[1 1 rmsize(3:end)]);
-%     end
-% else
-%     invS = audiodata.audio2;
-% end
-% fs = audiodata.fs;
-% %nbits = audiodata.nbits;
-% 
-% if isfield(audiodata,'properties') && isfield(audiodata.properties,'startflag')
-%     [method,ok] = listdlg('ListString',{'Synchronous average','Stack IRs in dimension 4','Convolve without separating'},...
-%                           'PromptString','Select the convolution method',...
-%                           'Name','AARAE options',...
-%                           'SelectionMode','single',...
-%                           'ListSize',[200 100]);
-%     if ok == 1
-%         if ndims(S) > 3 && method == 1
-%             method = 2;
-%             average = true;
-%         else
-%             average = false;
-%         end
-%         startflag = audiodata.properties.startflag;
-%         len = startflag(2)-startflag(1);
-%         switch method
-%             case 1
-%                 tempS = zeros(startflag(2)-1,size(S,2));
-%                 for j = 1:size(S,2)
-%                     newS = zeros(startflag(2)-1,length(startflag));
-%                     for i = 1:length(startflag)
-%                         newS(:,i) = S(startflag(i):startflag(i)+len-1,j);
-%                     end
-%                     tempS(:,j) = mean(newS,2);
-%                 end
-%                 S = tempS;
-%                 %invS = invS(:,size(S,2));
-%             case 2
-%                 indices = cat(2,{1:len*length(startflag)},repmat({':'},1,ndims(S)-1));
-%                 S = S(indices{:});
-%                 sizeS = size(S);
-%                 if length(sizeS) == 2, sizeS = [sizeS,1]; end
-%                 if length(sizeS) < 3
-%                     newS = zeros([len,sizeS(2:end),length(startflag)]);
-%                     newinvS = zeros([length(audiodata.audio2),sizeS(2:end),length(startflag)]);
-%                 else
-%                     sizeS(1,4) = length(startflag);
-%                     newS = zeros([len,sizeS(2:end)]);
-%                     newinvS = zeros([length(audiodata.audio2),sizeS(2:end)]);
-%                 end
-%                 newindices = repmat({':'},1,ndims(newS));
-%                 for j = 1:size(S,2)
-%                     indices{1,2} = j;
-%                     newindices{1,2} = j;
-%                     newS(newindices{:}) = reshape(S(indices{:}),[len,1,sizeS(3:end)]);
-%                     newsizeS = size(newS);
-%                     if size(S,2) == size(audiodata.audio2,2)
-%                         newinvS(newindices{:}) = repmat(audiodata.audio2(:,j),[1 1 newsizeS(3:end)]);
-%                     else
-%                         newinvS(newindices{:}) = repmat(audiodata.audio2,[1 1 newsizeS(3:end)]);
-%                     end
-%                 end
-%                 S = newS;
-%                 invS = newinvS;
-%                 if average
-%                     S = mean(S,4);
-%                     invS = mean(invS,4);
-%                 end
-%         end
-%     else
-%         return
-%     end
-% else
-%     method = 1;
-% end
-% 
-% if method == 1 || method == 2 || method == 3
-%     maxsize = 1e6; % this could be a user setting 
-%                    % (maximum size that can be handled to avoid 
-%                    % out-of-memory error from convolution process)
-%     if numel(S) <= maxsize
-%         S_pad = [S; zeros(size(invS))];
-%         invS_pad = [invS; zeros(size(S))];
-%         IR = ifft(fft(S_pad) .* fft(invS_pad)); % this replaces the old function call in the next line, which seems to do twice the zero-padding necessary
-%         %IR = convolvedemo(S_pad, invS_pad, 2, fs); % Calls convolvedemo.m
-%     else
-%         % use nested for-loops instead of doing everything at once (could
-%         % be very slow!) if the audio is too big for vectorized processing
-%         [~,chans,bands,dim4,dim5,dim6] = size(S);
-%         %IR = zeros(2*(length(S)+length(invS))-1,chans,bands,dim4,dim5,dim6);
-%         IR = zeros(length(S)+length(invS),chans,bands,dim4,dim5,dim6);
-%         for ch = 1:chans
-%             for b = 1:bands
-%                 for d4 = 1:dim4
-%                     for d5 = 1:dim5
-%                         for d6 = 1:dim6
-%                             S_pad = [S(:,ch,b,d4,d5,d6);zeros(length(invS),1)];
-%                             invS_pad = [invS(:,ch,b,d4,d5,d6); zeros(length(S),1)];
-%                             IR(:,ch,b,d4,d5,d6) = ifft(fft(S_pad) .* fft(invS_pad));
-% %                             IR(:,ch,b,d4,d5,d6) =...
-% %                                 convolvedemo(S_pad, invS_pad, 2, fs);
-%                         end
-%                     end
-%                 end
-%             end
-%         end
-%     end
-%     indices = cat(2,{1:length(S_pad)},repmat({':'},1,ndims(IR)-1));
-%     IR = IR(indices{:});
-% end
-% % THE FOLLOWING LINE REPLACES ALL OF THE ABOVE
+% convolveaudiowithaudio2 is an AARAE utility
 [IR,method,scalingmethod] = convolveaudiowithaudio2(audiodata);
-% ****************************
-
-
 
 if ishandle(h), close(h); end
 
@@ -979,6 +939,7 @@ if leafname == 1
 end
 if ~isempty(getappdata(hMain,'testsignal'))
     signaldata = audiodata;
+    signaldata.AARAEname = newleaf;
     signaldata = rmfield(signaldata,'audio2');
     signaldata.audio = IR;
     %signaldata.fs = fs; % This should be unnecessary
@@ -1018,6 +979,12 @@ set(hObject,'Enable','on');
 java.lang.Runtime.getRuntime.gc % Java garbage collection
 guidata(hObject, handles);
 
+
+
+
+% *************************************************************************
+% SELECTION CHANGE IN ANALYSERS FUNCAT BOX
+% *************************************************************************
 
 % --- Executes on selection change in funcat_box.
 function funcat_box_Callback(hObject, ~, handles) %#ok
@@ -1060,6 +1027,12 @@ set(hObject,'String',[' ';cellstr({analyzers(3:length(analyzers)).name}')]);
 handles.funname = [];
 guidata(hObject,handles)
 
+
+
+
+% *************************************************************************
+% ANALYSE AUDIO
+% *************************************************************************
 
 % --- Executes on button press in analyze_btn.
 function analyze_btn_Callback(hObject, ~, handles) %#ok
@@ -1143,6 +1116,7 @@ for nleafs = 1:length(selectedNodes)
                     signaldata_fields = fieldnames(signaldata);
                     signaldata_emptyfields = structfun(@isempty,signaldata);
                     signaldata = rmfield(signaldata,signaldata_fields(signaldata_emptyfields));
+                    signaldata.AARAEname = newleaf{1,1};
                     
                     % Save as you go
                     save([cd '/Utilities/Backup/' newleaf{1,1} '.mat'], 'signaldata','-v7.3');
@@ -1234,6 +1208,12 @@ java.lang.Runtime.getRuntime.gc % Java garbage collection
 guidata(hObject,handles)
 
 
+
+
+% *************************************************************************
+% SELECTION CHANGE IN FUN ANALYSERS BOX
+% *************************************************************************
+
 % --- Executes on selection change in fun_box.
 function fun_box_Callback(hObject, ~, handles) %#ok
 % hObject    handle to fun_box (see GCBO)
@@ -1273,6 +1253,12 @@ if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgr
     set(hObject,'BackgroundColor','white');
 end
 
+
+
+
+% *************************************************************************
+% SELECTION CHANGE IN PROCESSORS_AT BOX
+% *************************************************************************
 
 % --- Executes on selection change in procat_box.
 function procat_box_Callback(hObject, ~, handles) %#ok
@@ -1359,6 +1345,13 @@ if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgr
     set(hObject,'BackgroundColor','white');
 end
 
+
+
+
+
+% *************************************************************************
+% PROCESS AUDIO
+% *************************************************************************
 
 % --- Executes on button press in proc_btn.
 function proc_btn_Callback(hObject, ~, handles) %#ok
@@ -1464,6 +1457,7 @@ for nleafs = 1:length(selectedNodes)
                     newdata_fields = fieldnames(newdata);
                     newdata_emptyfields = structfun(@isempty,newdata);
                     newdata = rmfield(newdata,newdata_fields(newdata_emptyfields));
+                    newdata.AARAEname = newleaf{1,1};
                     
                     % Save as you go
                     save([cd '/Utilities/Backup/' newleaf{1,1} '.mat'], 'newdata','-v7.3');
@@ -3051,6 +3045,13 @@ if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgr
 end
 
 
+
+
+
+% *************************************************************************
+% SETTINGS BUTTON
+% *************************************************************************
+
 % --- Executes on button press in settings_btn.
 function settings_btn_Callback(hObject, ~, handles) %#ok : Executed when Settings button is clicked
 % hObject    handle to settings_btn (see GCBO)
@@ -3162,6 +3163,12 @@ if size(eventdata.Indices,1) ~= 0 && eventdata.Indices(1,2) == 4
 end
 
 
+
+
+% *************************************************************************
+% PROCESSORS HELP BUTTON
+% *************************************************************************
+
 % --- Executes on button press in proc_help_btn.
 function proc_help_btn_Callback(~, ~, handles) %#ok : Executed when help button for processors is clicked
 % hObject    handle to proc_help_btn (see GCBO)
@@ -3171,6 +3178,12 @@ contents = cellstr(get(handles.proc_box,'String'));
 selection = contents{get(handles.proc_box,'Value')};
 eval(['doc ' selection])
 
+
+
+
+% *************************************************************************
+% ANALYSERS HELP BUTTON
+% *************************************************************************
 % --- Executes on button press in analyser_help_btn.
 function analyser_help_btn_Callback(~, ~, handles) %#ok : Executed when help button for analysers is clicked
 % hObject    handle to analyser_help_btn (see GCBO)

@@ -119,6 +119,14 @@ if isstruct(IN) % You should check that the function is being called within
         bandID = 1:size(audio,3);
     end
     
+    % The name of the audio input could be useful in generating figures
+    % (for example, in the title of a figure). This is a string.
+    if isfield(IN,'AARAEname') % Get the AARAE name if it exists
+        AARAEname = IN.AARAEname;
+    else
+        AARAEname = [];
+    end
+    
     % *********************************************************************
     % Sometimes you may wish to get another audio input
     % The following uses an in-built AARAE function 'choose_audio' to do
@@ -158,6 +166,9 @@ elseif ~isempty(param) || nargin > 1
     % is not input as a structure.
     fs = input_3;
     cal = input_4;
+    chanID = makechanID(size(audio,2),0);
+    bandID = 1:size(audio,3);
+    AARAEname = [];
 end
 % *************************************************************************
 
