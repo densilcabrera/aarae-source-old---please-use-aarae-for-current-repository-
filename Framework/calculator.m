@@ -130,7 +130,7 @@ if nargout(handles.funname) == 1
                 end
                 handles.funname = [handles.funname,'_',num2str(index)];
             end
-            signaldata.AARAEname = handles.funname;
+            signaldata.name = handles.funname;
             % Save as you go
             save([cd '/Utilities/Backup/' handles.funname '.mat'], 'signaldata');
             

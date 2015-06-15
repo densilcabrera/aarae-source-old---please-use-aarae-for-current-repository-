@@ -170,7 +170,7 @@ if ~isempty(handles.testsignal(handles.version))
         delete([cd '/Utilities/Backup/' selectedNodes(1).getName.char '.mat'])
     end
     signaldata = handles.testsignal(handles.version);
-    signaldata.AARAEname = handles.selNodeName;
+    signaldata.name = handles.selNodeName;
     save([cd '/Utilities/Backup/' handles.selNodeName '.mat'], 'signaldata');
     
     set(mainHandles.(matlab.lang.makeValidName(removefield)),'Name',handles.selNodeName);
@@ -193,7 +193,7 @@ function cancel_btn_Callback(~, ~, handles) %#ok : Executed when Cancel button i
 % handles    structure with handles and user data (see GUIDATA)
 set(handles.OUT_start,'String','-');
 set(handles.OUT_end,'String','-');
-fprintf(handles.fid, ['%% CANCEL EDIT\n']);
+fprintf(handles.fid, '%% CANCEL EDIT\n');
 uiresume(handles.edit_signal);
 
 
@@ -550,7 +550,7 @@ set(handles.audiodatatext,'String',audiodatatext);
 %    handles.line = findobj(gcf,'type','line');
 % Update handles structure
 guidata(hObject, handles);
-fprintf(handles.fid, ['%% RESET EDIT\n']);
+fprintf(handles.fid, '%% RESET EDIT\n');
 
 
 % --- Executes on selection change in edit_box.
@@ -963,7 +963,7 @@ if ~isempty(handles.testsignal(handles.version))
     
     % Save as you go
     signaldata = handles.testsignal(handles.version); 
-    signaldata.AARAEname = handles.selNodeName;
+    signaldata.name = [handles.selNodeName '_edit'];
     save([cd '/Utilities/Backup/' handles.selNodeName '.mat'], 'signaldata');
     
     mainHandles.(matlab.lang.makeValidName(handles.selNodeName)).UserData = handles.testsignal(handles.version);
@@ -989,7 +989,8 @@ if ~isempty(get(hObject,'String'))
 else
     set(hObject,'String',handles.selNodeName)
 end
-fprintf(handles.fid,['%% New name: ', handles.selNodeName,'\n']);
+handles.testsignal.name = [handles.selNodeName '_edit'];
+fprintf(handles.fid,['%% New name: ', [handles.selNodeName '_edit'],'\n']);
 guidata(hObject,handles)
 
 % --- Executes during object creation, after setting all properties.
