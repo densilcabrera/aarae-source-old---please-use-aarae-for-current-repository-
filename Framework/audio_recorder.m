@@ -45,6 +45,18 @@ end
 % End initialization code - DO NOT EDIT
 
 
+
+
+
+
+% Note: for AARAE Release 7 (July 2015), channel mapping was introduced
+% instead of specifying the number of contiguous channels from 1. However,
+% the relevant function names and variable names have been retained from
+% the previous versions.
+
+
+
+
 % --- Executes just before audio_recorder is made visible.
 function audio_recorder_OpeningFcn(hObject, ~, handles, varargin)
 % This function has no output args, see OutputFcn.
@@ -464,6 +476,8 @@ else
     catch
         handles.recording.chanID = cellstr([repmat('Chan',size(handles.recording.audio,2),1) num2str((1:size(handles.recording.audio,2))')]);    
     end
+    % Potentially add dim5ID or outchanID here (once its name is defined).
+    % should it be a property or a first order field?
     if get(handles.cal_chk,'Value') == 1, handles.recording.cal = handles.syscalstats.cal(1:size(handles.recording.audio,2)); end
     name = get(handles.IN_name,'String');
     if isempty(name), name = 'untitled'; end

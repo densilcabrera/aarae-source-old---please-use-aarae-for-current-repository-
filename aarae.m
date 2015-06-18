@@ -229,6 +229,92 @@ end
 
 
 
+
+% *************************************************************************
+% KEYBOARD SHORTCUTS
+% *************************************************************************
+
+% --- Executes on key press with focus on aarae or any of its controls.
+function aarae_WindowKeyPressFcn(hObject, eventdata, handles) %#ok
+% hObject    handle to aarae (see GCBO)
+% eventdata  structure with the following fields (see FIGURE)
+%	Key: name of the key that was pressed, in lower case
+%	Character: character interpretation of the key(s) that was pressed
+%	Modifier: name(s) of the modifier key(s) (i.e., control, shift) pressed
+% handles    structure with handles and user data (see GUIDATA)
+handles = guidata(hObject);
+if strcmp(eventdata.Modifier,'shift')
+    handles.alternate = 1;
+else
+    handles.alternate = 0;
+end
+%guidata(hObject,handles)
+selectedNodes = handles.mytree.getSelectedNodes;
+signaldata = selectedNodes(1).handle.UserData;
+if ~isempty(signaldata)
+    if strcmp(eventdata.Key,'l') && ~isfield(handles,'legend')
+        if ismatrix(signaldata.audio)
+            if isfield(signaldata,'chanID')
+                handles.legend = legend(handles.axestime,signaldata.chanID);
+            end
+        end
+        if ~ismatrix(signaldata.audio)
+            if isfield(signaldata,'bandID')
+                handles.legend = legend(handles.axestime,cellstr(num2str(signaldata.bandID')));
+            end
+        end
+    elseif strcmp(eventdata.Key,'l') && isfield(handles,'legend')
+        legend(handles.axestime,'off');
+        handles = rmfield(handles,'legend');
+    end
+end
+if ~isempty(eventdata.Modifier)
+    if strcmp(eventdata.Modifier,'control') == 1
+        switch eventdata.Key
+            case 'r'
+                rec_btn_Callback(hObject, eventdata, handles)
+                handles = guidata(hObject);
+            case 'g'
+                genaudio_btn_Callback(hObject, eventdata, handles)
+                handles = guidata(hObject);
+            case 'l'
+                load_btn_Callback(hObject, eventdata, handles)
+                handles = guidata(hObject);
+            case 'c'
+                calc_btn_Callback(hObject, eventdata, handles)
+                handles = guidata(hObject);
+            case 'e'
+                if strcmp(get(handles.tools_panel,'Visible'),'on')
+                    edit_btn_Callback(hObject, eventdata, handles)
+                    handles = guidata(hObject);
+                end
+            case 's'
+                if strcmp(get(handles.tools_panel,'Visible'),'on')
+                    save_btn_Callback(hObject, eventdata, handles)
+                    handles = guidata(hObject);
+                end
+            case 'delete'
+                if strcmp(get(handles.tools_panel,'Visible'),'on')
+                    delete_btn_Callback(hObject, eventdata, handles)
+                    handles = guidata(hObject);
+                end
+        end
+    end
+end
+guidata(hObject,handles)
+
+
+
+
+
+
+
+
+
+
+
+
+
 % *************************************************************************
 % *************************************************************************
 %                  ENDING, CLEARING & EXPORTING FROM AARAE
@@ -2901,342 +2987,6 @@ guidata(hObject,handles)
 
 
 
-
-
-
-
-
-% *************************************************************************
-% KEYBOARD SHORTCUTS
-% *************************************************************************
-
-% --- Executes on key press with focus on aarae or any of its controls.
-function aarae_WindowKeyPressFcn(hObject, eventdata, handles) %#ok
-% hObject    handle to aarae (see GCBO)
-% eventdata  structure with the following fields (see FIGURE)
-%	Key: name of the key that was pressed, in lower case
-%	Character: character interpretation of the key(s) that was pressed
-%	Modifier: name(s) of the modifier key(s) (i.e., control, shift) pressed
-% handles    structure with handles and user data (see GUIDATA)
-handles = guidata(hObject);
-if strcmp(eventdata.Modifier,'shift')
-    handles.alternate = 1;
-else
-    handles.alternate = 0;
-end
-%guidata(hObject,handles)
-selectedNodes = handles.mytree.getSelectedNodes;
-signaldata = selectedNodes(1).handle.UserData;
-if ~isempty(signaldata)
-    if strcmp(eventdata.Key,'l') && ~isfield(handles,'legend')
-        if ismatrix(signaldata.audio)
-            if isfield(signaldata,'chanID')
-                handles.legend = legend(handles.axestime,signaldata.chanID);
-            end
-        end
-        if ~ismatrix(signaldata.audio)
-            if isfield(signaldata,'bandID')
-                handles.legend = legend(handles.axestime,cellstr(num2str(signaldata.bandID')));
-            end
-        end
-    elseif strcmp(eventdata.Key,'l') && isfield(handles,'legend')
-        legend(handles.axestime,'off');
-        handles = rmfield(handles,'legend');
-    end
-end
-if ~isempty(eventdata.Modifier)
-    if strcmp(eventdata.Modifier,'control') == 1
-        switch eventdata.Key
-            case 'r'
-                rec_btn_Callback(hObject, eventdata, handles)
-                handles = guidata(hObject);
-            case 'g'
-                genaudio_btn_Callback(hObject, eventdata, handles)
-                handles = guidata(hObject);
-            case 'l'
-                load_btn_Callback(hObject, eventdata, handles)
-                handles = guidata(hObject);
-            case 'c'
-                calc_btn_Callback(hObject, eventdata, handles)
-                handles = guidata(hObject);
-            case 'e'
-                if strcmp(get(handles.tools_panel,'Visible'),'on')
-                    edit_btn_Callback(hObject, eventdata, handles)
-                    handles = guidata(hObject);
-                end
-            case 's'
-                if strcmp(get(handles.tools_panel,'Visible'),'on')
-                    save_btn_Callback(hObject, eventdata, handles)
-                    handles = guidata(hObject);
-                end
-            case 'delete'
-                if strcmp(get(handles.tools_panel,'Visible'),'on')
-                    delete_btn_Callback(hObject, eventdata, handles)
-                    handles = guidata(hObject);
-                end
-        end
-    end
-end
-guidata(hObject,handles)
-
-
-
-
-
-
-% *************************************************************************
-% RESULT BOX FUNCTIONS
-% *************************************************************************
-
-
-% --- Executes on selection change in result_box.
-function result_box_Callback(hObject, ~, handles) %#ok
-% hObject    handle to result_box (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
-
-% Hints: contents = cellstr(get(hObject,'String')) returns result_box contents as cell array
-%        contents{get(hObject,'Value')} returns selected item from result_box
-get(handles.aarae,'SelectionType');
-contents = cellstr(get(hObject,'String'));
-if strcmp(get(handles.aarae,'SelectionType'),'open') && ~isempty(contents{get(hObject,'Value')})
-    contents = cellstr(get(hObject,'String'));
-    file = contents{get(hObject,'Value')};
-    [~,~,ext] = fileparts(file);
-    if ~strcmp(file,' ')
-        switch ext
-            case '.fig'
-                openfig(file);
-            otherwise
-                open(file)
-        end
-    end
-end
-
-% --- Executes during object creation, after setting all properties.
-function result_box_CreateFcn(hObject, ~, ~) %#ok
-% hObject    handle to result_box (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    empty - handles not created until after all CreateFcns called
-
-% Hint: listbox controls usually have a white background on Windows.
-%       See ISPC and COMPUTER.
-if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
-    set(hObject,'BackgroundColor','white');
-end
-
-
-% --- Executes on selection change in freq_popup.
-function freq_popup_Callback(hObject, ~, handles) %#ok
-% hObject    handle to freq_popup (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
-
-% Hints: contents = cellstr(get(hObject,'String')) returns freq_popup contents as cell array
-%        contents{get(hObject,'Value')} returns selected item from freq_popup
-refreshplots(handles,'freq')
-guidata(hObject,handles)
-
-% --- Executes during object creation, after setting all properties.
-function freq_popup_CreateFcn(hObject, ~, ~) %#ok
-% hObject    handle to freq_popup (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    empty - handles not created until after all CreateFcns called
-
-% Hint: popupmenu controls usually have a white background on Windows.
-%       See ISPC and COMPUTER.
-if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
-    set(hObject,'BackgroundColor','white');
-end
-
-
-% --- Executes on selection change in time_popup.
-function time_popup_Callback(hObject, ~, handles) %#ok
-% hObject    handle to time_popup (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
-
-% Hints: contents = cellstr(get(hObject,'String')) returns time_popup contents as cell array
-%        contents{get(hObject,'Value')} returns selected item from time_popup
-contents = cellstr(get(hObject,'String'));
-selection = contents{get(hObject,'Value')};
-set(handles.compare_btn,'TooltipString',['Compare selected signals in ' selection])
-refreshplots(handles,'time')
-guidata(hObject,handles)
-
-% --- Executes during object creation, after setting all properties.
-function time_popup_CreateFcn(hObject, ~, ~) %#ok
-% hObject    handle to time_popup (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    empty - handles not created until after all CreateFcns called
-
-% Hint: popupmenu controls usually have a white background on Windows.
-%       See ISPC and COMPUTER.
-if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
-    set(hObject,'BackgroundColor','white');
-end
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-% *************************************************************************
-% PROPERTIES BUTTON
-% *************************************************************************
-
-
-% --- Executes on button press in properties_btn.
-function properties_btn_Callback(~, ~, handles) %#ok
-% hObject    handle to properties_btn (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
-selectedNodes = handles.mytree.getSelectedNodes;
-signaldata = selectedNodes(1).handle.UserData;
-if isfield(signaldata,'properties')
-    properties = signaldata.properties; %#ok : used for evalc
-    msgbox([selectedNodes(1).getName.char evalc('properties')],'AARAE info')
-end
-
-
-
-
-
-
-
-
-
-% --- Executes on selection change in ntable_popup.
-function ntable_popup_Callback(hObject, eventdata, handles) %#ok
-% hObject    handle to ntable_popup (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
-
-% Hints: contents = cellstr(get(hObject,'String')) returns ntable_popup contents as cell array
-%        contents{get(hObject,'Value')} returns selected item from ntable_popup
-eventdata.NewValue = get(handles.Xvalues_sel,'SelectedObject');
-Xvalues_sel_SelectionChangeFcn(hObject, eventdata, handles)
-Yvalues_box_Callback(hObject, eventdata, handles)
-
-% --- Executes during object creation, after setting all properties.
-function ntable_popup_CreateFcn(hObject, ~, ~) %#ok
-% hObject    handle to ntable_popup (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    empty - handles not created until after all CreateFcns called
-
-% Hint: popupmenu controls usually have a white background on Windows.
-%       See ISPC and COMPUTER.
-if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
-    set(hObject,'BackgroundColor','white');
-end
-
-
-% --- Executes on selection change in Xvalues_box.
-function Xvalues_box_Callback(~, ~, ~) %#ok
-% hObject    handle to Xvalues_box (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
-
-% Hints: contents = cellstr(get(hObject,'String')) returns Xvalues_box contents as cell array
-%        contents{get(hObject,'Value')} returns selected item from Xvalues_box
-
-
-% --- Executes during object creation, after setting all properties.
-function Xvalues_box_CreateFcn(hObject, ~, ~) %#ok
-% hObject    handle to Xvalues_box (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    empty - handles not created until after all CreateFcns called
-
-% Hint: listbox controls usually have a white background on Windows.
-%       See ISPC and COMPUTER.
-if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
-    set(hObject,'BackgroundColor','white');
-end
-
-
-% --- Executes on selection change in Yvalues_box.
-function Yvalues_box_Callback(~, ~, handles)
-% hObject    handle to Yvalues_box (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
-
-% Hints: contents = cellstr(get(hObject,'String')) returns Yvalues_box contents as cell array
-%        contents{get(hObject,'Value')} returns selected item from Yvalues_box
-selectedNodes = handles.mytree.getSelectedNodes;
-data = selectedNodes(1).handle.UserData;
-ntable = get(handles.ntable_popup,'Value');
-Xvalues = get(handles.Xvalues_sel,'SelectedObject');
-Xvalues = get(Xvalues,'tag');
-switch Xvalues
-    case 'radiobutton1'
-        bar(handles.axesdata,data.tables(ntable).Data(:,get(handles.Yvalues_box,'Value')),'FaceColor',[0 0.5 0.5])
-        set(handles.axesdata,'Xtick',1:length(data.tables(ntable).RowName),'XTickLabel',data.tables(ntable).RowName)
-    case 'radiobutton2'
-        bar(handles.axesdata,data.tables(ntable).Data(get(handles.Yvalues_box,'Value'),:),'FaceColor',[0 0.5 0.5])
-        set(handles.axesdata,'Xtick',1:length(data.tables(ntable).ColumnName),'XTickLabel',data.tables(ntable).ColumnName)
-end
-ycontents = cellstr(get(handles.Yvalues_box,'String'));
-ylabel(handles.axesdata,ycontents{get(handles.Yvalues_box,'Value')})
-
-% --- Executes during object creation, after setting all properties.
-function Yvalues_box_CreateFcn(hObject, ~, ~) %#ok
-% hObject    handle to Yvalues_box (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    empty - handles not created until after all CreateFcns called
-
-% Hint: listbox controls usually have a white background on Windows.
-%       See ISPC and COMPUTER.
-if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
-    set(hObject,'BackgroundColor','white');
-end
-
-
-% --- Executes when selected object is changed in Xvalues_sel.
-function Xvalues_sel_SelectionChangeFcn(hObject, eventdata, handles)
-% hObject    handle to the selected object in Xvalues_sel 
-% eventdata  structure with the following fields (see UIBUTTONGROUP)
-%	EventName: string 'SelectionChanged' (read only)
-%	OldValue: handle of the previously selected object or empty if none was selected
-%	NewValue: handle of the currently selected object
-% handles    structure with handles and user data (see GUIDATA)
-selectedNodes = handles.mytree.getSelectedNodes;
-data = selectedNodes(1).handle.UserData;
-ntable = get(handles.ntable_popup,'Value');
-switch get(eventdata.NewValue,'Tag')
-    case 'radiobutton1'
-        set(handles.Xvalues_box,'String',data.tables(ntable).RowName,'Value',1)
-        set(handles.Yvalues_box,'String',data.tables(ntable).ColumnName,'Value',1)
-    case 'radiobutton2'
-        set(handles.Yvalues_box,'String',data.tables(ntable).RowName,'Value',1)
-        set(handles.Xvalues_box,'String',data.tables(ntable).ColumnName,'Value',1)
-end
-Yvalues_box_Callback(hObject, eventdata, handles)
-
-
-% --- Executes on button press in wild_btn.
-%function wild_btn_Callback(hObject, eventdata, handles)
-% hObject    handle to wild_btn (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
-%!matlab -nodesktop
-
-
-
 function To_freq_Callback(hObject, ~, handles) %#ok : Executed when initial time input box changes above the lower axes
 % hObject    handle to To_freq (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
@@ -3396,6 +3146,289 @@ if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgr
 end
 
 
+% --- Executes on selection change in freq_popup.
+function freq_popup_Callback(hObject, ~, handles) %#ok
+% hObject    handle to freq_popup (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: contents = cellstr(get(hObject,'String')) returns freq_popup contents as cell array
+%        contents{get(hObject,'Value')} returns selected item from freq_popup
+refreshplots(handles,'freq')
+guidata(hObject,handles)
+
+% --- Executes during object creation, after setting all properties.
+function freq_popup_CreateFcn(hObject, ~, ~) %#ok
+% hObject    handle to freq_popup (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: popupmenu controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+
+% --- Executes on selection change in time_popup.
+function time_popup_Callback(hObject, ~, handles) %#ok
+% hObject    handle to time_popup (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: contents = cellstr(get(hObject,'String')) returns time_popup contents as cell array
+%        contents{get(hObject,'Value')} returns selected item from time_popup
+contents = cellstr(get(hObject,'String'));
+selection = contents{get(hObject,'Value')};
+set(handles.compare_btn,'TooltipString',['Compare selected signals in ' selection])
+refreshplots(handles,'time')
+guidata(hObject,handles)
+
+% --- Executes during object creation, after setting all properties.
+function time_popup_CreateFcn(hObject, ~, ~) %#ok
+% hObject    handle to time_popup (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: popupmenu controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+
+
+
+
+
+
+
+% *************************************************************************
+% *************************************************************************
+% RESULT FIGURES BOX FUNCTIONS
+% *************************************************************************
+% *************************************************************************
+
+
+% --- Executes on selection change in result_box.
+function result_box_Callback(hObject, ~, handles) %#ok
+% hObject    handle to result_box (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: contents = cellstr(get(hObject,'String')) returns result_box contents as cell array
+%        contents{get(hObject,'Value')} returns selected item from result_box
+get(handles.aarae,'SelectionType');
+contents = cellstr(get(hObject,'String'));
+if strcmp(get(handles.aarae,'SelectionType'),'open') && ~isempty(contents{get(hObject,'Value')})
+    contents = cellstr(get(hObject,'String'));
+    file = contents{get(hObject,'Value')};
+    [~,~,ext] = fileparts(file);
+    if ~strcmp(file,' ')
+        switch ext
+            case '.fig'
+                openfig(file);
+            otherwise
+                open(file)
+        end
+    end
+end
+
+% --- Executes during object creation, after setting all properties.
+function result_box_CreateFcn(hObject, ~, ~) %#ok
+% hObject    handle to result_box (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: listbox controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+% *************************************************************************
+% *************************************************************************
+%                           PROPERTIES BUTTON
+% *************************************************************************
+% *************************************************************************
+
+% --- Executes on button press in properties_btn.
+function properties_btn_Callback(~, ~, handles) %#ok
+% hObject    handle to properties_btn (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+selectedNodes = handles.mytree.getSelectedNodes;
+signaldata = selectedNodes(1).handle.UserData;
+if isfield(signaldata,'properties')
+    properties = signaldata.properties; %#ok : used for evalc
+    msgbox([selectedNodes(1).getName.char evalc('properties')],'AARAE info')
+end
+
+
+
+
+
+
+
+
+
+% *************************************************************************
+% *************************************************************************
+%                           AARAE TABLES IN GUI
+% *************************************************************************
+% *************************************************************************
+
+
+
+% --- Executes on selection change in ntable_popup.
+function ntable_popup_Callback(hObject, eventdata, handles) %#ok
+% hObject    handle to ntable_popup (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: contents = cellstr(get(hObject,'String')) returns ntable_popup contents as cell array
+%        contents{get(hObject,'Value')} returns selected item from ntable_popup
+eventdata.NewValue = get(handles.Xvalues_sel,'SelectedObject');
+Xvalues_sel_SelectionChangeFcn(hObject, eventdata, handles)
+Yvalues_box_Callback(hObject, eventdata, handles)
+
+% --- Executes during object creation, after setting all properties.
+function ntable_popup_CreateFcn(hObject, ~, ~) %#ok
+% hObject    handle to ntable_popup (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: popupmenu controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+
+% --- Executes on selection change in Xvalues_box.
+function Xvalues_box_Callback(~, ~, ~) %#ok
+% hObject    handle to Xvalues_box (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: contents = cellstr(get(hObject,'String')) returns Xvalues_box contents as cell array
+%        contents{get(hObject,'Value')} returns selected item from Xvalues_box
+
+
+% --- Executes during object creation, after setting all properties.
+function Xvalues_box_CreateFcn(hObject, ~, ~) %#ok
+% hObject    handle to Xvalues_box (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: listbox controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+
+% --- Executes on selection change in Yvalues_box.
+function Yvalues_box_Callback(~, ~, handles)
+% hObject    handle to Yvalues_box (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: contents = cellstr(get(hObject,'String')) returns Yvalues_box contents as cell array
+%        contents{get(hObject,'Value')} returns selected item from Yvalues_box
+selectedNodes = handles.mytree.getSelectedNodes;
+data = selectedNodes(1).handle.UserData;
+ntable = get(handles.ntable_popup,'Value');
+Xvalues = get(handles.Xvalues_sel,'SelectedObject');
+Xvalues = get(Xvalues,'tag');
+switch Xvalues
+    case 'radiobutton1'
+        bar(handles.axesdata,data.tables(ntable).Data(:,get(handles.Yvalues_box,'Value')),'FaceColor',[0 0.5 0.5])
+        set(handles.axesdata,'Xtick',1:length(data.tables(ntable).RowName),'XTickLabel',data.tables(ntable).RowName)
+    case 'radiobutton2'
+        bar(handles.axesdata,data.tables(ntable).Data(get(handles.Yvalues_box,'Value'),:),'FaceColor',[0 0.5 0.5])
+        set(handles.axesdata,'Xtick',1:length(data.tables(ntable).ColumnName),'XTickLabel',data.tables(ntable).ColumnName)
+end
+ycontents = cellstr(get(handles.Yvalues_box,'String'));
+ylabel(handles.axesdata,ycontents{get(handles.Yvalues_box,'Value')})
+
+% --- Executes during object creation, after setting all properties.
+function Yvalues_box_CreateFcn(hObject, ~, ~) %#ok
+% hObject    handle to Yvalues_box (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: listbox controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+
+% --- Executes when selected object is changed in Xvalues_sel.
+function Xvalues_sel_SelectionChangeFcn(hObject, eventdata, handles)
+% hObject    handle to the selected object in Xvalues_sel 
+% eventdata  structure with the following fields (see UIBUTTONGROUP)
+%	EventName: string 'SelectionChanged' (read only)
+%	OldValue: handle of the previously selected object or empty if none was selected
+%	NewValue: handle of the currently selected object
+% handles    structure with handles and user data (see GUIDATA)
+selectedNodes = handles.mytree.getSelectedNodes;
+data = selectedNodes(1).handle.UserData;
+ntable = get(handles.ntable_popup,'Value');
+switch get(eventdata.NewValue,'Tag')
+    case 'radiobutton1'
+        set(handles.Xvalues_box,'String',data.tables(ntable).RowName,'Value',1)
+        set(handles.Yvalues_box,'String',data.tables(ntable).ColumnName,'Value',1)
+    case 'radiobutton2'
+        set(handles.Yvalues_box,'String',data.tables(ntable).RowName,'Value',1)
+        set(handles.Xvalues_box,'String',data.tables(ntable).ColumnName,'Value',1)
+end
+Yvalues_box_Callback(hObject, eventdata, handles)
+
+
+
+
+
+% --- Executes on button press in wild_btn.
+%function wild_btn_Callback(hObject, eventdata, handles)
+% hObject    handle to wild_btn (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+%!matlab -nodesktop
+
+
+
+
+
+
+
+
+% *************************************************************************
+% *************************************************************************
+%                           RESULT PLOTS
+% *************************************************************************
+% *************************************************************************
 
 
 % --- Executes on selection change in chartfunc_popup.
@@ -3422,10 +3455,6 @@ end
 
 
 
-
-% *************************************************************************
-% RESULT PLOT SETTINGS
-% *************************************************************************
 
 % --- Executes when selected cell(s) is changed in cattable.
 function cattable_CellSelectionCallback(hObject, eventdata, handles) %#ok : opens listdlg for changing selection of categorical dimensions
