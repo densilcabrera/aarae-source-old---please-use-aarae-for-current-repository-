@@ -23,7 +23,7 @@ function varargout = audio_recorder(varargin)
 
 % Edit the above text to modify the response to help audio_recorder
 
-% Last Modified by GUIDE v2.5 03-Sep-2014 11:14:24
+% Last Modified by GUIDE v2.5 18-Jun-2015 09:14:44
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -105,6 +105,8 @@ else
         %output_settings{4} = ['Bit depth = ',num2str(handles.outputdata.nbits)];
         output_settings{4} = ['Duration = ',num2str(handles.dur),' s'];
         set(handles.IN_numchsout,'String','1')
+        % currently channel mapping of output is only allowed for mono
+        % signals
         if size(handles.outputdata.audio,2) == 1
             set([handles.text25,handles.IN_numchsout,handles.sim_chk],'Visible','on')
         else
@@ -126,7 +128,7 @@ else
         %set(handles.IN_nbits,'String','-');
         set(handles.IN_qdur,'String',num2str(getappdata(hMain,'audio_recorder_qdur')));
         set(handles.IN_buffer,'String',num2str(getappdata(hMain,'audio_recorder_buffer')));
-        handles.numchs = str2double(get(handles.IN_numchs,'String'));
+        handles.numchs = str2num(get(handles.IN_numchs,'String'));
         handles.addtime = str2double(get(handles.IN_duration,'String'));
         handles.fs = handles.outputdata.fs;
         %handles.nbits = handles.outputdata.nbits;
@@ -152,7 +154,7 @@ else
         set(handles.IN_buffer,'String',num2str(getappdata(hMain,'audio_recorder_buffer')));
         set(handles.OUT_axes,'Visible','off');
         set(handles.audio_recorder,'Position',handles.position-[0 0 0 handles.OUT_axes_position(4)])
-        handles.numchs = str2double(get(handles.IN_numchs,'String'));
+        handles.numchs = str2num(get(handles.IN_numchs,'String'));
         handles.duration = str2double(get(handles.IN_duration,'String'));
         handles.fs = str2double(get(handles.IN_fs,'String'));
         %handles.nbits = str2double(get(handles.IN_nbits,'String'));
@@ -247,22 +249,33 @@ if get(handles.pb_enable,'Value') == 1
     % Set playback object
     outputs = cellstr(get(handles.outputdev_popup,'String'));
     outputdevname = outputs{get(handles.outputdev_popup,'Value')};
-    handles.hap = dsp.AudioPlayer('DeviceName',outputdevname,'SampleRate',handles.outputdata.fs,'QueueDuration',handles.qdur,'BufferSizeSource','Property','BufferSize',handles.buffer);
+    handles.hap = dsp.AudioPlayer('DeviceName',outputdevname,...
+        'SampleRate',handles.outputdata.fs,...
+        'QueueDuration',handles.qdur,...
+        'BufferSizeSource','Property',...
+        'BufferSize',handles.buffer);
     % Set record object
     inputs = cellstr(get(handles.inputdev_popup,'String'));
     inputdevname = inputs{get(handles.inputdev_popup,'Value')};
-    handles.har = dsp.AudioRecorder('DeviceName',inputdevname,'SampleRate',handles.outputdata.fs,'QueueDuration',handles.qdur,'OutputDataType','double','NumChannels',handles.numchs,'BufferSizeSource','Property','BufferSize',handles.buffer);
+    handles.har = dsp.AudioRecorder('DeviceName',inputdevname,...
+        'SampleRate',handles.outputdata.fs,...
+        'QueueDuration',handles.qdur,...
+        'OutputDataType','double',...
+        'ChannelMappingSource','Property',...
+        'ChannelMapping',handles.numchs,...
+        'BufferSizeSource','Property',...
+        'BufferSize',handles.buffer);
     % Set playback audio
     handles.hsr1 = dsp.SignalSource;
-    if size(handles.outputdata.audio,2) == 1 && str2double(get(handles.IN_numchsout,'String')) > 1
+    if size(handles.outputdata.audio,2) == 1 && length(str2num(get(handles.IN_numchsout,'String'))) > 1
         if get(handles.sim_chk,'Value') == 1
-            playbackaudio = repmat(handles.outputdata.audio,1,str2double(get(handles.IN_numchsout,'String')));
+            playbackaudio = repmat(handles.outputdata.audio,1,length(str2num(get(handles.IN_numchsout,'String'))));
             addtimeok = false;
         else
-            playbackaudio = zeros((length(handles.outputdata.audio)+floor(handles.addtime*handles.fs))*str2double(get(handles.IN_numchsout,'String')),str2double(get(handles.IN_numchsout,'String')));
+            playbackaudio = zeros((length(handles.outputdata.audio)+floor(handles.addtime*handles.fs))*length(str2num(get(handles.IN_numchsout,'String'))),length(str2num(get(handles.IN_numchsout,'String'))));
             j = 1;
             playbackaudio(1:length(handles.outputdata.audio),j) = handles.outputdata.audio;
-            for j = 1:str2double(get(handles.IN_numchsout,'String'))-1
+            for j = length(str2num(get(handles.IN_numchsout,'String')))-1
                 playbackaudio((length(handles.outputdata.audio)+floor(handles.addtime*handles.fs))*j+1:(length(handles.outputdata.audio)+floor(handles.addtime*handles.fs))*j+length(handles.outputdata.audio),j+1) = handles.outputdata.audio;
             end
             addtimeok = true;
@@ -281,7 +294,7 @@ if get(handles.pb_enable,'Value') == 1
     guidata(hObject,handles)
     handles.rec = [];
     ncycles = ceil(length(handles.hsr1.Signal)/handles.har.SamplesPerFrame);
-    audio = zeros(ncycles*handles.har.SamplesPerFrame,handles.numchs);
+    audio = zeros(ncycles*handles.har.SamplesPerFrame,length(handles.numchs));
     set(hObject,'BackgroundColor','red');
     set(handles.stop_btn,'Visible','on');
     % Initialize playback/record routine
@@ -317,7 +330,7 @@ if get(handles.pb_enable,'Value') == 1
                 handles.rec = handles.rec(1:(size(handles.outputdata.audio,1)+handles.addtime*handles.fs),:);
             else
                 handles.rec = handles.rec(1:size(playbackaudio,1),:);
-                handles.rec = reshape(handles.rec,(size(handles.outputdata.audio,1)+handles.addtime*handles.fs),handles.numchs,1,1,str2double(get(handles.IN_numchsout,'String')));
+                handles.rec = reshape(handles.rec,(size(handles.outputdata.audio,1)+handles.addtime*handles.fs),length(handles.numchs),1,1,length(str2num(get(handles.IN_numchsout,'String'))));
             end
         else
             UserData.state = false;
@@ -344,11 +357,18 @@ else
     % Set record object
     inputs = cellstr(get(handles.inputdev_popup,'String'));
     inputdevname = inputs{get(handles.inputdev_popup,'Value')};
-    handles.har = dsp.AudioRecorder('DeviceName',inputdevname,'SampleRate',handles.fs,'OutputDataType','double','NumChannels',handles.numchs,'BufferSizeSource','Property','BufferSize',handles.buffer,'QueueDuration',handles.qdur);
+    handles.har = dsp.AudioRecorder('DeviceName',inputdevname,...
+        'SampleRate',handles.fs,...
+        'OutputDataType','double',...
+        'ChannelMappingSource','Property',...
+        'ChannelMapping',handles.numchs,...
+        'BufferSizeSource','Property',...
+        'BufferSize',handles.buffer,...
+        'QueueDuration',handles.qdur);
     guidata(hObject,handles)
     ncycles = ceil(dur/handles.har.SamplesPerFrame);
     handles.rec = [];
-    audio = zeros(ncycles*handles.har.SamplesPerFrame,handles.numchs);
+    audio = zeros(ncycles*handles.har.SamplesPerFrame,length(handles.numchs));
     set(hObject,'BackgroundColor','red');
     set(handles.stop_btn,'Visible','on');
     % Initialize record routine
@@ -438,7 +458,12 @@ else
     end
     handles.recording.fs = handles.fs;
     %handles.recording.nbits = handles.nbits;
-    handles.recording.chanID = cellstr([repmat('Chan',size(handles.recording.audio,2),1) num2str((1:size(handles.recording.audio,2))')]);
+    try
+        handles.recording.chanID = cellstr([repmat('Chan',size(handles.recording.audio,2),1) num2str((handles.numchs)')]);
+    
+    catch
+        handles.recording.chanID = cellstr([repmat('Chan',size(handles.recording.audio,2),1) num2str((1:size(handles.recording.audio,2))')]);    
+    end
     if get(handles.cal_chk,'Value') == 1, handles.recording.cal = handles.syscalstats.cal(1:size(handles.recording.audio,2)); end
     name = get(handles.IN_name,'String');
     if isempty(name), name = 'untitled'; end
@@ -469,11 +494,15 @@ function IN_numchs_Callback(hObject, ~, handles) %#ok number of channels input
 % Hints: get(hObject,'String') returns contents of IN_numchs as text
 %        str2double(get(hObject,'String')) returns contents of IN_numchs as a double
 
-% Get number of channels
-numchs = str2double(get(handles.IN_numchs, 'string'));
+% allow multiple numbers to be entered for channel mapping
+numchs = str2num(get(handles.IN_numchs, 'string')); 
 hMain = getappdata(0,'hMain');
 % Check user's input
-if (isnan(numchs)||numchs<=0)
+numchs = numchs(~isnan(numchs));
+numchs = numchs(numchs>0);
+numchs = round(numchs);
+numchs = unique(numchs);
+if isempty(numchs)
     set(hObject,'String',num2str(handles.numchs));
     warndlg('All inputs MUST be real positive numbers!');
 else
@@ -679,7 +708,7 @@ if get(hObject,'Value') == 1
     set(handles.OUT_axes,'Visible','on');
     children = get(handles.OUT_axes,'Children');
     set(children,'Visible','on');
-    handles.numchs = str2double(get(handles.IN_numchs,'String'));
+    handles.numchs = str2num(get(handles.IN_numchs,'String'));
     handles.addtime = str2double(get(handles.IN_duration,'String'));
     handles.fs = handles.outputdata.fs;
     %handles.nbits = handles.outputdata.nbits;
@@ -702,7 +731,7 @@ else
     set(handles.OUT_axes,'Visible','off');
     children = get(handles.OUT_axes,'Children');
     set(children,'Visible','off');
-    handles.numchs = str2double(get(handles.IN_numchs,'String'));
+    handles.numchs = str2num(get(handles.IN_numchs,'String'));
     handles.duration = str2double(get(handles.IN_duration,'String'));
     handles.fs = str2double(get(handles.IN_fs,'String'));
     %handles.nbits = str2double(get(handles.IN_nbits,'String'));

@@ -231,7 +231,7 @@ end
 
 % *************************************************************************
 % *************************************************************************
-%                           ENDING AARAE
+%                  ENDING, CLEARING & EXPORTING FROM AARAE
 % *************************************************************************
 % *************************************************************************
 
@@ -261,6 +261,207 @@ else
     uiresume(handles.aarae);
 end
 
+
+
+
+
+% *************************************************************************
+% EXPORT ALL DATA FROM AARAE (CREATE A 'PROJECT')
+% *************************************************************************
+
+% --- Executes on button press in export_btn.
+function export_btn_Callback(hObject, ~, handles)
+% hObject    handle to export_btn (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+root = handles.root; % Get selected leaf
+root = root(1);
+first = root.getFirstChild;
+nbranches = root.getChildCount;
+branches = cell(nbranches,1);
+branches{1,1} = char(first.getValue);
+nleaves = 0;
+nleaves = nleaves + handles.(matlab.lang.makeValidName(branches{1,1}))(1).getChildCount;
+next = first.getNextSibling;
+for n = 2:nbranches
+    branches{n,1} = char(next.getValue);
+    nleaves = nleaves + handles.(matlab.lang.makeValidName(branches{n,1}))(1).getChildCount;
+    next = next.getNextSibling;
+end
+if nleaves == 0
+    warndlg('Nothing to export!','AARAE info');
+else
+%    leaves = cell(nleaves,1);
+%    i = 0;
+%    for n = 1:size(branches,1)
+%        currentbranch = handles.(matlab.lang.makeValidName(branches{n,1}));
+%        if currentbranch.getChildCount ~= 0
+%            i = i + 1;
+%            first = currentbranch.getFirstChild;
+%            %leafnames(i,:) = first.getName;
+%            leaves{i,1} = char(first.getValue);
+%            next = first.getNextSibling;
+%            if ~isempty(next)
+%                for m = 1:currentbranch.getChildCount-1
+%                    i = i + 1;
+%                    %leafnames(i,:) = next.getName;
+%                    leaves{i,1} = char(next.getValue);
+%                    next = next.getNextSibling;
+%                end
+%            end
+%        end
+%    end
+    if ~isdir([cd '/Projects']), mkdir([cd '/Projects']); end
+	folder = uigetdir([cd '/Projects'],'Export all');
+    if ischar(folder)
+        set(hObject,'BackgroundColor','red');
+        set(hObject,'Enable','off');
+        pause on
+        pause(0.001)
+        pause off
+%        h = waitbar(0,['1 of ' num2str(size(leaves,1))],'Name','Saving files...');
+%        steps = size(leaves,1);
+%        for i = 1:size(leaves,1)
+%            current = handles.(matlab.lang.makeValidName(leaves{i,:}));
+%            current = current(1);
+%            data = current.handle.UserData; %#ok : used in save
+%            if ~exist([folder '/' leaves{i,:} '.mat'],'file')
+%                try
+%                    save([folder '/' leaves{i,:} '.mat'], 'data');
+%                catch error
+%                    warndlg(error.message,'AARAE info')
+%                end
+%            else
+%                button = questdlg(['A file called ' leaves{i,:} '.mat is already in the destination folder, would you like to replace it?'],...
+%                                  'AARAE info','Yes','No','Append','Append');
+%                switch button
+%                    case 'Yes'
+%                        save([folder '/' leaves{i,:} '.mat'], 'data');
+%                    case 'Append'
+%                        index = 1;
+%                        % This while cycle is just to make sure no signals are
+%                        % overwriten
+%                        while exist([folder '/' leaves{i,:} '_' num2str(index) '.mat'],'file')
+%                            index = index + 1;
+%                        end
+%                        try
+%                            save([folder '/' leaves{i,:} '_' num2str(index) '.mat'], 'data');
+%                        catch error
+%                            warndlg(error.message,'AARAE info')
+%                        end 
+%                end
+%            end
+%            waitbar(i / steps,h,sprintf('%d of %d',i,size(leaves,1)))
+%        end
+%        close(h)
+        if isdir([cd '/Utilities/Backup'])
+            leaves = dir([cd '/Utilities/Backup/*.mat']);
+            copyfile([cd '/Utilities/Backup'],folder);
+        end
+        if isdir([cd '/Utilities/Temp'])
+            nfigs = dir([cd '/Utilities/Temp/*.fig']);
+            copyfile([cd '/Utilities/Temp'],[folder '/figures']);
+        end
+        if isfield(handles,'activitylog')
+            if isdir([cd '/Log'])
+                copyfile([cd '/Log' handles.activitylog],folder);
+            end
+        end
+        addpath(genpath([cd '/Projects']))
+        fprintf(handles.fid, ['%% ' datestr(now,16) ' - Exported ' num2str(size(leaves,1)) ' data files and ' num2str(size(nfigs,1)) ' figures to "%s" \n\n'],folder);
+        set(hObject,'BackgroundColor',[0.94 0.94 0.94]);
+        set(hObject,'Enable','off');
+    else
+        addpath(genpath([cd '/Projects']))
+    end
+end
+guidata(hObject,handles)
+
+
+
+
+
+
+% *************************************************************************
+% CLEAR ALL FROM THE AARAE WORKSPACE
+% *************************************************************************
+
+% --- Executes on button press in clrall_btn.
+function clrall_btn_Callback(hObject, ~, handles) %#ok
+% hObject    handle to clrall_btn (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+root = handles.root; % Get selected leaf
+root = root(1);
+first = root.getFirstChild;
+nbranches = root.getChildCount;
+branches = cell(nbranches,1);
+branches{1,1} = char(first.getValue);
+nleaves = 0;
+nleaves = nleaves + handles.(matlab.lang.makeValidName(branches{1,1}))(1).getChildCount;
+next = first.getNextSibling;
+for n = 2:nbranches
+    branches{n,1} = char(next.getValue);
+    nleaves = nleaves + handles.(matlab.lang.makeValidName(branches{n,1}))(1).getChildCount;
+    next = next.getNextSibling;
+end
+leaves = cell(nleaves,1);
+i = 0;
+for n = 1:size(branches,1)
+    currentbranch = handles.(matlab.lang.makeValidName(branches{n,1}));
+    if currentbranch.getChildCount ~= 0
+        i = i + 1;
+        first = currentbranch.getFirstChild;
+        %leafnames(i,:) = first.getName;
+        leaves{i,:} = char(first.getValue);
+        next = first.getNextSibling;
+        if ~isempty(next)
+            for m = 1:currentbranch.getChildCount-1
+                i = i + 1;
+                %leafnames(i,:) = next.getName;
+                leaves{i,:} = char(next.getValue);
+                next = next.getNextSibling;
+            end
+        end
+    end
+end
+if nleaves == 0
+    warndlg('Nothing to delete!','AARAE info');
+else
+    %leafnames = char(leafnames);
+    %leaves = char(leaves);
+    delete = questdlg('Current workspace will be cleared, would you like to proceed?',...
+        'Warning',...
+        'Yes','No','Yes');
+    switch delete
+        case 'Yes'
+        set(hObject,'BackgroundColor','red');
+        set(hObject,'Enable','off');
+        for i = 1:size(leaves,1)
+            current = handles.(matlab.lang.makeValidName(leaves{i,1}));
+            handles.mytree.remove(current);
+            handles = rmfield(handles,matlab.lang.makeValidName(leaves{i,1}));
+        end
+        handles.mytree.reloadNode(handles.root);
+        handles.mytree.setSelectedNode(handles.root);
+        rmpath([cd '/Utilities/Temp']);
+        rmdir([cd '/Utilities/Temp'],'s');
+        rmpath([cd '/Utilities/Backup']);
+        rmdir([cd '/Utilities/Backup'],'s');
+        mkdir([cd '/Utilities/Temp']);
+        mkdir([cd '/Utilities/Backup']);
+        addpath([cd '/Utilities/Temp']);
+        addpath([cd '/Utilities/Backup']);
+        set(handles.result_box,'Value',1);
+        set(handles.result_box,'String',cell(1,1));
+        fprintf(handles.fid, ['%% ' datestr(now,16) ' - Cleared workspace \n\n']);
+        set(hObject,'BackgroundColor',[0.94 0.94 0.94]);
+        set(hObject,'Enable','off');
+        set(handles.export_btn,'Enable','off');
+    end
+end
+guidata(hObject,handles)
 
 
 
@@ -1627,121 +1828,6 @@ guidata(hObject,handles);
 
 
 
-% *************************************************************************
-% EXPORT ALL DATA FROM AARAE (CREATE A 'PROJECT')
-% *************************************************************************
-
-% --- Executes on button press in export_btn.
-function export_btn_Callback(hObject, ~, handles)
-% hObject    handle to export_btn (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
-
-root = handles.root; % Get selected leaf
-root = root(1);
-first = root.getFirstChild;
-nbranches = root.getChildCount;
-branches = cell(nbranches,1);
-branches{1,1} = char(first.getValue);
-nleaves = 0;
-nleaves = nleaves + handles.(matlab.lang.makeValidName(branches{1,1}))(1).getChildCount;
-next = first.getNextSibling;
-for n = 2:nbranches
-    branches{n,1} = char(next.getValue);
-    nleaves = nleaves + handles.(matlab.lang.makeValidName(branches{n,1}))(1).getChildCount;
-    next = next.getNextSibling;
-end
-if nleaves == 0
-    warndlg('Nothing to export!','AARAE info');
-else
-%    leaves = cell(nleaves,1);
-%    i = 0;
-%    for n = 1:size(branches,1)
-%        currentbranch = handles.(matlab.lang.makeValidName(branches{n,1}));
-%        if currentbranch.getChildCount ~= 0
-%            i = i + 1;
-%            first = currentbranch.getFirstChild;
-%            %leafnames(i,:) = first.getName;
-%            leaves{i,1} = char(first.getValue);
-%            next = first.getNextSibling;
-%            if ~isempty(next)
-%                for m = 1:currentbranch.getChildCount-1
-%                    i = i + 1;
-%                    %leafnames(i,:) = next.getName;
-%                    leaves{i,1} = char(next.getValue);
-%                    next = next.getNextSibling;
-%                end
-%            end
-%        end
-%    end
-    if ~isdir([cd '/Projects']), mkdir([cd '/Projects']); end
-	folder = uigetdir([cd '/Projects'],'Export all');
-    if ischar(folder)
-        set(hObject,'BackgroundColor','red');
-        set(hObject,'Enable','off');
-        pause on
-        pause(0.001)
-        pause off
-%        h = waitbar(0,['1 of ' num2str(size(leaves,1))],'Name','Saving files...');
-%        steps = size(leaves,1);
-%        for i = 1:size(leaves,1)
-%            current = handles.(matlab.lang.makeValidName(leaves{i,:}));
-%            current = current(1);
-%            data = current.handle.UserData; %#ok : used in save
-%            if ~exist([folder '/' leaves{i,:} '.mat'],'file')
-%                try
-%                    save([folder '/' leaves{i,:} '.mat'], 'data');
-%                catch error
-%                    warndlg(error.message,'AARAE info')
-%                end
-%            else
-%                button = questdlg(['A file called ' leaves{i,:} '.mat is already in the destination folder, would you like to replace it?'],...
-%                                  'AARAE info','Yes','No','Append','Append');
-%                switch button
-%                    case 'Yes'
-%                        save([folder '/' leaves{i,:} '.mat'], 'data');
-%                    case 'Append'
-%                        index = 1;
-%                        % This while cycle is just to make sure no signals are
-%                        % overwriten
-%                        while exist([folder '/' leaves{i,:} '_' num2str(index) '.mat'],'file')
-%                            index = index + 1;
-%                        end
-%                        try
-%                            save([folder '/' leaves{i,:} '_' num2str(index) '.mat'], 'data');
-%                        catch error
-%                            warndlg(error.message,'AARAE info')
-%                        end 
-%                end
-%            end
-%            waitbar(i / steps,h,sprintf('%d of %d',i,size(leaves,1)))
-%        end
-%        close(h)
-        if isdir([cd '/Utilities/Backup'])
-            leaves = dir([cd '/Utilities/Backup/*.mat']);
-            copyfile([cd '/Utilities/Backup'],folder);
-        end
-        if isdir([cd '/Utilities/Temp'])
-            nfigs = dir([cd '/Utilities/Temp/*.fig']);
-            copyfile([cd '/Utilities/Temp'],[folder '/figures']);
-        end
-        if isfield(handles,'activitylog')
-            if isdir([cd '/Log'])
-                copyfile([cd '/Log' handles.activitylog],folder);
-            end
-        end
-        addpath(genpath([cd '/Projects']))
-        fprintf(handles.fid, ['%% ' datestr(now,16) ' - Exported ' num2str(size(leaves,1)) ' data files and ' num2str(size(nfigs,1)) ' figures to "%s" \n\n'],folder);
-        set(hObject,'BackgroundColor',[0.94 0.94 0.94]);
-        set(hObject,'Enable','off');
-    else
-        addpath(genpath([cd '/Projects']))
-    end
-end
-guidata(hObject,handles)
-
-
-
 
 
 
@@ -2998,88 +3084,6 @@ end
 
 
 
-
-
-
-% *************************************************************************
-% CLEAR ALL FROM THE AARAE WORKSPACE
-% *************************************************************************
-
-% --- Executes on button press in clrall_btn.
-function clrall_btn_Callback(hObject, ~, handles) %#ok
-% hObject    handle to clrall_btn (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
-root = handles.root; % Get selected leaf
-root = root(1);
-first = root.getFirstChild;
-nbranches = root.getChildCount;
-branches = cell(nbranches,1);
-branches{1,1} = char(first.getValue);
-nleaves = 0;
-nleaves = nleaves + handles.(matlab.lang.makeValidName(branches{1,1}))(1).getChildCount;
-next = first.getNextSibling;
-for n = 2:nbranches
-    branches{n,1} = char(next.getValue);
-    nleaves = nleaves + handles.(matlab.lang.makeValidName(branches{n,1}))(1).getChildCount;
-    next = next.getNextSibling;
-end
-leaves = cell(nleaves,1);
-i = 0;
-for n = 1:size(branches,1)
-    currentbranch = handles.(matlab.lang.makeValidName(branches{n,1}));
-    if currentbranch.getChildCount ~= 0
-        i = i + 1;
-        first = currentbranch.getFirstChild;
-        %leafnames(i,:) = first.getName;
-        leaves{i,:} = char(first.getValue);
-        next = first.getNextSibling;
-        if ~isempty(next)
-            for m = 1:currentbranch.getChildCount-1
-                i = i + 1;
-                %leafnames(i,:) = next.getName;
-                leaves{i,:} = char(next.getValue);
-                next = next.getNextSibling;
-            end
-        end
-    end
-end
-if nleaves == 0
-    warndlg('Nothing to delete!','AARAE info');
-else
-    %leafnames = char(leafnames);
-    %leaves = char(leaves);
-    delete = questdlg('Current workspace will be cleared, would you like to proceed?',...
-        'Warning',...
-        'Yes','No','Yes');
-    switch delete
-        case 'Yes'
-        set(hObject,'BackgroundColor','red');
-        set(hObject,'Enable','off');
-        for i = 1:size(leaves,1)
-            current = handles.(matlab.lang.makeValidName(leaves{i,1}));
-            handles.mytree.remove(current);
-            handles = rmfield(handles,matlab.lang.makeValidName(leaves{i,1}));
-        end
-        handles.mytree.reloadNode(handles.root);
-        handles.mytree.setSelectedNode(handles.root);
-        rmpath([cd '/Utilities/Temp']);
-        rmdir([cd '/Utilities/Temp'],'s');
-        rmpath([cd '/Utilities/Backup']);
-        rmdir([cd '/Utilities/Backup'],'s');
-        mkdir([cd '/Utilities/Temp']);
-        mkdir([cd '/Utilities/Backup']);
-        addpath([cd '/Utilities/Temp']);
-        addpath([cd '/Utilities/Backup']);
-        set(handles.result_box,'Value',1);
-        set(handles.result_box,'String',cell(1,1));
-        fprintf(handles.fid, ['%% ' datestr(now,16) ' - Cleared workspace \n\n']);
-        set(hObject,'BackgroundColor',[0.94 0.94 0.94]);
-        set(hObject,'Enable','off');
-        set(handles.export_btn,'Enable','off');
-    end
-end
-guidata(hObject,handles)
 
 
 
