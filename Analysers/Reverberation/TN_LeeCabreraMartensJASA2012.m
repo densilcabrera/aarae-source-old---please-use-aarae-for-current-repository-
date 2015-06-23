@@ -28,7 +28,7 @@ function output=TN_LeeCabreraMartensJASA2012(RIR, level, ERdB_User)
 % are necessary.
 %
 % By Doheon Lee and Densil Cabrera (2013)
-% version 1.00 (15 April 2014)
+% version 2.00 (22 June 2015)
 
 % INPUT
 %     RIR:
@@ -51,8 +51,8 @@ function output=TN_LeeCabreraMartensJASA2012(RIR, level, ERdB_User)
 %         and [-5 -25] for TN. It is recommended to use the default
 %         setting, unless users have
 %
-%   OUTPUT
-%       - EDTN & TN values.
+%     OUTPUT
+%       - EDTN, TN and TN_User values
 
 % References:
 %  Lee, D., and Cabrera, D. (2010). Appl. Acoust. 71, 801-811.
@@ -60,18 +60,6 @@ function output=TN_LeeCabreraMartensJASA2012(RIR, level, ERdB_User)
 %  Moore, B.J.C., Glasberg, B.R., and Baer, T. (1997). J. Acoust. Soc. Am. 45, 224-240.
 %  Glasberg, B.R., and Moore, B.C.J. (2002). J. Audio. Eng. Soc. 50, 331-342.
 %  Moore, B.J.C., and Glasberg, B.R. (2007). J. Acoust. Soc. Am. 121, 1604-1612
-
-
-% Example 1: TN of a data matrix 'rir_data' when the expected listening
-% level is LAeq of 65 dB or LAFmax of 65 dB.
-%
-% loudrev(rir_data, 65);
-
-% Example 2: EDTN of a wave file 'room1.wav' with an expected LAeq or
-% LAFmax of 65 dB and a user defined evaluation rage of a peak to -20 dB
-% of the peak.
-%
-% loudrev('room1.wav', 65, [0 -20]);
 
 % %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Copyright (c) 2013, Doheon Lee and Densil Cabrera
@@ -109,7 +97,6 @@ function output=TN_LeeCabreraMartensJASA2012(RIR, level, ERdB_User)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 if isstruct(RIR)
-    RIR = choose_from_higher_dimensions(RIR,3,1); 
     data = RIR.audio;
     fs = RIR.fs;
     
@@ -143,6 +130,19 @@ else
     fs=str2double(input('Sampling Rate in Hz: ', 's'));
 end
 
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%% LEVEL CALIBRATION %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% resample to fs = 32 kHz because Glasberg & Moore appear to be using this
+% sampling rate in their paper. Please note that some of the calculations
+% later in this function are hard-coded for fs = 32 kHz.
+if fs ~= 32000
+    data = resample(data,32000,fs);
+    fs = 32000;
+end
+
 [lensig, chan]=size(data);
 if lensig < chan
     data=data';
@@ -153,9 +153,6 @@ if chan > 2
     chan = 2;
 end
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%%%%%%%%%%%%%%% LEVEL CALIBRATION %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 LA=zeros(lensig, chan); % A-weighted data
 LAF=zeros(lensig, chan); % A-weighted and fast integrated data
 
@@ -172,38 +169,39 @@ for i=1:chan;
     LA(:,i)=filter(hd, data(:,i)); % apply A-weigting
     LAF(:,i)=filter(bb,a,abs(LA(:,i))); % rectify and apply temporal integration
 end
+clear bb a
 
 LAFmax=10*log10(mean(max(LAF.^2))); % (mean maxima for 2-chan)
-gainadjust=level-LAFmax;
-data=data.*10.^(gainadjust/20);
+gain=level-LAFmax; 
 
-
-% t=(1:48000);
-% time=(t-1)./48000;
+% USE FOR TESTING THE OUTPUT OF MGBLoudnessforTN FOR 1K AT 40 DECIBEL
+% t=(1:fs);
+% time=(t-1)./fs;
 % data=sin(2*pi*1000*time);
-% gain=10*log10(mean(data.^2));
-% data=data.*10.^((level-gain)/20);
-
+% gain=40-10*log10(mean(data.^2));
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%% EDTN AND TN CALCULATION %%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-[~, LoudnessDecay,~,time]=MGBLoudnessforTN(data, fs, 2, -60.83, 1, 500, 0);
+[~, LoudnessShort, ~,LoudnessTime]=MGBLoudnessforTN(data, fs, 2, gain, 1, 500, 0);
 
-LoudnessDecaylog=log(LoudnessDecay)';
-peaks=findpeaks(LoudnessDecay, 'minpeakheight', max(LoudnessDecay)*0.5, 'minpeakdistance', 5); 
-directSound=peaks(1); % Direct sound in loudness
+% SMOOTHING THE LOUDNESS DECAY CURVE AND DETECTING THE LOUDNESS OF DIRECT SOUND
+[bb,a]=butter(3, 50/1000, 'low'); % note that the sampling rate of the output of 'MGBLoundssforTN' is 1000 Hz.
+LoudnessDecayEnvelope=filtfilt(bb,a,LoudnessShort); clear bb a
+pks=findpeaks(LoudnessDecayEnvelope, 'minpeakheight', max(LoudnessDecayEnvelope)*0.9);
+LoudnessDirectSound=pks(1); % loudness of a direct sound
+LoudnessDecaylog=log(LoudnessDecayEnvelope)';
 
 % EDTN CALCULATION
 ERdB = [0 -10]; % Evaluation range in decibel-like units
 ERsone=(10.^(ERdB/20)).^0.6;%Evaluation range in sone
-Point1_EDTN= find(LoudnessDecay==(directSound*ERsone(1)),1,'last');
-Point2_EDTN= find(LoudnessDecay>=(directSound*ERsone(2)),1,'last');
-P_EDTN=polyfit(time(Point1_EDTN:Point2_EDTN),LoudnessDecaylog(Point1_EDTN:Point2_EDTN),1);
-BestFitLineEDTN=polyval(P_EDTN,time);
+Point1_EDTN= find(LoudnessDecayEnvelope==(LoudnessDirectSound*ERsone(1)),1,'last');
+Point2_EDTN= find(LoudnessDecayEnvelope>=(LoudnessDirectSound*ERsone(2)),1,'last');
+P_EDTN=polyfit(LoudnessTime(Point1_EDTN:Point2_EDTN),LoudnessDecaylog(Point1_EDTN:Point2_EDTN),1);
+BestFitLineEDTN=polyval(P_EDTN,LoudnessTime);
 
-if Point2_EDTN >= length(LoudnessDecay)
+if Point2_EDTN >= length(LoudnessDecayEnvelope)
     disp('Evaluation range is beyond the length of the impulse response')
     output.EDTN = [];
 else
@@ -211,15 +209,14 @@ else
 end
 
 % TN CALCULATION
-
 ERdB = [-5 -25]; % Evaluation range in decibel-like units
 ERsone=(10.^(ERdB/20)).^0.6;%Evaluation range in sone
-Point1_TN= find(LoudnessDecay>=(directSound*ERsone(1)),1,'last');
-Point2_TN= find(LoudnessDecay>=(directSound*ERsone(2)),1,'last');
-P_TN=polyfit(time(Point1_TN:Point2_TN),LoudnessDecaylog(Point1_TN:Point2_TN),1);
-BestFitLineTN=polyval(P_TN,time);
+Point1_TN= find(LoudnessDecayEnvelope>=(LoudnessDirectSound*ERsone(1)),1,'last');
+Point2_TN= find(LoudnessDecayEnvelope>=(LoudnessDirectSound*ERsone(2)),1,'last');
+P_TN=polyfit(LoudnessTime(Point1_TN:Point2_TN),LoudnessDecaylog(Point1_TN:Point2_TN),1);
+BestFitLineTN=polyval(P_TN,LoudnessTime);
 
-if Point2_TN >= length(LoudnessDecay)
+if Point2_TN >= length(LoudnessDecayEnvelope)
     disp('Evaluation range is beyond the length of the impulse response')
     output.TN = [];
 else
@@ -235,17 +232,17 @@ if exist('TN_User_start', 'var') || nargin == 3
     end
     ERsone=(10.^(ERdB/20)).^0.6;%Evaluation range in sone
     if ERdB(1) == 0
-        Point1_TNU= find(LoudnessDecay==(directSound*ERsone(1)),1,'last');
-        Point2_TNU= find(LoudnessDecay>=(directSound*ERsone(2)),1,'last');
+        Point1_TNU= find(LoudnessDecayEnvelope==(LoudnessDirectSound*ERsone(1)),1,'last');
+        Point2_TNU= find(LoudnessDecayEnvelope>=(LoudnessDirectSound*ERsone(2)),1,'last');
     else
-        Point1_TNU=find(LoudnessDecay>=(directSound*ERsone(1)),1,'last');
-        Point2_TNU= find(LoudnessDecay>=(directSound*ERsone(2)),1,'last');
+        Point1_TNU=find(LoudnessDecayEnvelope>=(LoudnessDirectSound*ERsone(1)),1,'last');
+        Point2_TNU= find(LoudnessDecayEnvelope>=(LoudnessDirectSound*ERsone(2)),1,'last');
     end
     
-    P_TNU=polyfit(time(Point1_TNU:Point2_TNU),LoudnessDecaylog(Point1_TNU:Point2_TNU),1);
-    BestFitLineTNU=polyval(P_TNU,time);
+    P_TNU=polyfit(LoudnessTime(Point1_TNU:Point2_TNU),LoudnessDecaylog(Point1_TNU:Point2_TNU),1);
+    BestFitLineTNU=polyval(P_TNU,LoudnessTime);
     
-    if Point2_TNU >= length(LoudnessDecay)
+    if Point2_TNU >= length(LoudnessDecayEnvelope)
         disp('Evaluation range is beyond the length of the impulse response')
         output.TN_User = [];
     else
@@ -255,11 +252,11 @@ if exist('TN_User_start', 'var') || nargin == 3
     output.funcallback.inarg = {level,ERdB};
 end
 
+output.LoudnessShort=LoudnessShort;
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%% FIGURE %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-
 
 figure('name','Loudness-based Reverberance Parameters')
 if isfield(output, 'TN_User')
@@ -268,46 +265,51 @@ else
     subplot(1,2,1)
 end
 
-semilogy(time, LoudnessDecay, [time(Point1_EDTN) time(Point2_EDTN)], ...
-    exp([BestFitLineEDTN(Point1_EDTN) BestFitLineTNU(Point2_EDTN)]), '--xr');
+warning ('off', 'MATLAB:Axes:NegativeDataInLogAxis');
+semilogy(LoudnessTime, LoudnessShort, LoudnessTime, LoudnessDecayEnvelope, ':k', ...
+    [LoudnessTime(Point1_EDTN) LoudnessTime(Point2_EDTN)], ...
+    exp([BestFitLineEDTN(Point1_EDTN) BestFitLineEDTN(Point2_EDTN)]), '--xr');
 hold on
 title(['EDTN: ', num2str(output.EDTN), ' s'])
 xlabel('Time (s)', 'fontsize', 15);
 ylabel('Loudness (sone)', 'fontsize', 15);
-ymax = 10.^ceil(log10(max([max(LoudnessDecay) max(BestFitLineEDTN)])));
+ymax = 10.^ceil(log10(max([max(LoudnessShort) max(BestFitLineEDTN)])));
 ylim([ymax/1000 ymax])
 %axis([0 3 1 4]);
-
 if isfield(output, 'TN_User')
     subplot(1,3,2)
 else
     subplot(1,2,2)
 end
 
-semilogy(time, LoudnessDecay, [time(Point1_TN) time(Point2_TN)], ...
-    exp([BestFitLineTN(Point1_TN) BestFitLineTNU(Point2_TN)]), '--xr');
+semilogy(LoudnessTime, LoudnessShort, LoudnessTime, LoudnessDecayEnvelope, ':k', ...
+    [LoudnessTime(Point1_TN) LoudnessTime(Point2_TN)], ...
+    exp([BestFitLineTN(Point1_TN) BestFitLineTN(Point2_TN)]), '--xr');
 title(['TN: ', num2str(output.TN), ' s'])
 xlabel('Time (s)', 'fontsize', 15);
 ylabel('Loudness (sone)', 'fontsize', 15);
-ymax = 10.^ceil(log10(max([max(LoudnessDecay) max(BestFitLineTN)])));
+ymax = 10.^ceil(log10(max([max(LoudnessShort) max(BestFitLineTN)])));
 ylim([ymax/1000 ymax])
 %axis([0 3 1 4]);
 
 if isfield(output, 'TN_User')
     subplot(1,3,3)
-    semilogy(time, LoudnessDecay, [time(Point1_TNU) time(Point2_TNU)], ...
+    semilogy(LoudnessTime, LoudnessShort, LoudnessTime, LoudnessDecayEnvelope, ':k', ...
+        [LoudnessTime(Point1_TNU) LoudnessTime(Point2_TNU)], ...
         exp([BestFitLineTNU(Point1_TNU) BestFitLineTNU(Point2_TNU)]), '--xr');
     title(['TN(user): ', num2str(output.TN_User), ' s'])
     xlabel('Time (s)', 'fontsize', 15);
     ylabel('Loudness (sone)', 'fontsize', 15);
     %axis([0 3 1 4]);
-    ymax = 10.^ceil(log10(max([max(LoudnessDecay) max(BestFitLineTNU)])));
+    ymax = 10.^ceil(log10(max([max(LoudnessShort) max(BestFitLineTNU)])));
     ylim([ymax/1000 ymax])
 end
 
+warning ('on', 'MATLAB:Axes:NegativeDataInLogAxis');
+
 if isstruct(RIR)
-    doresultleaf(LoudnessDecay,'Loudness [sone]',{'Time'},...
-                 'Time',     time,       's',           true,...
+    doresultleaf(LoudnessShort,'Loudness [sone]',{'Time'},...
+                 'Time',     LoudnessTime,       's',           true,...
                  'Function', {'Unique'}, 'categorical', [],...
                  'name','Loudness');
 end
@@ -509,23 +511,21 @@ end
             signal = signal(:,1:2);
             nchan = 2;
         end
-        
-        % resample to fs = 32 kHz because Glasberg & Moore appear to be using this
-        % sampling rate in their paper. Please note that some of the calculations
-        % later in this function are hard-coded for fs = 32 kHz.
-        if fs ~= 32000
-            signal = resample(signal,32000,fs);
-            fs = 32000;
-        end
-        
+
         % signal calibration offset
-        signal = signal .* 10^(cal/20);
-        
+        cal = cal-59.9259;
+        % if length(cal) == 1
+            signal = signal .* 10.^(cal/20);
+        % else
+        %     signal(:,1) = signal(:,1) .* 10.^(cal(1)/20);
+        %     signal(:,2) = signal(:,2) .* 10.^(cal(2)/20);
+        % end
+
         % use if you wish to monitor the sound pressure level here
         % disp(['rms level of the entire wave ', num2str(10*log10(mean(signal.^2)+10e-99)+59.9259), ' dB'])
         % the offset of 59.9259 dB was chosen so that a 1 kHz tone at 40 dB yields
         % 1 sone. However, arguably 0.89 dB should be added to this (see comments
-        % elsewhere).
+        % elsewhere).   
         
         % zeropad signal by 32 ms at start and 63 ms at end
         signal = [zeros(1024,nchan);signal;zeros(2016,nchan)];
