@@ -252,7 +252,7 @@ if exist('TN_User_start', 'var') || nargin == 3
     output.funcallback.inarg = {level,ERdB};
 end
 
-output.LoudnessShort=LoudnessShort;
+%output.LoudnessShort=LoudnessShort;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%% FIGURE %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
