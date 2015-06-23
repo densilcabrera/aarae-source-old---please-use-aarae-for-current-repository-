@@ -7,7 +7,7 @@ function out = ReverberationTime_IR1(data,fs,startthresh,bpo,doplot,filterstreng
 % prior to it).
 %
 % Code by Grant Cuthbert & Densil Cabrera
-% Version 1.06 (18 February 2014)
+% Version 1.07 (24 June 2015)
 
 %--------------------------------------------------------------------------
 % INPUT VARIABLES
@@ -126,7 +126,7 @@ if isstruct(data)
     % can handle, and the third argument determines whether a dialog box is
     % used for selection. If the number of dimensions in the input is ok
     % then no change is made.
-    data = choose_from_higher_dimensions(data,3,1); 
+    data = choose_from_higher_dimensions(data,3,1);
     ir = data.audio;
     fs = data.fs;
     if size(ir,3)>1
@@ -149,7 +149,7 @@ else
     ir = data;
     if nargin < 2
         fs = inputdlg({'Sampling frequency [samples/s]'},...
-                           'Fs',1,{'48000'});
+            'Fs',1,{'48000'});
         fs = str2num(char(fs));
     end
 end
@@ -198,14 +198,14 @@ if ~isempty(ir) && ~isempty(fs) && ~isempty(startthresh) && ~isempty(bpo) && ~is
     %--------------------------------------------------------------------------
     % START TRUNCATION
     %--------------------------------------------------------------------------
-
+    
     [len,chans,bands] = size(ir);
     if (bands>1)
         multibandIR = 1;
     else
         multibandIR = 0;
     end
-
+    
     % Get last 10 % for Chu noise compensation if set (before the circular
     % shift is done as part of startpoint detection/allignment)
     if noisecomp == 1
@@ -214,42 +214,57 @@ if ~isempty(ir) && ~isempty(fs) && ~isempty(startthresh) && ~isempty(bpo) && ~is
     if noisecomp == 2;
         autotrunc = 1;
     end
-
+    
     % Preallocate
     m = zeros(1,chans,bands); % maximum value of the IR
     startpoint = zeros(1,chans,bands); % the auto-detected start time of the IR
-
+    
     for dim2 = 1:chans
         for dim3 = 1:bands
             m(1,dim2,dim3) = max(ir(:,dim2,dim3).^2); % maximum value of the IR
             startpoint(1,dim2,dim3) = find(ir(:,dim2,dim3).^2 >= m(1,dim2,dim3)./ ...
                 (10^(abs(startthresh)/10)),1,'first'); % Define start point
-
+            
             %for cases where startpoint was not found
-            startpoint(isempty(startpoint))=1; 
-
+            startpoint(isempty(startpoint))=1;
+            
             %startpoint = min(startpoint,[],3);
             if startpoint(1,dim2,dim3) >1
-
+                
                 % zero the data before the startpoint
                 ir(1:startpoint(1,dim2,dim3)-1,dim2,dim3) = 0;
-
+                
                 % rotate the zeros to the end (to keep a constant data length)
                 ir(:,dim2,dim3) = circshift(ir(:,dim2,dim3),-(startpoint(1,dim2,dim3)-1));
-
+                
             end % if startpoint
         end
     end % for dim2
-
-    early50 = ir(1:1+floor(fs*0.05),:,:); % Truncate Early80
-    early80 = ir(1:1+floor(fs*0.08),:,:); % Truncate Early80
-    late50 = ir(ceil(fs*0.05):end,:,:); % Truncate Late50
-    late80 = ir(ceil(fs*0.08):end,:,:); % Truncate Late80
-
+    
+    
+    try
+        early50 = ir(1:1+floor(fs*0.05),:,:); % Truncate Early50
+        late50 = ir(ceil(fs*0.05):end,:,:); % Truncate Late50
+        do50 = true;
+    catch
+        [early50, late50] = deal(NaN(1,chans,bands));
+        do50 = false;
+    end
+    
+    try
+        early80 = ir(1:1+floor(fs*0.08),:,:); % Truncate Early80
+        late80 = ir(ceil(fs*0.08):end,:,:); % Truncate Late80
+        do80 = true;
+    catch
+        [early80, late80] = deal(NaN(1,chans,bands));
+        do80 = false;
+    end
+    
+    
     %--------------------------------------------------------------------------
     % FILTERING
     %--------------------------------------------------------------------------
-
+    
     if (multibandIR == 0) && ((bpo ==1) || (bpo == 3))
         noctaves = log2(f_hi/f_low);
         if bpo == 1
@@ -273,62 +288,74 @@ if ~isempty(ir) && ~isempty(fs) && ~isempty(startthresh) && ~isempty(bpo) && ~is
             bandfc = 1:bands;
         end
     end
-
+    
     % - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     if (multibandIR == 0) && ((bpo ==1) || (bpo == 3))
-
+        
         % use AARAE's fft-based filters
-
+        
         if bpo == 1
             order = [12,12]*filterstrength;
             iroct = octbandfilter_viaFFT(ir,fs,bandfc,order,0,1000,0,phasemode);
-            early50oct = octbandfilter_viaFFT(early50,fs,bandfc,order,0,1000,0,phasemode);
-            early80oct = octbandfilter_viaFFT(early80,fs,bandfc,order,0,1000,0,phasemode);
-            late50oct = octbandfilter_viaFFT(late50,fs,bandfc,order,0,1000,0,phasemode);
-            late80oct = octbandfilter_viaFFT(late80,fs,bandfc,order,0,1000,0,phasemode);
+            if do50
+                early50oct = octbandfilter_viaFFT(early50,fs,bandfc,order,0,1000,0,phasemode);
+                early80oct = octbandfilter_viaFFT(early80,fs,bandfc,order,0,1000,0,phasemode);
+            end
+            if do80
+                late50oct = octbandfilter_viaFFT(late50,fs,bandfc,order,0,1000,0,phasemode);
+                late80oct = octbandfilter_viaFFT(late80,fs,bandfc,order,0,1000,0,phasemode);
+            end
             if noisecomp == 1
                 ir_end10oct = octbandfilter_viaFFT(ir_end10,fs,bandfc,order,0,1000,0,phasemode);
             end
-
+            
         else
             order = [36,24] * filterstrength;
             iroct = thirdoctbandfilter_viaFFT(ir,fs,bandfc,order,0,1000,0,phasemode);
-            early50oct = thirdoctbandfilter_viaFFT(early50,fs,bandfc,order,0,1000,0,phasemode);
-            early80oct = thirdoctbandfilter_viaFFT(early80,fs,bandfc,order,0,1000,0,phasemode);
-            late50oct = thirdoctbandfilter_viaFFT(late50,fs,bandfc,order,0,1000,0,phasemode);
-            late80oct = thirdoctbandfilter_viaFFT(late80,fs,bandfc,order,0,1000,0,phasemode);
+            if do50
+                early50oct = thirdoctbandfilter_viaFFT(early50,fs,bandfc,order,0,1000,0,phasemode);
+                early80oct = thirdoctbandfilter_viaFFT(early80,fs,bandfc,order,0,1000,0,phasemode);
+            end
+            if do80
+                late50oct = thirdoctbandfilter_viaFFT(late50,fs,bandfc,order,0,1000,0,phasemode);
+                late80oct = thirdoctbandfilter_viaFFT(late80,fs,bandfc,order,0,1000,0,phasemode);
+            end
             if noisecomp == 1
                 ir_end10oct = thirdoctbandfilter_viaFFT(ir_end10,fs,bandfc,order,0,1000,0,phasemode);
             end
         end
-
+        
         % check the number of bands again, in case some were not ok to filter
         bands = size(iroct,3);
         fc = fc(1:bands);
         bandfc = bandfc(1:bands);
-
+        
         %----------------------------------------------------------------------
         % END AUTO-TRUNCATION
         %----------------------------------------------------------------------
-
-
-
-
+        
+        
+        
+        
         if autotrunc == 1
             % Lundeby crosspoint
             [crosspoint, Tlate, okcrosspoint] =...
                 lundebycrosspoint(iroct(1:(end-max(max(max(startpoint)))),:,:).^2, fs,fc);
-
+            
             % autotruncation
             for ch = 1:chans
                 for b = 1:bands
                     if crosspoint(1,ch,b) < len
                         iroct(crosspoint(1,ch,b):end,ch,b) = 0;
                         if crosspoint(1,ch,b) > fs*0.05
-                            late50oct(round(crosspoint(1,ch,b)-fs*0.05+1):end,ch,b)=0;
+                            if do50
+                                late50oct(round(crosspoint(1,ch,b)-fs*0.05+1):end,ch,b)=0;
+                            end
                         end
                         if crosspoint(1,ch,b) > fs*0.08
-                            late80oct(round(crosspoint(1,ch,b)-fs*0.08+1):end,ch,b)=0;
+                            if do80
+                                late80oct(round(crosspoint(1,ch,b)-fs*0.08+1):end,ch,b)=0;
+                            end
                         end
                     end
                 end
@@ -338,54 +365,60 @@ if ~isempty(ir) && ~isempty(fs) && ~isempty(startthresh) && ~isempty(bpo) && ~is
             % isn't due to filter ringing)
             % this is especially important for non-linear curve fitting
             for ch = 1:chans
-
+                
                 iroct(end-startpoint(1,ch,1):end,ch,:) = 0;
-
+                
             end
         end
-
+        
         %----------------------------------------------------------------------
         % CALCULATE ENERGY PARAMETERS
         %----------------------------------------------------------------------
-
-        early50oct = sum(early50oct.^2);
-        early80oct = sum(early80oct.^2);
-        late50oct = sum(late50oct.^2);
-        late80oct = sum(late80oct.^2);
         alloct = sum(iroct.^2);
-
-
-        C50 = 10*log10(early50oct ./ late50oct); % C50
-        C80 = 10*log10(early80oct ./ late80oct); % C80
-        D50 = (early50oct ./ alloct); % D50
-        D80 = (early80oct ./ alloct); % D80
-
+        if do50
+            early50oct = sum(early50oct.^2);
+            late50oct = sum(late50oct.^2);
+            C50 = 10*log10(early50oct ./ late50oct); % C50
+            D50 = (early50oct ./ alloct); % D50
+        else
+            [C50,D50] = deal(NaN(1,chans,bands));
+        end
+        
+        if do80
+            
+            early80oct = sum(early80oct.^2);
+            late80oct = sum(late80oct.^2);
+            C80 = 10*log10(early80oct ./ late80oct); % C80
+            D80 = (early80oct ./ alloct); % D80
+        else
+            [C80,D80] = deal(NaN(1,chans,bands));
+        end
         % time values of IR in seconds
         tstimes = (0:(length(iroct)-1))' ./ fs;
-
+        
         Ts = (sum(iroct.^2 .* ...
             repmat(tstimes,[1,chans,bands])))./alloct; % Ts
         %     end
-
-
-
-
+        
+        
+        
+        
     end % if multibandIR == 0
     % - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-
+    
     if (multibandIR == 1) || (bpo == 0)
         bands = size(ir,3);
         iroct = ir;
-
+        
         %----------------------------------------------------------------------
         % END AUTO-TRUNCATION
         %----------------------------------------------------------------------
-
+        
         if autotrunc == 1
             % Lundeby crosspoint
             [crosspoint, Tlate, okcrosspoint] =...
                 lundebycrosspoint(iroct(1:(end-max(max(max(startpoint)))),:,:).^2, fs,bandfc);
-
+            
             % autotruncation
             for ch = 1:chans
                 for b = 1:bands
@@ -400,10 +433,10 @@ if ~isempty(ir) && ~isempty(fs) && ~isempty(startthresh) && ~isempty(bpo) && ~is
                     end
                 end
             end
-
+            
         end
-
-
+        
+        
         %----------------------------------------------------------------------
         % CALCULATE ENERGY PARAMETERS
         %----------------------------------------------------------------------
@@ -416,21 +449,21 @@ if ~isempty(ir) && ~isempty(fs) && ~isempty(startthresh) && ~isempty(bpo) && ~is
         late50oct = sum(late50.^2);
         late80oct = sum(late80.^2);
         alloct = sum(ir.^2);
-
-
+        
+        
         C50 = 10*log10(early50oct ./ late50oct); % C50
         C80 = 10*log10(early80oct ./ late80oct); % C80
         D50 = (early50oct ./ alloct); % D50
         D80 = (early80oct ./ alloct); % D80
-
+        
         % time values of IR in seconds
         tstimes = (0:(length(iroct)-1))' ./ fs;
-
+        
         Ts = (sum(iroct.^2 .* ...
             repmat(tstimes,[1,chans,bands])))./alloct; % Ts
-
+        
     end % if multibandIR == 1
-
+    
     % mean square of last 10%
     if noisecomp == 1
         if (multibandIR == 0) && ((bpo==1) || (bpo==3))
@@ -441,18 +474,18 @@ if ~isempty(ir) && ~isempty(fs) && ~isempty(startthresh) && ~isempty(bpo) && ~is
     else
         ir_end10oct = zeros(1,chans,bands);
     end
-
+    
     %--------------------------------------------------------------------------
     % REVERBERATION TIME (Reverse Integration, Linear Regression)
     %--------------------------------------------------------------------------
-
+    
     %***************************************
     % Derive the reverse-integrated decay curve(s)
-
+    
     % square and correct for background noise (Chu method) if set
     iroct2 = iroct.^2 - repmat(ir_end10oct,[len,1,1]);
     iroct2(iroct2<0) = 0;
-
+    
     if noisecomp == 2
         % extrapolate decay beyond crosspoint
         tau = 0.8*Tlate./log(1e6); % 0.8 is more conservative than 1
@@ -467,92 +500,92 @@ if ~isempty(ir) && ~isempty(fs) && ~isempty(startthresh) && ~isempty(bpo) && ~is
             end
         end
     end
-
+    
     % Reverse integrate squared IR, and express the result in decibels
     levdecay = 10*log10(flipdim(cumsum(flipdim(iroct2,1)),1));
-
+    
     for dim2 = 1:chans
         for dim3 = 1:bands
             % Adjust so that the IR starts at 0 dB
             levdecay(:,dim2,dim3) = levdecay(:,dim2,dim3) - levdecay(1,dim2,dim3);
         end
     end
-
+    
     if (noisecomp == 0) || (noisecomp == 1) || (noisecomp == 2)
         %***************************************
         % Derive decay times, via linear regressions over the appropriate
         % evaluation ranges
-
+        
         % preallocate
         [o,p,q] = deal(zeros(2, chans, bands));
         [EDT,T20,T30,EDTr2,T20r2,T30r2] = deal(zeros(1, chans, bands));
-
+        
         for dim2 = 1:chans
             for dim3 = 1:bands
-
+                
                 % find the indices for the relevant start and end samples
                 irstart = find(levdecay(:,dim2,dim3) <= 0, 1, 'first'); % 0 dB
                 tstart = find(levdecay(:,dim2,dim3) <= -5, 1, 'first'); % -5 dB
                 edtend = find(levdecay(:,dim2,dim3) <= -10, 1, 'first'); % -10 dB
                 t20end = find(levdecay(:,dim2,dim3) <= -25, 1, 'first'); % -25 dB
                 t30end = find(levdecay(:,dim2,dim3) <= -35, 1, 'first'); % -35 dB
-
+                
                 %******************************************************************
                 % linear regression for EDT
-
+                
                 o(:,dim2,dim3) = polyfit((irstart:edtend)', ...
                     levdecay(irstart:edtend,dim2,dim3),1)';
-
-
-
+                
+                
+                
                 EDT(1,dim2,dim3) = 6*((o(2,dim2,dim3)-10)/o(1,dim2,dim3) ...
                     -(o(2,dim2,dim3)-0)/o(1,dim2,dim3))/fs; % EDT
                 EDTr2(1,dim2,dim3) = corr(levdecay(irstart:edtend,dim2,dim3), ...
                     (irstart:edtend)' * o(1,dim2,dim3) + ...
                     o(2,dim2,dim3)).^2; % correlation coefficient, EDT
-
-
+                
+                
                 %******************************************************************
                 % linear regression for T20
-
+                
                 p(:,dim2,dim3) = polyfit((tstart:t20end)', ...
                     levdecay(tstart:t20end,dim2,dim3),1)';
-
-
-
+                
+                
+                
                 T20(1,dim2, dim3) = 3*((p(2,dim2,dim3)-25)/p(1,dim2,dim3) ...
                     -(p(2,dim2,dim3)-5)/ ...
                     p(1,dim2,dim3))/fs; % reverberation time, T20
                 T20r2(1,dim2, dim3) = corr(levdecay(tstart:t20end,dim2,dim3), ...
                     (tstart:t20end)'*p(1,dim2,dim3) ...
                     + p(2,dim2,dim3)).^2; % correlation coefficient, T20
-
-
-
+                
+                
+                
                 %******************************************************************
                 % linear regression for T30
-
+                
                 q(:,dim2,dim3) = polyfit((tstart:t30end)', ...
                     levdecay(tstart:t30end,dim2,dim3),1)'; % linear regression
-
-
-
+                
+                
+                
                 T30(1,dim2, dim3) = 2*((q(2,dim2,dim3)-35)/q(1,dim2,dim3) ...
                     -(q(2,dim2,dim3)-5)/ ...
                     q(1,dim2,dim3))/fs; % reverberation time, T30
                 T30r2(1,dim2, dim3) = corr(levdecay(tstart:t30end,dim2,dim3), ...
                     (tstart:t30end)'*q(1,dim2,dim3) ...
                     + q(2,dim2,dim3)).^2; % correlation coefficient, T30
-
-
-
+                
+                
+                
             end % dim3
         end % dim2
-
+        
     elseif (noisecomp == 3) || (noisecomp == 4) || (noisecomp == 5)
         % nonlinear curve fit following Xiang 1995
-
-
+        
+        
         % nonlinear curve fitting seed coefficients
         b1 = 1*rand;
         b2 = -20*rand;
@@ -560,7 +593,7 @@ if ~isempty(ir) && ~isempty(fs) && ~isempty(startthresh) && ~isempty(bpo) && ~is
         b = [b1;b2;b3];
         maxloopcount = 10; % maximum number of fitting attempts for each parameter
         jthreshold = 0.9; % value less than 1, the higher the value, the stricter the threshold
-
+        
         % preallocate
         t = zeros(len, chans, bands);
         o = zeros(3, chans, bands);
@@ -579,7 +612,7 @@ if ~isempty(ir) && ~isempty(fs) && ~isempty(startthresh) && ~isempty(bpo) && ~is
         T20r2 = zeros(1, chans, bands);
         T30r2 = zeros(1, chans, bands);
         dataend1 = zeros(1, chans, bands);
-
+        
         for dim2 = 1:chans
             for dim3 = 1:bands
                 % find the end of the sound (find first -inf)
@@ -591,17 +624,17 @@ if ~isempty(ir) && ~isempty(fs) && ~isempty(startthresh) && ~isempty(bpo) && ~is
                 end
             end
         end
-
-
+        
+        
         for dim2 = 1:chans
             for dim3 = 1:bands
                 irstart = find(levdecay(:,dim2,dim3) <= 0, 1, 'first'); % 0 dB
                 edtend = find(levdecay(:,dim2,dim3) <= -10, 1, 'first'); % -10 dB
                 t(1:dataend(:,dim2,dim3),dim2,dim3) = ((1:dataend(:,dim2,dim3))-1)./fs;
-
+                
                 irlen = (t(dataend(:,dim2,dim3),dim2,dim3)); % duration of ir
-
-
+                
+                
                 % decay curve model
                 if noisecomp == 3
                     % use entire data length for method 3
@@ -624,7 +657,7 @@ if ~isempty(ir) && ~isempty(fs) && ~isempty(startthresh) && ~isempty(bpo) && ~is
                     modelfun = @(B,x)(10*log10(abs(B(1)).*exp(-abs(B(2)).*x)...
                         + abs(B(3)).*(irlen-x)));
                 end
-
+                
                 % derive coefficients
                 fitted = 0;
                 loopcount = 0;
@@ -639,7 +672,7 @@ if ~isempty(ir) && ~isempty(fs) && ~isempty(startthresh) && ~isempty(bpo) && ~is
                         b = [100*rand;-100*rand;0.1*rand];
                         disp('*')
                     end
-
+                    
                 end
                 o(1,dim2,dim3) = abs(o(1,dim2,dim3));
                 o(2,dim2,dim3) = -abs(o(2,dim2,dim3));
@@ -651,25 +684,25 @@ if ~isempty(ir) && ~isempty(fs) && ~isempty(startthresh) && ~isempty(bpo) && ~is
                     10*log10(o(1,dim2,dim3).*exp(-abs(o(2,dim2,dim3)).*t(:,dim2,dim3)));
                 levdecaymodelEDT(:,dim2,dim3) = ...
                     levdecaymodelEDT(:,dim2,dim3)-max(levdecaymodelEDT(:,dim2,dim3));
-
+                
                 startmodelEDT = ...
                     find(levdecaymodelEDT(:,dim2,dim3) <= 0, 1, 'first'); % 0 dB
                 endmodelEDT = ...
                     find(levdecaymodelEDT(:,dim2,dim3) <= -10, 1, 'first'); % -10 dB
-
+                
                 % length of specific model
                 edtmodlen(:,dim2,dim3) = length(t(startmodelEDT:endmodelEDT,dim2,dim3));
-
+                
                 EDT(1,dim2,dim3) = 6.*(edtmodlen(1,dim2,dim3))./fs; % EDT in seconds
-
+                
                 EDTr2(1,dim2,dim3) = corr(levdecay(irstart:edtend,dim2,dim3), ...
                     (irstart:edtend)' * o(1,dim2,dim3) + ...
                     o(2,dim2,dim3)).^2; % correlation coefficient, EDT
-
-
+                
+                
             end % dim3
         end % dim2
-
+        
         % no need for further fitting etc for noisecomp 3 and 4
         if (noisecomp == 3) || (noisecomp ==4)
             [p,q] = deal(o);
@@ -678,7 +711,7 @@ if ~isempty(ir) && ~isempty(fs) && ~isempty(startthresh) && ~isempty(bpo) && ~is
             disp('Hence the evaluation ranges of EDT, T20 and T30 are not used in their full sense,')
             disp('and their values are likely to be very similar to each other.')
         end
-
+        
         % T20 nonlinear model
         for dim2 = 1:chans
             for dim3 = 1:bands
@@ -690,62 +723,62 @@ if ~isempty(ir) && ~isempty(fs) && ~isempty(startthresh) && ~isempty(bpo) && ~is
                     p(:,dim2,dim3) = [0;0;0];
                     %disp('insufficient dynamic range for T20')
                 else
-                irlen = (t(dataend(:,dim2,dim3),dim2,dim3)); % finite length of IR (ULI)
-
-                % decay curve model
-
-                if noisecomp == 5
-                    % vector of response (dependent variable) values
-                    x = t((tstart:t20end),dim2,dim3); % discrete time
-                    y = levdecay((tstart:t20end),dim2,dim3);
-                    modelfun = @(B,x)(10*log10(abs(B(1)).*exp(-abs(B(2)).*x)...
-                        + abs(B(3)).*(irlen-x)));
-
-                    % derive coefficients
-                    fitted = 0;
-                    loopcount = 0;
-                    while ~fitted
-                        loopcount = loopcount+1;
-                        [p(:,dim2,dim3),~,j] = nlinfit(x,y,modelfun,b);
-                        jflag = min(sum(j.^2));
-                        if jflag > jthreshold || loopcount == maxloopcount,
-                            fitted = 1;
-                            b = p(:,dim2,dim3)';
-                        else
-                            b = [100*rand;100*rand;rand];
-                            disp('*')
+                    irlen = (t(dataend(:,dim2,dim3),dim2,dim3)); % finite length of IR (ULI)
+                    
+                    % decay curve model
+                    
+                    if noisecomp == 5
+                        % vector of response (dependent variable) values
+                        x = t((tstart:t20end),dim2,dim3); % discrete time
+                        y = levdecay((tstart:t20end),dim2,dim3);
+                        modelfun = @(B,x)(10*log10(abs(B(1)).*exp(-abs(B(2)).*x)...
+                            + abs(B(3)).*(irlen-x)));
+                        
+                        % derive coefficients
+                        fitted = 0;
+                        loopcount = 0;
+                        while ~fitted
+                            loopcount = loopcount+1;
+                            [p(:,dim2,dim3),~,j] = nlinfit(x,y,modelfun,b);
+                            jflag = min(sum(j.^2));
+                            if jflag > jthreshold || loopcount == maxloopcount,
+                                fitted = 1;
+                                b = p(:,dim2,dim3)';
+                            else
+                                b = [100*rand;100*rand;rand];
+                                disp('*')
+                            end
+                            
                         end
-
+                        p(1,dim2,dim3) = abs(p(1,dim2,dim3));
+                        p(2,dim2,dim3) = -abs(p(2,dim2,dim3));
+                        p(3,dim2,dim3) = abs(p(3,dim2,dim3));
+                        
+                        disp(['T20 nonlinear parameters: ',num2str(p(1,dim2,dim3)),...
+                            ' ',num2str(p(2,dim2,dim3)),' ',num2str(p(3,dim2,dim3))])
                     end
-                    p(1,dim2,dim3) = abs(p(1,dim2,dim3));
-                    p(2,dim2,dim3) = -abs(p(2,dim2,dim3));
-                    p(3,dim2,dim3) = abs(p(3,dim2,dim3));
-
-                    disp(['T20 nonlinear parameters: ',num2str(p(1,dim2,dim3)),...
-                        ' ',num2str(p(2,dim2,dim3)),' ',num2str(p(3,dim2,dim3))])
-                end
-                % create acoustic parameter-specific model using coefficients
-                levdecaymodelT20(:,dim2,dim3) = ...
-                    10*log10(p(1,dim2,dim3).*exp(-abs(p(2,dim2,dim3)).*t(:,dim2,dim3)));
-                levdecaymodelT20(:,dim2,dim3) = ...
-                    levdecaymodelT20(:,dim2,dim3)-max(levdecaymodelT20(:,dim2,dim3));
-
-                startmodelT20 = ...
-                    find(levdecaymodelT20(:,dim2,dim3) <= -5, 1, 'first'); % -5 dB
-                endmodelT20 = ...
-                    find(levdecaymodelT20(:,dim2,dim3) <= -25, 1, 'first'); % -25 dB
-                t20modlen(:,dim2,dim3) = length(t(startmodelT20:endmodelT20,dim2,dim3));
-
-                T20(1,dim2,dim3) = 3.*(t20modlen(1,dim2,dim3))./fs; % T20 in seconds
-
-                T20r2(1,dim2,dim3) = corr(levdecay(tstart:t20end,dim2,dim3), ...
-                    (tstart:t20end)'*p(1,dim2,dim3) ...
-                    + p(2,dim2,dim3)).^2; % correlation coefficient, T20
+                    % create acoustic parameter-specific model using coefficients
+                    levdecaymodelT20(:,dim2,dim3) = ...
+                        10*log10(p(1,dim2,dim3).*exp(-abs(p(2,dim2,dim3)).*t(:,dim2,dim3)));
+                    levdecaymodelT20(:,dim2,dim3) = ...
+                        levdecaymodelT20(:,dim2,dim3)-max(levdecaymodelT20(:,dim2,dim3));
+                    
+                    startmodelT20 = ...
+                        find(levdecaymodelT20(:,dim2,dim3) <= -5, 1, 'first'); % -5 dB
+                    endmodelT20 = ...
+                        find(levdecaymodelT20(:,dim2,dim3) <= -25, 1, 'first'); % -25 dB
+                    t20modlen(:,dim2,dim3) = length(t(startmodelT20:endmodelT20,dim2,dim3));
+                    
+                    T20(1,dim2,dim3) = 3.*(t20modlen(1,dim2,dim3))./fs; % T20 in seconds
+                    
+                    T20r2(1,dim2,dim3) = corr(levdecay(tstart:t20end,dim2,dim3), ...
+                        (tstart:t20end)'*p(1,dim2,dim3) ...
+                        + p(2,dim2,dim3)).^2; % correlation coefficient, T20
                 end
             end % dim 3
         end % dim 2
-
-
+        
+        
         % T30 nonlinear model
         for dim2 = 1:chans
             for dim3 = 1:bands
@@ -757,70 +790,70 @@ if ~isempty(ir) && ~isempty(fs) && ~isempty(startthresh) && ~isempty(bpo) && ~is
                     q(:,dim2,dim3) = [0;0;0];
                     %disp('insufficient dynamic range for T30')
                 else
-
-                irlen = (t(dataend(:,dim2,dim3),dim2,dim3)); % finite length of IR (ULI)
-
-
-                % decay curve model
-
-                if noisecomp == 5
-                    % vector of response (dependent variable) values
-                    x = t((tstart:t30end),dim2,dim3); % discrete time
-                    y = levdecay((tstart:t30end),dim2,dim3);
-                    modelfun = @(B,x)(10*log10(abs(B(1)).*exp(-abs(B(2)).*x)...
-                        + abs(B(3)).*(irlen-x)));
-
-
-                    % derive coefficients
-                    fitted = 0;
-                    loopcount = 0;
-                    while ~fitted
-                        loopcount = loopcount+1;
-                        [q(:,dim2,dim3),~,j] = nlinfit(x,y,modelfun,b);
-                        jflag = min(sum(j.^2));
-                        if jflag > jthreshold || loopcount == maxloopcount,
-                            fitted = 1;
-                            b = q(:,dim2,dim3)';
-                        else
-                            b = [100*rand;100*rand;rand];
-                            disp('*')
+                    
+                    irlen = (t(dataend(:,dim2,dim3),dim2,dim3)); % finite length of IR (ULI)
+                    
+                    
+                    % decay curve model
+                    
+                    if noisecomp == 5
+                        % vector of response (dependent variable) values
+                        x = t((tstart:t30end),dim2,dim3); % discrete time
+                        y = levdecay((tstart:t30end),dim2,dim3);
+                        modelfun = @(B,x)(10*log10(abs(B(1)).*exp(-abs(B(2)).*x)...
+                            + abs(B(3)).*(irlen-x)));
+                        
+                        
+                        % derive coefficients
+                        fitted = 0;
+                        loopcount = 0;
+                        while ~fitted
+                            loopcount = loopcount+1;
+                            [q(:,dim2,dim3),~,j] = nlinfit(x,y,modelfun,b);
+                            jflag = min(sum(j.^2));
+                            if jflag > jthreshold || loopcount == maxloopcount,
+                                fitted = 1;
+                                b = q(:,dim2,dim3)';
+                            else
+                                b = [100*rand;100*rand;rand];
+                                disp('*')
+                            end
+                            
                         end
-
+                        q(1,dim2,dim3) = abs(q(1,dim2,dim3));
+                        q(2,dim2,dim3) = -abs(q(2,dim2,dim3));
+                        q(3,dim2,dim3) = abs(q(3,dim2,dim3));
+                        disp(['T30 nonlinear parameters: ',num2str(q(1,dim2,dim3)),...
+                            ' ',num2str(q(2,dim2,dim3)),' ',num2str(q(3,dim2,dim3))])
+                        
                     end
-                    q(1,dim2,dim3) = abs(q(1,dim2,dim3));
-                    q(2,dim2,dim3) = -abs(q(2,dim2,dim3));
-                    q(3,dim2,dim3) = abs(q(3,dim2,dim3));
-                    disp(['T30 nonlinear parameters: ',num2str(q(1,dim2,dim3)),...
-                        ' ',num2str(q(2,dim2,dim3)),' ',num2str(q(3,dim2,dim3))])
-
-                end
-                % create acoustic parameter-specific model using coefficients
-
-                levdecaymodelT30(:,dim2,dim3) = ...
-                    10*log10(q(1,dim2,dim3).*exp(-abs(q(2,dim2,dim3)).*t(:,dim2,dim3)));
-
-                levdecaymodelT30(:,dim2,dim3) = ...
-                    levdecaymodelT30(:,dim2,dim3)-max(levdecaymodelT30(:,dim2,dim3));
-
-                startmodelT30 = ...
-                    find(levdecaymodelT30(:,dim2,dim3) <= -5, 1, 'first'); % -5 dB
-                endmodelT30 = ...
-                    find(levdecaymodelT30(:,dim2,dim3) <= -35, 1, 'first'); % -35 dB
-                t30modlen(:,dim2,dim3) = length(t(startmodelT30:endmodelT30,dim2,dim3));
-
-                T30(1,dim2,dim3) = 2.*(t30modlen(1,dim2,dim3))./fs; % T30 in seconds
-
-                T30r2(1,dim2,dim3) = corr(levdecay(tstart:t30end,dim2,dim3), ...
-                    (tstart:t30end)'*q(1,dim2,dim3) ...
-                    + q(2,dim2,dim3)).^2; % correlation coefficient, T30
+                    % create acoustic parameter-specific model using coefficients
+                    
+                    levdecaymodelT30(:,dim2,dim3) = ...
+                        10*log10(q(1,dim2,dim3).*exp(-abs(q(2,dim2,dim3)).*t(:,dim2,dim3)));
+                    
+                    levdecaymodelT30(:,dim2,dim3) = ...
+                        levdecaymodelT30(:,dim2,dim3)-max(levdecaymodelT30(:,dim2,dim3));
+                    
+                    startmodelT30 = ...
+                        find(levdecaymodelT30(:,dim2,dim3) <= -5, 1, 'first'); % -5 dB
+                    endmodelT30 = ...
+                        find(levdecaymodelT30(:,dim2,dim3) <= -35, 1, 'first'); % -35 dB
+                    t30modlen(:,dim2,dim3) = length(t(startmodelT30:endmodelT30,dim2,dim3));
+                    
+                    T30(1,dim2,dim3) = 2.*(t30modlen(1,dim2,dim3))./fs; % T30 in seconds
+                    
+                    T30r2(1,dim2,dim3) = corr(levdecay(tstart:t30end,dim2,dim3), ...
+                        (tstart:t30end)'*q(1,dim2,dim3) ...
+                        + q(2,dim2,dim3)).^2; % correlation coefficient, T30
                 end
             end % dim 3
-        end % dim 2   
+        end % dim 2
     end
-
+    
     %--------------------------------------------------------------------------
-
-
+    
+    
     if  bpo == 1
         fc500 = find(bandfc == 500);
         fc1000 = find(bandfc == 1000);
@@ -831,7 +864,7 @@ if ~isempty(ir) && ~isempty(fs) && ~isempty(startthresh) && ~isempty(bpo) && ~is
         else
             [EDTmid,T20mid,T30mid] = deal(nan(1,chans));
         end
-
+        
         fc125 = find(bandfc == 125);
         fc250 = find(bandfc == 250);
         if ~isempty(fc125) && ~isempty(fc250) && fc250-fc125 == 1
@@ -841,7 +874,7 @@ if ~isempty(ir) && ~isempty(fs) && ~isempty(startthresh) && ~isempty(bpo) && ~is
         else
             [EDTlow,T20low,T30low] = deal(nan(1,chans));
         end
-
+        
         fc2000 = find(bandfc == 2000);
         fc4000 = find(bandfc == 4000);
         if ~isempty(fc2000) && ~isempty(fc4000) && fc4000-fc2000 == 1
@@ -851,7 +884,7 @@ if ~isempty(ir) && ~isempty(fs) && ~isempty(startthresh) && ~isempty(bpo) && ~is
         else
             [EDThigh,T20high,T30high] = deal(nan(1,chans));
         end
-
+        
         % Bass ratio
         if ~isempty(T30mid) && ~isempty(T30low)
             BR_T30 = T30low ./ T30mid;
@@ -860,7 +893,7 @@ if ~isempty(ir) && ~isempty(fs) && ~isempty(startthresh) && ~isempty(bpo) && ~is
         else
             [BR_EDT,BR_T20,BR_T30] = deal(nan(1,chans));
         end
-
+        
         if ~isempty(T30mid) && ~isempty(T30high)
             TR_T30 = T30high ./ T30mid;
             TR_T20 = T20high ./ T20mid;
@@ -868,22 +901,22 @@ if ~isempty(ir) && ~isempty(fs) && ~isempty(startthresh) && ~isempty(bpo) && ~is
         else
             [TR_EDT,TR_T20,TR_T30] = deal(nan(1,chans));
         end
-
+        
     end
-
+    
     % percentage ratio of T20 to T30
     T20T30r = (T20./T30)*100;
-
+    
     %--------------------------------------------------------------------------
     % OUTPUT
     %--------------------------------------------------------------------------
-
-
+    
+    
     % Create output structure
-
+    
     out.bandfc = bandfc;
-
-
+    
+    
     out.EDT = permute(EDT,[2,3,1]);
     out.T20 = permute(T20,[2,3,1]);
     out.T30 = permute(T30,[2,3,1]);
@@ -921,7 +954,7 @@ if ~isempty(ir) && ~isempty(fs) && ~isempty(startthresh) && ~isempty(bpo) && ~is
         out.TR_T20 = permute(TR_T20,[2,3,1]);
         out.TR_T30 = permute(TR_T30,[2,3,1]);
     end
-
+    
     % if chans == 1
     %     disp(out)
     % else
@@ -932,7 +965,7 @@ if ~isempty(ir) && ~isempty(fs) && ~isempty(startthresh) && ~isempty(bpo) && ~is
     %disp(out.T20)
     %disp('Reverberation Time T30 (s):')
     %disp(out.T30)
-
+    
     %disp('Clarity Index C50 (dB):')
     %disp(out.C50)
     %disp('Clarity Index C80 (dB):')
@@ -943,7 +976,7 @@ if ~isempty(ir) && ~isempty(fs) && ~isempty(startthresh) && ~isempty(bpo) && ~is
     %disp(out.D80)
     %disp('Centre Time (s):')
     %disp(out.Ts)
-
+    
     %disp('EDT squared correlation coefficient:')
     %disp(out.EDTr2)
     %disp('T20 squared correlation coefficient:')
@@ -993,7 +1026,7 @@ if ~isempty(ir) && ~isempty(fs) && ~isempty(startthresh) && ~isempty(bpo) && ~is
     %    disp(out.TR_T30)
     %end
     % end
-
+    
     %--------------------------------------------------------------------------
     % AARAE TABLE
     %--------------------------------------------------------------------------
@@ -1022,10 +1055,10 @@ if ~isempty(ir) && ~isempty(fs) && ~isempty(startthresh) && ~isempty(bpo) && ~is
                 'Ratio of T20 to T30 %%'};
             t1 =uitable('Data',dat1,'ColumnName',cnames1,'RowName',rnames1);
             set(t1,'ColumnWidth',{60});
-
+            
             if bpo == 1
-
-
+                
+                
                 dat2 = [out.EDTlow(ch),out.EDTmid(ch),out.EDThigh(ch),out.BR_EDT(ch),out.TR_EDT(ch);...
                     out.T20low(ch),out.T20mid(ch),out.T20high(ch),out.BR_T20(ch),out.TR_T20(ch);...
                     out.T30low(ch),out.T30mid(ch),out.T30high(ch),out.BR_T30(ch),out.TR_T30(ch)];
@@ -1040,19 +1073,19 @@ if ~isempty(ir) && ~isempty(fs) && ~isempty(startthresh) && ~isempty(bpo) && ~is
             %out = [];
             out.tables = [out.tables tables];
         end
-
+        
         %--------------------------------------------------------------------------
         % PLOTTING
         %--------------------------------------------------------------------------
-
+        
         if doplot
             % Define number of rows and columns (for y axis labelling)
             [r,c] = subplotpositions(bands+1,0.4);
-
-
+            
+            
             % preallocate
             levdecayend = zeros(1,chans, bands);
-
+            
             for dim2 = 1:chans
                 for dim3 = 1:bands
                     irstart(1,dim2,dim3) = find(levdecay(:,dim2,dim3) <= 0, 1, 'first'); % 0 dB
@@ -1064,20 +1097,20 @@ if ~isempty(ir) && ~isempty(fs) && ~isempty(startthresh) && ~isempty(bpo) && ~is
                     levdecayend(1,dim2,dim3) = levdecayend(1,dim2,dim3)./fs;
                 end
             end
-
-
+            
+            
             for ch = 1:chans
-
+                
                 figure('Name',['Channel ', num2str(ch), ', Level Decay and Regression Lines'])
-
+                
                 for band = 1:bands
-
-
+                    
+                    
                     subplot(r,c,band)
-
-
+                    
+                    
                     hold on
-
+                    
                     % plot the level decay(s) on a single subplot
                     plot(((1:len)-1)./fs, levdecay(:,ch,band),'Color',[0.2 0.2 0.2], ...
                         'LineStyle',':','DisplayName','Level Decay')
@@ -1087,13 +1120,13 @@ if ~isempty(ir) && ~isempty(fs) && ~isempty(startthresh) && ~isempty(bpo) && ~is
                             (tstart(1,ch,band):t30end(1,ch,band)).* ...
                             q(1,ch,band)+q(2,ch,band), ...
                             'Color',[0 0 0.6],'DisplayName', 'T30')
-
+                        
                         % linear regression for T20
                         plot(((tstart(1,ch,band):t20end(1,ch,band))./fs), ...
                             (tstart(1,ch,band):t20end(1,ch,band)).* ...
                             p(1,ch,band)+p(2,ch,band), ...
                             'Color',[0 0.6 0],'DisplayName','T20')
-
+                        
                         % linear regression for EDT
                         plot(((irstart(1,ch,band):edtend(1,ch,band))./fs), ...
                             (irstart(1,ch,band):edtend(1,ch,band)).* ...
@@ -1101,7 +1134,7 @@ if ~isempty(ir) && ~isempty(fs) && ~isempty(startthresh) && ~isempty(bpo) && ~is
                             'Color',[0.9 0 0],'DisplayName','EDT')
                     end
                     if (noisecomp == 3) || (noisecomp == 4)
-
+                        
                         plot(t(irstart(1,ch,band):dataend(1,ch,band),ch,band)...
                             ,10*log10((q(1,ch,band).* ...
                             exp(-abs(q(2,ch,band))...
@@ -1109,7 +1142,7 @@ if ~isempty(ir) && ~isempty(fs) && ~isempty(startthresh) && ~isempty(bpo) && ~is
                             (q(3,ch,band).*(t(dataend(1,ch,band),ch,band)...
                             -t(irstart(1,ch,band):dataend(1,ch,band),ch,band))))), ...
                             'Color',[0.7 0 0],'DisplayName', 'Nonlinear Fit')
-
+                        
                         plot(t(irstart(1,ch,band):dataend(1,ch,band),ch,band),...
                             10*log10(q(1,ch,band).* ...
                             exp(-abs(q(2,ch,band))...
@@ -1117,8 +1150,8 @@ if ~isempty(ir) && ~isempty(fs) && ~isempty(startthresh) && ~isempty(bpo) && ~is
                             'LineStyle',':','Color',[0 0 0.7],'DisplayName', 'Linear fit no B3')
                     end
                     if (noisecomp == 5)
-
-
+                        
+                        
                         plot(t(tstart(1,ch,band):t30end(1,ch,band),ch,band)...
                             ,10*log10((q(1,ch,band).* ...
                             exp(-abs(q(2,ch,band))...
@@ -1126,13 +1159,13 @@ if ~isempty(ir) && ~isempty(fs) && ~isempty(startthresh) && ~isempty(bpo) && ~is
                             (q(3,ch,band).*(t(dataend(1,ch,band),ch,band)...
                             -t(tstart(1,ch,band):t30end(1,ch,band),ch,band))))), ...
                             'Color',[0 0 0.7],'DisplayName', 'T30')
-
+                        
                         plot(t(tstart(1,ch,band):t30end(1,ch,band),ch,band),...
                             10*log10(q(1,ch,band).* ...
                             exp(-abs(q(2,ch,band))...
                             .*t(tstart(1,ch,band):t30end(1,ch,band),ch,band))),...
                             'LineStyle',':','Color',[0 0 0.7],'DisplayName', 'T30 no B3')
-
+                        
                         plot(t(tstart(1,ch,band):t20end(1,ch,band),ch,band),...
                             10*log10((p(1,ch,band).* ...
                             exp(-abs(p(2,ch,band))...
@@ -1140,13 +1173,13 @@ if ~isempty(ir) && ~isempty(fs) && ~isempty(startthresh) && ~isempty(bpo) && ~is
                             (p(3,ch,band).*(t(dataend(1,ch,band),ch,band)...
                             -t(tstart(1,ch,band):t20end(1,ch,band),ch,band))))), ...
                             'Color',[0 0.7 0],'DisplayName', 'T20')
-
+                        
                         plot(t(tstart(1,ch,band):t20end(1,ch,band),ch,band),...
                             10*log10(p(1,ch,band).* ...
                             exp(-abs(p(2,ch,band))...
                             .*t(tstart(1,ch,band):t20end(1,ch,band),ch,band))),...
                             'LineStyle',':','Color',[0 0.7 0],'DisplayName', 'T20 no B3')
-
+                        
                         plot(t(irstart(1,ch,band):edtend(1,ch,band),ch,band)...
                             ,10*log10((o(1,ch,band).* ...
                             exp(-abs(o(2,ch,band))...
@@ -1154,59 +1187,59 @@ if ~isempty(ir) && ~isempty(fs) && ~isempty(startthresh) && ~isempty(bpo) && ~is
                             (o(3,ch,band).*(t(dataend(1,ch,band),ch,band)...
                             -t(irstart(1,ch,band):edtend(1,ch,band),ch,band))))), ...
                             'Color',[0.7 0 0],'DisplayName', 'EDT')
-
+                        
                         plot(t(irstart(1,ch,band):edtend(1,ch,band),ch,band),...
                             10*log10(o(1,ch,band).* ...
                             exp(-abs(o(2,ch,band))...
                             .*t(irstart(1,ch,band):edtend(1,ch,band),ch,band))),...
                             'LineStyle',':','Color',[0.7 0 0],'DisplayName', 'EDT no B3')
-
-
+                        
+                        
                     end
-
+                    
                     if exist('crosspoint','var')
                         plot(crosspoint(1,ch,band)./fs,...
                             levdecay(crosspoint(1,ch,band),ch,band),...
                             'mo')
                     end
-
+                    
                     % x axis label (only on the bottom row of subplots)
                     if band > (c*r - c)
                         xlabel('Time (s)')
                     end
-
+                    
                     % y axis label (only on the left column of subplots)
                     if mod(band-1, c) == 0
                         ylabel('Level (dB)')
                     end
-
+                    
                     xlim([0 levdecayend(1,ch,band)])
                     ylim([-65 0])
-
+                    
                     if (noisecomp == 0) || (noisecomp == 1) || (noisecomp == 2)|| (noisecomp == 5)
                         % text on subplots
                         text(levdecayend(1,ch,band)*0.45,-5,...
                             ['EDT ',num2str(0.01*round(100*EDT(1,ch,band)))],'Color',[0.9 0 0])
-
+                        
                         text(levdecayend(1,ch,band)*0.45,-10,...
                             ['T20 ',num2str(0.01*round(100*T20(1,ch,band)))],'Color',[0 0.6 0])
-
+                        
                         text(levdecayend(1,ch,band)*0.45,-15,...
                             ['T30 ',num2str(0.01*round(100*T30(1,ch,band)))],'Color',[0 0 0.6])
                     elseif (noisecomp == 3) || (noisecomp == 4)
                         text(levdecayend(1,ch,band)*0.45,-5,...
                             ['T ',num2str(0.01*round(100*EDT(1,ch,band)))],'Color',[0 0 0.6])
                     end
-
-
+                    
+                    
                     % subplot title
                     title([num2str(bandfc(band)),' Hz'])
-
+                    
                 end % for band
-
+                
                 % DIY legend
                 subplot(r,c,band+1)
-
+                
                 plot([0.1,0.4], [0.8,0.8],'Color',[0.2 0.2 0.2], ...
                     'LineStyle',':','DisplayName','Level Decay')
                 xlim([0,1])
@@ -1230,15 +1263,15 @@ if ~isempty(ir) && ~isempty(fs) && ~isempty(startthresh) && ~isempty(bpo) && ~is
                     'YTick',zeros(1,0),...
                     'XTickLabel','',...
                     'XTick',zeros(1,0))
-            end        
-            hold off        
+            end
+            hold off
         end
         if isstruct(data)
             doresultleaf(levdecay,'Level [dB]',{'Time'},...
-                         'Time',      ((1:len)-1)./fs,  's',           true,...
-                         'channels',  chanID,           'categorical', [],...
-                         'Frequency', num2cell(bandfc), 'Hz',          false,...
-                         'name','Reverb_time');
+                'Time',      ((1:len)-1)./fs,  's',           true,...
+                'channels',  chanID,           'categorical', [],...
+                'Frequency', num2cell(bandfc), 'Hz',          false,...
+                'name','Reverb_time');
         end
     end
     out.funcallback.name = 'ReverberationTime_IR1.m';

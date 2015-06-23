@@ -459,9 +459,7 @@ if ~isempty(ir) && ~isempty(fs) && ~isempty(startthresh) && ~isempty(bpo) && ~is
             % isn't due to filter ringing)
             % this is especially important for non-linear curve fitting
             for ch = 1:chans
-
                 iroct(end-startpoint(1,ch,1):end,ch,:) = 0;
-
             end
         end
 
@@ -534,7 +532,7 @@ if ~isempty(ir) && ~isempty(fs) && ~isempty(startthresh) && ~isempty(bpo) && ~is
     end
 
     % Reverse integrate squared IR, and express the result in decibels
-    levdecay = 10*log10(flipdim(cumsum(flipdim(iroct2,1)),1));
+    levdecay = 10*log10(flip(cumsum(flip(iroct2,1)),1));
 
     for dim2 = 1:chans
         for dim3 = 1:bands
