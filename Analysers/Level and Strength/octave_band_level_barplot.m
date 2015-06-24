@@ -19,6 +19,11 @@ if isstruct(in)
         cal = 0;
         disp('This audio signal has not been calibrated.')
     end
+    if isfield(in,'name') % Get the AARAE name if it exists
+        name = in.name;
+    else
+        name = [];
+    end
 else
     audio = in;
     if nargin < 3
@@ -31,6 +36,7 @@ else
                            'Fs',1,{'48000'});
         fs = str2num(char(fs));
     end
+    name = [];
 end
 if nargin < 8, dosubplots = 0; end % default setting for multichannel plotting
 if nargin < 7, tau = 0.125; end % default temporal integration constant in seconds
@@ -145,7 +151,7 @@ if ~isempty(audio) && ~isempty(fs) && ~isempty(cal) && ~isempty(showpercentiles)
         out.tables = [];
         
         for ch = 1:chans
-            figure('name', ['Octave Band Spectrum, Channel ', ...
+            figure('name', [name ' Octave Band Spectrum, Channel ', ...
                 num2str(ch), ', tau = ', num2str(tau),' s'])
 
             width = 0.5;
@@ -203,7 +209,7 @@ if ~isempty(audio) && ~isempty(fs) && ~isempty(cal) && ~isempty(showpercentiles)
         [~,out.tables] = disptables(fig,out.tables,tablenames);
     else
         [r, c] = subplotpositions(chans, 0.8);
-        figure('name', ['Octave Band Spectrum, tau = ', num2str(tau),' s'])
+        figure('name', [name ' Octave Band Spectrum, tau = ', num2str(tau),' s'])
         out.tables = [];
         for ch = 1:chans
             subplot(r,c,ch)
@@ -255,7 +261,8 @@ if ~isempty(audio) && ~isempty(fs) && ~isempty(cal) && ~isempty(showpercentiles)
     %             text(k-0.25,ymax-(ymax-ymin)*0.025, ...
     %                 num2str(round(out.Leq(k,ch)*10)/10),'Color',[1,0.3,0.3])
     %         end
-             %fig = figure('Visible','off');
+%             fig = figure('Visible','off','name',[name ...
+%                 ' Octave Band Spectrum, tau = ', num2str(tau),' s']);
             table1 = uitable('Data',[out.Leq(:,ch),out.Lmax(:,ch),out.L1(:,ch),out.L5(:,ch),out.L10(:,ch),out.L50(:,ch),out.L90(:,ch)],...
                              'ColumnName',{'Leq','Lmax','L1','L5','L10','L50','L90'},...
                              'RowName',num2cell(frequencies),'Parent',fig);

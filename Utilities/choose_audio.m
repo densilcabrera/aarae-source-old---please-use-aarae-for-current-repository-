@@ -91,7 +91,7 @@ switch method
                     fprintf(handles.fid,['%% Selected additional audio from AARAE: ',leaves{s,1},'\n']);
                     fprintf(handles.fid,'%% Note that the following code is particular to the configuration of the leaves in AARAE, and so might not work if reapplied out of context.\n');
                     fprintf(handles.fid,'leaves = findleaves; %% findleaves is an AARAE utility.\n');
-                    fprintf(handles.fid,['X1 = handles.(matlab.lang.makeValidName(leaves{',s,',1})).handle.UserData;\n']);
+                    fprintf(handles.fid,['X1 = handles.(matlab.lang.makeValidName(leaves{',num2str(s),',1})).handle.UserData;\n']);
                 else
                     out = cell(size(s'));
                     fprintf(handles.fid,'%% Selected multiple additional audio leaves from AARAE.\n');
@@ -100,7 +100,7 @@ switch method
                     for i = 1:length(s)
                         out{i,1} = handles.(matlab.lang.makeValidName(leaves{s(1,i),1})).handle.UserData;
                         fprintf(handles.fid,['%% Selected additional audio from AARAE: ',leaves{s(1,i),1},'\n']);
-                        fprintf(handles.fid,['X',num2str(i),' = handles.(matlab.lang.makeValidName(leaves{',s(1,i),',1})).handle.UserData;\n']);
+                        fprintf(handles.fid,['X',num2str(i),' = handles.(matlab.lang.makeValidName(leaves{',num2str(s(1,i)),',1})).handle.UserData;\n']);
                     end
                 end
             else

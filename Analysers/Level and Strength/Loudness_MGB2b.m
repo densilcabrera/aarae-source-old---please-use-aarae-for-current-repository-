@@ -161,14 +161,18 @@ if isstruct(IN)
     signal = IN.audio;
     fs = IN.fs;
     
-    
+    if isfield(IN,'name') % Get the AARAE name if it exists
+        name = IN.name;
+    else
+        name = [];
+    end
     
     
     
 elseif ~isempty(param) || nargin > 1
     
     signal = IN;
-    
+    name = [];
 end
 
 
@@ -796,7 +800,7 @@ if ~isempty(signal) && ~isempty(fs)
     switch doplot
         case 1
         % plot of loudness and specific loudness
-            figure('Name','Loudness')
+            figure('Name',['Loudness ' name])
             subplot(2,2,1:2)
             plot(times,InstantaneousLoudness,'k','DisplayName','Instantaneous');
             hold on
@@ -828,7 +832,7 @@ if ~isempty(signal) && ~isempty(fs)
             
         case 2
             % just plot loudness
-            figure('Name','Loudness')
+            figure('Name',['Loudness' name])
             plot(times,InstantaneousLoudness,'k','DisplayName','Instantaneous');
             hold on
             plot(times,ShortTermLoudness,'r','DisplayName','Short term');
@@ -883,7 +887,7 @@ if ~isempty(signal) && ~isempty(fs)
             end % if doplot == 4
             
             clear log2sone
-            figure('Name','Time-varying loudness level')
+            figure('Name',['Time-varying loudness level' name])
             plot(times,LN(:,1),'k','DisplayName','Instantaneous')
             hold on
             plot(times,LN(:,2),'r','DisplayName','Short term')
