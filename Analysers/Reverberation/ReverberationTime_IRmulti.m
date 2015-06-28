@@ -5,7 +5,9 @@ function out = ReverberationTime_IRmulti(data,fs,startthresh,bpo,doplot,filterst
 % values calculated from individual impulse responses.
 %
 % The intended use for this is spatial averaging in room acoustics
-% measurements.
+% measurements. It may be instructive to compare the results from this
+% function with reverberation times of individual impulse responses
+% (calculared from AARAE's ReverberationTime_IR1).
 %
 % All impulse responses in the audio input, and in additional inputs via
 % dialog box (if used), are squared and combined to yield the result, apart
@@ -18,7 +20,7 @@ function out = ReverberationTime_IRmulti(data,fs,startthresh,bpo,doplot,filterst
 % filterbank,those channels/bands that do not meet the criterion are not
 % included in the average.
 %
-% To use this function from the AARAE GUI, you should select one audio leaf
+% To use this function from the AARAE GUI, you should select ONE audio leaf
 % (if you select more, then the function will run multiple times). If you
 % wish to load additional audio, this is done via the dialog box of this
 % function. Multiple additional audio inputs can be chosen (but if the
@@ -29,7 +31,11 @@ function out = ReverberationTime_IRmulti(data,fs,startthresh,bpo,doplot,filterst
 % Impulse responses should normally be reasonably well prepared (by
 % appropriate truncation) prior to calling this function. Bear in mind that
 % the length of the averaged impulse response will be taken from the
-% minimum length of the audio inputs.
+% minimum length of the audio inputs. Also all of the individual IRs are
+% shifted (independently) to start at the beginning of the analysis,
+% approximately in synchrony. The IRs can be gain adjusted within this
+% function (no adjustment, normalized, or equal energy) - see
+% 'averagingmethod' below.
 %
 % This function is adapted from ReverberationTime_IR1 (by Grant Cuthbert &
 % Densil Cabrera).
