@@ -20,6 +20,7 @@ answer = inputdlg(prompt,dlgtitle,[1 50],def);
 originalindices = cellfun(@eval,def,'UniformOutput',false);
 if any(cellfun(@isempty,answer)) || isempty(answer)
     warndlg('Invalid selection, process will be applied to the whole audio file.','AARAE info','modal')
+    fprintf(handles.fid,'%% Invalid selection - partial selection was not executed. \n');
     indices = originalindices;
 else
     indices = cell(size(answer));
@@ -35,7 +36,7 @@ else
     try
         in.audio(indices{:});
         if partialsel
-            selectionstring = 'IN.audio = IN.audio(';
+            selectionstring = 'X.audio = X.audio(';
             for i = 1:length(answer)
                 dimstring = char(answer{i});
                 if ~isempty(regexp(dimstring,',','once')) || ~isempty(regexp(dimstring,' ','once'))
@@ -49,13 +50,14 @@ else
             end
             
             fprintf(handles.fid,'%% Partial selection of audio using AARAE''s partial_selection.m utility function - the following code is equivalent:\n');
-            fprintf(handles.fid,'COMPLETE.audio = IN.audio;\n');
+            %fprintf(handles.fid,'COMPLETE.audio = X.audio;\n');
             fprintf(handles.fid,[selectionstring,'\n']);
-            handles.partialselindices=answer;
-            guidata(findobj('Tag','aarae'),handles); % maybe this is dangerous!
+%             handles.partialselindices=answer; % why do we need/want to do this?
+%             guidata(findobj('Tag','aarae'),handles); % maybe this is dangerous!
         end
     catch
         warndlg('Invalid selection, process will be applied to the whole audio file.','AARAE info','modal')
+        fprintf(handles.fid,'%% Invalid selection - partial selection was not executed. \n');
         indices = originalindices;
     end
 end

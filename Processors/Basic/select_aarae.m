@@ -6,7 +6,8 @@ function out = select_aarae(in)
 %
 
     indices = partial_selection(in);    
-    out.audio(indices{:}) = in.audio(indices{:});
+    %out.audio(indices{:}) = in.audio(indices{:}); % presumably an error
+    out.audio = in.audio(indices{:});
        
     if isfield(in,'cal') && length(indices)>1
         if length(in.cal) == size(in.audio,2)
@@ -31,6 +32,16 @@ function out = select_aarae(in)
         else
             out.bandID = [];
         end      
+    end
+    
+    if isfield(in,'properties') && length(indices)>3
+        if isfield(in.properties,'relgain')
+            if length(in.properties.relgain) == size(in.audio,4)
+                out.properties.relgain = in.properties.relgain(indices{4});
+            else
+                out.properties.relgain = [];
+            end
+        end
     end
     
     % potentially include other fields for similar treatment
