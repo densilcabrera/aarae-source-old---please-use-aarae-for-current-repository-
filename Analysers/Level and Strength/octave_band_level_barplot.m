@@ -104,7 +104,8 @@ if ~isempty(audio) && ~isempty(fs) && ~isempty(cal) && ~isempty(showpercentiles)
         a = [1 -E];% filter denominator
         % rectify, integrate and convert to decibels
 
-        Itemp=filter(b,a,abs(audiooct)).^2;
+        %Itemp=filter(b,a,abs(audiooct)).^2; % integrate the rectified wave
+        Itemp=filter(b,a,audiooct.^2); % integrate the squared wave
 
     else
         % no temporal integration
