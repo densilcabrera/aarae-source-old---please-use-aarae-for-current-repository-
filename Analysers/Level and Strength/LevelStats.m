@@ -71,7 +71,10 @@ if tau > 0
     a = [1, -E];% filter denominator
     
     % rectify, integrate and square
-    audio=filter(b,a,abs(audio)).^2;
+    %audio=filter(b,a,abs(audio)).^2;
+    
+    % integrate the squared wave
+    audio=filter(b,a,audio.^2);
     
 else
     % no temporal integration
