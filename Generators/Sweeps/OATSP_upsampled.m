@@ -12,6 +12,32 @@
 % (along with its inverse filter). This allows the OATSP to be used for
 % measurements focussing on the low frequency range.
 %
+% INPUTS
+%
+% * dur: duration in seconds. Short durations may be problematic if the
+% upsampling factor is large.
+%
+% * upsamplingfactor: upsampling factor is a positive number, which
+% is the ratio between the sampling rate of the audio and the sampling rate
+% at which the OATSP signal was generated. For example, if the audio
+% sampling rate is 48000 Hz, and the upsampling factor is 100, then the
+% sweep will be generated using an initial sampling rate of 480 Hz (and
+% hence will span 0 Hz - 240 Hz).
+%
+% * resample_n and resample_beta: these are filter design parameters used
+% by Matlab's resample function (see Matlab's help for further
+% information).
+% 
+% * mratio is the OATSP design parameter (refer to the paper by Suzuki et
+% al).
+%
+% * fs: sampling rate of the output audio.
+%
+% * donorm: whether or not to normalize the wave.
+%
+% * reverse: whether or not to time-reverse the sweep (and its inverse
+% filter) - which are in fact the time reverse of each other.
+%
 % code by Densil Cabrera & Daniel Jimenez
 % version 1.0 (3 June 2015)
 
@@ -43,9 +69,7 @@ else
     param = [];
 end
 
-if rem(fs,upsamplingfactor) ~= 0
-    upsamplingfactor = round(fs/upsamplingfactor);
-end
+
 
 if ~isempty(param) || nargin ~=0
     if ~exist('fs','var')
@@ -57,8 +81,25 @@ if ~isempty(param) || nargin ~=0
     if ~exist('donorm','var')
        donorm = 1;
     end
+    if ~exist('reverse','var')
+       reverse = 0;
+    end
+    if ~exist('resample_beta','var')
+       resample_beta = 5;
+    end
+    if ~exist('resample_n','var')
+       resample_n = 10;
+    end
+    if ~exist('upsamplingfactor','var')
+       upsamplingfactor = 100;
+    end
+    if rem(fs,upsamplingfactor) ~= 0
+        upsamplingfactor = round(fs/upsamplingfactor);
+    end
     
     fs1 = fs/upsamplingfactor;
+    
+    
     
     N = 2*ceil(dur * fs1/2);
     m = round((N*mratio)/2);
@@ -66,10 +107,8 @@ if ~isempty(param) || nargin ~=0
     Hlow = exp(1i * 4 * m * pi * k.^2 ./ N.^2);
     H = [Hlow;conj(flipud(Hlow(2:end)))];
     Sinv = ifft(H);
-    Sinv = circshift(Sinv,-round(N/2-m));
-    
-    Sinv = resample(Sinv,fs,fs1,resample_n,resample_beta);
-    
+    Sinv = circshift(Sinv,-round(N/2-m));    
+    Sinv = resample(Sinv,fs,fs1,resample_n,resample_beta);    
     S = flipud(Sinv);
 
     
