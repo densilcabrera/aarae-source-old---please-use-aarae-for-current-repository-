@@ -941,6 +941,7 @@ if ~isempty(handles.testsignal(handles.version))
         iconPath = fullfile(matlabroot,'/toolbox/fixedpoint/fixedpointtool/resources/plot.png');
     end
     handles.selNodeName = [handles.selNodeName '_edit'];
+    handles.testsignal(handles.version).name = handles.selNodeName;
     mainHandles.(matlab.lang.makeValidName(handles.selNodeName)) = uitreenode('v0', handles.selNodeName, handles.selNodeName,  iconPath, true);
     switch handles.testsignal(handles.version).datatype
         case 'testsignals', ivalue = 1;
@@ -989,8 +990,10 @@ if ~isempty(get(hObject,'String'))
 else
     set(hObject,'String',handles.selNodeName)
 end
-handles.testsignal.name = [handles.selNodeName '_edit'];
-fprintf(handles.fid,['%% New name: ', [handles.selNodeName '_edit'],'\n']);
+% handles.testsignal.name = [handles.selNodeName '_edit'];
+% fprintf(handles.fid,['%% New name: ', [handles.selNodeName '_edit'],'\n']);
+handles.testsignal.name = handles.selNodeName;
+fprintf(handles.fid,['%% New name: ', handles.selNodeName,'\n']);
 guidata(hObject,handles)
 
 % --- Executes during object creation, after setting all properties.

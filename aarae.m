@@ -184,12 +184,12 @@ fprintf(handles.fid, '%%   * results tables from analysers;\n');
 fprintf(handles.fid, '%%   * names of exported files; and\n');
 fprintf(handles.fid, '%%   * function call equivalents to AARAE activity.\n\n');
 fprintf(handles.fid, '%% When opening the log file in a spreadsheet program, use comma delimiting to distribute table data into the appropriate spreadsheet cells.\n');
-fprintf(handles.fid, '%% (However, bear in mind that the commas required in the lines of code will be removed when you do that.)\n\n');
+fprintf(handles.fid, '%% (However, bear in mind that the commas required in the log file''s function calls will be removed when you do that.)\n\n');
 fprintf(handles.fid, '%% The code written to this log file may be useful for adapting in writing an AARAE workflow function.\n');
-fprintf(handles.fid, '%% Examples of workflows are in AARAE''s Workflows folder.\n\n');
+fprintf(handles.fid, '%% Examples of workflows are in AARAE''s Workflows folder.\n');
 fprintf(handles.fid, 'handles = guidata(findobj(''Tag'',''aarae'')); %% Use this line within a workflow to retrieve the AARAE handles.\n');
 fprintf(handles.fid, 'fprintf(handles.fid,''This is a test of using fprintf to write to the log file.''); %% Use this line within a workflow to write to the log file.\n\n');
-
+fprintf(handles.fid, '%% **************************************************\n\n\n\n');
 
 guidata(hObject, handles);
 
@@ -998,8 +998,8 @@ else
         signaldata = getappdata(hMain,'testsignal');
         fprintf(handles.fid, ['%% ' datestr(now,16) ' - Edited "' char(selectedNodes.getName) '": cropped from %fs to %fs (at input fs); new duration = ' num2str(length(signaldata.audio)/signaldata.fs) ' s\n\n'],xi,xf);
         fprintf(handles.fid, '%% ***********************************************\n');
-        %signaldata.name = selectedNodes.getName; % name is set
-        %within edit_signal, so we do not need to set it here.
+        signaldata.name = char(selectedNodes.getName); % name is set
+        %within edit_signal, so we should not need to set it here.
     else
         handles.mytree.setSelectedNode(handles.root);
     end
