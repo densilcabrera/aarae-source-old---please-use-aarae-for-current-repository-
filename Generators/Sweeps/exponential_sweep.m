@@ -1,6 +1,6 @@
 % Generates a exponential sweep and its inverse for IR measurement
 %
-function OUT = exponential_sweep(dur,start_freq,end_freq,fs,reverse)% generates an exponentially swept
+function OUT = exponential_sweep(dur,start_freq,end_freq,fs,reverse,rcos_ms)% generates an exponentially swept
 % signal S, starting at start_freq Hz and ending at end_freq Hz,
 % for duration = dur seconds long, and an
 % amplitude of ampl = 0.5, with a raised cosine window applied for rcos_ms = 15 ms.
@@ -10,16 +10,18 @@ if nargin == 0
                        'Start frequency [Hz]';...
                        'End frequency [Hz]';...
                        'Sampling Frequency [samples/s]';...
-                       'Ascending [0] or descending [1] sweep'},...
-                       'Sine sweep input parameters',1,{'10';'20';'20000';'48000';'0'});
+                       'Ascending [0] or descending [1] sweep';...
+                       'Fade-in and Fade-out duration [ms]'},...
+                       'Sine sweep input parameters',1,{'10';'20';'20000';'48000';'0';'15'});
     param = str2num(char(param));
-    if length(param) < 5, param = []; end
+    if length(param) < 6, param = []; end
     if ~isempty(param)
         dur = param(1);
         start_freq = param(2);
         end_freq = param(3);
         fs = param(4);
         reverse = param(5);
+        rcos_ms = param(6);
     end
 else
     param = [];
@@ -30,9 +32,9 @@ if ~isempty(param) || nargin ~=0
     end
     SI = 1/fs;
     ampl = 0.5;
-    rcos_ms = 15;
+    %rcos_ms = 15;
     scale_inv = 0;
-
+    if 2*round((rcos_ms*1e-3))>dur, rcos_ms = 15; end
 
     w1 = 2*pi*start_freq; w2 = 2*pi*end_freq;
     K = (dur*w1)/(log(w2/w1));
@@ -77,8 +79,9 @@ if ~isempty(param) || nargin ~=0
     OUT.properties.sig_len = sig_len;
     OUT.properties.freq = [start_freq, end_freq];
     OUT.properties.reverse = reverse;
+    OUT.properties.rcos_ms = rcos_ms;
     OUT.funcallback.name = 'exponential_sweep.m';
-    OUT.funcallback.inarg = {dur,start_freq,end_freq,fs,reverse};
+    OUT.funcallback.inarg = {dur,start_freq,end_freq,fs,reverse,rcos_ms};
 else
     OUT = [];
 end
