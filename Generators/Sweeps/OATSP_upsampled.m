@@ -1,4 +1,4 @@
-% Generates a linear sweep (Optimized Aoshima Time Streteched Pulse)
+% This function generates a linear sweep (Optimized Aoshima Time Streteched Pulse)
 % and its inverse filter for impulse response measurement,
 % based on the concepts in:
 % 
@@ -7,30 +7,37 @@
 % of very long impulse responses"
 % Journal of the Acoustical Society of America 97(2):1119-1123
 %
-% The sweep bandwidth is always 0 Hz to the Nyquist frequency.
+% Rather than a sweep from 0 Hz to the Nyquist frequency, this function
+% uses a lower sampling rate to generate the sweep, which is then upsampled
+% (along with its inverse filter). This allows the OATSP to be used for
+% measurements focussing on the low frequency range.
 %
 % code by Densil Cabrera & Daniel Jimenez
-% version 1.01 (14 March 2014)
+% version 1.0 (3 June 2015)
 
-function OUT = OATSP_upsampled(dur,upsamplingfactor,mratio,fs,donorm,reverse)
+function OUT = OATSP_upsampled(dur,upsamplingfactor,resample_n,resample_beta,mratio,fs,donorm,reverse)
 
 if nargin == 0
     param = inputdlg({'Duration [s]';...
                       'Upsampling factor (positive integer)';...
+                      'Resample n (proportional to length of lowpass filter used for resampling)';...
+                      'Resample beta (design parameter for the Kaiser window used for lowpass filter design)';...
                       'Ratio of main sweep duration to remaining duration [between 0 and 1]';...
                       'Sampling rate [Hz]';...
                       'Normalize output [0 | 1]';...
                       'Ascending [0] or descending [1] sweep'},...
-                      'OATSP input parameters',1,{'60';'100';'0.5';'48000';'1';'0'});
+                      'OATSP input parameters',1,{'60';'100';'10';'5';'0.5';'48000';'1';'0'});
     param = str2num(char(param));
-    if length(param) < 6, param = []; end
+    if length(param) < 8, param = []; end
     if ~isempty(param)
         dur = param(1);
         upsamplingfactor = param(2);
-        mratio = param(3);
-        fs = param(4);
-        donorm = param(5);
-        reverse = param(6);
+        resample_n = param(3);
+        resample_beta = param(4);
+        mratio = param(5);
+        fs = param(6);
+        donorm = param(7);
+        reverse = param(8);
     end   
 else
     param = [];
@@ -61,10 +68,10 @@ if ~isempty(param) || nargin ~=0
     Sinv = ifft(H);
     Sinv = circshift(Sinv,-round(N/2-m));
     
-    S = flipud(Sinv);
+    Sinv = resample(Sinv,fs,fs1,resample_n,resample_beta);
     
-    S=upsample(S,upsamplingfactor);
-    Sinv=upsample(Sinv,upsamplingfactor);
+    S = flipud(Sinv);
+
     
     if donorm == 1
         S = S ./ max(abs(S));
@@ -84,16 +91,18 @@ if ~isempty(param) || nargin ~=0
     OUT.properties.mratio = mratio;
     OUT.properties.m = m;
     OUT.properties.N = N;
-    OUT.properties.freq = [0, fs/2];
+    OUT.properties.resample_n = resample_n;
+    OUT.properties.resample_beta = resample_beta;
+    OUT.properties.freq = [0, fs1/2];
     OUT.properties.reverse = reverse;
     OUT.funcallback.name = 'OATSP_upsampled.m';
-    OUT.funcallback.inarg = {dur,upsamplingfactor,mratio,fs,donorm,reverse};
+    OUT.funcallback.inarg = {dur,upsamplingfactor,resample_n,resample_beta,mratio,fs,donorm,reverse};
 else
     OUT = [];
 end
 
 %**************************************************************************
-% Copyright (c) 2014, Densil Cabrera & Daniel Jimenez
+% Copyright (c) 2014-15, Densil Cabrera & Daniel Jimenez
 % All rights reserved.
 %
 % Redistribution and use in source and binary forms, with or without
