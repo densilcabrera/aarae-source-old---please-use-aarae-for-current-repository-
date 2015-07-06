@@ -164,9 +164,27 @@ switch choice
         return
     case 4
         % uniform random
-        disp('not implemented')
-        OUT = [];
-        return
+        if ~exist('parameter','var')
+            param = inputdlg({'Pulse density (between 0 and 1)'},...
+                'Arithmetic pulse series settings',... % This is the dialog window title.
+                [1 60],...
+                {'0.5'}); % default answers
+            param = str2num(char(param));
+            if length(param) < 1, param = []; end
+            if ~isempty(param)
+                density = param(1);
+            else
+                % get out of here if the user presses 'cancel'
+                OUT = [];
+                return
+            end
+        else
+            density = parameter(1);
+        end
+        indices = round(len*rand(round(len*density),1));
+        audio(unique(indices(indices>0 & indices<=len))) = 1;
+        parameter = density;
+        tag = 'RandomPulses';
     case 5
         % primes
         audio(isprime(2:len+1))=1;
