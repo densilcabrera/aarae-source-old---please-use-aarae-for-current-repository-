@@ -387,7 +387,7 @@ else
     testsignal = real(handles.signaldata.audio);
     if size(testsignal,2) > 2, testsignal = mean(testsignal,2); end
     if size(testsignal,3) > 1, testsignal = sum(testsignal,3); end
-    testsignal = testsignal./max(abs(testsignal));
+    testsignal = testsignal./max(max(abs(testsignal)));
     fs = handles.signaldata.fs;
     nbits = 16;
     doesSupport = audiodevinfo(0, handles.odeviceid, fs, nbits, size(testsignal,2));

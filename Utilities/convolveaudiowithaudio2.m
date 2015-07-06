@@ -29,12 +29,18 @@ if isfield(IN,'properties') && isfield(IN.properties,'startflag')
         methoddialog = false;
     end
     
+    
+    % SETTINGS
     if methoddialog
-        [method,ok] = listdlg('ListString',{'Synchronous average','Stack IRs in dimension 4','Convolve without separating'},...
+        [method,ok] = listdlg('ListString',{'Synchronous average (excluding silent cycle)',...
+            'Stack IRs in dimension 4',...
+            'Convolve without separating',...
+            'Select the cleanest IR (multichannel)',...
+            'Select the cleanest single IR (best channel)'},...
             'PromptString','Select the convolution method',...
             'Name','AARAE options',...
             'SelectionMode','single',...
-            'ListSize',[200 100]);
+            'ListSize',[300 100]);
     else
         ok = 1;
     end
@@ -49,9 +55,17 @@ if isfield(IN,'properties') && isfield(IN.properties,'startflag')
         len = startflag(2)-startflag(1);
         switch method
             case 1
-                tempS = zeros(startflag(2)-1,size(S,2));
+                % Synchronous average (excluding silent cycle)
+                cyclelen = startflag(2)-1;
+                % ignore silent cycle if it exists
+                if isfield(IN.properties,'relgain')
+                    if isinf(IN.properties.relgain(1))
+                        startflag = startflag(2:end);
+                    end
+                end
+                tempS = zeros(cyclelen,size(S,2));
                 for j = 1:size(S,2)
-                    newS = zeros(startflag(2)-1,length(startflag));
+                    newS = zeros(cyclelen,length(startflag));
                     for i = 1:length(startflag)
                         newS(:,i) = S(startflag(i):startflag(i)+len-1,j);
                     end
@@ -59,7 +73,13 @@ if isfield(IN,'properties') && isfield(IN.properties,'startflag')
                 end
                 S = tempS;
                 %invS = invS(:,size(S,2));
-            case 2
+                
+                % consider returning the silent cycle somehow...
+%                 if isinf(IN.properties.relgain(1))
+%                         
+%                 end
+            case {2, 4, 5}
+                % Stack IRs in dimension 4
                 indices = cat(2,{1:len*length(startflag)},repmat({':'},1,ndims(S)-1));
                 S = S(indices{:});
                 sizeS = size(S);
@@ -87,8 +107,19 @@ if isfield(IN,'properties') && isfield(IN.properties,'startflag')
                 S = newS;
                 invS = newinvS;
                 if average
+                    % ignore silent cycle if it exists
+                    if isfield(IN.properties,'relgain')
+                        if isinf(IN.properties.relgain(1))
+                            S = mean(S(:,:,:,2:end,:,:),4);
+                            invS = mean(invS(:,:,:,2:end,:,:),4);
+                        else
+                            S = mean(S,4);
+                            invS = mean(invS,4);
+                        end
+                    else
                     S = mean(S,4);
                     invS = mean(invS,4);
+                    end
                 end
         end
     else
@@ -98,7 +129,9 @@ else
     method = 1;
 end
 
-if method == 1 || method == 2 || method == 3
+
+% DO THE CONVOLUTION
+if method == 1 || method == 2 || method == 3 || method == 4 || method == 5
     maxsize = 1e6; % this could be a user setting 
                    % (maximum size that can be handled to avoid 
                    % out-of-memory error from convolution process)
@@ -133,6 +166,9 @@ if method == 1 || method == 2 || method == 3
     IR = IR(indices{:});
 end
 
+
+
+% SCALE THE IR
 % Currently the scaling method is not used by aarae.m, but it may be useful
 % in future (perhaps with modification).
 % One option would be for generators to output a properties.scalingfactor
@@ -141,7 +177,6 @@ end
 % scaling
 if ~exist('scalingmethod','var')
     scalingmethod = 0; % no scaling
-    %scalingfactor = 1;
 else
     switch scalingmethod
         case 1
@@ -164,6 +199,37 @@ else
 end
 
 
+% APPLY SELECTION CRITERIA OR OTHER POST-PROCESSING
+[len,chans,bands,dim4,dim5,dim6] = size(IR);
+switch method
+    case 4
+        % Automatically select the best IR (multichannel)
+        % We define the best IR as the one that has the highest max:rms
+        % value
+        IRtemp = zeros(len,chans,bands,dim4*dim5*dim6);
+        for ch = 1:chans
+            for b = 1:bands
+                IRtemp(:,ch,b,:) = reshape(IR(:,ch,b,:,:,:),[len, 1, 1, dim4 * dim5 * dim6]);
+            end
+        end
+        Quality = max(IRtemp) ./ rms(IRtemp);
+        Quality = mean(Quality,2); % average across channels
+        Quality = mean(Quality,3); % average across bands
+        [~, ind] = max(Quality,[],4);
+        IR = IRtemp(:,:,:,ind);
+        
+    case 5
+        % Automatically select the single best IR (best channel)
+        IRtemp = zeros(len,chans*dim4*dim5*dim6,bands);
+        for b = 1:bands
+            IRtemp(:,:,b) = reshape(IR(:,:,b,:,:,:),[len, chans * dim4 * dim5 * dim6]);
+        end
+        Quality = max(IRtemp) ./ rms(IRtemp);
+        Quality = mean(Quality,3); % average across bands
+        [~, ind] = max(Quality,[],2);
+        IR = IRtemp(:,ind,:);
+end
+        
 
 
 if nargin == 1
