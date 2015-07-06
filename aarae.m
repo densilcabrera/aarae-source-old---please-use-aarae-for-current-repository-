@@ -1151,16 +1151,13 @@ selectedNodes = handles.mytree.getSelectedNodes;
 
 if ishandle(h), close(h); end
 
-if method == 1
-    if ~ismatrix(IR), tempIR(:,:) = IR(:,1,:); else tempIR = IR; end
-    [trimsamp_low,trimsamp_high] = window_signal('main_stage1', handles.aarae,'IR',tempIR,'fs',audiodata.fs,'audio2len',size(audiodata.audio2,1)); % Calls the trimming GUI window to trim the IR
-    %indices{1,1} = trimsamp_low:trimsamp_high;
-    %IR = IR(indices{:}); % this seems to cause a bug!
-    IR = IR(trimsamp_low:trimsamp_high,:,:,:,:,:);
-    IRlength = length(IR);
-else
-    IRlength = length(IR);
-end
+
+if ~ismatrix(IR), tempIR(:,:) = IR(:,1,:,end,1,1); else tempIR = IR; end
+[trimsamp_low,trimsamp_high] = window_signal('main_stage1', handles.aarae,'IR',tempIR,'fs',audiodata.fs,'audio2len',size(audiodata.audio2,1)); % Calls the trimming GUI window to trim the IR
+%indices{1,1} = trimsamp_low:trimsamp_high;
+%IR = IR(indices{:}); % this seems to cause a bug!
+IR = IR(trimsamp_low:trimsamp_high,:,:,:,:,:);
+IRlength = length(IR);
 
 % Create new leaf and update the tree
 handles.mytree.setSelectedNode(handles.root);

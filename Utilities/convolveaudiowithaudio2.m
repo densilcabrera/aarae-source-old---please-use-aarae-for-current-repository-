@@ -36,7 +36,8 @@ if isfield(IN,'properties') && isfield(IN.properties,'startflag')
             'Stack IRs in dimension 4',...
             'Convolve without separating',...
             'Select the cleanest IR (multichannel)',...
-            'Select the cleanest single IR (best channel)'},...
+            'Select the cleanest single IR (best channel)',...
+            'Select the silent cycle or the IR with the lowest SNR (multichannel)'},...
             'PromptString','Select the convolution method',...
             'Name','AARAE options',...
             'SelectionMode','single',...
@@ -78,7 +79,7 @@ if isfield(IN,'properties') && isfield(IN.properties,'startflag')
 %                 if isinf(IN.properties.relgain(1))
 %                         
 %                 end
-            case {2, 4, 5}
+            case {2, 4, 5, 6}
                 % Stack IRs in dimension 4
                 indices = cat(2,{1:len*length(startflag)},repmat({':'},1,ndims(S)-1));
                 S = S(indices{:});
@@ -131,7 +132,7 @@ end
 
 
 % DO THE CONVOLUTION
-if method == 1 || method == 2 || method == 3 || method == 4 || method == 5
+if method == 1 || method == 2 || method == 3 || method == 4 || method == 5 || method == 6
     maxsize = 1e6; % this could be a user setting 
                    % (maximum size that can be handled to avoid 
                    % out-of-memory error from convolution process)
@@ -228,6 +229,25 @@ switch method
         Quality = mean(Quality,3); % average across bands
         [~, ind] = max(Quality,[],2);
         IR = IRtemp(:,ind,:);
+    case 6
+        % IR with lowest SNR
+        if isfield(IN.properties,'relgain')
+            if isinf(IN.properties.relgain(1))
+                IR = IR(:,:,:,1,:,:);
+            end
+        else
+            IRtemp = zeros(len,chans,bands,dim4*dim5*dim6);
+            for ch = 1:chans
+                for b = 1:bands
+                    IRtemp(:,ch,b,:) = reshape(IR(:,ch,b,:,:,:),[len, 1, 1, dim4 * dim5 * dim6]);
+                end
+            end
+            Quality = max(IRtemp) ./ rms(IRtemp);
+            Quality = mean(Quality,2); % average across channels
+            Quality = mean(Quality,3); % average across bands
+            [~, ind] = min(Quality,[],4);
+            IR = IRtemp(:,:,:,ind);
+        end
 end
         
 
