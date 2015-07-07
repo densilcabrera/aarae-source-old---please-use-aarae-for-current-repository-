@@ -211,8 +211,8 @@ catdata = cell(size(categories));
 catunits = cell(size(categories));
 catorcont = cell(size(categories));
 for n = 1:length(categories)
-    catunits{n,1} = audiodata.(genvarname([categories{n,1} 'info'])).units;
-    catorcont{n,1} = audiodata.(genvarname([categories{n,1} 'info'])).axistype;
+    catunits{n,1} = audiodata.(matlab.lang.makeValidName([categories{n,1} 'info'])).units;
+    catorcont{n,1} = audiodata.(matlab.lang.makeValidName([categories{n,1} 'info'])).axistype;
     if islogical(catorcont{n,1}) && catorcont{n,1} == true
         catdata{n,1} = ':';
     else
