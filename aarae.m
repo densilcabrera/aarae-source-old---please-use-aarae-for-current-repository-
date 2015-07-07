@@ -28,11 +28,11 @@ function varargout = aarae(varargin)
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
 gui_State = struct('gui_Name',       mfilename, ...
-                   'gui_Singleton',  gui_Singleton, ...
-                   'gui_OpeningFcn', @aarae_OpeningFcn, ...
-                   'gui_OutputFcn',  @aarae_OutputFcn, ...
-                   'gui_LayoutFcn',  [] , ...
-                   'gui_Callback',   []);
+    'gui_Singleton',  gui_Singleton, ...
+    'gui_OpeningFcn', @aarae_OpeningFcn, ...
+    'gui_OutputFcn',  @aarae_OutputFcn, ...
+    'gui_LayoutFcn',  [] , ...
+    'gui_Callback',   []);
 if nargin && ischar(varargin{1})
     gui_State.gui_Callback = str2func(varargin{1});
 end
@@ -150,7 +150,7 @@ handles.mytree.expand(handles.root);
 handles.mytree.setSelectedNode(handles.root);
 handles.mytree.setMultipleSelectionEnabled(true);
 
-% Generate activity log 
+% Generate activity log
 activity = dir([cd '/Log' '/activity log.txt']);
 if isempty(activity)
     activitylog = '/activity log.txt';
@@ -335,8 +335,8 @@ function finish_btn_Callback(~, eventdata, handles) %#ok
 
 if strcmp(get(handles.export_btn,'Enable'),'on')
     choice = questdlg('Are you sure to want to finish this AARAE session? Unexported data will be lost.',...
-                      'Exit AARAE',...
-                      'Yes','No','Export all & exit','Yes');
+        'Exit AARAE',...
+        'Yes','No','Export all & exit','Yes');
     switch choice
         case 'Yes'
             uiresume(handles.aarae);
@@ -379,69 +379,69 @@ end
 if nleaves == 0
     warndlg('Nothing to export!','AARAE info');
 else
-%    leaves = cell(nleaves,1);
-%    i = 0;
-%    for n = 1:size(branches,1)
-%        currentbranch = handles.(matlab.lang.makeValidName(branches{n,1}));
-%        if currentbranch.getChildCount ~= 0
-%            i = i + 1;
-%            first = currentbranch.getFirstChild;
-%            %leafnames(i,:) = first.getName;
-%            leaves{i,1} = char(first.getValue);
-%            next = first.getNextSibling;
-%            if ~isempty(next)
-%                for m = 1:currentbranch.getChildCount-1
-%                    i = i + 1;
-%                    %leafnames(i,:) = next.getName;
-%                    leaves{i,1} = char(next.getValue);
-%                    next = next.getNextSibling;
-%                end
-%            end
-%        end
-%    end
+    %    leaves = cell(nleaves,1);
+    %    i = 0;
+    %    for n = 1:size(branches,1)
+    %        currentbranch = handles.(matlab.lang.makeValidName(branches{n,1}));
+    %        if currentbranch.getChildCount ~= 0
+    %            i = i + 1;
+    %            first = currentbranch.getFirstChild;
+    %            %leafnames(i,:) = first.getName;
+    %            leaves{i,1} = char(first.getValue);
+    %            next = first.getNextSibling;
+    %            if ~isempty(next)
+    %                for m = 1:currentbranch.getChildCount-1
+    %                    i = i + 1;
+    %                    %leafnames(i,:) = next.getName;
+    %                    leaves{i,1} = char(next.getValue);
+    %                    next = next.getNextSibling;
+    %                end
+    %            end
+    %        end
+    %    end
     if ~isdir([cd '/Projects']), mkdir([cd '/Projects']); end
-	folder = uigetdir([cd '/Projects'],'Export all');
+    folder = uigetdir([cd '/Projects'],'Export all');
     if ischar(folder)
         set(hObject,'BackgroundColor','red');
         set(hObject,'Enable','off');
         pause on
         pause(0.001)
         pause off
-%        h = waitbar(0,['1 of ' num2str(size(leaves,1))],'Name','Saving files...');
-%        steps = size(leaves,1);
-%        for i = 1:size(leaves,1)
-%            current = handles.(matlab.lang.makeValidName(leaves{i,:}));
-%            current = current(1);
-%            data = current.handle.UserData; %#ok : used in save
-%            if ~exist([folder '/' leaves{i,:} '.mat'],'file')
-%                try
-%                    save([folder '/' leaves{i,:} '.mat'], 'data');
-%                catch error
-%                    warndlg(error.message,'AARAE info')
-%                end
-%            else
-%                button = questdlg(['A file called ' leaves{i,:} '.mat is already in the destination folder, would you like to replace it?'],...
-%                                  'AARAE info','Yes','No','Append','Append');
-%                switch button
-%                    case 'Yes'
-%                        save([folder '/' leaves{i,:} '.mat'], 'data');
-%                    case 'Append'
-%                        index = 1;
-%                        % This while cycle is just to make sure no signals are
-%                        % overwriten
-%                        while exist([folder '/' leaves{i,:} '_' num2str(index) '.mat'],'file')
-%                            index = index + 1;
-%                        end
-%                        try
-%                            save([folder '/' leaves{i,:} '_' num2str(index) '.mat'], 'data');
-%                        catch error
-%                            warndlg(error.message,'AARAE info')
-%                        end 
-%                end
-%            end
-%            waitbar(i / steps,h,sprintf('%d of %d',i,size(leaves,1)))
-%        end
-%        close(h)
+        %        h = waitbar(0,['1 of ' num2str(size(leaves,1))],'Name','Saving files...');
+        %        steps = size(leaves,1);
+        %        for i = 1:size(leaves,1)
+        %            current = handles.(matlab.lang.makeValidName(leaves{i,:}));
+        %            current = current(1);
+        %            data = current.handle.UserData; %#ok : used in save
+        %            if ~exist([folder '/' leaves{i,:} '.mat'],'file')
+        %                try
+        %                    save([folder '/' leaves{i,:} '.mat'], 'data');
+        %                catch error
+        %                    warndlg(error.message,'AARAE info')
+        %                end
+        %            else
+        %                button = questdlg(['A file called ' leaves{i,:} '.mat is already in the destination folder, would you like to replace it?'],...
+        %                                  'AARAE info','Yes','No','Append','Append');
+        %                switch button
+        %                    case 'Yes'
+        %                        save([folder '/' leaves{i,:} '.mat'], 'data');
+        %                    case 'Append'
+        %                        index = 1;
+        %                        % This while cycle is just to make sure no signals are
+        %                        % overwriten
+        %                        while exist([folder '/' leaves{i,:} '_' num2str(index) '.mat'],'file')
+        %                            index = index + 1;
+        %                        end
+        %                        try
+        %                            save([folder '/' leaves{i,:} '_' num2str(index) '.mat'], 'data');
+        %                        catch error
+        %                            warndlg(error.message,'AARAE info')
+        %                        end
+        %                end
+        %            end
+        %            waitbar(i / steps,h,sprintf('%d of %d',i,size(leaves,1)))
+        %        end
+        %        close(h)
         if isdir([cd '/Utilities/Backup'])
             leaves = dir([cd '/Utilities/Backup/*.mat']);
             copyfile([cd '/Utilities/Backup'],folder);
@@ -523,29 +523,29 @@ else
         'Yes','No','Yes');
     switch delete
         case 'Yes'
-        set(hObject,'BackgroundColor','red');
-        set(hObject,'Enable','off');
-        for i = 1:size(leaves,1)
-            current = handles.(matlab.lang.makeValidName(leaves{i,1}));
-            handles.mytree.remove(current);
-            handles = rmfield(handles,matlab.lang.makeValidName(leaves{i,1}));
-        end
-        handles.mytree.reloadNode(handles.root);
-        handles.mytree.setSelectedNode(handles.root);
-        rmpath([cd '/Utilities/Temp']);
-        rmdir([cd '/Utilities/Temp'],'s');
-        rmpath([cd '/Utilities/Backup']);
-        rmdir([cd '/Utilities/Backup'],'s');
-        mkdir([cd '/Utilities/Temp']);
-        mkdir([cd '/Utilities/Backup']);
-        addpath([cd '/Utilities/Temp']);
-        addpath([cd '/Utilities/Backup']);
-        set(handles.result_box,'Value',1);
-        set(handles.result_box,'String',cell(1,1));
-        fprintf(handles.fid, ['%% ' datestr(now,16) ' - Cleared workspace \n\n']);
-        set(hObject,'BackgroundColor',[0.94 0.94 0.94]);
-        set(hObject,'Enable','off');
-        set(handles.export_btn,'Enable','off');
+            set(hObject,'BackgroundColor','red');
+            set(hObject,'Enable','off');
+            for i = 1:size(leaves,1)
+                current = handles.(matlab.lang.makeValidName(leaves{i,1}));
+                handles.mytree.remove(current);
+                handles = rmfield(handles,matlab.lang.makeValidName(leaves{i,1}));
+            end
+            handles.mytree.reloadNode(handles.root);
+            handles.mytree.setSelectedNode(handles.root);
+            rmpath([cd '/Utilities/Temp']);
+            rmdir([cd '/Utilities/Temp'],'s');
+            rmpath([cd '/Utilities/Backup']);
+            rmdir([cd '/Utilities/Backup'],'s');
+            mkdir([cd '/Utilities/Temp']);
+            mkdir([cd '/Utilities/Backup']);
+            addpath([cd '/Utilities/Temp']);
+            addpath([cd '/Utilities/Backup']);
+            set(handles.result_box,'Value',1);
+            set(handles.result_box,'String',cell(1,1));
+            fprintf(handles.fid, ['%% ' datestr(now,16) ' - Cleared workspace \n\n']);
+            set(hObject,'BackgroundColor',[0.94 0.94 0.94]);
+            set(hObject,'Enable','off');
+            set(handles.export_btn,'Enable','off');
     end
 end
 guidata(hObject,handles)
@@ -565,8 +565,8 @@ function aarae_CloseRequestFcn(hObject,eventdata,handles) %#ok
 % handles    structure with handles and user data (see GUIDATA)
 if strcmp(get(handles.export_btn,'Enable'),'on')
     choice = questdlg('Are you sure to want to finish this AARAE session? Unexported data will be lost.',...
-                      'Exit AARAE',...
-                      'Yes','No','Export all & exit','Yes');
+        'Exit AARAE',...
+        'Yes','No','Export all & exit','Yes');
     switch choice
         case 'Yes'
             if getappdata(handles.aarae,'waiting')
@@ -577,7 +577,7 @@ if strcmp(get(handles.export_btn,'Enable'),'on')
                 % The GUI is no longer waiting, so destroy it now.
                 delete(hObject);
             end
-         %   uiresume(handles.aarae);
+            %   uiresume(handles.aarae);
         case 'Export all & exit'
             export_btn_Callback(handles.export_btn,eventdata,handles)
             if getappdata(handles.aarae,'waiting')
@@ -595,7 +595,7 @@ else
 end
 % Check appdata flag to see if the main GUI is in a wait state
 %if getappdata(handles.aarae,'waiting')
-    % The GUI is still in UIWAIT, so call UIRESUME and return
+% The GUI is still in UIWAIT, so call UIRESUME and return
 %    uiresume(hObject);
 %    setappdata(handles.aarae,'waiting',0);
 %else
@@ -612,7 +612,7 @@ end
 % *************************************************************************
 
 % --- Outputs from this function are returned to the command line.
-function varargout = aarae_OutputFcn(~, ~, handles) 
+function varargout = aarae_OutputFcn(~, ~, handles)
 % varargout  cell array for returning output args (see VARARGOUT);
 % hObject    handle to aarae
 % eventdata  reserved - to be defined in a future version of MATLAB
@@ -662,7 +662,7 @@ if strcmp(get(handles.recovery_txt,'Visible'),'on'), set(handles.recovery_txt,'V
 hMain = getappdata(0,'hMain');
 setappdata(hMain,'testsignal',[]);
 
-% Call the window that allows signal generation 
+% Call the window that allows signal generation
 newleaf = genaudio('main_stage1', handles.aarae);
 %set(handles.aarae,'CurrentObject',[])
 % Update the tree with the generated signal
@@ -776,7 +776,7 @@ for i = 1:length(filename)
             [signaldata.audio,signaldata.fs] = audioread(fullfile(handles.defaultaudiopath,filename{i}));
             %signaldata.nbits = 16;
         end;
-
+        
         % Generate new leaf and update the tree
         if ~isempty(signaldata)
             if ~isfield(signaldata,'chanID') && isfield(signaldata,'audio')
@@ -812,7 +812,7 @@ for i = 1:length(filename)
             signaldata.name = matlab.lang.makeValidName(newleaf{1,1});
             
             % Save as you go
-            save([cd '/Utilities/Backup/' newleaf{1,1} '.mat'], 'signaldata','-v7.3');            
+            save([cd '/Utilities/Backup/' newleaf{1,1} '.mat'], 'signaldata','-v7.3');
             
             handles.(signaldata.name) = uitreenode('v0', newleaf{1,1},  newleaf{1,1},  iconPath, true);
             handles.(signaldata.name).UserData = signaldata;
@@ -985,7 +985,7 @@ hMain = getappdata(0,'hMain');
 signaldata = getappdata(hMain,'testsignal');
 
 if isempty(signaldata), warndlg('No signal loaded!','Whoops...!');
-%elseif ndims(signaldata.audio) > 2, warndlg('Cannot edit file!','Whoops...!');
+    %elseif ndims(signaldata.audio) > 2, warndlg('Cannot edit file!','Whoops...!');
 else
     % Call editing window
     selectedNodes = handles.mytree.getSelectedNodes;
@@ -1036,7 +1036,7 @@ for nleafs = 1:length(selectedNodes)
             if strcmp(ext,'.mat'), ensave = 1;
             elseif strcmp(ext,'.wav') && ismatrix(audiodata.audio), ensave = 1;
             elseif strcmp(ext,'.wav') && ~ismatrix(audiodata.audio), ensave = 1; ext = '.mat';
-            elseif isempty(ext), ensave = 1; 
+            elseif isempty(ext), ensave = 1;
             else ensave = 0;
             end
         else
@@ -1148,129 +1148,129 @@ selectedNodes = handles.mytree.getSelectedNodes;
 
 % convolveaudiowithaudio2 is an AARAE utility
 [IR,method,scalingmethod] = convolveaudiowithaudio2(audiodata);
-
 if ishandle(h), close(h); end
-
-% Trim the IR. tempIR is used for visual display in window_signal
-if ~ismatrix(IR), tempIR(:,:) = IR(:,1,:,end,1,1); else tempIR = IR; end
-[trimsamp_low,trimsamp_high,chanind,bandind,cycind,outchanind,dim6ind] = ...
-    window_signal('main_stage1', handles.aarae,...
-    'IR',tempIR,...
-    'fs',audiodata.fs,...
-    'audio2len',size(audiodata.audio2,1),...
-    'chans',size(IR,2),...
-    'bands',size(IR,3),...
-    'cycles',size(IR,4),...
-    'outchans',size(IR,5),...
-    'dim6',size(IR,6));  % Calls the trimming GUI window to trim the IR
-IR = IR(trimsamp_low:trimsamp_high,chanind,bandind,cycind,outchanind,dim6ind);
-IRlength = length(IR);
-
-% Create new leaf and update the tree
-handles.mytree.setSelectedNode(handles.root);
-newleaf = ['IR_' selectedNodes(1).getName.char];
-leafname = isfield(handles,matlab.lang.makeValidName(newleaf));
-if leafname == 1
-    index = 1;
-    % This while cycle is just to make sure no signals are
-    % overwriten
-    if length(matlab.lang.makeValidName([newleaf,'_',num2str(index)])) >= namelengthmax, newleaf = newleaf(1:round(end/2)); end
-    while isfield(handles,matlab.lang.makeValidName([newleaf,'_',num2str(index)])) == 1
-        index = index + 1;
-    end
-    newleaf = [newleaf,'_',num2str(index)];
-end
-if ~isempty(getappdata(hMain,'testsignal'))
-    signaldata = audiodata;
-    signaldata.name = newleaf;
-    signaldata = rmfield(signaldata,'audio2');
-    signaldata.audio = IR;
-    %signaldata.fs = fs; % This should be unnecessary
-    %signaldata.nbits = 16;
+if ~isempty(IR)
+    % Trim the IR. tempIR is used for visual display in window_signal
+    if ~ismatrix(IR), tempIR(:,:) = IR(:,1,:,end,1,1); else tempIR = IR; end
+    [trimsamp_low,trimsamp_high,chanind,bandind,cycind,outchanind,dim6ind] = ...
+        window_signal('main_stage1', handles.aarae,...
+        'IR',tempIR,...
+        'fs',audiodata.fs,...
+        'audio2len',size(audiodata.audio2,1),...
+        'chans',size(IR,2),...
+        'bands',size(IR,3),...
+        'cycles',size(IR,4),...
+        'outchans',size(IR,5),...
+        'dim6',size(IR,6));  % Calls the trimming GUI window to trim the IR
+    IR = IR(trimsamp_low:trimsamp_high,chanind,bandind,cycind,outchanind,dim6ind);
+    IRlength = length(IR);
     
-    if isfield(signaldata,'chanID')
-        try
-            signaldata.chanID = signaldata.chanID{chanind,1};
-            if length(signaldata.chanID{:,1}) ~= size(signaldata.audio,2)
+    % Create new leaf and update the tree
+    handles.mytree.setSelectedNode(handles.root);
+    newleaf = ['IR_' selectedNodes(1).getName.char];
+    leafname = isfield(handles,matlab.lang.makeValidName(newleaf));
+    if leafname == 1
+        index = 1;
+        % This while cycle is just to make sure no signals are
+        % overwriten
+        if length(matlab.lang.makeValidName([newleaf,'_',num2str(index)])) >= namelengthmax, newleaf = newleaf(1:round(end/2)); end
+        while isfield(handles,matlab.lang.makeValidName([newleaf,'_',num2str(index)])) == 1
+            index = index + 1;
+        end
+        newleaf = [newleaf,'_',num2str(index)];
+    end
+    if ~isempty(getappdata(hMain,'testsignal'))
+        signaldata = audiodata;
+        signaldata.name = newleaf;
+        signaldata = rmfield(signaldata,'audio2');
+        signaldata.audio = IR;
+        %signaldata.fs = fs; % This should be unnecessary
+        %signaldata.nbits = 16;
+        
+        if isfield(signaldata,'chanID')
+            try
+                signaldata.chanID = signaldata.chanID{chanind,1};
+                if length(signaldata.chanID{:,1}) ~= size(signaldata.audio,2)
+                    signaldata.chanID = cellstr([repmat('Chan',size(signaldata.audio,2),1) num2str((1:size(signaldata.audio,2))')]);
+                end
+            catch
                 signaldata.chanID = cellstr([repmat('Chan',size(signaldata.audio,2),1) num2str((1:size(signaldata.audio,2))')]);
             end
-        catch
+        else
             signaldata.chanID = cellstr([repmat('Chan',size(signaldata.audio,2),1) num2str((1:size(signaldata.audio,2))')]);
         end
-    else
-        signaldata.chanID = cellstr([repmat('Chan',size(signaldata.audio,2),1) num2str((1:size(signaldata.audio,2))')]);
-    end
-    
-    if isfield(signaldata,'bandID')
-        try
-            signaldata.bandID = signaldata.bandID(bandind);
-            if length(signaldata.bandID) ~= size(signaldata.audio,3)
+        
+        if isfield(signaldata,'bandID')
+            try
+                signaldata.bandID = signaldata.bandID(bandind);
+                if length(signaldata.bandID) ~= size(signaldata.audio,3)
+                    signaldata.bandID = 1:size(signaldata.audio,3);
+                end
+            catch
                 signaldata.bandID = 1:size(signaldata.audio,3);
             end
-        catch
-            signaldata.bandID = 1:size(signaldata.audio,3);
         end
-    end
-    
-    if isfield(signaldata,'properties')
-        if isfield(signaldata.properties,'relgain')
-            if method == 1 || method >= 5
-                signaldata.properties = rmfield(signaldata.properties,'relgain');
+        
+        if isfield(signaldata,'properties')
+            if isfield(signaldata.properties,'relgain')
+                if method == 1 || method >= 5
+                    signaldata.properties = rmfield(signaldata.properties,'relgain');
+                end
+            end
+            if isfield(signaldata.properties,'startflag')
+                if method == 1 || method >= 5
+                    signaldata.properties = rmfield(signaldata.properties,'startflag');
+                end
             end
         end
-        if isfield(signaldata.properties,'startflag')
-            if method == 1 || method >= 5
-                signaldata.properties = rmfield(signaldata.properties,'startflag');
-            end
+        
+        signaldata.datatype = 'measurements';
+        iconPath = fullfile(matlabroot,'/toolbox/fixedpoint/fixedpointtool/resources/plot.png');
+        
+        % Save as you go
+        save([cd '/Utilities/Backup/' newleaf '.mat'], 'signaldata','-v7.3');
+        
+        handles.(matlab.lang.makeValidName(newleaf)) = uitreenode('v0', newleaf,  newleaf,  iconPath, true);
+        handles.(matlab.lang.makeValidName(newleaf)).UserData = signaldata;
+        handles.measurements.add(handles.(matlab.lang.makeValidName(newleaf)));
+        handles.mytree.reloadNode(handles.measurements);
+        handles.mytree.expand(handles.measurements);
+        handles.mytree.setSelectedNode(handles.(matlab.lang.makeValidName(newleaf)));
+        set([handles.clrall_btn,handles.export_btn],'Enable','on')
+        fprintf(handles.fid, ['%% ' datestr(now,16) ' - Processed "' char(selectedNodes(1).getName) '" to generate an impulse response of ' num2str(IRlength) ' points\n']);
+        switch method
+            case 1
+                fprintf(handles.fid,'method = 1; %% Synchronous average of cycles (excluding silent cycle)\n');
+            case 2
+                fprintf(handles.fid,'method = 2; %% Stack multicycle IR measurements in dimension 4\n');
+            case 3
+                fprintf(handles.fid,'method = 3; %% Reshape higher dimensions (>3) to channels\n');
+            case 4
+                fprintf(handles.fid,'method = 4; %% Simply convolve (without averaging, stacking or selecting)\n');
+            case 5
+                fprintf(handles.fid,'method = 5; %% Select the cleanest cycle\n');
+            case 6
+                fprintf(handles.fid,'method = 6; %% Select the cleanest IR (multichannel)\n');
+            case 7
+                fprintf(handles.fid,'method = 7; %% Select the cleanest single IR (best channel)\n');
+            case 8
+                fprintf(handles.fid,'method = 8; %% Select the silent cycle or the IR with the lowest SNR (multichannel)\n');
         end
+        
+        fprintf(handles.fid,['X = convolveaudiowithaudio2(X,','method',',',num2str(scalingmethod),');\n']);
+        
+        fprintf(handles.fid,['X.audio = X.audio(',num2str(trimsamp_low),':',num2str(trimsamp_high),...
+            ',[',num2str(chanind),...
+            '],[',num2str(bandind),...
+            '],[',num2str(cycind),...
+            '],[',num2str(outchanind),...
+            '],[',num2str(dim6ind),...
+            ']);\n']);
+        
+        fprintf(handles.fid,'\n');
+        % Log verbose metadata (not necessary here)
+        % logaudioleaffields(signaldata);
     end
-    
-    signaldata.datatype = 'measurements';
-    iconPath = fullfile(matlabroot,'/toolbox/fixedpoint/fixedpointtool/resources/plot.png');
-    
-    % Save as you go
-    save([cd '/Utilities/Backup/' newleaf '.mat'], 'signaldata','-v7.3');
-    
-    handles.(matlab.lang.makeValidName(newleaf)) = uitreenode('v0', newleaf,  newleaf,  iconPath, true);
-    handles.(matlab.lang.makeValidName(newleaf)).UserData = signaldata;
-    handles.measurements.add(handles.(matlab.lang.makeValidName(newleaf)));
-    handles.mytree.reloadNode(handles.measurements);
-    handles.mytree.expand(handles.measurements);
-    handles.mytree.setSelectedNode(handles.(matlab.lang.makeValidName(newleaf)));
-    set([handles.clrall_btn,handles.export_btn],'Enable','on')
-    fprintf(handles.fid, ['%% ' datestr(now,16) ' - Processed "' char(selectedNodes(1).getName) '" to generate an impulse response of ' num2str(IRlength) ' points\n']);
-    switch method
-        case 1
-            fprintf(handles.fid,'%% Method 1: Synchronous average of cycles (excluding silent cycle)\n');
-        case 2
-            fprintf(handles.fid,'%% Method 2: Stack multicycle IR measurements in dimension 4\n');
-        case 3
-            fprintf(handles.fid,'%% Method 3: Reshape higher dimensions (>3) to channels\n');
-        case 4
-            fprintf(handles.fid,'%% Method 4: Simply convolve (without averaging, stacking or selecting)\n');
-        case 5
-            fprintf(handles.fid,'%% Method 5: Select the cleanest cycle\n');
-        case 6
-            fprintf(handles.fid,'%% Method 6: Select the cleanest IR (multichannel)\n');
-        case 7
-            fprintf(handles.fid,'%% Method 7: Select the cleanest single IR (best channel)\n');
-        case 8
-            fprintf(handles.fid,'%% Method 8: Select the silent cycle or the IR with the lowest SNR (multichannel)\n');
-    end
-            
-    fprintf(handles.fid,['X = convolveaudiowithaudio2(X,',num2str(method),',',num2str(scalingmethod),');\n']);
-
-    fprintf(handles.fid,['X.audio = X.audio(',num2str(trimsamp_low),':',num2str(trimsamp_high),...
-        ',[',num2str(chanind),...
-        '],[',num2str(bandind),...
-        '],[',num2str(cycind),...
-        '],[',num2str(outchanind),...
-        '],[',num2str(dim6ind),...
-        ']);\n']);
-
-    fprintf(handles.fid,'\n');
-    % Log verbose metadata (not necessary here)
-    % logaudioleaffields(signaldata);
 end
 
 set(hObject,'BackgroundColor',[0.94 0.94 0.94]);
@@ -1297,12 +1297,12 @@ selectedNodes = handles.mytree.getSelectedNodes;
 %selectedNodes = selectedNodes(1);
 
 method = menu('Calibration',...
-              'Choose from AARAE',...
-              'Locate file on disc',...
-              'Input value',...
-              'Specify Leq',...
-              'Specify weighted Leq',...
-              'Cancel');
+    'Choose from AARAE',...
+    'Locate file on disc',...
+    'Input value',...
+    'Specify Leq',...
+    'Specify weighted Leq',...
+    'Cancel');
 cal_level = [];
 switch method
     case 1
@@ -1341,8 +1341,8 @@ switch method
             end
         end
         [s,ok] = listdlg('PromptString','Select a file:',...
-                'SelectionMode','single',...
-                'ListString',leaves);
+            'SelectionMode','single',...
+            'ListString',leaves);
         if ok == 1
             caldata = handles.(matlab.lang.makeValidName(leaves{s,1})).handle.UserData;
             if ~isfield(caldata,'audio')
@@ -1353,7 +1353,7 @@ switch method
                 %signaldata.audio = signaldata.audio.*calibration;
                 if (size(signaldata.audio,2) == size(cal_level,2) || size(cal_level,2) == 1) && ismatrix(caldata.audio)
                     cal_offset = inputdlg('Calibration tone RMS level',...
-                                'Calibration value',[1 50],{'0'});
+                        'Calibration value',[1 50],{'0'});
                     if isnan(str2double(char(cal_offset)))
                         return
                     else
@@ -1369,8 +1369,8 @@ switch method
         end
     case 2
         [filename,handles.defaultaudiopath] = uigetfile(...
-                    {'*.wav;*.mat;.WAV;.MAT','Calibration file (*.wav,*.mat)'},...
-                    'Select audio file',handles.defaultaudiopath);
+            {'*.wav;*.mat;.WAV;.MAT','Calibration file (*.wav,*.mat)'},...
+            'Select audio file',handles.defaultaudiopath);
         if ~ischar(filename)
             return
         else
@@ -1394,7 +1394,7 @@ switch method
             cal_level = 10 * log10(mean(caltone.^2,1));
             if (size(signaldata.audio,2) == size(cal_level,2) || size(cal_level,2) == 1) && ismatrix(caltone)
                 cal_offset = inputdlg('Calibration tone RMS level',...
-                            'Calibration value',[1 50],{'0'});
+                    'Calibration value',[1 50],{'0'});
                 if isnan(str2double(char(cal_offset)))
                     return
                 else
@@ -1413,7 +1413,7 @@ switch method
             def = cellstr(num2str(zeros(chans,1)));
         end
         cal_level = inputdlg(cellstr([repmat('channel ',chans,1) num2str((1:chans)')]),...
-                    'Calibration value',[1 60],def);
+            'Calibration value',[1 60],def);
         cal_level = str2num(char(cal_level))'; %#ok to prevent from spaces introduced in the input boxes
         if size(cal_level,1) > size(cal_level,2), cal_level = cal_level'; end
         if isempty(cal_level) || chans ~= size(cal_level,2)
@@ -1425,7 +1425,7 @@ switch method
         cal_level = 10 .* log10(mean(caldata.audio.^2,1));
         cal_level = repmat(20*log10(mean(10.^(cal_level./20),2)),1,size(caldata.audio,2));
         cal_offset = inputdlg('Signal RMS level',...
-                    'Calibration value',[1 50],cellstr(num2str(zeros(size(cal_level)))));
+            'Calibration value',[1 50],cellstr(num2str(zeros(size(cal_level)))));
         if isempty(cal_offset)
             return;
         else
@@ -1452,7 +1452,7 @@ switch method
             cal_level = 10 .* log10(mean(caldata.audio.^2,1));
             cal_level = repmat(20*log10(mean(10.^(cal_level./20),2)),1,size(caldata.audio,2));
             cal_offset = inputdlg('Signal RMS level',...
-                        'Calibration value',[1 50],cellstr(num2str(zeros(size(cal_level)))));
+                'Calibration value',[1 50],cellstr(num2str(zeros(size(cal_level)))));
             if isempty(cal_offset)
                 return;
             else
@@ -1519,7 +1519,7 @@ if handles.compareaudio == 1
             if ~ismatrix(signaldata.audio)
                 if ndims(signaldata.audio) == 3, cmap = colormap(hsv(size(signaldata.audio,3))); end
                 if ndims(signaldata.audio) >= 4, cmap = colormap(copper(size(signaldata.audio,4))); end
-                try 
+                try
                     linea(:,:) = signaldata.audio(:,str2double(get(handles.IN_nchannel,'String')),:);
                 catch
                     linea = zeros(size(t));
@@ -1639,8 +1639,8 @@ if handles.compareaudio == 1
         ylims = cell2mat(get(iplots,'Ylim'));
         set(iplots,'Ylim',[min(ylims(:,1)) max(ylims(:,2))])
         uicontrol('Style', 'pushbutton', 'String', 'Axes limits',...
-                'Position', [0 0 65 30],...
-                'Callback', 'setaxeslimits');
+            'Position', [0 0 65 30],...
+            'Callback', 'setaxeslimits');
     end
 else
     comparedata('main_stage1', handles.aarae);
@@ -1853,7 +1853,7 @@ else
     spectrum = fft(testsignal,len);
     phase = angle(spectrum);
     rmsmag = mean(abs(spectrum).^2).^0.5; % root mean square magnitude
-
+    
     % combine magnitude with phase
     changed_spectrum = ones(len,size(testsignal,2)).*repmat(rmsmag,size(testsignal,1),1) .* exp(1i .* phase);
     changed_spectrum(1) = 0; % make DC zero
@@ -2111,31 +2111,31 @@ for nleafs = 1:length(selectedNodes)
             [~,~,ext] = fileparts(file{multi,1});
             if strcmp(ext,'.mat')
                 warndlg('Option not yet available','AARAE info','modal')
-%                content = load([cd '/Processors/' category '/' num2str(signaldata.fs) 'Hz/' char(file(multi,:))]);
-%                filterbank = content.filterbank;
-%                w = whos('filterbank');
-%                if strcmp(w.class,'dfilt.df2sos')
-%                    for i = 1:length(filterbank)
-%                        for j = 1:min(size(signaldata.audio))
-%                            processed(:,j,i) = filter(filterbank(1,i),signaldata.audio(:,j));
-%                        end
-%                    end
-%                    bandID = [];
-%                elseif strcmp(w.class,'double')    
-%                    processed = filter(filterbank,1,signaldata.audio);
-%                end
+                %                content = load([cd '/Processors/' category '/' num2str(signaldata.fs) 'Hz/' char(file(multi,:))]);
+                %                filterbank = content.filterbank;
+                %                w = whos('filterbank');
+                %                if strcmp(w.class,'dfilt.df2sos')
+                %                    for i = 1:length(filterbank)
+                %                        for j = 1:min(size(signaldata.audio))
+                %                            processed(:,j,i) = filter(filterbank(1,i),signaldata.audio(:,j));
+                %                        end
+                %                    end
+                %                    bandID = [];
+                %                elseif strcmp(w.class,'double')
+                %                    processed = filter(filterbank,1,signaldata.audio);
+                %                end
             elseif strcmp(ext,'.m')
                 [~,funname] = fileparts(char(file(multi,:)));
                 try
-                if ~isempty(funcallback) && strcmp(funname,funcallback.name)
-                    processed = feval(funname,signaldata,funcallback.inarg{:});
-                else
-                    processed = feval(funname,signaldata);
-                end
-                if isfield(processed,'funcallback')
-                    funcallback = processed.funcallback;
-                    [~,funcallback.name] = fileparts(funcallback.name);
-                end
+                    if ~isempty(funcallback) && strcmp(funname,funcallback.name)
+                        processed = feval(funname,signaldata,funcallback.inarg{:});
+                    else
+                        processed = feval(funname,signaldata);
+                    end
+                    if isfield(processed,'funcallback')
+                        funcallback = processed.funcallback;
+                        [~,funcallback.name] = fileparts(funcallback.name);
+                    end
                 catch err
                     processed = [];
                     msgString = getReport(err);
@@ -2215,7 +2215,7 @@ for nleafs = 1:length(selectedNodes)
                             iconPath = fullfile(matlabroot,'/toolbox/matlab/icons/notesicon.gif');
                         end
                         % associate iconPath with leaf (ask Daniel how to do this)
-                       % handles.(matlab.lang.makeValidName(newleaf{1,1})) = uitreenode('v0', newleaf{1,1},  newleaf{1,1},  iconPath, true);
+                        % handles.(matlab.lang.makeValidName(newleaf{1,1})) = uitreenode('v0', newleaf{1,1},  newleaf{1,1},  iconPath, true);
                         handles.results.add(handles.(matlab.lang.makeValidName(newleaf{1,1})));
                         handles.mytree.reloadNode(handles.results);
                         handles.mytree.expand(handles.results);
@@ -2457,47 +2457,47 @@ for nleafs = 1:length(selectedNodes)
                 if isfield(handles,'choosefromhigherdims')
                     handles.choosefromhigherdims = [];
                 end
-%                 % Log contents of results tables - THIS IS NOW IN logaudioleaffields(signaldata);
-%                 if isfield(signaldata,'tables')
-%                     for tt = 1:size(signaldata.tables,2)
-%                         try
-%                         fprintf(handles.fid, ['%%  RESULTS TABLE: ', signaldata.tables(tt).Name,'\n']);
-%                         rownamelen = zeros(length(signaldata.tables(tt).RowName),1);
-%                         for rw = 1:length(signaldata.tables(tt).RowName)
-%                             rownamelen(rw) = length(signaldata.tables(tt).RowName{rw});
-%                         end
-%                         maxrownamelen = max(rownamelen);
-%                         if maxrownamelen < 15, maxrownamelen =15; end
-%                         fprintf(handles.fid, ['%%,', repmat(' ',[1,maxrownamelen+1])]);
-%                         for cl = 1:length(signaldata.tables(tt).ColumnName)
-%                             if cl < length(signaldata.tables(tt).ColumnName)
-%                                 colnamestring = char(signaldata.tables(tt).ColumnName(cl));
-%                                 if length(colnamestring)>14,colnamestring = colnamestring(1:14); end
-%                                 fprintf(handles.fid, [colnamestring,',',repmat(' ',[1,15-length(colnamestring)])]);
-%                             else
-%                                 colnamestring = char(signaldata.tables(tt).ColumnName(cl));
-%                                 if length(colnamestring)>14,colnamestring = colnamestring(1:14); end
-%                                 fprintf(handles.fid, [colnamestring,'\n']);
-%                             end
-%                         end
-% 
-%                         for rw = 1:length(signaldata.tables(tt).RowName)
-%                             fprintf(handles.fid, ['%% ', char(signaldata.tables(tt).RowName(rw)),',',repmat(' ',[1,maxrownamelen-rownamelen(rw)+1])]);
-%                             for cl = 1:size(signaldata.tables(tt).Data,2)
-%                                 if cl < size(signaldata.tables(tt).Data,2)
-%                                     fprintf(handles.fid, [num2str(signaldata.tables(tt).Data(rw,cl)),',',repmat(' ',[1,15-length(num2str(signaldata.tables(tt).Data(rw,cl)))])]);
-%                                 else
-%                                     fprintf(handles.fid, [num2str(signaldata.tables(tt).Data(rw,cl)),'\n']);
-%                                 end
-%                             end
-%                         end
-%                         catch
-%                             fprintf(handles.fid,'Table format not interpreted for logging');
-%                         end
-%                         fprintf(handles.fid,'\n');
-%                     end
-%                 end
-    
+                %                 % Log contents of results tables - THIS IS NOW IN logaudioleaffields(signaldata);
+                %                 if isfield(signaldata,'tables')
+                %                     for tt = 1:size(signaldata.tables,2)
+                %                         try
+                %                         fprintf(handles.fid, ['%%  RESULTS TABLE: ', signaldata.tables(tt).Name,'\n']);
+                %                         rownamelen = zeros(length(signaldata.tables(tt).RowName),1);
+                %                         for rw = 1:length(signaldata.tables(tt).RowName)
+                %                             rownamelen(rw) = length(signaldata.tables(tt).RowName{rw});
+                %                         end
+                %                         maxrownamelen = max(rownamelen);
+                %                         if maxrownamelen < 15, maxrownamelen =15; end
+                %                         fprintf(handles.fid, ['%%,', repmat(' ',[1,maxrownamelen+1])]);
+                %                         for cl = 1:length(signaldata.tables(tt).ColumnName)
+                %                             if cl < length(signaldata.tables(tt).ColumnName)
+                %                                 colnamestring = char(signaldata.tables(tt).ColumnName(cl));
+                %                                 if length(colnamestring)>14,colnamestring = colnamestring(1:14); end
+                %                                 fprintf(handles.fid, [colnamestring,',',repmat(' ',[1,15-length(colnamestring)])]);
+                %                             else
+                %                                 colnamestring = char(signaldata.tables(tt).ColumnName(cl));
+                %                                 if length(colnamestring)>14,colnamestring = colnamestring(1:14); end
+                %                                 fprintf(handles.fid, [colnamestring,'\n']);
+                %                             end
+                %                         end
+                %
+                %                         for rw = 1:length(signaldata.tables(tt).RowName)
+                %                             fprintf(handles.fid, ['%% ', char(signaldata.tables(tt).RowName(rw)),',',repmat(' ',[1,maxrownamelen-rownamelen(rw)+1])]);
+                %                             for cl = 1:size(signaldata.tables(tt).Data,2)
+                %                                 if cl < size(signaldata.tables(tt).Data,2)
+                %                                     fprintf(handles.fid, [num2str(signaldata.tables(tt).Data(rw,cl)),',',repmat(' ',[1,15-length(num2str(signaldata.tables(tt).Data(rw,cl)))])]);
+                %                                 else
+                %                                     fprintf(handles.fid, [num2str(signaldata.tables(tt).Data(rw,cl)),'\n']);
+                %                                 end
+                %                             end
+                %                         end
+                %                         catch
+                %                             fprintf(handles.fid,'Table format not interpreted for logging');
+                %                         end
+                %                         fprintf(handles.fid,'\n');
+                %                     end
+                %                 end
+                
                 h = findobj('type','figure','-not','tag','aarae');
                 index = 1;
                 filename = dir([cd '/Utilities/Temp/' char(selectedNodes(nleafs).getName) funname num2str(index) '.fig']);
@@ -2713,7 +2713,7 @@ if ~isempty(click) && ((click == handles.axestime) || (get(click,'Parent') == ha
             end
         end
         t = linspace(To,Tf,length(linea))./signaldata.fs;
-        f = signaldata.fs .* ((1:length(linea))-1) ./ length(linea);        
+        f = signaldata.fs .* ((1:length(linea))-1) ./ length(linea);
         switch handles.Settings.specmagscale;
             case {'Divided by length'}
                 spectscale = 1./length(linea);
@@ -2759,7 +2759,7 @@ if ~isempty(click) && ((click == handles.axestime) || (get(click,'Parent') == ha
                 if smoothfactor == 6, octsmooth = 24; end
                 if smoothfactor ~= 1, linea = octavesmoothing(linea, octsmooth, signaldata.fs); end
             end
-            %if plottype == 17, 
+            %if plottype == 17,
             plot(f(1:length(linea)),linea)%,'Marker','None'); end
             %if plottype ~= 17, semilogx(f,linea); end % Plot signal in frequency domain
             log_check = get(handles.logtime_chk,'Value');
@@ -2884,7 +2884,7 @@ if ~isempty(click) && ((click == handles.axesfreq) || (get(click,'Parent') == ha
                 if smoothfactor == 6, octsmooth = 24; end
                 if smoothfactor ~= 1, linea = octavesmoothing(linea, octsmooth, signaldata.fs); end
             end
-            %if plottype == 17, 
+            %if plottype == 17,
             plot(f(1:length(linea)),linea)%,'Marker','None'); end
             %if plottype ~= 17, semilogx(f,linea); end % Plot signal in frequency domain
             xlabel('Frequency [Hz]');
@@ -3184,7 +3184,7 @@ selectedNodes = handles.mytree.getSelectedNodes;
 signaldata = selectedNodes(1).handle.UserData;
 if isnan(Tf_time) || Tf_time <= str2double(get(handles.To_time,'String')) || Tf_time > length(signaldata.audio)/signaldata.fs
     %warndlg('Invalid entry','AARAE info','modal')
-	set(hObject,'String',handles.Tf_time_IN)
+    set(hObject,'String',handles.Tf_time_IN)
     refreshplots(handles,'time')
     guidata(hObject,handles)
 else
@@ -3448,7 +3448,7 @@ end
 
 % --- Executes when selected object is changed in Xvalues_sel.
 function Xvalues_sel_SelectionChangeFcn(hObject, eventdata, handles)
-% hObject    handle to the selected object in Xvalues_sel 
+% hObject    handle to the selected object in Xvalues_sel
 % eventdata  structure with the following fields (see UIBUTTONGROUP)
 %	EventName: string 'SelectionChanged' (read only)
 %	OldValue: handle of the previously selected object or empty if none was selected

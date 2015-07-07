@@ -8,27 +8,13 @@ function [OUT,method,scalingmethod] = convolveaudiowithaudio2(IN,method,scalingm
 % METHOD:
 %     1. 'Synchronous average of cycles (excluding silent cycle)'
 %     2. 'Stack multicycle IR measurements in dimension 4'
-%     3. 'Reshape higher dimensions (>3) to channels',...
-%     4. 'Simply convolve (without averaging, stacking or selecting)',...
-%     5. 'Select the cleanest cycle',...
-%     6. 'Select the cleanest IR (multichannel)',...
-%     7. 'Select the cleanest single IR (best channel)',...
+%     3. 'Reshape higher dimensions (>3) to channels'
+%     4. 'Simply convolve (without averaging, stacking or selecting)'
+%     5. 'Select the cleanest cycle'
+%     6. 'Select the cleanest IR (multichannel)'
+%     7. 'Select the cleanest single IR (best channel)'
 %     8. 'Select the silent cycle or the IR with the lowest SNR (multichannel)'
 
-% change 3 to 4
-% write 3
-% write 5
-% change 4 to 6
-% change 5 to 7
-% change 6 to 8
-
-%OLD METHODS
-%             1.'Synchronous average of cycles (excluding silent cycle)',...
-%             2.'Stack multicycle IR measurements in dimension 4',...
-%             3.'Simply convolve (without averaging, stacking or selecting)',...
-%             4.'Select the cleanest IR (multichannel)',...
-%             5.'Select the cleanest single IR (best channel)',...
-%             6.'Select the silent cycle or the IR with the lowest SNR (multichannel)'},...
 
 
 S = IN.audio;
@@ -75,7 +61,13 @@ if isfield(IN,'properties') && isfield(IN.properties,'startflag')
             'PromptString','Select the convolution method',...
             'Name','AARAE options',...
             'SelectionMode','single',...
-            'ListSize',[300 100]);
+            'ListSize',[380 150]);
+        if ~ok
+            OUT = [];
+            method = [];
+            scalingmethod = [];
+            return
+        end
     else
         ok = 1;
     end
