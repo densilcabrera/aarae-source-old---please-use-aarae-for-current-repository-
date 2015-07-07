@@ -2225,8 +2225,7 @@ for nleafs = 1:length(selectedNodes)
                         else
                             iconPath = fullfile(matlabroot,'/toolbox/matlab/icons/notesicon.gif');
                         end
-                        % associate iconPath with leaf (ask Daniel how to do this)
-                        % handles.(matlab.lang.makeValidName(newleaf{1,1})) = uitreenode('v0', newleaf{1,1},  newleaf{1,1},  iconPath, true);
+                        handles.(matlab.lang.makeValidName(newleaf{1,1})) = uitreenode('v0', newleaf{1,1},  newleaf{1,1},  iconPath, true);
                         handles.results.add(handles.(matlab.lang.makeValidName(newleaf{1,1})));
                         handles.mytree.reloadNode(handles.results);
                         handles.mytree.expand(handles.results);
