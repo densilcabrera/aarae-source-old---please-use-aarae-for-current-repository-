@@ -31,12 +31,45 @@ function mySelectFcn(tree, ~)
             set(mainHandles.signaltypetext,'String',[selectedNodes.getName.char ' selected']);
         end
         if ~isempty(audiodata) && isfield(audiodata,'audio')% If there's audio data saved in the leaf...
-            Details = audiodata;
-            if isfield(Details,'datatype'), Details = rmfield(Details,'datatype'); end
-            if isfield(Details,'funcallback'), Details = rmfield(Details,'funcallback'); end
-            if isfield(Details,'properties'), Details = rmfield(Details,'properties'); end %#ok : used in lines 30 and 31
-            audiodatatext = evalc('Details');
-            clear('Details')
+
+%             Details = audiodata;
+%             if isfield(Details,'datatype'), Details = rmfield(Details,'datatype'); end
+%             if isfield(Details,'funcallback'), Details = rmfield(Details,'funcallback'); end
+%             if isfield(Details,'properties'), Details = rmfield(Details,'properties'); end %#ok : used in lines 30 and 31
+%             audiodatatext = evalc('Details');
+%             clear('Details')
+
+            % method of getting audiodatatext (replaces code above)
+            audiodatatext = [char(10),'audio [',num2str(size(audiodata.audio,1)),'x',...
+                num2str(size(audiodata.audio,2)),'x',...
+                num2str(size(audiodata.audio,3)),'x',...
+                num2str(size(audiodata.audio,4)),'x',...
+                num2str(size(audiodata.audio,5)),'x',...
+                num2str(size(audiodata.audio,6)),']'];
+            if isfield(audiodata, 'audio2')
+                audiodatatext = [audiodatatext, char(10), 'audio2 [',num2str(size(audiodata.audio2,1)),'x',...
+                num2str(size(audiodata.audio2,2)),']'];
+            end
+            if isfield(audiodata,'chanID')
+                if length(audiodata.chanID) == 1
+                    audiodatatext = [audiodatatext, char(10), 'chanID {', audiodata.chanID{1,1}, '}'];
+                elseif length(audiodata.chanID) == 2
+                    audiodatatext = [audiodatatext, char(10), 'chanID {', audiodata.chanID{1,1}, ';', audiodata.chanID{2,1}, '}'];
+                else
+                    audiodatatext = [audiodatatext, char(10), 'chanID {', audiodata.chanID{1,1}, ';', audiodata.chanID{2,1}, '...}'];
+                end
+            end
+            if isfield(audiodata,'bandID')
+                if length(audiodata.bandID) > 1
+                audiodatatext = [audiodatatext,char(10), 'bandID [',...
+                    num2str(min(audiodata.bandID)), ' to ',num2str(max(audiodata.bandID)) ']'];
+                else
+                    audiodatatext = [audiodatatext,char(10), 'bandID [',...
+                    num2str(audiodata.bandID), ']'];
+                end
+            end
+            
+            
             set(mainHandles.audiodatatext,'String',['Selected: ' selectedNodes.getName.char audiodatatext]); % Output contents in textbox below the tree
             set(mainHandles.datatext,'Visible','off');
             set(mainHandles.datatext,'String',[]);

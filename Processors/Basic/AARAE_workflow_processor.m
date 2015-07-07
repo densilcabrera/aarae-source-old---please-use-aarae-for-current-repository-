@@ -55,6 +55,7 @@ try
     if isfield(OUT,'audio')
         if isempty(OUT.audio)
             % empty audio field
+            OUT = rmfield(OUT,'audio');
             datatype = 4;
             OUT.datatype = datatypefield(datatype);
         end
@@ -65,6 +66,11 @@ try
     end
     if isfield(OUT,'tables')
         % tables are present
+        if isfield(OUT,'audio')
+            % remove the audio field so that the tables are available in
+            % the GUI
+            OUT = rmfield(OUT,'audio');
+        end
         datatype = 4;
         OUT.datatype = datatypefield(datatype);
     end
