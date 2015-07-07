@@ -4,6 +4,31 @@ function [OUT,method,scalingmethod] = convolveaudiowithaudio2(IN,method,scalingm
 % replicate most of what is done by the GUI button (apart from truncation
 % of the impulse response). Function calls for this are written to the log
 % file.
+%
+% METHOD:
+%     1. 'Synchronous average of cycles (excluding silent cycle)'
+%     2. 'Stack multicycle IR measurements in dimension 4'
+%     3. 'Reshape higher dimensions (>3) to channels',...
+%     4. 'Simply convolve (without averaging, stacking or selecting)',...
+%     5. 'Select the cleanest cycle',...
+%     6. 'Select the cleanest IR (multichannel)',...
+%     7. 'Select the cleanest single IR (best channel)',...
+%     8. 'Select the silent cycle or the IR with the lowest SNR (multichannel)'
+
+% change 3 to 4
+% write 3
+% write 5
+% change 4 to 6
+% change 5 to 7
+% change 6 to 8
+
+%OLD METHODS
+%             1.'Synchronous average of cycles (excluding silent cycle)',...
+%             2.'Stack multicycle IR measurements in dimension 4',...
+%             3.'Simply convolve (without averaging, stacking or selecting)',...
+%             4.'Select the cleanest IR (multichannel)',...
+%             5.'Select the cleanest single IR (best channel)',...
+%             6.'Select the silent cycle or the IR with the lowest SNR (multichannel)'},...
 
 
 S = IN.audio;
@@ -30,11 +55,20 @@ if isfield(IN,'properties') && isfield(IN.properties,'startflag')
     end
     
     
+    
+    
+    
     % SETTINGS
+    
+    
+    
+    
     if methoddialog
-        [method,ok] = listdlg('ListString',{'Synchronous average (excluding silent cycle)',...
-            'Stack IRs in dimension 4',...
-            'Convolve without separating',...
+        [method,ok] = listdlg('ListString',{'Synchronous average of cycles (excluding silent cycle)',...
+            'Stack multicycle IR measurements in dimension 4',...
+            'Reshape higher dimensions (>3) to channels',...
+            'Simply convolve (without averaging, stacking or selecting)',...
+            'Select the cleanest cycle',...
             'Select the cleanest IR (multichannel)',...
             'Select the cleanest single IR (best channel)',...
             'Select the silent cycle or the IR with the lowest SNR (multichannel)'},...
@@ -76,11 +110,11 @@ if isfield(IN,'properties') && isfield(IN.properties,'startflag')
                 %invS = invS(:,size(S,2));
                 
                 % consider returning the silent cycle somehow...
-%                 if isinf(IN.properties.relgain(1))
-%                         
-%                 end
-            case {2, 4, 5, 6}
-                % Stack IRs in dimension 4
+                %                 if isinf(IN.properties.relgain(1))
+                %
+                %                 end
+            case {2, 3, 5, 6, 7, 8}
+                % find the indices corresponding to cycles
                 indices = cat(2,{1:len*length(startflag)},repmat({':'},1,ndims(S)-1));
                 S = S(indices{:});
                 sizeS = size(S);
@@ -118,8 +152,8 @@ if isfield(IN,'properties') && isfield(IN.properties,'startflag')
                             invS = mean(invS,4);
                         end
                     else
-                    S = mean(S,4);
-                    invS = mean(invS,4);
+                        S = mean(S,4);
+                        invS = mean(invS,4);
                     end
                 end
         end
@@ -132,40 +166,40 @@ end
 
 
 % DO THE CONVOLUTION
-if method == 1 || method == 2 || method == 3 || method == 4 || method == 5 || method == 6
-    maxsize = 1e6; % this could be a user setting 
-                   % (maximum size that can be handled to avoid 
-                   % out-of-memory error from convolution process)
-    if numel(S) <= maxsize
-        S_pad = [S; zeros(size(invS))];
-        invS_pad = [invS; zeros(size(S))];
-        IR = ifft(fft(S_pad) .* fft(invS_pad)); % this replaces the old function call in the next line, which seems to do twice the zero-padding necessary
-        %IR = convolvedemo(S_pad, invS_pad, 2, fs); % Calls convolvedemo.m
-    else
-        % use nested for-loops instead of doing everything at once (could
-        % be very slow!) if the audio is too big for vectorized processing
-        [~,chans,bands,dim4,dim5,dim6] = size(S);
-        %IR = zeros(2*(length(S)+length(invS))-1,chans,bands,dim4,dim5,dim6);
-        IR = zeros(length(S)+length(invS),chans,bands,dim4,dim5,dim6);
-        for ch = 1:chans
-            for b = 1:bands
-                for d4 = 1:dim4
-                    for d5 = 1:dim5
-                        for d6 = 1:dim6
-                            S_pad = [S(:,ch,b,d4,d5,d6);zeros(length(invS),1)];
-                            invS_pad = [invS(:,ch,b,d4,d5,d6); zeros(length(S),1)];
-                            IR(:,ch,b,d4,d5,d6) = ifft(fft(S_pad) .* fft(invS_pad));
-%                             IR(:,ch,b,d4,d5,d6) =...
-%                                 convolvedemo(S_pad, invS_pad, 2, fs);
-                        end
+
+maxsize = 1e6; % this could be a user setting
+% (maximum size that can be handled to avoid
+% out-of-memory error from convolution process)
+if numel(S) <= maxsize
+    S_pad = [S; zeros(size(invS))];
+    invS_pad = [invS; zeros(size(S))];
+    IR = ifft(fft(S_pad) .* fft(invS_pad)); % this replaces the old function call in the next line, which seems to do twice the zero-padding necessary
+    %IR = convolvedemo(S_pad, invS_pad, 2, fs); % Calls convolvedemo.m
+else
+    % use nested for-loops instead of doing everything at once (could
+    % be very slow!) if the audio is too big for vectorized processing
+    [~,chans,bands,dim4,dim5,dim6] = size(S);
+    %IR = zeros(2*(length(S)+length(invS))-1,chans,bands,dim4,dim5,dim6);
+    IR = zeros(length(S)+length(invS),chans,bands,dim4,dim5,dim6);
+    for ch = 1:chans
+        for b = 1:bands
+            for d4 = 1:dim4
+                for d5 = 1:dim5
+                    for d6 = 1:dim6
+                        S_pad = [S(:,ch,b,d4,d5,d6);zeros(length(invS),1)];
+                        invS_pad = [invS(:,ch,b,d4,d5,d6); zeros(length(S),1)];
+                        IR(:,ch,b,d4,d5,d6) = ifft(fft(S_pad) .* fft(invS_pad));
+                        %                             IR(:,ch,b,d4,d5,d6) =...
+                        %                                 convolvedemo(S_pad, invS_pad, 2, fs);
                     end
                 end
             end
         end
     end
-    indices = cat(2,{1:length(S_pad)},repmat({':'},1,ndims(IR)-1));
-    IR = IR(indices{:});
 end
+indices = cat(2,{1:length(S_pad)},repmat({':'},1,ndims(IR)-1));
+IR = IR(indices{:});
+
 
 
 
@@ -203,33 +237,71 @@ end
 % APPLY SELECTION CRITERIA OR OTHER POST-PROCESSING
 [len,chans,bands,dim4,dim5,dim6] = size(IR);
 switch method
-    case 4
+    case 3
+        % Reshape higher dimensions (>3) to channels
+        IRtemp = zeros(len,chans*dim4*dim5*dim6,bands);
+        for b = 1:bands
+            IRtemp(:,:,b) = reshape(IR(:,:,b,:,:,:),[len,chans*dim4*dim5*dim6]);
+        end
+        IR = IRtemp;
+        
+    case 5
+        % Automatically select the cleanest cycle
+        % We define the best IR as the one that has the highest max:rms
+        % value, using a centre weighting for rms (Blackman-Harris
+        % window function) (we don't care so much about noise that is a
+        % long way from the IR), and we exclude most of the acausal part
+        % (which might primarily distortion)
+        
+        weighting = repmat(window(@blackmanharris,len),[1,chans,bands,dim4,dim5,dim6]);
+        
+        Quality = max(IR) ./ ...
+            rms(IR(round(0.45*len):end,:,:,:,:,:).*weighting(round(0.45*len):end,:,:,:,:,:));
+        Quality = mean(Quality,2); % average across channels
+        Quality = mean(Quality,3); % average across bands
+        Quality = mean(Quality,5); % average across dim5
+        Quality = mean(Quality,6); % average across dim6
+        [~, ind] = max(Quality,[],4);
+        IR = IR(:,:,:,ind,:,:);
+    case 6
         % Automatically select the best IR (multichannel)
         % We define the best IR as the one that has the highest max:rms
-        % value
+        % value, using a centre weighting for rms (Blackman-Harris
+        % window function) (we don't care so much about noise that is a
+        % long way from the IR), and we exclude most of the acausal part
+        % (which might primarily distortion)
         IRtemp = zeros(len,chans,bands,dim4*dim5*dim6);
+        weighting = repmat(window(@blackmanharris,len),[1,chans,bands,dim4*dim5*dim6]);
         for ch = 1:chans
             for b = 1:bands
                 IRtemp(:,ch,b,:) = reshape(IR(:,ch,b,:,:,:),[len, 1, 1, dim4 * dim5 * dim6]);
             end
         end
-        Quality = max(IRtemp) ./ rms(IRtemp);
+        Quality = max(IRtemp) ./ ...
+            rms(IRtemp(round(0.45*len):end,:,:,:).*weighting(round(0.45*len):end,:,:,:));
         Quality = mean(Quality,2); % average across channels
         Quality = mean(Quality,3); % average across bands
         [~, ind] = max(Quality,[],4);
         IR = IRtemp(:,:,:,ind);
         
-    case 5
+    case 7
         % Automatically select the single best IR (best channel)
+        % We define the best IR as the one that has the highest max:rms
+        % value, using a centre weighting for rms (Blackman-Harris
+        % window function) (we don't care so much about noise that is a
+        % long way from the IR), and we exclude most of the acausal part
+        % (which might primarily distortion)
         IRtemp = zeros(len,chans*dim4*dim5*dim6,bands);
+        weighting = repmat(window(@blackmanharris,len),[1,chans*dim4*dim5*dim6,bands]);
         for b = 1:bands
             IRtemp(:,:,b) = reshape(IR(:,:,b,:,:,:),[len, chans * dim4 * dim5 * dim6]);
         end
-        Quality = max(IRtemp) ./ rms(IRtemp);
+        Quality = max(IRtemp) ./ ...
+            rms(IRtemp(round(0.45*len):end,:,:).*weighting(round(0.45*len):end,:,:));
         Quality = mean(Quality,3); % average across bands
         [~, ind] = max(Quality,[],2);
         IR = IRtemp(:,ind,:);
-    case 6
+    case 8
         % IR with lowest SNR
         if isfield(IN.properties,'relgain')
             if isinf(IN.properties.relgain(1))
@@ -249,7 +321,7 @@ switch method
             IR = IRtemp(:,:,:,ind);
         end
 end
-        
+
 
 
 if nargin == 1

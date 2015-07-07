@@ -1151,12 +1151,19 @@ selectedNodes = handles.mytree.getSelectedNodes;
 
 if ishandle(h), close(h); end
 
-
+% Trim the IR. tempIR is used for visual display in window_signal
 if ~ismatrix(IR), tempIR(:,:) = IR(:,1,:,end,1,1); else tempIR = IR; end
-[trimsamp_low,trimsamp_high] = window_signal('main_stage1', handles.aarae,'IR',tempIR,'fs',audiodata.fs,'audio2len',size(audiodata.audio2,1)); % Calls the trimming GUI window to trim the IR
-%indices{1,1} = trimsamp_low:trimsamp_high;
-%IR = IR(indices{:}); % this seems to cause a bug!
-IR = IR(trimsamp_low:trimsamp_high,:,:,:,:,:);
+[trimsamp_low,trimsamp_high,chanind,bandind,cycind,outchanind,dim6ind] = ...
+    window_signal('main_stage1', handles.aarae,...
+    'IR',tempIR,...
+    'fs',audiodata.fs,...
+    'audio2len',size(audiodata.audio2,1),...
+    'chans',size(IR,2),...
+    'bands',size(IR,3),...
+    'cycles',size(IR,4),...
+    'outchans',size(IR,5),...
+    'dim6',size(IR,6));  % Calls the trimming GUI window to trim the IR
+IR = IR(trimsamp_low:trimsamp_high,chanind,bandind,cycind,outchanind,dim6ind);
 IRlength = length(IR);
 
 % Create new leaf and update the tree
@@ -1180,13 +1187,44 @@ if ~isempty(getappdata(hMain,'testsignal'))
     signaldata.audio = IR;
     %signaldata.fs = fs; % This should be unnecessary
     %signaldata.nbits = 16;
+    
     if isfield(signaldata,'chanID')
-        if length(signaldata.chanID) ~= size(signaldata.audio,2)
+        try
+            signaldata.chanID = signaldata.chanID{chanind,1};
+            if length(signaldata.chanID{:,1}) ~= size(signaldata.audio,2)
+                signaldata.chanID = cellstr([repmat('Chan',size(signaldata.audio,2),1) num2str((1:size(signaldata.audio,2))')]);
+            end
+        catch
             signaldata.chanID = cellstr([repmat('Chan',size(signaldata.audio,2),1) num2str((1:size(signaldata.audio,2))')]);
         end
     else
         signaldata.chanID = cellstr([repmat('Chan',size(signaldata.audio,2),1) num2str((1:size(signaldata.audio,2))')]);
     end
+    
+    if isfield(signaldata,'bandID')
+        try
+            signaldata.bandID = signaldata.bandID(bandind);
+            if length(signaldata.bandID) ~= size(signaldata.audio,3)
+                signaldata.bandID = 1:size(signaldata.audio,3);
+            end
+        catch
+            signaldata.bandID = 1:size(signaldata.audio,3);
+        end
+    end
+    
+    if isfield(signaldata,'properties')
+        if isfield(signaldata.properties,'relgain')
+            if method == 1 || method >= 5
+                signaldata.properties = rmfield(signaldata.properties,'relgain');
+            end
+        end
+        if isfield(signaldata.properties,'startflag')
+            if method == 1 || method >= 5
+                signaldata.properties = rmfield(signaldata.properties,'startflag');
+            end
+        end
+    end
+    
     signaldata.datatype = 'measurements';
     iconPath = fullfile(matlabroot,'/toolbox/fixedpoint/fixedpointtool/resources/plot.png');
     
@@ -1201,10 +1239,35 @@ if ~isempty(getappdata(hMain,'testsignal'))
     handles.mytree.setSelectedNode(handles.(matlab.lang.makeValidName(newleaf)));
     set([handles.clrall_btn,handles.export_btn],'Enable','on')
     fprintf(handles.fid, ['%% ' datestr(now,16) ' - Processed "' char(selectedNodes(1).getName) '" to generate an impulse response of ' num2str(IRlength) ' points\n']);
-    fprintf(handles.fid,['X = convolveaudiowithaudio2(X,',num2str(method),',',num2str(scalingmethod),');\n']);
-    if method == 1
-        fprintf(handles.fid,['X.audio = X.audio(',num2str(trimsamp_low),':',num2str(trimsamp_high),',:,:,:,:,:);\n']);
+    switch method
+        case 1
+            fprintf(handles.fid,'%% Method 1: Synchronous average of cycles (excluding silent cycle)\n');
+        case 2
+            fprintf(handles.fid,'%% Method 2: Stack multicycle IR measurements in dimension 4\n');
+        case 3
+            fprintf(handles.fid,'%% Method 3: Reshape higher dimensions (>3) to channels\n');
+        case 4
+            fprintf(handles.fid,'%% Method 4: Simply convolve (without averaging, stacking or selecting)\n');
+        case 5
+            fprintf(handles.fid,'%% Method 5: Select the cleanest cycle\n');
+        case 6
+            fprintf(handles.fid,'%% Method 6: Select the cleanest IR (multichannel)\n');
+        case 7
+            fprintf(handles.fid,'%% Method 7: Select the cleanest single IR (best channel)\n');
+        case 8
+            fprintf(handles.fid,'%% Method 8: Select the silent cycle or the IR with the lowest SNR (multichannel)\n');
     end
+            
+    fprintf(handles.fid,['X = convolveaudiowithaudio2(X,',num2str(method),',',num2str(scalingmethod),');\n']);
+
+    fprintf(handles.fid,['X.audio = X.audio(',num2str(trimsamp_low),':',num2str(trimsamp_high),...
+        ',[',num2str(chanind),...
+        '],[',num2str(bandind),...
+        '],[',num2str(cycind),...
+        '],[',num2str(outchanind),...
+        '],[',num2str(dim6ind),...
+        ']);\n']);
+
     fprintf(handles.fid,'\n');
     % Log verbose metadata (not necessary here)
     % logaudioleaffields(signaldata);

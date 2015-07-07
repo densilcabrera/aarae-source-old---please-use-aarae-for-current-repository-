@@ -23,7 +23,7 @@ function varargout = window_signal(varargin)
 
 % Edit the above text to modify the response to help window_signal
 
-% Last Modified by GUIDE v2.5 13-Jun-2015 09:04:22
+% Last Modified by GUIDE v2.5 06-Jul-2015 22:35:43
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -84,6 +84,21 @@ else
     handles.IR = varargin{impulse+1};
     fs = find(strcmp(varargin, 'fs'));
     handles.fs = varargin{fs+1};
+    chans = find(strcmp(varargin, 'chans'));
+    handles.chans = 1:varargin{chans+1};
+    set(handles.ChannelsTextBox,'String',num2str(handles.chans))
+    bands = find(strcmp(varargin, 'bands'));
+    handles.bands = 1:varargin{bands+1};
+    set(handles.BandsTextBox,'String',num2str(handles.bands))
+    cycles = find(strcmp(varargin, 'cycles'));
+    handles.cycles = 1:varargin{cycles+1};
+    set(handles.CyclesTextBox,'String',num2str(handles.cycles))
+    outchans = find(strcmp(varargin, 'outchans'));
+    handles.outchans = 1:varargin{outchans+1};
+    set(handles.OutputChansTextbox,'String',num2str(handles.outchans))
+    dim6 = find(strcmp(varargin, 'dim6'));
+    handles.dim6 = 1:varargin{dim6+1};
+    set(handles.Dim6TextBox,'String',num2str(handles.dim6))
     audio2len = find(strcmp(varargin, 'audio2len'));
     handles.audio2len = varargin{audio2len+1};
     t = linspace(0,size(handles.IR,1),size(handles.IR,1));
@@ -234,6 +249,11 @@ function varargout = window_signal_OutputFcn(hObject, ~, handles)
 % Get default command line output from handles structure
 varargout{1} = handles.slow;
 varargout{2} = handles.shigh;
+varargout{3} = handles.chans;
+varargout{4} = handles.bands;
+varargout{5} = handles.cycles;
+varargout{6} = handles.outchans;
+varargout{7} = handles.dim6;
 delete(hObject);
 
 
@@ -496,6 +516,167 @@ function trimmethod_popup_CreateFcn(hObject, eventdata, handles)
 % handles    empty - handles not created until after all CreateFcns called
 
 % Hint: popupmenu controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+
+
+function ChannelsTextBox_Callback(hObject, eventdata, handles)
+% hObject    handle to ChannelsTextBox (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: get(hObject,'String') returns contents of ChannelsTextBox as text
+%        str2double(get(hObject,'String')) returns contents of ChannelsTextBox as a double
+input = round(str2num(get(hObject,'String')));
+input = unique(input(input>=1 & input<=max(handles.chans) & ~isnan(input)));
+if isempty(input)
+    set(hObject,'String',['1:' num2str(handles.chans)])
+    warndlg('Invalid entry!','AARAE info');
+else
+    handles.chans = input;
+end
+guidata(hObject, handles);
+
+% --- Executes during object creation, after setting all properties.
+function ChannelsTextBox_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to ChannelsTextBox (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: edit controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+
+
+function BandsTextBox_Callback(hObject, eventdata, handles)
+% hObject    handle to BandsTextBox (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: get(hObject,'String') returns contents of BandsTextBox as text
+%        str2double(get(hObject,'String')) returns contents of BandsTextBox as a double
+input = round(str2num(get(hObject,'String')));
+input = unique(input(input>=1 & input<=max(handles.bands) & ~isnan(input)));
+if isempty(input)
+    set(hObject,'String',['1:' num2str(handles.bands)])
+    warndlg('Invalid entry!','AARAE info');
+else
+    handles.bands = input;
+end
+guidata(hObject, handles);
+
+% --- Executes during object creation, after setting all properties.
+function BandsTextBox_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to BandsTextBox (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: edit controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+
+
+function CyclesTextBox_Callback(hObject, eventdata, handles)
+% hObject    handle to CyclesTextBox (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: get(hObject,'String') returns contents of CyclesTextBox as text
+%        str2double(get(hObject,'String')) returns contents of CyclesTextBox as a double
+input = round(str2num(get(hObject,'String')));
+input = unique(input(input>=1 & input<=max(handles.cycles) & ~isnan(input)));
+if isempty(input)
+    set(hObject,'String',['1:' num2str(handles.cycles)])
+    warndlg('Invalid entry!','AARAE info');
+else
+    handles.cycles = input;
+end
+guidata(hObject, handles);
+
+
+
+% --- Executes during object creation, after setting all properties.
+function CyclesTextBox_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to CyclesTextBox (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: edit controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+
+
+function OutputChansTextbox_Callback(hObject, eventdata, handles)
+% hObject    handle to OutputChansTextbox (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: get(hObject,'String') returns contents of OutputChansTextbox as text
+%        str2double(get(hObject,'String')) returns contents of OutputChansTextbox as a double
+input = round(str2num(get(hObject,'String')));
+input = unique(input(input>=1 & input<=max(handles.outchans) & ~isnan(input)));
+if isempty(input)
+    set(hObject,'String',['1:' num2str(handles.outchans)])
+    warndlg('Invalid entry!','AARAE info');
+else
+    handles.outchans = input;
+end
+guidata(hObject, handles);
+
+
+
+% --- Executes during object creation, after setting all properties.
+function OutputChansTextbox_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to OutputChansTextbox (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: edit controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+
+
+function Dim6TextBox_Callback(hObject, eventdata, handles)
+% hObject    handle to Dim6TextBox (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: get(hObject,'String') returns contents of Dim6TextBox as text
+%        str2double(get(hObject,'String')) returns contents of Dim6TextBox as a double
+input = round(str2num(get(hObject,'String')));
+input = unique(input(input>=1 & input<=max(handles.dim6) & ~isnan(input)));
+if isempty(input)
+    set(hObject,'String',['1:' num2str(handles.dim6)])
+    warndlg('Invalid entry!','AARAE info');
+else
+    handles.dim6 = input;
+end
+guidata(hObject, handles);
+
+
+
+% --- Executes during object creation, after setting all properties.
+function Dim6TextBox_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to Dim6TextBox (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: edit controls usually have a white background on Windows.
 %       See ISPC and COMPUTER.
 if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
     set(hObject,'BackgroundColor','white');
