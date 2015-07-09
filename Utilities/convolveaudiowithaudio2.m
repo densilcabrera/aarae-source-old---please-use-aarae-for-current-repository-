@@ -1,9 +1,9 @@
 function [OUT,method,scalingmethod] = convolveaudiowithaudio2(IN,method,scalingmethod)
 % This function is used by AARAE's convolve audio with audio2 button
-% (called from aarae.m). It can also be called with two input arguments to
-% replicate most of what is done by the GUI button (apart from truncation
-% of the impulse response). Function calls for this are written to the log
-% file.
+% (called from aarae.m). It can also be called with two or three input
+% arguments to replicate most of what is done by the GUI button (apart from
+% truncation of the impulse response). Function calls for this are written
+% to the log file.
 %
 % METHOD:
 %     1. 'Synchronous average of cycles (excluding silent cycle)'
@@ -14,7 +14,11 @@ function [OUT,method,scalingmethod] = convolveaudiowithaudio2(IN,method,scalingm
 %     6. 'Select the cleanest IR (multichannel)'
 %     7. 'Select the cleanest single IR (best channel)'
 %     8. 'Select the silent cycle or the IR with the lowest SNR (multichannel)'
-
+%
+% SCALINGMETHOD:
+% This is not fully implemented yet and the particular scaling methods are
+% likely to change in a future revision. Currenly aarae.m does not use
+% scalingmethod (i.e. scalingmethod = 0, no scaling).
 
 
 S = IN.audio;
@@ -198,13 +202,19 @@ IR = IR(indices{:});
 % SCALE THE IR
 % Currently the scaling method is not used by aarae.m, but it may be useful
 % in future (perhaps with modification).
-% One option would be for generators to output a properties.scalingfactor
-% field value to be used here.
 
+%scalingmethod = 1;
 % scaling
+if isfield(IN,'properties')
+    if isfield(IN.properties,'IRscalingfactor')
+        scalingmethod = -1; % overide scalingmethod input
+        IR = IN.properties.IRscalingfactor * IR;
+    end
+end
+
 if ~exist('scalingmethod','var')
     scalingmethod = 0; % no scaling
-else
+elseif scalingmethod ~= -1
     switch scalingmethod
         case 1
             % scale based on length of inverse filter
@@ -213,9 +223,18 @@ else
             % scale based on squared length of inverse filter
             scalingfactor = 1/size(IN.audio2,1).^2;
         case 3
-            % or what about this method?
-            scalingfactor = 1/(sum(IN.audio2(:,1,1,1,1,1))*size(IN.audio2,1));
+            % scale based on sqrt of inv filter energy
+            scalingfactor = 1/(sum(IN.audio2(:,1,1,1,1,1).^2)).^0.5;
         case 4
+            % scale based on inv filter energy
+            scalingfactor = 1/(sum(IN.audio2(:,1,1,1,1,1).^2));
+        case 5
+            % scale based on product of sqrt of inv filter energy and
+            % length (a compromise between length and energy)
+            scalingfactor = 1/(sum((IN.audio2(:,1,1,1,1,1).^2)).^0.5*size(IN.audio2,1));
+        case 6
+            scalingfactor = 1/((sum(IN.audio2(:,1,1,1,1,1).^2)).^0.5 * (2*size(IN.audio2,1)).^0.5);
+        case 7
             % normalize the IR
             scalingfactor = 1/(max(max(max(max(max(max(abs(IR))))))));
         otherwise
@@ -223,7 +242,9 @@ else
             scalingfactor = 1;
     end
     IR = scalingfactor * IR;
+    %disp(num2str(scalingfactor))
 end
+
 
 
 % APPLY SELECTION CRITERIA OR OTHER POST-PROCESSING
@@ -243,7 +264,7 @@ switch method
         % value, using a centre weighting for rms (Blackman-Harris
         % window function) (we don't care so much about noise that is a
         % long way from the IR), and we exclude most of the acausal part
-        % (which might primarily distortion)
+        % (which might be primarily distortion)
         
         weighting = repmat(window(@blackmanharris,len),[1,chans,bands,dim4,dim5,dim6]);
         
@@ -261,7 +282,7 @@ switch method
         % value, using a centre weighting for rms (Blackman-Harris
         % window function) (we don't care so much about noise that is a
         % long way from the IR), and we exclude most of the acausal part
-        % (which might primarily distortion)
+        % (which might be primarily distortion)
         IRtemp = zeros(len,chans,bands,dim4*dim5*dim6);
         weighting = repmat(window(@blackmanharris,len),[1,chans,bands,dim4*dim5*dim6]);
         for ch = 1:chans
@@ -282,7 +303,7 @@ switch method
         % value, using a centre weighting for rms (Blackman-Harris
         % window function) (we don't care so much about noise that is a
         % long way from the IR), and we exclude most of the acausal part
-        % (which might primarily distortion)
+        % (which might be primarily distortion)
         IRtemp = zeros(len,chans*dim4*dim5*dim6,bands);
         weighting = repmat(window(@blackmanharris,len),[1,chans*dim4*dim5*dim6,bands]);
         for b = 1:bands
