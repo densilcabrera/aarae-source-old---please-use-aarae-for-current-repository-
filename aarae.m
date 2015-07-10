@@ -23,7 +23,7 @@ function varargout = aarae(varargin)
 
 % Edit the above text to modify the response to help aarae
 
-% Last Modified by GUIDE v2.5 10-Jul-2015 12:47:43
+% Last Modified by GUIDE v2.5 10-Jul-2015 13:25:23
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -1515,27 +1515,27 @@ function compare_btn_Callback(hObject, ~, handles) %#ok
 selectedNodes = handles.mytree.getSelectedNodes;
 if handles.compareaudio == 1
     % STILL WORKING ON THIS!
-% ******* Determine the size of the audio to be compared
-%     numberofnodes = length(selectedNodes);
-%     valid = zeros(numberofnodes,1); % check that they have audio in them
-%     for i = 1:numberofnodes
-%         if ~isempty(selectedNodes(i).handle.UserData) && isfield(selectedNodes(i).handle.UserData,'audio')
-%             valid(i) = 1;
-%         end
-%     end
-%     numberofvalidnodes = sum(valid);
-%     if numberofvalidnodes == 0
-%         % nothing to plot (but this should not be possible)
-%         warndlg('No valid audio signals selected for plotting','AARAE info','modal')
-%         return
-%     end
-%     [len,chans,bands,cycles,outchans,dim6] = deal(ones(numberofnodes,1));
-%     for i = 1:numberofnodes
-%         if valid(i)==1
-%             [len(i), chans(i), bands(i),cycles(i),outchans(i),dim6(i)] = ...
-%                 size(selectedNodes(i).handle.UserData.audio);
-%         end
-%    end
+    % ******* Determine the size of the audio to be compared
+    %     numberofnodes = length(selectedNodes);
+    %     valid = zeros(numberofnodes,1); % check that they have audio in them
+    %     for i = 1:numberofnodes
+    %         if ~isempty(selectedNodes(i).handle.UserData) && isfield(selectedNodes(i).handle.UserData,'audio')
+    %             valid(i) = 1;
+    %         end
+    %     end
+    %     numberofvalidnodes = sum(valid);
+    %     if numberofvalidnodes == 0
+    %         % nothing to plot (but this should not be possible)
+    %         warndlg('No valid audio signals selected for plotting','AARAE info','modal')
+    %         return
+    %     end
+    %     [len,chans,bands,cycles,outchans,dim6] = deal(ones(numberofnodes,1));
+    %     for i = 1:numberofnodes
+    %         if valid(i)==1
+    %             [len(i), chans(i), bands(i),cycles(i),outchans(i),dim6(i)] = ...
+    %                 size(selectedNodes(i).handle.UserData.audio);
+    %         end
+    %    end
     
     
     
@@ -1548,11 +1548,11 @@ if handles.compareaudio == 1
     
     
     
-     %audiosubplots;
-     
-% **************************************************
-% THE FOLLWOING WILL BE REPLACED WITH SOMETHING MORE USEFUL
-
+    %audiosubplots;
+    
+    % **************************************************
+    % THE FOLLOWING WILL BE REPLACED WITH SOMETHING MORE USEFUL
+    
     compplot = figure;
     for i = 1:length(selectedNodes)
         linea = [];
@@ -2021,6 +2021,197 @@ guidata(hObject,handles);
 
 
 
+% *************************************************************************
+% *************************************************************************
+%                               WORKFLOWS
+% *************************************************************************
+% *************************************************************************
+% This should be almost the same as the main Processors function
+
+
+% --- Executes on button press in RunWorkflowButton.
+function RunWorkflowButton_Callback(hObject, ~, handles)
+% hObject    handle to RunWorkflowButton (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+selectedNodes = handles.mytree.getSelectedNodes;
+if isempty(selectedNodes)
+    % in this case there is no audio available for input, so the workflow
+    % must not have an input
+    % I still need to write this code, so let's do nothing for now.
+    return
+end
+funcallback = [];
+for nleafs = 1:length(selectedNodes)
+    handles.nleafs = nleafs;
+    guidata(hObject,handles)
+    signaldata = selectedNodes(nleafs).handle.UserData;
+    if ~isempty(signaldata)
+        set(hObject,'BackgroundColor','red');
+        set(hObject,'Enable','off');
+        
+        name = selectedNodes(nleafs).getName.char;
+        
+        errorflag = false;
+        
+        processed = [];
+        
+        funname = 'AARAE_workflow_processor';
+        try
+            if ~isempty(funcallback) && strcmp(funname,funcallback.name)
+                processed = feval(funname,signaldata,funcallback.inarg{:});
+            else
+                processed = feval(funname,signaldata);
+            end
+            if isfield(processed,'funcallback')
+                funcallback = processed.funcallback;
+                [~,funcallback.name] = fileparts(funcallback.name);
+            end
+        catch err
+            processed = [];
+            msgString = getReport(err);
+            disp(['AARAE processor error running ' funname '.']);
+            disp(msgString); % displays the error message without creating an error.
+            fprintf(handles.fid,['AARAE processor error running ' funname '.\n']);
+            fprintf(handles.fid,msgString);
+            fprintf(handles.fid,'.\n');
+            errorflag = true;
+        end
+    else
+        processed = [];
+    end
+    
+    
+    if ~isempty(processed)
+        % Generate new leaf and update tree
+        newleaf = cell(1,1);
+        newleaf{1,1} = [name ' ' char(processed.workflowname)];
+        if ~isempty(signaldata)
+            if isstruct(processed)
+                dif = intersect(fieldnames(signaldata),fieldnames(processed));
+                newdata = signaldata;
+                for i = 1:size(dif,1)
+                    newdata.(dif{i,1}) = processed.(dif{i,1});
+                end
+                newfields = setxor(fieldnames(signaldata),fieldnames(processed));
+                for i = 1:size(newfields,1)
+                    if ~isfield(newdata,newfields{i,1})
+                        newdata.(newfields{i,1}) = processed.(newfields{i,1});
+                    end
+                end
+                
+                % remove audio and audio2 if there are tables (from
+                % AARAE_workflow_processor). Usually tables should
+                % only be created by analysers (not processors).
+                if isfield(newdata,'tables') && isfield(newdata,'audio')
+                    newdata = rmfield(newdata,'audio');
+                end
+                if isfield(newdata,'tables') && isfield(newdata,'audio2')
+                    newdata = rmfield(newdata,'audio2');
+                end
+                
+            else
+                % should not be necessary
+                newdata = signaldata;
+                newdata.audio = processed;
+            end
+            iconPath = fullfile(matlabroot,'/toolbox/fixedpoint/fixedpointtool/resources/plot.png');
+            leafname = isfield(handles,matlab.lang.makeValidName(newleaf{1,1}));
+            if leafname == 1
+                index = 1;
+                % This while cycle is just to make sure no signals are
+                % overwriten
+                if length(matlab.lang.makeValidName([newleaf{1,1},'_',num2str(index)])) >= namelengthmax-2, newleaf{1,1} = newleaf{1,1}(1:round(end/2)); end
+                while isfield(handles,matlab.lang.makeValidName([newleaf{1,1},'_',num2str(index)])) == 1
+                    index = index + 1;
+                end
+                newleaf{1,1} = [newleaf{1,1},'_',num2str(index)];
+            end
+            
+            newdata_fields = fieldnames(newdata);
+            newdata_emptyfields = structfun(@isempty,newdata);
+            newdata = rmfield(newdata,newdata_fields(newdata_emptyfields));
+            newdata.name = newleaf{1,1};
+            
+            % Save as you go
+            save([cd '/Utilities/Backup/' newleaf{1,1} '.mat'], 'newdata','-v7.3');
+            
+            handles.(matlab.lang.makeValidName(newleaf{1,1})) = uitreenode('v0', newleaf{1,1},  newleaf{1,1},  iconPath, true);
+            handles.(matlab.lang.makeValidName(newleaf{1,1})).UserData = newdata;
+            if strcmp(newdata.datatype,'testsignals')
+                handles.testsignals.add(handles.(matlab.lang.makeValidName(newleaf{1,1})));
+                handles.mytree.reloadNode(handles.testsignals);
+                handles.mytree.expand(handles.testsignals);
+                set([handles.clrall_btn,handles.export_btn],'Enable','on')
+            elseif strcmp(newdata.datatype,'measurements')
+                handles.measurements.add(handles.(matlab.lang.makeValidName(newleaf{1,1})));
+                handles.mytree.reloadNode(handles.measurements);
+                handles.mytree.expand(handles.measurements);
+                set([handles.clrall_btn,handles.export_btn],'Enable','on')
+            elseif strcmp(newdata.datatype,'results')
+                if isfield(newdata,'audio')
+                    iconPath = fullfile(matlabroot,'/toolbox/fixedpoint/fixedpointtool/resources/plot.png');
+                elseif isfield(newdata,'tables')
+                    iconPath = fullfile(matlabroot,'/toolbox/matlab/icons/HDF_grid.gif');
+                else
+                    iconPath = fullfile(matlabroot,'/toolbox/matlab/icons/notesicon.gif');
+                end
+                handles.(matlab.lang.makeValidName(newleaf{1,1})) = uitreenode('v0', newleaf{1,1},  newleaf{1,1},  iconPath, true);
+                handles.results.add(handles.(matlab.lang.makeValidName(newleaf{1,1})));
+                handles.mytree.reloadNode(handles.results);
+                handles.mytree.expand(handles.results);
+                set([handles.clrall_btn,handles.export_btn],'Enable','on')
+            else
+                handles.processed.add(handles.(matlab.lang.makeValidName(newleaf{1,1})));
+                handles.mytree.reloadNode(handles.processed);
+                handles.mytree.expand(handles.processed);
+                set([handles.clrall_btn,handles.export_btn],'Enable','on')
+            end
+        end
+        fprintf(handles.fid, ['%% ' datestr(now,16) ' - Processed "' name '" using ' newdata.workflowname ' (AARAE workflow)\n']);
+        % Log verbose metadata
+        logaudioleaffields(newdata);
+        if isfield(handles,'choosefromhigherdims')
+            handles.choosefromhigherdims = [];
+        end
+    else
+        newleaf{1,1} = [];
+    end
+   
+    if errorflag
+        h=warndlg('One or more attempts to run a workflow processor failed due to an error. Please refer to the error report in the Matlab Command Window.','AARAE info','modal');
+        uiwait(h)
+    end
+    
+    h = findobj('type','figure','-not','tag','aarae');
+    if ~isempty(h)
+        index = 1;
+        filename = dir([cd '/Utilities/Temp/' newdata.workflowname num2str(index) '.fig']);
+        if ~isempty(filename)
+            while isempty(dir([cd '/Utilities/Temp/' newdata.workflowname num2str(index) '.fig'])) == 0
+                index = index + 1;
+            end
+        end
+        for i = 1:length(h)
+            saveas(h(i),[cd '/Utilities/Temp/' newdata.workflowname num2str(index) '.fig']);
+            fprintf(handles.fid,['%% Result figure name: ', newdata.workflowname num2str(index), '.fig, temporarily stored in /Utilities/Temp/\n']);
+            index = index + 1;
+        end
+        results = dir([cd '/Utilities/Temp']);
+        set(handles.result_box,'String',[' ';cellstr({results(3:length(results)).name}')]);
+    end
+    if length(selectedNodes) > 1, delete(h); end
+    set(hObject,'BackgroundColor',[0.94 0.94 0.94]);
+    set(hObject,'Enable','on');
+    if ~isempty(newleaf{1,1})
+        handles.mytree.setSelectedNode(handles.(matlab.lang.makeValidName(newleaf{1,1})));
+    end
+end
+java.lang.Runtime.getRuntime.gc % Java garbage collection
+guidata(hObject,handles);
+
+
+
 
 
 
@@ -2217,7 +2408,7 @@ for nleafs = 1:length(selectedNodes)
                             end
                         end
                         
-                        % remove audio and audio2 if there are tables (from 
+                        % remove audio and audio2 if there are tables (from
                         % AARAE_workflow_processor). Usually tables should
                         % only be created by analysers (not processors).
                         if isfield(newdata,'tables') && isfield(newdata,'audio')
@@ -2596,16 +2787,16 @@ for nleafs = 1:length(selectedNodes)
                 results = dir([cd '/Utilities/Temp']);
                 % could sort the results here in terms of the parts of the
                 % filenames (leafname, funname, T|C, index)
-%                 D = dir('directory_name') returns the results in an M-by-1
-%                   structure with the fields: 
-%                       name    -- Filename
-%                       date    -- Modification date
-%                       bytes   -- Number of bytes allocated to the file
-%                       isdir   -- 1 if name is a directory and 0 if not
-%                       datenum -- Modification date as a MATLAB serial date number.
-%                       This value is locale-dependent.
-
-
+                %                 D = dir('directory_name') returns the results in an M-by-1
+                %                   structure with the fields:
+                %                       name    -- Filename
+                %                       date    -- Modification date
+                %                       bytes   -- Number of bytes allocated to the file
+                %                       isdir   -- 1 if name is a directory and 0 if not
+                %                       datenum -- Modification date as a MATLAB serial date number.
+                %                       This value is locale-dependent.
+                
+                
                 set(handles.result_box,'String',[' ';cellstr({results(3:length(results)).name}')]);
                 if length(selectedNodes) > 1 || size(file,1) > 1, delete(h); end % close figures
             end
@@ -3685,5 +3876,4 @@ if size(eventdata.Indices,1) ~= 0 && eventdata.Indices(1,2) == 4
         doresultplot(handles,handles.axesdata)
     end
 end
-
 

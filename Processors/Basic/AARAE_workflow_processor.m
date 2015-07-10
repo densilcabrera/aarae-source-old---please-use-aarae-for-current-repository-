@@ -50,6 +50,7 @@ try
     end
     OUT.funcallback.name = 'AARAE_workflow_processor.m';
     OUT.funcallback.inarg = {filename};
+    OUT.workflowname = filename;
     % classify as 'results' if the output does not have audio, or does have
     % tables
     if isfield(OUT,'audio')
