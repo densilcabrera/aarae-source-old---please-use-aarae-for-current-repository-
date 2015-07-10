@@ -40,35 +40,47 @@ function mySelectFcn(tree, ~)
 %             clear('Details')
 
             % method of getting audiodatatext (replaces code above)
-            audiodatatext = [char(10),'audio [',num2str(size(audiodata.audio,1)),'x',...
+            audiodatatext = [char(10),' audio [',num2str(size(audiodata.audio,1)),'x',...
                 num2str(size(audiodata.audio,2)),'x',...
                 num2str(size(audiodata.audio,3)),'x',...
                 num2str(size(audiodata.audio,4)),'x',...
                 num2str(size(audiodata.audio,5)),'x',...
                 num2str(size(audiodata.audio,6)),']'];
             if isfield(audiodata, 'audio2')
-                audiodatatext = [audiodatatext, char(10), 'audio2 [',num2str(size(audiodata.audio2,1)),'x',...
+                audiodatatext = [audiodatatext, char(10), ' audio2 [',num2str(size(audiodata.audio2,1)),'x',...
                 num2str(size(audiodata.audio2,2)),']'];
             end
             if isfield(audiodata,'chanID')
                 if length(audiodata.chanID) == 1
-                    audiodatatext = [audiodatatext, char(10), 'chanID {', audiodata.chanID{1,1}, '}'];
+                    audiodatatext = [audiodatatext, char(10), ' chanID {', audiodata.chanID{1,1}, '}'];
                 elseif length(audiodata.chanID) == 2
-                    audiodatatext = [audiodatatext, char(10), 'chanID {', audiodata.chanID{1,1}, ';', audiodata.chanID{2,1}, '}'];
+                    audiodatatext = [audiodatatext, char(10), ' chanID {', audiodata.chanID{1,1}, ';', audiodata.chanID{2,1}, '}'];
                 else
-                    audiodatatext = [audiodatatext, char(10), 'chanID {', audiodata.chanID{1,1}, ';', audiodata.chanID{2,1}, '...}'];
+                    audiodatatext = [audiodatatext, char(10), ' chanID {', audiodata.chanID{1,1}, ';', audiodata.chanID{2,1}, '...}'];
                 end
             end
             if isfield(audiodata,'bandID')
                 if length(audiodata.bandID) > 1
-                audiodatatext = [audiodatatext,char(10), 'bandID [',...
+                audiodatatext = [audiodatatext,char(10), ' bandID [',...
                     num2str(min(audiodata.bandID)), ' to ',num2str(max(audiodata.bandID)) ']'];
                 else
-                    audiodatatext = [audiodatatext,char(10), 'bandID [',...
+                    audiodatatext = [audiodatatext,char(10), ' bandID [',...
                     num2str(audiodata.bandID), ']'];
                 end
             end
-            
+            if isfield(audiodata,'cal')
+                if length(audiodata.cal) == 1
+                    audiodatatext = [audiodatatext, char(10), ' cal ', num2str(audiodata.cal)];
+                elseif length(audiodata.cal) == 2
+                    audiodatatext = [audiodatatext, char(10), ' cal [', num2str(audiodata.cal(1)), ',', num2str(audiodata.cal(2)), ']'];
+                elseif length(audiodata.cal) == 3
+                    audiodatatext = [audiodatatext, char(10), ' cal [', num2str(audiodata.cal(1)), ';', num2str(audiodata.cal(2)), ';', num2str(audiodata.cal(3)), ']'];
+                elseif length(audiodata.cal) == 4
+                    audiodatatext = [audiodatatext, char(10), ' cal [', num2str(audiodata.cal(1)), ';', num2str(audiodata.cal(2)), ';', num2str(audiodata.cal(3)), ';', num2str(audiodata.cal(4)), ']'];
+                else 
+                    audiodatatext = [audiodatatext, char(10), ' cal [', num2str(audiodata.cal(1)), ';', num2str(audiodata.cal(2)), ';', num2str(audiodata.cal(3)), ';', num2str(audiodata.cal(4)), '...]'];
+                end
+            end
             
             set(mainHandles.audiodatatext,'String',['Selected: ' selectedNodes.getName.char audiodatatext]); % Output contents in textbox below the tree
             set(mainHandles.datatext,'Visible','off');
