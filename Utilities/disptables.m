@@ -65,7 +65,9 @@ switch window
             y = y + s{i,1}(1,4) + 10;
             if s{i,1}(1,3) > x, x = s{i,1}(1,3); end
         end
-        set(fig,'Position',[figpos(1) figpos(2) x y],'WindowButtonDownFcn','copytoclipboard')
+        set(fig,'Position',[figpos(1) figpos(2) x y],...
+            'WindowButtonDownFcn','copytoclipboard',...
+            'Tag','AARAE table')
 end
 for n = 1:length(tables)
     outtables(n).RowName = get(tables(n),'RowName');
