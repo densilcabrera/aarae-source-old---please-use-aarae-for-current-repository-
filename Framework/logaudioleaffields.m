@@ -1,5 +1,5 @@
 % --- Writes verbose data to the log file for an audio leaf
-function logaudioleaffields(signaldata,callbackaudioin)
+function callbackstring = logaudioleaffields(signaldata,callbackaudioin)
 % This function is called from aarae.m, to write to the log file
 % The input argument callbackaudioin should be 0 if the function call
 % back does not have audio in, or 1 (default) if it does.
