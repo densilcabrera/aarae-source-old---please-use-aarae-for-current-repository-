@@ -23,7 +23,7 @@ function varargout = aarae(varargin)
 
 % Edit the above text to modify the response to help aarae
 
-% Last Modified by GUIDE v2.5 10-Jul-2015 13:25:23
+% Last Modified by GUIDE v2.5 10-Jul-2015 21:43:28
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -2035,12 +2035,7 @@ function RunWorkflowButton_Callback(hObject, ~, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 selectedNodes = handles.mytree.getSelectedNodes;
-if isempty(selectedNodes)
-    % in this case there is no audio available for input, so the workflow
-    % must not have an input
-    % I still need to write this code, so let's do nothing for now.
-    return
-end
+%errorflag = true;
 funcallback = [];
 for nleafs = 1:length(selectedNodes)
     handles.nleafs = nleafs;
@@ -2054,7 +2049,7 @@ for nleafs = 1:length(selectedNodes)
         
         errorflag = false;
         
-        processed = [];
+        %processed = [];
         
         funname = 'AARAE_workflow_processor';
         try
@@ -2078,14 +2073,40 @@ for nleafs = 1:length(selectedNodes)
             errorflag = true;
         end
     else
-        processed = [];
+        % no audio input
+        set(hObject,'BackgroundColor','red');
+        set(hObject,'Enable','off');
+        
+        %name = selectedNodes(nleafs).getName.char;
+        
+        errorflag = false;
+        
+        %processed = [];
+        
+        funname = 'AARAE_workflow_processor';
+        try
+                processed = feval(funname,[]);
+            if isfield(processed,'funcallback')
+                funcallback = processed.funcallback;
+                [~,funcallback.name] = fileparts(funcallback.name);
+            end
+        catch err
+            processed = [];
+            msgString = getReport(err);
+            disp(['AARAE processor error running ' funname '.']);
+            disp(msgString); % displays the error message without creating an error.
+            fprintf(handles.fid,['AARAE processor error running ' funname '.\n']);
+            fprintf(handles.fid,msgString);
+            fprintf(handles.fid,'.\n');
+            errorflag = true;
+        end
     end
     
     
     if ~isempty(processed)
         % Generate new leaf and update tree
         newleaf = cell(1,1);
-        newleaf{1,1} = [name ' ' char(processed.workflowname)];
+        newleaf{1,1} = char(processed.funcallback.inarg{1,1});
         if ~isempty(signaldata)
             if isstruct(processed)
                 dif = intersect(fieldnames(signaldata),fieldnames(processed));
@@ -2115,6 +2136,9 @@ for nleafs = 1:length(selectedNodes)
                 newdata = signaldata;
                 newdata.audio = processed;
             end
+        else
+            newdata = processed;
+        end
             iconPath = fullfile(matlabroot,'/toolbox/fixedpoint/fixedpointtool/resources/plot.png');
             leafname = isfield(handles,matlab.lang.makeValidName(newleaf{1,1}));
             if leafname == 1
@@ -2167,8 +2191,8 @@ for nleafs = 1:length(selectedNodes)
                 handles.mytree.expand(handles.processed);
                 set([handles.clrall_btn,handles.export_btn],'Enable','on')
             end
-        end
-        fprintf(handles.fid, ['%% ' datestr(now,16) ' - Processed "' name '" using ' newdata.workflowname ' (AARAE workflow)\n']);
+        
+        fprintf(handles.fid, ['%% ' datestr(now,16) ' - Ran ' newdata.funcallback.inarg{1,1} ' (AARAE workflow)\n']);
         % Log verbose metadata
         logaudioleaffields(newdata);
         if isfield(handles,'choosefromhigherdims')
@@ -2186,15 +2210,15 @@ for nleafs = 1:length(selectedNodes)
     h = findobj('type','figure','-not','tag','aarae');
     if ~isempty(h)
         index = 1;
-        filename = dir([cd '/Utilities/Temp/' newdata.workflowname num2str(index) '.fig']);
+        filename = dir([cd '/Utilities/Temp/' newdata.funcallback.inarg{1,1} num2str(index) '.fig']);
         if ~isempty(filename)
-            while isempty(dir([cd '/Utilities/Temp/' newdata.workflowname num2str(index) '.fig'])) == 0
+            while isempty(dir([cd '/Utilities/Temp/' newdata.funcallback.inarg{1,1} num2str(index) '.fig'])) == 0
                 index = index + 1;
             end
         end
         for i = 1:length(h)
-            saveas(h(i),[cd '/Utilities/Temp/' newdata.workflowname num2str(index) '.fig']);
-            fprintf(handles.fid,['%% Result figure name: ', newdata.workflowname num2str(index), '.fig, temporarily stored in /Utilities/Temp/\n']);
+            saveas(h(i),[cd '/Utilities/Temp/' newdata.funcallback.inarg{1,1} num2str(index) '.fig']);
+            fprintf(handles.fid,['%% Result figure name: ', newdata.funcallback.inarg{1,1} num2str(index), '.fig, temporarily stored in /Utilities/Temp/\n']);
             index = index + 1;
         end
         results = dir([cd '/Utilities/Temp']);
@@ -3876,4 +3900,3 @@ if size(eventdata.Indices,1) ~= 0 && eventdata.Indices(1,2) == 4
         doresultplot(handles,handles.axesdata)
     end
 end
-

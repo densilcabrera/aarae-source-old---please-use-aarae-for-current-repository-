@@ -24,33 +24,55 @@ function OUT = AARAE_workflow_processor(IN,filename)
 
 if ~isdir([cd '/Workflows']), mkdir([cd '/Workflows']); end
 
-if nargin ==1 
-    %cd('/Workflows'); % default directory for workflows
-    [filename, pathname] = uigetfile({'*.m'}, ...
-        'Select the workflow function that you wish to run.',...
-        [cd '/Workflows']);
-    
-    if isequal(filename,0) || isequal(pathname,0)
-        % user pressed 'cancel'
-        OUT = [];
-        return
+ok = false;
+while ~ok
+    if nargin ==1
+        %cd('/Workflows'); % default directory for workflows
+        [filename, pathname] = uigetfile({'*.m'}, ...
+            'Select the workflow function that you wish to run.',...
+            [cd '/Workflows']);
+        
+        if isequal(filename,0) || isequal(pathname,0)
+            % user pressed 'cancel'
+            OUT = [];
+            return
+        end
     end
+    
+    % remove suffix if present
+    C = strsplit(filename,'.');
+    filename = C{1};
+    try
+        functionhandle = str2func(filename);
+        if isempty(IN) && nargin(functionhandle) == 1
+            IN = choose_audio;
+            if isempty(IN)
+                OUT = [];
+                return
+            end
+%             h = warndlg('The selected workflow function requires audio input. Please try again.','AARAE info');
+%             pause(1)
+%             delete(h)
+        else
+            ok = true;
+        end
+    catch
+        warndlg('Unable to interpret the selected function.','AARAE info','modal');
+    end
+    
 end
 
-% remove suffix if present
-C = strsplit(filename,'.');
-filename = C{1};
-    
+ 
 try
-    functionhandle = str2func(filename);
+    
     if nargin(functionhandle) == 1
         OUT = functionhandle(IN);
     else
-        OUT = functionhandle;
+        OUT = functionhandle();
     end
     OUT.funcallback.name = 'AARAE_workflow_processor.m';
     OUT.funcallback.inarg = {filename};
-    OUT.workflowname = filename;
+    %OUT.workflowname = filename;
     % classify as 'results' if the output does not have audio, or does have
     % tables
     if isfield(OUT,'audio')
@@ -75,7 +97,10 @@ try
         datatype = 4;
         OUT.datatype = datatypefield(datatype);
     end
-    
+    if ~isfield(OUT,'datatype')
+        datatype = 1;
+        OUT.datatype = datatypefield(datatype);
+    end
 
 catch err
     h=warndlg('AARAE workflow abandoned either because of an error in the workflow function or because the selected input data was inappropriate for the workflow function. Please refer to the Matlab error report in the Command Window.','AARAE info','modal');
