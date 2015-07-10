@@ -23,7 +23,7 @@ function varargout = aarae(varargin)
 
 % Edit the above text to modify the response to help aarae
 
-% Last Modified by GUIDE v2.5 29-Jul-2014 17:40:21
+% Last Modified by GUIDE v2.5 10-Jul-2015 12:47:43
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -551,6 +551,13 @@ end
 guidata(hObject,handles)
 
 
+% --- Executes on button press in CloseFiguresButton.
+function CloseFiguresButton_Callback(hObject, eventdata, handles)
+% hObject    handle to CloseFiguresButton (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+h = findobj('type','figure','-not','tag','aarae');
+delete(h)
 
 
 
@@ -682,7 +689,7 @@ if ~isempty(getappdata(hMain,'testsignal'))
         index = 1;
         % This while cycle is just to make sure no signals are
         % overwriten
-        if length(matlab.lang.makeValidName([newleaf,'_',num2str(index)])) >= namelengthmax, newleaf = newleaf(1:round(end/2)); end
+        if length(matlab.lang.makeValidName([newleaf,'_',num2str(index)])) >= namelengthmax-2, newleaf = newleaf(1:round(end/2)); end
         while isfield(handles,matlab.lang.makeValidName([newleaf,'_',num2str(index)])) == 1
             index = index + 1;
         end
@@ -803,7 +810,7 @@ for i = 1:length(filename)
             if leafname == 1
                 index = 1;
                 % This while cycle is just to make sure no duplicate names
-                if length(matlab.lang.makeValidName([newleaf{1,1},'_',num2str(index)])) >= namelengthmax, newleaf{1,1} = newleaf{1,1}(1:round(end/2)); end
+                if length(matlab.lang.makeValidName([newleaf{1,1},'_',num2str(index)])) >= namelengthmax-2, newleaf{1,1} = newleaf{1,1}(1:round(end/2)); end
                 while isfield(handles,matlab.lang.makeValidName([newleaf{1,1},'_',num2str(index)])) == 1
                     index = index + 1;
                 end
@@ -1173,7 +1180,7 @@ if ~isempty(IR)
         index = 1;
         % This while cycle is just to make sure no signals are
         % overwriten
-        if length(matlab.lang.makeValidName([newleaf,'_',num2str(index)])) >= namelengthmax, newleaf = newleaf(1:round(end/2)); end
+        if length(matlab.lang.makeValidName([newleaf,'_',num2str(index)])) >= namelengthmax-2, newleaf = newleaf(1:round(end/2)); end
         while isfield(handles,matlab.lang.makeValidName([newleaf,'_',num2str(index)])) == 1
             index = index + 1;
         end
@@ -1501,12 +1508,51 @@ guidata(hObject,handles)
 
 
 % --- Executes on button press in compare_btn.
-function compare_btn_Callback(~, ~, handles) %#ok
+function compare_btn_Callback(hObject, ~, handles) %#ok
 % hObject    handle to compare_btn (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 selectedNodes = handles.mytree.getSelectedNodes;
 if handles.compareaudio == 1
+    % STILL WORKING ON THIS!
+% ******* Determine the size of the audio to be compared
+%     numberofnodes = length(selectedNodes);
+%     valid = zeros(numberofnodes,1); % check that they have audio in them
+%     for i = 1:numberofnodes
+%         if ~isempty(selectedNodes(i).handle.UserData) && isfield(selectedNodes(i).handle.UserData,'audio')
+%             valid(i) = 1;
+%         end
+%     end
+%     numberofvalidnodes = sum(valid);
+%     if numberofvalidnodes == 0
+%         % nothing to plot (but this should not be possible)
+%         warndlg('No valid audio signals selected for plotting','AARAE info','modal')
+%         return
+%     end
+%     [len,chans,bands,cycles,outchans,dim6] = deal(ones(numberofnodes,1));
+%     for i = 1:numberofnodes
+%         if valid(i)==1
+%             [len(i), chans(i), bands(i),cycles(i),outchans(i),dim6(i)] = ...
+%                 size(selectedNodes(i).handle.UserData.audio);
+%         end
+%    end
+    
+    
+    
+    % get the user to choose the method of plotting
+    
+    
+    
+    
+    
+    
+    
+    
+     %audiosubplots;
+     
+% **************************************************
+% THE FOLLWOING WILL BE REPLACED WITH SOMETHING MORE USEFUL
+
     compplot = figure;
     for i = 1:length(selectedNodes)
         linea = [];
@@ -1642,6 +1688,10 @@ if handles.compareaudio == 1
             'Position', [0 0 65 30],...
             'Callback', 'setaxeslimits');
     end
+    
+    % **************************************************
+    
+    
 else
     comparedata('main_stage1', handles.aarae);
 end
@@ -2190,7 +2240,7 @@ for nleafs = 1:length(selectedNodes)
                         index = 1;
                         % This while cycle is just to make sure no signals are
                         % overwriten
-                        if length(matlab.lang.makeValidName([newleaf{1,1},'_',num2str(index)])) >= namelengthmax, newleaf{1,1} = newleaf{1,1}(1:round(end/2)); end
+                        if length(matlab.lang.makeValidName([newleaf{1,1},'_',num2str(index)])) >= namelengthmax-2, newleaf{1,1} = newleaf{1,1}(1:round(end/2)); end
                         while isfield(handles,matlab.lang.makeValidName([newleaf{1,1},'_',num2str(index)])) == 1
                             index = index + 1;
                         end
@@ -2438,7 +2488,7 @@ for nleafs = 1:length(selectedNodes)
                         index = 1;
                         % This while cycle is just to make sure no signals are
                         % overwriten
-                        if length(matlab.lang.makeValidName([newleaf{1,1},'_',num2str(index)])) >= namelengthmax, newleaf{1,1} = newleaf{1,1}(1:round(end/2)); end
+                        if length(matlab.lang.makeValidName([newleaf{1,1},'_',num2str(index)])) >= namelengthmax-2, newleaf{1,1} = newleaf{1,1}(1:round(end/2)); end
                         while isfield(handles,matlab.lang.makeValidName([newleaf{1,1},'_',num2str(index)])) == 1
                             index = index + 1;
                         end
@@ -2463,7 +2513,7 @@ for nleafs = 1:length(selectedNodes)
                 end
                 fprintf(handles.fid, ['%% ' datestr(now,16) ' - Analysed "' char(selectedNodes(nleafs).getName) '" using ' funname ' in ' handles.funcat '\n']);% In what category???
                 % Log verbose metadata
-                logaudioleaffields(signaldata);
+                callbackstring = logaudioleaffields(signaldata);
                 if isfield(handles,'choosefromhigherdims')
                     handles.choosefromhigherdims = [];
                 end
@@ -2517,14 +2567,47 @@ for nleafs = 1:length(selectedNodes)
                     end
                 end
                 for i = 1:length(h)
-                    saveas(h(i),[cd '/Utilities/Temp/' char(selectedNodes(nleafs).getName) funname num2str(index) '.fig']);
-                    fprintf(handles.fid,['%% Result figure name: ', char(selectedNodes(nleafs).getName), funname num2str(index), '.fig, temporarily stored in /Utilities/Temp/\n']);
+                    % Write figure's UserData property
+                    UserData = {'Environment','AARAE';...
+                        'Function name',funname;...
+                        'Input',char(selectedNodes(nleafs).getName);...
+                        'Callback string', callbackstring;...
+                        'Time created',datestr(now,31)};
+                    set(h(i),'UserData',UserData)
+                    try
+                        Figtag = get(h(i),'Tag');
+                        if ~isempty(Figtag)
+                            if strcmp(Figtag,'AARAE table')
+                                Figtag = 'T'; % indicate table in filename
+                            else
+                                Figtag = 'C'; % indicate chart in filename
+                            end
+                        else
+                            Figtag = 'C'; % indicate chart in filename
+                        end
+                        filename = [char(selectedNodes(nleafs).getName) ' ' funname Figtag num2str(index) '.fig'];
+                        saveas(h(i),[cd '/Utilities/Temp/' filename]);
+                        fprintf(handles.fid,['%% Result figure name: ', filename, ', temporarily stored in /Utilities/Temp/\n']);
+                    catch
+                    end
                     index = index + 1;
                 end
                 fprintf(handles.fid,'\n');
                 results = dir([cd '/Utilities/Temp']);
+                % could sort the results here in terms of the parts of the
+                % filenames (leafname, funname, T|C, index)
+%                 D = dir('directory_name') returns the results in an M-by-1
+%                   structure with the fields: 
+%                       name    -- Filename
+%                       date    -- Modification date
+%                       bytes   -- Number of bytes allocated to the file
+%                       isdir   -- 1 if name is a directory and 0 if not
+%                       datenum -- Modification date as a MATLAB serial date number.
+%                       This value is locale-dependent.
+
+
                 set(handles.result_box,'String',[' ';cellstr({results(3:length(results)).name}')]);
-                if length(selectedNodes) > 1 || size(file,1) > 1, delete(h); end
+                if length(selectedNodes) > 1 || size(file,1) > 1, delete(h); end % close figures
             end
         end
         if errorflag
@@ -3602,4 +3685,5 @@ if size(eventdata.Indices,1) ~= 0 && eventdata.Indices(1,2) == 4
         doresultplot(handles,handles.axesdata)
     end
 end
+
 
