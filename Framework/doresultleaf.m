@@ -43,15 +43,15 @@ if ~isempty(hasleafname), leafname = varargin{hasleafname+1}; end
 
 varstring = cell(ndims(out.data),1); % used for logging
 for n = 1:4:4*ndims(out.data)
-    out.(genvarname(input{n})) = input{n+1};
-    out.(genvarname([input{n} 'info'])).units = input{n+2};
-    out.(genvarname([input{n} 'info'])).axistype = input{n+3};
+    out.(matlab.lang.makeValidName(input{n})) = input{n+1};
+    out.(matlab.lang.makeValidName([input{n} 'info'])).units = input{n+2};
+    out.(matlab.lang.makeValidName([input{n} 'info'])).axistype = input{n+3};
     varstring((n+3)/4) = {['DIMENSION ',num2str((n+3)/4),': ', char(input{n}),...
-        ', LENGTH: ', num2str(length(out.(genvarname(input{n})))),...
+        ', LENGTH: ', num2str(length(out.(matlab.lang.makeValidName(input{n})))),...
         ', UNITS: ',...
-        (out.(genvarname([input{n} 'info'])).units),...
+        (out.(matlab.lang.makeValidName([input{n} 'info'])).units),...
         ', AXIS TYPE: ',...
-        num2str(out.(genvarname([input{n} 'info'])).axistype)]};
+        num2str(out.(matlab.lang.makeValidName([input{n} 'info'])).axistype)]};
 end
 out.datatype = 'results';
 aarae_fig = findobj('Tag','aarae');
@@ -60,13 +60,13 @@ selectedNodes = handles.mytree.getSelectedNodes;
 if isfield(handles,'nleafs')
     leafname = [char(selectedNodes(handles.nleafs).getName) '_' leafname];
 end
-leafnameexist = isfield(handles,genvarname(leafname));
+leafnameexist = isfield(handles,matlab.lang.makeValidName(leafname));
 if leafnameexist == 1
     index = 1;
     % This while cycle is just to make sure no signals are
     % overwriten
-    if length(genvarname([leafname,'_',num2str(index)])) >= namelengthmax, leafname = leafname(1:round(end/2)); end
-    while isfield(handles,genvarname([leafname,'_',num2str(index)])) == 1
+    if length(matlab.lang.makeValidName([leafname,'_',num2str(index)])) >= namelengthmax, leafname = leafname(1:round(end/2)); end
+    while isfield(handles,matlab.lang.makeValidName([leafname,'_',num2str(index)])) == 1
         index = index + 1;
     end
     leafname = [leafname,'_',num2str(index)];
@@ -80,9 +80,9 @@ for n = 1:length(varstring)
     fprintf(handles.fid, ['%% ', char(varstring(n)),'\n']);
 end
 
-handles.(genvarname(leafname)) = uitreenode('v0', leafname,  leafname, iconPath, true);
-handles.(genvarname(leafname)).UserData = out;
-handles.results.add(handles.(genvarname(leafname)));
+handles.(matlab.lang.makeValidName(leafname)) = uitreenode('v0', leafname,  leafname, iconPath, true);
+handles.(matlab.lang.makeValidName(leafname)).UserData = out;
+handles.results.add(handles.(matlab.lang.makeValidName(leafname)));
 handles.mytree.reloadNode(handles.results);
 handles.mytree.expand(handles.results);
 guidata(aarae_fig, handles);

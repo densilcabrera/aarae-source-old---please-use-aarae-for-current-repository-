@@ -2035,7 +2035,6 @@ function RunWorkflowButton_Callback(hObject, ~, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 selectedNodes = handles.mytree.getSelectedNodes;
-%errorflag = true;
 funcallback = [];
 for nleafs = 1:length(selectedNodes)
     handles.nleafs = nleafs;
@@ -2044,13 +2043,9 @@ for nleafs = 1:length(selectedNodes)
     if ~isempty(signaldata)
         set(hObject,'BackgroundColor','red');
         set(hObject,'Enable','off');
-        
+        set(handles.CloseFiguresButton,'Enable','off');
         name = selectedNodes(nleafs).getName.char;
-        
         errorflag = false;
-        
-        %processed = [];
-        
         funname = 'AARAE_workflow_processor';
         try
             if ~isempty(funcallback) && strcmp(funname,funcallback.name)
@@ -2067,7 +2062,7 @@ for nleafs = 1:length(selectedNodes)
             msgString = getReport(err);
             disp(['AARAE processor error running ' funname '.']);
             disp(msgString); % displays the error message without creating an error.
-            fprintf(handles.fid,['AARAE processor error running ' funname '.\n']);
+            fprintf(handles.fid,['AARAE processor error running ' funname 'with ' name(nleafs)'.\n']);
             fprintf(handles.fid,msgString);
             fprintf(handles.fid,'.\n');
             errorflag = true;
@@ -2076,16 +2071,12 @@ for nleafs = 1:length(selectedNodes)
         % no audio input
         set(hObject,'BackgroundColor','red');
         set(hObject,'Enable','off');
-        
-        %name = selectedNodes(nleafs).getName.char;
-        
+        set(handles.CloseFiguresButton,'Enable','off');
+        name = [];
         errorflag = false;
-        
-        %processed = [];
-        
         funname = 'AARAE_workflow_processor';
         try
-                processed = feval(funname,[]);
+            processed = feval(funname,[]);
             if isfield(processed,'funcallback')
                 funcallback = processed.funcallback;
                 [~,funcallback.name] = fileparts(funcallback.name);
@@ -2101,12 +2092,10 @@ for nleafs = 1:length(selectedNodes)
             errorflag = true;
         end
     end
-    
-    
     if ~isempty(processed)
         % Generate new leaf and update tree
         newleaf = cell(1,1);
-        newleaf{1,1} = char(processed.funcallback.inarg{1,1});
+        newleaf{1,1} = [name ' ' char(processed.funcallback.inarg{1,1})];
         if ~isempty(signaldata)
             if isstruct(processed)
                 dif = intersect(fieldnames(signaldata),fieldnames(processed));
@@ -2139,61 +2128,68 @@ for nleafs = 1:length(selectedNodes)
         else
             newdata = processed;
         end
-            iconPath = fullfile(matlabroot,'/toolbox/fixedpoint/fixedpointtool/resources/plot.png');
-            leafname = isfield(handles,matlab.lang.makeValidName(newleaf{1,1}));
-            if leafname == 1
-                index = 1;
-                % This while cycle is just to make sure no signals are
-                % overwriten
-                if length(matlab.lang.makeValidName([newleaf{1,1},'_',num2str(index)])) >= namelengthmax-2, newleaf{1,1} = newleaf{1,1}(1:round(end/2)); end
-                while isfield(handles,matlab.lang.makeValidName([newleaf{1,1},'_',num2str(index)])) == 1
-                    index = index + 1;
-                end
-                newleaf{1,1} = [newleaf{1,1},'_',num2str(index)];
+        iconPath = fullfile(matlabroot,'/toolbox/fixedpoint/fixedpointtool/resources/plot.png');
+        leafname = isfield(handles,matlab.lang.makeValidName(newleaf{1,1}));
+        if leafname == 1
+            index = 1;
+            % This while cycle is just to make sure no signals are
+            % overwriten
+            if length(matlab.lang.makeValidName([newleaf{1,1},'_',num2str(index)])) >= namelengthmax-2, newleaf{1,1} = newleaf{1,1}(1:round(end/2)); end
+            while isfield(handles,matlab.lang.makeValidName([newleaf{1,1},'_',num2str(index)])) == 1
+                index = index + 1;
             end
-            
-            newdata_fields = fieldnames(newdata);
-            newdata_emptyfields = structfun(@isempty,newdata);
-            newdata = rmfield(newdata,newdata_fields(newdata_emptyfields));
-            newdata.name = newleaf{1,1};
-            
-            % Save as you go
-            save([cd '/Utilities/Backup/' newleaf{1,1} '.mat'], 'newdata','-v7.3');
-            
+            newleaf{1,1} = [newleaf{1,1},'_',num2str(index)];
+        end
+        
+        newdata_fields = fieldnames(newdata);
+        newdata_emptyfields = structfun(@isempty,newdata);
+        newdata = rmfield(newdata,newdata_fields(newdata_emptyfields));
+        newdata.name = newleaf{1,1};
+        
+        % Save as you go
+        save([cd '/Utilities/Backup/' newleaf{1,1} '.mat'], 'newdata','-v7.3');
+        
+        
+        if strcmp(newdata.datatype,'testsignals')
             handles.(matlab.lang.makeValidName(newleaf{1,1})) = uitreenode('v0', newleaf{1,1},  newleaf{1,1},  iconPath, true);
             handles.(matlab.lang.makeValidName(newleaf{1,1})).UserData = newdata;
-            if strcmp(newdata.datatype,'testsignals')
-                handles.testsignals.add(handles.(matlab.lang.makeValidName(newleaf{1,1})));
-                handles.mytree.reloadNode(handles.testsignals);
-                handles.mytree.expand(handles.testsignals);
-                set([handles.clrall_btn,handles.export_btn],'Enable','on')
-            elseif strcmp(newdata.datatype,'measurements')
-                handles.measurements.add(handles.(matlab.lang.makeValidName(newleaf{1,1})));
-                handles.mytree.reloadNode(handles.measurements);
-                handles.mytree.expand(handles.measurements);
-                set([handles.clrall_btn,handles.export_btn],'Enable','on')
-            elseif strcmp(newdata.datatype,'results')
-                if isfield(newdata,'audio')
-                    iconPath = fullfile(matlabroot,'/toolbox/fixedpoint/fixedpointtool/resources/plot.png');
-                elseif isfield(newdata,'tables')
-                    iconPath = fullfile(matlabroot,'/toolbox/matlab/icons/HDF_grid.gif');
-                else
-                    iconPath = fullfile(matlabroot,'/toolbox/matlab/icons/notesicon.gif');
-                end
-                handles.(matlab.lang.makeValidName(newleaf{1,1})) = uitreenode('v0', newleaf{1,1},  newleaf{1,1},  iconPath, true);
-                handles.results.add(handles.(matlab.lang.makeValidName(newleaf{1,1})));
-                handles.mytree.reloadNode(handles.results);
-                handles.mytree.expand(handles.results);
-                set([handles.clrall_btn,handles.export_btn],'Enable','on')
+            handles.testsignals.add(handles.(matlab.lang.makeValidName(newleaf{1,1})));
+            handles.mytree.reloadNode(handles.testsignals);
+            handles.mytree.expand(handles.testsignals);
+            set([handles.clrall_btn,handles.export_btn],'Enable','on')
+        elseif strcmp(newdata.datatype,'measurements')
+            handles.(matlab.lang.makeValidName(newleaf{1,1})) = uitreenode('v0', newleaf{1,1},  newleaf{1,1},  iconPath, true);
+            handles.(matlab.lang.makeValidName(newleaf{1,1})).UserData = newdata;
+            handles.measurements.add(handles.(matlab.lang.makeValidName(newleaf{1,1})));
+            handles.mytree.reloadNode(handles.measurements);
+            handles.mytree.expand(handles.measurements);
+            set([handles.clrall_btn,handles.export_btn],'Enable','on')
+        elseif strcmp(newdata.datatype,'results')
+            if isfield(newdata,'audio')
+                iconPath = fullfile(matlabroot,'/toolbox/fixedpoint/fixedpointtool/resources/plot.png');
+            elseif isfield(newdata,'tables')
+                iconPath = fullfile(matlabroot,'/toolbox/matlab/icons/HDF_grid.gif');
             else
-                handles.processed.add(handles.(matlab.lang.makeValidName(newleaf{1,1})));
-                handles.mytree.reloadNode(handles.processed);
-                handles.mytree.expand(handles.processed);
-                set([handles.clrall_btn,handles.export_btn],'Enable','on')
+                iconPath = fullfile(matlabroot,'/toolbox/matlab/icons/notesicon.gif');
             end
+            handles.(matlab.lang.makeValidName(newleaf{1,1})) = uitreenode('v0', newleaf{1,1},  newleaf{1,1},  iconPath, true);
+            handles.(matlab.lang.makeValidName(newleaf{1,1})).UserData = newdata;
+            handles.results.add(handles.(matlab.lang.makeValidName(newleaf{1,1})));
+            handles.mytree.reloadNode(handles.results);
+            handles.mytree.expand(handles.results);
+            set([handles.clrall_btn,handles.export_btn],'Enable','on')
+        else
+            handles.(matlab.lang.makeValidName(newleaf{1,1})) = uitreenode('v0', newleaf{1,1},  newleaf{1,1},  iconPath, true);
+            handles.(matlab.lang.makeValidName(newleaf{1,1})).UserData = newdata;
+            handles.processed.add(handles.(matlab.lang.makeValidName(newleaf{1,1})));
+            handles.mytree.reloadNode(handles.processed);
+            handles.mytree.expand(handles.processed);
+            set([handles.clrall_btn,handles.export_btn],'Enable','on')
+        end
         
         fprintf(handles.fid, ['%% ' datestr(now,16) ' - Ran ' newdata.funcallback.inarg{1,1} ' (AARAE workflow)\n']);
         % Log verbose metadata
+        %callbackstring = logaudioleaffields(newdata);
         logaudioleaffields(newdata);
         if isfield(handles,'choosefromhigherdims')
             handles.choosefromhigherdims = [];
@@ -2201,7 +2197,7 @@ for nleafs = 1:length(selectedNodes)
     else
         newleaf{1,1} = [];
     end
-   
+    
     if errorflag
         h=warndlg('One or more attempts to run a workflow processor failed due to an error. Please refer to the error report in the Matlab Command Window.','AARAE info','modal');
         uiwait(h)
@@ -2209,17 +2205,51 @@ for nleafs = 1:length(selectedNodes)
     
     h = findobj('type','figure','-not','tag','aarae');
     if ~isempty(h)
-        index = 1;
-        filename = dir([cd '/Utilities/Temp/' newdata.funcallback.inarg{1,1} num2str(index) '.fig']);
-        if ~isempty(filename)
-            while isempty(dir([cd '/Utilities/Temp/' newdata.funcallback.inarg{1,1} num2str(index) '.fig'])) == 0
-                index = index + 1;
-            end
-        end
+        %         index = 1;
+        %         filename = dir([cd '/Utilities/Temp/' newdata.funcallback.inarg{1,1} num2str(index) '.fig']);
+        %         if ~isempty(filename)
+        %             while isempty(dir([cd '/Utilities/Temp/' newdata.funcallback.inarg{1,1} num2str(index) '.fig'])) == 0
+        %                 index = index + 1;
+        %             end
+        %         end
+        
+        
         for i = 1:length(h)
-            saveas(h(i),[cd '/Utilities/Temp/' newdata.funcallback.inarg{1,1} num2str(index) '.fig']);
-            fprintf(handles.fid,['%% Result figure name: ', newdata.funcallback.inarg{1,1} num2str(index), '.fig, temporarily stored in /Utilities/Temp/\n']);
-            index = index + 1;
+            % Write figure's UserData property
+            UserData = {'Environment','AARAE';...
+                'Function name',funname;...
+                'Input',char(selectedNodes(nleafs).getName);...
+                'Callback string', 'Workflow';...
+                'Time created',datestr(now,31)};
+            set(h(i),'UserData',UserData)
+            try
+                Figtag = get(h(i),'Tag');
+                if ~isempty(Figtag)
+                    if strcmp(Figtag,'AARAE table')
+                        Figtag = 'T'; % indicate table in filename
+                    else
+                        Figtag = 'C'; % indicate chart in filename
+                    end
+                else
+                    Figtag = 'C'; % indicate chart in filename
+                end
+                index = 1;
+                filename = dir([cd '/Utilities/Temp/' newdata.funcallback.inarg{1,1} ' ' funname Figtag num2str(index) '.fig']);
+                if ~isempty(filename)
+                    while isempty(dir([cd '/Utilities/Temp/' newdata.funcallback.inarg{1,1} ' ' funname Figtag num2str(index) '.fig'])) == 0
+                        index = index + 1;
+                    end
+                end
+                filename = [newdata.funcallback.inarg{1,1} ' ' funname Figtag num2str(index) '.fig'];
+                saveas(h(i),[cd '/Utilities/Temp/' filename]);
+                fprintf(handles.fid,['%% Result figure name: ', filename, ', temporarily stored in /Utilities/Temp/\n']);
+            catch
+            end
+            
+            
+            %             saveas(h(i),[cd '/Utilities/Temp/' newdata.funcallback.inarg{1,1} num2str(index) '.fig']);
+            %             fprintf(handles.fid,['%% Result figure name: ', newdata.funcallback.inarg{1,1} num2str(index), '.fig, temporarily stored in /Utilities/Temp/\n']);
+            %             index = index + 1;
         end
         results = dir([cd '/Utilities/Temp']);
         set(handles.result_box,'String',[' ';cellstr({results(3:length(results)).name}')]);
@@ -2231,8 +2261,10 @@ for nleafs = 1:length(selectedNodes)
         handles.mytree.setSelectedNode(handles.(matlab.lang.makeValidName(newleaf{1,1})));
     end
 end
+set(handles.CloseFiguresButton,'Enable','on');
 java.lang.Runtime.getRuntime.gc % Java garbage collection
 guidata(hObject,handles);
+%disp('hello')
 
 
 
@@ -2364,6 +2396,7 @@ for nleafs = 1:length(selectedNodes)
     if ~isempty(signaldata)
         set(hObject,'BackgroundColor','red');
         set(hObject,'Enable','off');
+        set(handles.CloseFiguresButton,'Enable','off');
         % Processes the selected leaf using the selected process from proc_box
         contents = cellstr(get(handles.procat_box,'String'));
         category = contents{get(handles.procat_box,'Value')};
@@ -2417,7 +2450,10 @@ for nleafs = 1:length(selectedNodes)
             if ~isempty(processed)
                 % Generate new leaf and update tree
                 newleaf = cell(1,1);
-                newleaf{1,1} = [name ' ' char(file(multi,:))];
+                % remove suffix if present
+                C = strsplit(char(file(multi,:)),'.');
+                file1 = C{1};
+                newleaf{1,1} = [name ' ' file1];
                 if ~isempty(signaldata)
                     if isstruct(processed)
                         dif = intersect(fieldnames(signaldata),fieldnames(processed));
@@ -2470,14 +2506,17 @@ for nleafs = 1:length(selectedNodes)
                     % Save as you go
                     save([cd '/Utilities/Backup/' newleaf{1,1} '.mat'], 'newdata','-v7.3');
                     
-                    handles.(matlab.lang.makeValidName(newleaf{1,1})) = uitreenode('v0', newleaf{1,1},  newleaf{1,1},  iconPath, true);
-                    handles.(matlab.lang.makeValidName(newleaf{1,1})).UserData = newdata;
+                    
                     if strcmp(newdata.datatype,'testsignals')
+                        handles.(matlab.lang.makeValidName(newleaf{1,1})) = uitreenode('v0', newleaf{1,1},  newleaf{1,1},  iconPath, true);
+                        handles.(matlab.lang.makeValidName(newleaf{1,1})).UserData = newdata;
                         handles.testsignals.add(handles.(matlab.lang.makeValidName(newleaf{1,1})));
                         handles.mytree.reloadNode(handles.testsignals);
                         handles.mytree.expand(handles.testsignals);
                         set([handles.clrall_btn,handles.export_btn],'Enable','on')
                     elseif strcmp(newdata.datatype,'measurements')
+                        handles.(matlab.lang.makeValidName(newleaf{1,1})) = uitreenode('v0', newleaf{1,1},  newleaf{1,1},  iconPath, true);
+                        handles.(matlab.lang.makeValidName(newleaf{1,1})).UserData = newdata;
                         handles.measurements.add(handles.(matlab.lang.makeValidName(newleaf{1,1})));
                         handles.mytree.reloadNode(handles.measurements);
                         handles.mytree.expand(handles.measurements);
@@ -2491,11 +2530,15 @@ for nleafs = 1:length(selectedNodes)
                             iconPath = fullfile(matlabroot,'/toolbox/matlab/icons/notesicon.gif');
                         end
                         handles.(matlab.lang.makeValidName(newleaf{1,1})) = uitreenode('v0', newleaf{1,1},  newleaf{1,1},  iconPath, true);
+                        handles.(matlab.lang.makeValidName(newleaf{1,1})).UserData = newdata;
+                        
                         handles.results.add(handles.(matlab.lang.makeValidName(newleaf{1,1})));
                         handles.mytree.reloadNode(handles.results);
                         handles.mytree.expand(handles.results);
                         set([handles.clrall_btn,handles.export_btn],'Enable','on')
                     else
+                        handles.(matlab.lang.makeValidName(newleaf{1,1})) = uitreenode('v0', newleaf{1,1},  newleaf{1,1},  iconPath, true);
+                        handles.(matlab.lang.makeValidName(newleaf{1,1})).UserData = newdata;
                         handles.processed.add(handles.(matlab.lang.makeValidName(newleaf{1,1})));
                         handles.mytree.reloadNode(handles.processed);
                         handles.mytree.expand(handles.processed);
@@ -2504,7 +2547,7 @@ for nleafs = 1:length(selectedNodes)
                 end
                 fprintf(handles.fid, ['%% ' datestr(now,16) ' - Processed "' name '" using ' funname ' in ' category '\n']);
                 % Log verbose metadata
-                logaudioleaffields(newdata);
+                callbackstring=logaudioleaffields(newdata);
                 if isfield(handles,'choosefromhigherdims')
                     handles.choosefromhigherdims = [];
                 end
@@ -2519,18 +2562,54 @@ for nleafs = 1:length(selectedNodes)
     end
     h = findobj('type','figure','-not','tag','aarae');
     if ~isempty(h)
-        index = 1;
-        filename = dir([cd '/Utilities/Temp/' handles.funname num2str(index) '.fig']);
-        if ~isempty(filename)
-            while isempty(dir([cd '/Utilities/Temp/' handles.funname num2str(index) '.fig'])) == 0
-                index = index + 1;
+        %         index = 1;
+        %         filename = dir([cd '/Utilities/Temp/' handles.funname num2str(index) '.fig']);
+        %         if ~isempty(filename)
+        %             while isempty(dir([cd '/Utilities/Temp/' handles.funname num2str(index) '.fig'])) == 0
+        %                 index = index + 1;
+        %             end
+        %         end
+        %         for i = 1:length(h)
+        %             saveas(h(i),[cd '/Utilities/Temp/' handles.funname num2str(index) '.fig']);
+        %             fprintf(handles.fid,['%% Result figure name: ', handles.funname num2str(index), '.fig, temporarily stored in /Utilities/Temp/\n']);
+        %             index = index + 1;
+        %         end
+        for i = 1:length(h)
+            % Write figure's UserData property
+            UserData = {'Environment','AARAE';...
+                'Function name',funname;...
+                'Input',char(selectedNodes(nleafs).getName);...
+                'Callback string', callbackstring;...
+                'Time created',datestr(now,31)};
+            set(h(i),'UserData',UserData)
+            try
+                Figtag = get(h(i),'Tag');
+                if ~isempty(Figtag)
+                    if strcmp(Figtag,'AARAE table')
+                        Figtag = 'T'; % indicate table in filename
+                    else
+                        Figtag = 'C'; % indicate chart in filename
+                    end
+                else
+                    Figtag = 'C'; % indicate chart in filename
+                end
+                index = 1;
+                filename = dir([cd '/Utilities/Temp/' char(selectedNodes(nleafs).getName) ' ' funname Figtag num2str(index) '.fig']);
+                if ~isempty(filename)
+                    while isempty(dir([cd '/Utilities/Temp/' char(selectedNodes(nleafs).getName) ' ' funname Figtag num2str(index) '.fig'])) == 0
+                        index = index + 1;
+                    end
+                end
+                filename = [char(selectedNodes(nleafs).getName) ' ' funname Figtag num2str(index) '.fig'];
+                saveas(h(i),[cd '/Utilities/Temp/' filename]);
+                fprintf(handles.fid,['%% Result figure name: ', filename, ', temporarily stored in /Utilities/Temp/\n']);
+            catch
             end
         end
-        for i = 1:length(h)
-            saveas(h(i),[cd '/Utilities/Temp/' handles.funname num2str(index) '.fig']);
-            fprintf(handles.fid,['%% Result figure name: ', handles.funname num2str(index), '.fig, temporarily stored in /Utilities/Temp/\n']);
-            index = index + 1;
-        end
+        
+        
+        
+        
         results = dir([cd '/Utilities/Temp']);
         set(handles.result_box,'String',[' ';cellstr({results(3:length(results)).name}')]);
     end
@@ -2541,6 +2620,7 @@ for nleafs = 1:length(selectedNodes)
         handles.mytree.setSelectedNode(handles.(matlab.lang.makeValidName(newleaf{1,1})));
     end
 end
+set(handles.CloseFiguresButton,'Enable','on');
 java.lang.Runtime.getRuntime.gc % Java garbage collection
 guidata(hObject,handles);
 
@@ -2645,6 +2725,7 @@ selectedNodes = handles.mytree.getSelectedNodes;
 funcallback = [];
 h = findobj('type','figure','-not','tag','aarae');
 delete(h)
+set(handles.CloseFiguresButton,'Enable','off');
 for nleafs = 1:length(selectedNodes)
     handles.nleafs = nleafs;
     guidata(hObject,handles)
@@ -2774,38 +2855,46 @@ for nleafs = 1:length(selectedNodes)
                 %                 end
                 
                 h = findobj('type','figure','-not','tag','aarae');
-                index = 1;
-                filename = dir([cd '/Utilities/Temp/' char(selectedNodes(nleafs).getName) funname num2str(index) '.fig']);
-                if ~isempty(filename)
-                    while isempty(dir([cd '/Utilities/Temp/' char(selectedNodes(nleafs).getName) funname num2str(index) '.fig'])) == 0
-                        index = index + 1;
-                    end
-                end
-                for i = 1:length(h)
-                    % Write figure's UserData property
-                    UserData = {'Environment','AARAE';...
-                        'Function name',funname;...
-                        'Input',char(selectedNodes(nleafs).getName);...
-                        'Callback string', callbackstring;...
-                        'Time created',datestr(now,31)};
-                    set(h(i),'UserData',UserData)
-                    try
-                        Figtag = get(h(i),'Tag');
-                        if ~isempty(Figtag)
-                            if strcmp(Figtag,'AARAE table')
-                                Figtag = 'T'; % indicate table in filename
+                if ~isempty(h)
+                    %                 index = 1;
+                    %                 filename = dir([cd '/Utilities/Temp/' char(selectedNodes(nleafs).getName) funname num2str(index) '.fig']);
+                    %                 if ~isempty(filename)
+                    %                     while isempty(dir([cd '/Utilities/Temp/' char(selectedNodes(nleafs).getName) funname num2str(index) '.fig'])) == 0
+                    %                         index = index + 1;
+                    %                     end
+                    %                 end
+                    for i = 1:length(h)
+                        % Write figure's UserData property
+                        UserData = {'Environment','AARAE';...
+                            'Function name',funname;...
+                            'Input',char(selectedNodes(nleafs).getName);...
+                            'Callback string', callbackstring;...
+                            'Time created',datestr(now,31)};
+                        set(h(i),'UserData',UserData)
+                        try
+                            Figtag = get(h(i),'Tag');
+                            if ~isempty(Figtag)
+                                if strcmp(Figtag,'AARAE table')
+                                    Figtag = 'T'; % indicate table in filename
+                                else
+                                    Figtag = 'C'; % indicate chart in filename
+                                end
                             else
                                 Figtag = 'C'; % indicate chart in filename
                             end
-                        else
-                            Figtag = 'C'; % indicate chart in filename
+                            index = 1;
+                            filename = dir([cd '/Utilities/Temp/' char(selectedNodes(nleafs).getName) ' ' funname Figtag num2str(index) '.fig']);
+                            if ~isempty(filename)
+                                while isempty(dir([cd '/Utilities/Temp/' char(selectedNodes(nleafs).getName) ' ' funname Figtag num2str(index) '.fig'])) == 0
+                                    index = index + 1;
+                                end
+                            end
+                            filename = [char(selectedNodes(nleafs).getName) ' ' funname Figtag num2str(index) '.fig'];
+                            saveas(h(i),[cd '/Utilities/Temp/' filename]);
+                            fprintf(handles.fid,['%% Result figure name: ', filename, ', temporarily stored in /Utilities/Temp/\n']);
+                        catch
                         end
-                        filename = [char(selectedNodes(nleafs).getName) ' ' funname Figtag num2str(index) '.fig'];
-                        saveas(h(i),[cd '/Utilities/Temp/' filename]);
-                        fprintf(handles.fid,['%% Result figure name: ', filename, ', temporarily stored in /Utilities/Temp/\n']);
-                    catch
                     end
-                    index = index + 1;
                 end
                 fprintf(handles.fid,'\n');
                 results = dir([cd '/Utilities/Temp']);
@@ -2833,6 +2922,7 @@ for nleafs = 1:length(selectedNodes)
         set(hObject,'Enable','on');
     end
 end
+set(handles.CloseFiguresButton,'Enable','on');
 java.lang.Runtime.getRuntime.gc % Java garbage collection
 %handles.mytree.setSelectedNode(handles.(matlab.lang.makeValidName(newleaf)));
 guidata(hObject,handles)
