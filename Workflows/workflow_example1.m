@@ -121,6 +121,11 @@ end
 % If you do not wish any figures to be preserved (e.g., if you are only
 % interested in the values output in the log file), you can get rid of all
 % the figures before they are saved by calling the AARAE utility function
-% closefigures (which has no input or output arguments).
+% closefigures
+% Use no input argument to close all figures.
+% closefigures('T')
+% Use an input argument of 'T' to only close tables.
+% closefigures('C')
+% Use an input argiment of 'C' to only close non-tables (charts)
 
 end
