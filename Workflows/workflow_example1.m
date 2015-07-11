@@ -1,4 +1,8 @@
 function X = workflow_example1(X)
+% This function requires a recording of a swept sinusoid (with its inverse
+% filter in the audio2 field), and calculates reverberation time and STI
+% (with particular input parameters) from this.
+%
 % This is an example of how a processing and analysis workflow can be written,
 % by adapting code that was written to AARAE's log file.
 %
@@ -14,8 +18,7 @@ function X = workflow_example1(X)
 % An AARAE workflow function (like this function) is stored in the
 % Workflows directory. To run it from the AARAE GUI, use the processor
 % called AARAE_workflow_processor, which is in the Processors/Basic
-% directory. Alternatively, if your workflow has no audio input, use the
-% AARAE_workflow_calculator, which is in the Calculators/Basic directory.
+% directory. 
 %
 % An obvious alternative to writing a workflow function is to write your
 % own AARAE function and place it within a sub-directory of the Processors
@@ -38,13 +41,10 @@ function X = workflow_example1(X)
 % Log file information is automatically written from the output of the
 % aarae_workflow_processor function, but you may wish to write additional
 % information from within this function (especially if your workflow
-% involves several AARAE function calls). If you wish to write directly to
-% the log file, you will need the file identifier fid, which can be found
-% from
-handles = guidata(findobj('Tag','aarae'));
-% the file identifier is handles.fid, which can be used, for example, as
-% follows:
-fprintf(handles.fid,['%% This is a test of using fprintf to write to the log file.','\n']);
+% involves several AARAE function calls). The simplest way of doing this is
+% to use the AARAE utility logtext, which takes a string as its input
+% argument.
+logtext('%% This is a test of using fprintf to write to AARAE''s log file.\n');
 
 % USING AARAE's LOGAUDIOLEAFFIELDS FUNCTION
 % AARAE's logaudioleaffields is the function that is used in the AARAE
@@ -107,7 +107,7 @@ if isfield(Y,'tables')
     X.tables = [Y.tables X.tables];
 end
 % These concatenated tables will be written to the log file, and also will
-% be available in the GUI if you don't return an audio field in the output.
+% be available in the GUI.
 % Note that if you return a tables field, then the audio field will be
 % automatically deleted from the structure.
 
@@ -118,6 +118,9 @@ end
 % empty output to the AARAE workspace, then use logaudioleaffields (as
 % described above) after each analysis.
 
-
+% If you do not wish any figures to be preserved (e.g., if you are only
+% interested in the values output in the log file), you can get rid of all
+% the figures before they are saved by calling the AARAE utility function
+% closefigures (which has no input or output arguments).
 
 end
