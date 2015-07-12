@@ -20,17 +20,21 @@ in the MATLAB path. You should find all the AARAE subfolders:
     - Documents
     - Framework
     - Generators
+    - Log (AARAE will automatically create this folder when it runs)
     - Processors
     - Projects
     - Templates
     - Utilities
+    - Workflows
 
 These folders do not need to be added to the MATLAB path in order for the
-GUI interface to launch.
-You should also find the aarae.m and aarae.fig files in your current
-directory. This will automatically appear as part of the current
-directory's available files, along with the Licence for AARAE and this
-README.txt file.
+GUI interface to launch. We advise you not to add them to the MATLAB path 
+to reduce the risk of function name conflicts. Instead, make the AARAE folder 
+MATLAB’s current directory.
+
+You should also find the aarae.m and aarae.fig files the AARAE
+directory, along with the Licence for AARAE and this README.txt file. 
+When you run AARAE, the file Settings.mat will be created.
 
 Once you've made the AARAE folder your current folder in the MATLAB path,
 in order to launch AARAE, please type in MATLAB's Command Window:
