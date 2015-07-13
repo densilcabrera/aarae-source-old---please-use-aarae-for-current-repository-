@@ -1794,7 +1794,10 @@ if handles.compareaudio == 1
                 if plottype == 14, signaldata.audio = unwrap(angle(signaldata.audio)); end
                 if plottype == 15, signaldata.audio = angle(signaldata.audio) .* 180/pi; end
                 if plottype == 16, signaldata.audio = unwrap(angle(signaldata.audio)) ./(2*pi); end
-                if plottype == 17, signaldata.audio = -diff(unwrap(angle(signaldata.audio))).*length(signaldata.audio)/(signaldata.fs*2*pi).*1000; end
+                if plottype == 17
+                    signaldata.audio = -diff(unwrap(angle(signaldata.audio))).*length(signaldata.audio)/(signaldata.fs*2*pi).*1000; 
+                    f = f(1:end-1);
+                end
                 if strcmp(get(handles.(matlab.lang.makeValidName(['smooth' axes '_popup'])),'Visible'),'on')
                     smoothfactor = get(handles.(matlab.lang.makeValidName(['smooth' axes '_popup'])),'Value');
                     if smoothfactor == 2, octsmooth = 1; end
@@ -1810,7 +1813,7 @@ if handles.compareaudio == 1
                         for d4 = 1:cyclesselect(i)
                             for d5 = 1:outchansselect(i)
                                 for d6 = 1:dim6select(i)
-                                    labelstring = [];
+                                    labelstring = '';
                                     switch subplotdim
                                         case 1
                                             plotnum = i;
