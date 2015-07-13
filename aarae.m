@@ -1738,10 +1738,10 @@ if handles.compareaudio == 1
                 if plottype == 2, signaldata.audio = signaldata.audio.^2; end
                 if plottype == 3, signaldata.audio = 10.*log10(signaldata.audio.^2); end
                 if plottype == 4
-                    for b = 1:bandsselect
-                        for d4 = 1:cyclesselect
-                            for d5 = 1:outchansselect
-                                for d6 = 1:dim6select
+                    for b = 1:bandsselect(i)
+                        for d4 = 1:cyclesselect(i)
+                            for d5 = 1:outchansselect(i)
+                                for d6 = 1:dim6select(i)
                                     signaldata.audio(:,:,b,d4,d5,d6) = ...
                                         abs(hilbert(real(signaldata.audio(:,:,b,d4,d5,d6))));
                                 end
@@ -1750,10 +1750,10 @@ if handles.compareaudio == 1
                     end
                 end
                 if plottype == 5
-                    for b = 1:bandsselect
-                        for d4 = 1:cyclesselect
-                            for d5 = 1:outchansselect
-                                for d6 = 1:dim6select
+                    for b = 1:bandsselect(i)
+                        for d4 = 1:cyclesselect(i)
+                            for d5 = 1:outchansselect(i)
+                                for d6 = 1:dim6select(i)
                                     signaldata.audio(:,:,b,d4,d5,d6) = ...
                                         medfilt1(diff([angle(hilbert(real(...
                                         signaldata.audio(:,:,b,d4,d5,d6)))); ...
@@ -1771,11 +1771,11 @@ if handles.compareaudio == 1
                     if numel(signaldata.audio) < 1e6
                         signaldata.audio = fft(signaldata.audio);
                     else
-                        for ch = 1:chansselect
-                            for b = 1:bandsselect
-                                for d4 = 1:cyclesselect
-                                    for d5 = 1:outchansselect
-                                        for d6 = 1:dim6select
+                        for ch = 1:chansselect(i)
+                            for b = 1:bandsselect(i)
+                                for d4 = 1:cyclesselect(i)
+                                    for d5 = 1:outchansselect(i)
+                                        for d6 = 1:dim6select(i)
                                             signaldata.audio(:,:,b,d4,d5,d6) = ...
                                                 fft(signaldata.audio(:,:,b,d4,d5,d6));
                                         end
@@ -1810,23 +1810,96 @@ if handles.compareaudio == 1
                         for d4 = 1:cyclesselect(i)
                             for d5 = 1:outchansselect(i)
                                 for d6 = 1:dim6select(i)
-                                    % find the plot number, & H, S & V
-                                    % indices
+                                    labelstring = [];
                                     switch subplotdim
                                         case 1
                                             plotnum = i;
+                                            if isfield(signaldata,'name')
+                                                titlestring = signaldata.name;
+                                            end
+                                            if max(chansselect(i)) > 1
+                                                if isfield(signaldata,'chanID')
+                                                    labelstring = [labelstring signaldata.chanID{ch,1}];
+                                                end
+                                            end
+                                            if max(bandsselect(i)) > 1
+                                                if isfield(signaldata,'bandID')
+                                                    labelstring = [labelstring num2str(signaldata.bandID(b))  ' Hz'];
+                                                end
+                                            end
                                         case 2
                                             plotnum = ch;
+                                            if isfield(signaldata,'chanID')
+                                                titlestring = signaldata.chanID{ch,1};
+                                            end
+                                            if max(bandsselect(i)) > 1
+                                                if isfield(signaldata,'bandID')
+                                                    labelstring = [labelstring num2str(signaldata.bandID(b)) ' Hz'];
+                                                end
+                                            end
                                         case 3
                                             plotnum = b;
+                                            if isfield(signaldata,'bandID')
+                                                titlestring = [num2str(signaldata.bandID(b)) ' Hz'];
+                                            end
+                                            if max(chansselect(i)) > 1
+                                                if isfield(signaldata,'chanID')
+                                                    labelstring = [labelstring signaldata.chanID{ch,1}];
+                                                end
+                                            end
                                         case 4
                                             plotnum = d4;
+                                            if isfield(signaldata,'properties')
+                                                if isfield(signaldata.properties,'relgain')
+                                                    titlestring = [num2str(signaldata.properties.relgain(d4)) ' dB'];
+                                                end
+                                            end
+                                            if max(chansselect(i)) > 1
+                                                if isfield(signaldata,'chanID')
+                                                    labelstring = [labelstring signaldata.chanID{ch,1}];
+                                                end
+                                            end
+                                            if max(bandsselect(i)) > 1
+                                                if isfield(signaldata,'bandID')
+                                                    labelstring = [labelstring num2str(signaldata.bandID(b)) ' Hz'];
+                                                end
+                                            end
                                         case 5
                                             plotnum = d5;
+                                            if max(chansselect(i)) > 1
+                                                if isfield(signaldata,'chanID')
+                                                    labelstring = [labelstring signaldata.chanID{ch,1}];
+                                                end
+                                            end
+                                            if max(bandsselect(i)) > 1
+                                                if isfield(signaldata,'bandID')
+                                                    labelstring = [labelstring num2str(signaldata.bandID(b)) ' Hz'];
+                                                end
+                                            end
                                         case 6
                                             plotnum = d6;
+                                            if max(chansselect(i)) > 1
+                                                if isfield(signaldata,'chanID')
+                                                    labelstring = [labelstring signaldata.chanID{ch,1}];
+                                                end
+                                            end
+                                            if max(bandsselect(i)) > 1
+                                                if isfield(signaldata,'bandID')
+                                                    labelstring = [labelstring num2str(signaldata.bandID(b)) ' Hz'];
+                                                end
+                                            end
                                         otherwise
                                             plotnum = 1;
+                                            if max(chansselect(i)) > 1
+                                                if isfield(signaldata,'chanID')
+                                                    labelstring = [labelstring signaldata.chanID{ch,1}];
+                                                end
+                                            end
+                                            if max(bandsselect(i)) > 1
+                                                if isfield(signaldata,'bandID')
+                                                    labelstring = [labelstring num2str(signaldata.bandID(b)) ' Hz'];
+                                                end
+                                            end
                                     end
                                     switch Hdim
                                         case 1
@@ -1879,12 +1952,14 @@ if handles.compareaudio == 1
                                     if plottype <= 7
                                         subplot(r,c,plotnum)
                                         plot(t,real(signaldata.audio(:,ch,b,d4,d5,d6)), ...
-                                            'color',permute(linecolor(Hind,Sind,Vind,:),[1,4,2,3]));
+                                            'color',permute(linecolor(Hind,Sind,Vind,:),[1,4,2,3]),...
+                                        'DisplayName',labelstring);
                                         xlabel('Time [s]');
                                     elseif plottype >= 8
                                         h=subplot(r,c,plotnum);
                                         plot(f,real(signaldata.audio(:,ch,b,d4,d5,d6)), ...
-                                            'color',permute(linecolor(Hind,Sind,Vind,:),[1,4,2,3]));
+                                            'color',permute(linecolor(Hind,Sind,Vind,:),[1,4,2,3]),...
+                                            'DisplayName',labelstring);
                                         xlabel('Frequency [Hz]');
                                         if ischar(handles.Settings.frequencylimits)
                                             xlim([f(2) signaldata.fs/2])
@@ -1898,6 +1973,7 @@ if handles.compareaudio == 1
                                             set(h,'XScale','linear','XTickLabelMode','auto')
                                         end
                                     end
+                                    title(titlestring)
                                     hold on
                                 end
                             end
