@@ -103,6 +103,8 @@ else
     save([cd '/Settings.mat'],'Settings')
 end
 
+    handles.compareaudio = -1; % prevents a timing bug when large files are loaded and the compare button pressed immediately
+
 if ~isdir([cd '/Log']), mkdir([cd '/Log']); end
 if ~isdir([cd '/Utilities/Temp'])
     mkdir([cd '/Utilities/Temp']);
@@ -1514,6 +1516,9 @@ selectedNodes = handles.mytree.getSelectedNodes;
 if handles.compareaudio == 1
     % ******* Determine the size of the audio to be compared
         numberofnodes = length(selectedNodes);
+        if numberofnodes > handles.Settings.maxlines
+            numberofnodes = handles.Settings.maxlines;
+        end
         valid = zeros(numberofnodes,1); % check that they have audio in them
         for i = 1:numberofnodes
             if ~isempty(selectedNodes(i).handle.UserData) && isfield(selectedNodes(i).handle.UserData,'audio')
@@ -1527,14 +1532,20 @@ if handles.compareaudio == 1
             return
         end
         [len,chans,bands,cycles,outchans,dim6] = deal(ones(numberofnodes,1));
+%         bandIDs = cell(numberofnodes,1);
         for i = 1:numberofnodes
             if valid(i)==1
                 [len(i), chans(i), bands(i),cycles(i),outchans(i),dim6(i)] = ...
                     size(selectedNodes(i).handle.UserData.audio);
+%                 if isfield(selectedNodes(i).handle.UserData,'bandID'
+%                     % need to try to match bandIDs
+%                     bandIDs{i} = selectedNodes(i).handle.UserData.bandID(:)';
+%                 end
             end
        end
     
     dimsize = [numberofnodes;max(chans);max(bands);max(cycles);max(outchans);max(dim6)];
+    
     if max(dimsize) > 1
     % ******* Make a dialog box
     parameterstring1 = 'Generate subplots for Nothing [0]';
@@ -1660,11 +1671,11 @@ if handles.compareaudio == 1
             [~, chansselect(i), bandsselect(i),...
                 cyclesselect(i),outchansselect(i),dim6select(i)] = ...
                 size(selectedNodes(i).handle.UserData.audio(:,...
-                chanplot(chanplot<=chans(i)),...
-                bandplot(bandplot<=bands(i)),...
-                cycleplot(cycleplot<=cycles(i)),...
-                outchanplot(outchanplot<=outchans(i)),...
-                dim6plot(dim6plot<=dim6(i))));
+                chanplot(chanplot<=chans(i) & chanplot<=handles.Settings.maxlines),...
+                bandplot(bandplot<=bands(i) & bandplot<=handles.Settings.maxlines),...
+                cycleplot(cycleplot<=cycles(i) & cycleplot<=handles.Settings.maxlines),...
+                outchanplot(outchanplot<=outchans(i) & outchanplot<=handles.Settings.maxlines),...
+                dim6plot(dim6plot<=dim6(i) & dim6plot<=handles.Settings.maxlines)));
         end
     end
     
@@ -1814,6 +1825,7 @@ if handles.compareaudio == 1
                             for d5 = 1:outchansselect(i)
                                 for d6 = 1:dim6select(i)
                                     labelstring = '';
+                                    titlestring = '';
                                     switch subplotdim
                                         case 1
                                             plotnum = i;
@@ -2141,7 +2153,7 @@ if handles.compareaudio == 1
     % **************************************************
     
     
-else
+elseif handles.compareaudio == 0
     comparedata('main_stage1', handles.aarae);
 end
 
