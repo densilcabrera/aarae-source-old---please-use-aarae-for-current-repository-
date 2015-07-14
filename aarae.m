@@ -1534,126 +1534,214 @@ if handles.compareaudio == 1
 %                     bandIDs{i} = selectedNodes(i).handle.UserData.bandID(:)';
 %                 end
             end
-       end
+        end
+    
+           % get plottype from the 'time' chart (the upper chart) in the AARAE GUI
+    axes = 'time';
+    plottype = get(handles.(matlab.lang.makeValidName([axes '_popup'])),'Value');
+    
+    parameterstring10 = ''; 
+    switch plottype
+        case 1
+            figurename = 'Real amplitude';
+            defaultsmoothing = '0';
+        case 2
+            figurename = 'Squared amplitude';
+            parameterstring10 = 'Smoothing filter length [samples]';
+            defaultsmoothing = '0';
+        case 3
+            figurename = 'Level [dB]';
+            parameterstring10 = 'Smoothing filter length [samples]';
+            defaultsmoothing = '0';
+        case 4
+            figurename = 'Envelope';
+            parameterstring10 = 'Smoothing filter length [samples]';
+            defaultsmoothing = '0';
+        case 5
+            figurename = 'Instantaneous frequency [Hz]';
+            parameterstring10 = 'Smoothing filter length [samples]';
+            defaultsmoothing = '5';
+        case 6
+            figurename = 'Absolute amplitude';
+            parameterstring10 = 'Smoothing filter length [samples]';
+            defaultsmoothing = '0';
+        case 7
+            figurename = 'Imaginary amplitude';
+            defaultsmoothing = '0';
+        case 8
+            figurename = 'Level spectrum [dB]';
+            parameterstring10 = 'Fractional octave band smoothing (e.g. 1 for octave, 3 for 1/3 octave, etc)';
+            defaultsmoothing = '0';
+        case 9
+            figurename = 'Squared spectrum';
+            parameterstring10 = 'Fractional octave band smoothing (e.g. 1 for octave, 3 for 1/3 octave, etc)';
+            defaultsmoothing = '0';
+        case 10
+            figurename = 'Absolute spectrum';
+            parameterstring10 = 'Fractional octave band smoothing (e.g. 1 for octave, 3 for 1/3 octave, etc)';
+            defaultsmoothing = '0';
+        case 11
+            figurename = 'Real spectrum';
+            defaultsmoothing = '0';
+        case 12
+            figurename = 'Imaginary spectrum';
+            defaultsmoothing = '0';
+        case 13
+            figurename = 'Phase spectrum [radians]';
+            defaultsmoothing = '0';
+        case 14
+            figurename = 'Unwrapped phase spectrum [radians]';
+            defaultsmoothing = '0';
+        case 15
+            figurename = 'Phase spectrum [degrees]';
+            defaultsmoothing = '0';
+        case 16
+            figurename = 'Unwrapped phase spectrum [rad/2pi]';
+            defaultsmoothing = '0';
+        case 17
+            figurename = 'Group delay [ms]';
+            defaultsmoothing = '0';
+        otherwise
+            figurename = '';
+    end
+    
     
     dimsize = [numberofnodes;max(chans);max(bands);max(cycles);max(outchans);max(dim6)];
     
     if max(dimsize) > 1
-    % ******* Make a dialog box
-    parameterstring1 = 'Generate subplots for Nothing [0]';
-    parameterstring2 = 'Distinct line HSV hues for Nothing [0]';
-    parameterstring3 = 'Distinct line HSV saturations for Nothing [0]';
-    parameterstring4 = 'Distinct line HSV values for Nothing [0]';
-    if dimsize(1) > 1
-        parameterstring1 = [parameterstring1 ', Audio selection [1]'];
-        parameterstring2 = [parameterstring2 ', Audio selection [1]'];
-        parameterstring3 = [parameterstring3 ', Audio selection [1]'];
-        parameterstring4 = [parameterstring4 ', Audio selection [1]'];
-    end
-    if dimsize(2) > 1
-        parameterstring1 = [parameterstring1 ', Channels [2]'];
-        parameterstring2 = [parameterstring2 ', Channels [2]'];
-        parameterstring3 = [parameterstring3 ', Channels [2]'];
-        parameterstring4 = [parameterstring4 ', Channels [2]'];
-    end
-    if dimsize(3) > 1
-        parameterstring1 = [parameterstring1 ', Bands [3]'];
-        parameterstring2 = [parameterstring2 ', Bands [3]'];
-        parameterstring3 = [parameterstring3 ', Bands [3]'];
-        parameterstring4 = [parameterstring4 ', Bands [3]'];
-    end
-    if dimsize(4) > 1
-        parameterstring1 = [parameterstring1 ', Cycles [4]'];
-        parameterstring2 = [parameterstring2 ', Cycles [4]'];
-        parameterstring3 = [parameterstring3 ', Cycles [4]'];
-        parameterstring4 = [parameterstring4 ', Cycles [4]'];
-    end
-    if dimsize(5) > 1
-        parameterstring1 = [parameterstring1 ', Asynchronous output channels [5]'];
-        parameterstring2 = [parameterstring2 ', Asynchronous output channels [5]'];
-        parameterstring3 = [parameterstring3 ', Asynchronous output channels [5]'];
-        parameterstring4 = [parameterstring4 ', Asynchronous output channels [5]'];
-    end
-    if dimsize(6) > 1
-        parameterstring1 = [parameterstring1 ', Dimension 6 [6]'];
-        parameterstring2 = [parameterstring2 ', Dimension 6 [6]'];
-        parameterstring3 = [parameterstring3 ', Dimension 6 [6]'];
-        parameterstring4 = [parameterstring4 ', Dimension 6 [6]'];
-    end
+        % ******* Make a dialog box
+        parameterstring1 = 'Generate subplots for Nothing [0]';
+        parameterstring2 = 'Distinct line HSV hues for Nothing [0]';
+        parameterstring3 = 'Distinct line HSV saturations for Nothing [0]';
+        parameterstring4 = 'Distinct line HSV values for Nothing [0]';
+        if dimsize(1) > 1
+            parameterstring1 = [parameterstring1 ', Audio selection [1]'];
+            parameterstring2 = [parameterstring2 ', Audio selection [1]'];
+            parameterstring3 = [parameterstring3 ', Audio selection [1]'];
+            parameterstring4 = [parameterstring4 ', Audio selection [1]'];
+        end
+        if dimsize(2) > 1
+            parameterstring1 = [parameterstring1 ', Channels [2]'];
+            parameterstring2 = [parameterstring2 ', Channels [2]'];
+            parameterstring3 = [parameterstring3 ', Channels [2]'];
+            parameterstring4 = [parameterstring4 ', Channels [2]'];
+        end
+        if dimsize(3) > 1
+            parameterstring1 = [parameterstring1 ', Bands [3]'];
+            parameterstring2 = [parameterstring2 ', Bands [3]'];
+            parameterstring3 = [parameterstring3 ', Bands [3]'];
+            parameterstring4 = [parameterstring4 ', Bands [3]'];
+        end
+        if dimsize(4) > 1
+            parameterstring1 = [parameterstring1 ', Cycles [4]'];
+            parameterstring2 = [parameterstring2 ', Cycles [4]'];
+            parameterstring3 = [parameterstring3 ', Cycles [4]'];
+            parameterstring4 = [parameterstring4 ', Cycles [4]'];
+        end
+        if dimsize(5) > 1
+            parameterstring1 = [parameterstring1 ', Asynchronous output channels [5]'];
+            parameterstring2 = [parameterstring2 ', Asynchronous output channels [5]'];
+            parameterstring3 = [parameterstring3 ', Asynchronous output channels [5]'];
+            parameterstring4 = [parameterstring4 ', Asynchronous output channels [5]'];
+        end
+        if dimsize(6) > 1
+            parameterstring1 = [parameterstring1 ', Dimension 6 [6]'];
+            parameterstring2 = [parameterstring2 ', Dimension 6 [6]'];
+            parameterstring3 = [parameterstring3 ', Dimension 6 [6]'];
+            parameterstring4 = [parameterstring4 ', Dimension 6 [6]'];
+        end
         
-    parameterstring5 = ['Channel indices (up to ', num2str(max(chans))];
-    parameterstring6 = ['Band indices (up to ', num2str(max(bands))];
-    parameterstring7 = ['Cycle indices (up to ', num2str(max(cycles))];
-    parameterstring8 = ['Asynchonous output indices (up to ', num2str(max(outchans))];
-    parameterstring9 = ['Dimension 6 indices (up to ', num2str(max(dim6))];
-    
-    nonsignletondims = find(dimsize>1,4,'first');
-    if isempty(nonsignletondims)
-        [default1, default2, default3, default4] = deal('0');
-    elseif length(nonsignletondims) == 1
-        [default1, default2] = deal(num2str(nonsignletondims));
-        [default3, default4] = deal('0');
-    elseif length(nonsignletondims) == 2
-        default1 = num2str(nonsignletondims(1));
-        default2 = num2str(nonsignletondims(2));
-        [default3, default4] = deal('0');
-    elseif length(nonsignletondims) == 3
-        default1 = num2str(nonsignletondims(1));
-        default2 = num2str(nonsignletondims(2));
-        [default3, default4] = deal(num2str(nonsignletondims(3)));
-    else
-        default1 = num2str(nonsignletondims(1));
-        default2 = num2str(nonsignletondims(2));
-        default3 = num2str(nonsignletondims(3));
-        default4 = num2str(nonsignletondims(4));
-    end
-    
-    
-    defaultchans = ['1:' num2str(dimsize(2))];
-    defaultbands = ['1:' num2str(dimsize(3))];
-    defaultcycles = ['1:' num2str(dimsize(4))];
-    defaultoutchans = ['1:' num2str(dimsize(5))];
-    defaultdim6 = ['1:' num2str(dimsize(6))];
-
-    % Dialog box for selection
-    param = inputdlg({parameterstring1;... 
-                      parameterstring2;...
-                      parameterstring3;...
-                      parameterstring4;...
-                      parameterstring5;... 
-                      parameterstring6;...
-                      parameterstring7;...
-                      parameterstring8;...
-                      parameterstring9},...% inputdlg window.
-                      'Data Mapping & Selection',...
-                      [1 90],... 
-                      {default1;default2;default3;default4;...
-                      defaultchans;...
-                      defaultbands;...
-                      defaultcycles;...
-                      defaultoutchans;...
-                      defaultdim6}); 
-
-
-
-    if length(param) < 9, param = []; end 
-    if ~isempty(param) 
-        subplotdim = str2num(char(param(1)));
-        Hdim = str2num(char(param(2)));
-        Sdim = str2num(char(param(3)));
-        Vdim = str2num(char(param(4)));
-        chanplot = str2num(char(param(5)));
-        bandplot = str2num(char(param(6)));
-        cycleplot = str2num(char(param(7)));
-        outchanplot = str2num(char(param(8)));
-        dim6plot = str2num(char(param(9)));
-    else
-        % get out of here if the user presses 'cancel'
-        return
-    end
+        parameterstring5 = ['Channel indices (up to ', num2str(max(chans))];
+        parameterstring6 = ['Band indices (up to ', num2str(max(bands))];
+        parameterstring7 = ['Cycle indices (up to ', num2str(max(cycles))];
+        parameterstring8 = ['Asynchonous output indices (up to ', num2str(max(outchans))];
+        parameterstring9 = ['Dimension 6 indices (up to ', num2str(max(dim6))];
+        
+        
+        nonsignletondims = find(dimsize>1,4,'first');
+        if isempty(nonsignletondims)
+            [default1, default2, default3, default4] = deal('0');
+        elseif length(nonsignletondims) == 1
+            [default1, default2] = deal(num2str(nonsignletondims));
+            [default3, default4] = deal('0');
+        elseif length(nonsignletondims) == 2
+            default1 = num2str(nonsignletondims(1));
+            default2 = num2str(nonsignletondims(2));
+            [default3, default4] = deal('0');
+        elseif length(nonsignletondims) == 3
+            default1 = num2str(nonsignletondims(1));
+            default2 = num2str(nonsignletondims(2));
+            [default3, default4] = deal(num2str(nonsignletondims(3)));
+        else
+            default1 = num2str(nonsignletondims(1));
+            default2 = num2str(nonsignletondims(2));
+            default3 = num2str(nonsignletondims(3));
+            default4 = num2str(nonsignletondims(4));
+        end
+        
+        
+        defaultchans = ['1:' num2str(dimsize(2))];
+        defaultbands = ['1:' num2str(dimsize(3))];
+        defaultcycles = ['1:' num2str(dimsize(4))];
+        defaultoutchans = ['1:' num2str(dimsize(5))];
+        defaultdim6 = ['1:' num2str(dimsize(6))];
+        
+        
+        
+        % Dialog box for selection
+        param = inputdlg({parameterstring1;...
+            parameterstring2;...
+            parameterstring3;...
+            parameterstring4;...
+            parameterstring5;...
+            parameterstring6;...
+            parameterstring7;...
+            parameterstring8;...
+            parameterstring9;...
+            parameterstring10},...% inputdlg window.
+            'Data Mapping & Selection',...
+            [1 90],...
+            {default1;default2;default3;default4;...
+            defaultchans;...
+            defaultbands;...
+            defaultcycles;...
+            defaultoutchans;...
+            defaultdim6;...
+            defaultsmoothing});
+        
+        
+        
+        if length(param) < 10, param = []; end
+        if ~isempty(param)
+            subplotdim = str2num(char(param(1)));
+            Hdim = str2num(char(param(2)));
+            Sdim = str2num(char(param(3)));
+            Vdim = str2num(char(param(4)));
+            chanplot = str2num(char(param(5)));
+            bandplot = str2num(char(param(6)));
+            cycleplot = str2num(char(param(7)));
+            outchanplot = str2num(char(param(8)));
+            dim6plot = str2num(char(param(9)));
+            smoothingmethod = str2num(char(param(10)));
+        else
+            % get out of here if the user presses 'cancel'
+            return
+        end
     else
         [subplotdim, Hdim, Sdim, Vdim, chanplot, bandplot, cycleplot,...
             outchanplot, dim6plot] = deal(1);
+        if ~isempty(parameterstring10)
+            % Dialog box for selection
+            param = inputdlg({parameterstring10},...% inputdlg window.
+                'Smoothing',...
+                [1 90],...
+                {defaultsmoothing});
+            if ~isempty(param)
+                smoothingmethod = str2num(char(param(1)));
+            else
+                smoothingmethod = str2num(defaultsmoothing);
+            end
+        end
     end
     % size of selected audio
     [chansselect,bandsselect,cyclesselect,outchansselect,dim6select] =...
@@ -1709,46 +1797,7 @@ if handles.compareaudio == 1
     [r, c] = subplotpositions(numberofsubplots, 0.5);
     linecolor = HSVplotcolours2(numberofH, numberofS, numberofV);
     
-    % get plottype from the 'time' chart (the upper chart) in the AARAE GUI
-    axes = 'time';
-    plottype = get(handles.(matlab.lang.makeValidName([axes '_popup'])),'Value');
-    
-    switch plottype
-        case 1
-            figurename = 'Real amplitude';
-        case 2
-            figurename = 'Squared amplitude';
-        case 3
-            figurename = 'Level [dB]';
-        case 4
-            figurename = 'Envelope';
-        case 5
-            figurename = 'Instantaneous frequency [Hz]';
-        case 6
-            figurename = 'Absolute amplitude';
-        case 7
-            figurename = 'Imaginary amplitude';
-        case 8
-            figurename = 'Level spectrum [dB]';
-        case 9
-            figurename = 'Squared spectrum';
-        case 10
-            figurename = 'Absolute spectrum';
-        case 11
-            figurename = 'Real spectrum';
-        case 12
-            figurename = 'Imaginary spectrum';
-        case 13
-            figurename = 'Phase spectrum [radians]';
-        case 14
-            figurename = 'Unwrapped phase spectrum [radians]';
-        case 15
-            figurename = 'Phase spectrum [degrees]';
-        case 16
-            figurename = 'Unwrapped phase spectrum [rad/2pi]';
-        case 17
-            figurename = 'Group delay [ms]';
-    end
+
     
     
     % make the figure
@@ -1786,15 +1835,31 @@ if handles.compareaudio == 1
                 otherwise
                     spectscale = 1;
             end
+            
+            
             if plottype == 1
                 signaldata.audio = real(signaldata.audio);
             end
+            
             if plottype == 2
+                if smoothingmethod > 1
+                    signaldata.audio = filter(ones(1,smoothingmethod)/smoothingmethod,...
+                                1,signaldata.audio.^2);
+                else
                 signaldata.audio = signaldata.audio.^2;
+                end
             end
+            
             if plottype == 3
-                signaldata.audio = 10.*log10(signaldata.audio.^2);
+                if smoothingmethod > 1
+                    signaldata.audio = 10.*log10(...
+                    filter(ones(1,smoothingmethod)/smoothingmethod,...
+                                1,signaldata.audio.^2));
+                else
+                    signaldata.audio = 10.*log10(signaldata.audio.^2);
+                end
             end
+            
             if plottype == 4
                 for b = 1:bandsselect(i)
                     for d4 = 1:cyclesselect(i)
@@ -1806,23 +1871,39 @@ if handles.compareaudio == 1
                         end
                     end
                 end
+                if smoothingmethod > 1
+                    signaldata.audio = filter(ones(1,smoothingmethod)/smoothingmethod,...
+                                1,signaldata.audio);
+                end
             end
+            
             if plottype == 5
                 for b = 1:bandsselect(i)
                     for d4 = 1:cyclesselect(i)
                         for d5 = 1:outchansselect(i)
                             for d6 = 1:dim6select(i)
                                 signaldata.audio(:,:,b,d4,d5,d6) = ...
-                                    medfilt1(diff([angle(hilbert(real(...
+                                    diff([angle(hilbert(real(...
                                     signaldata.audio(:,:,b,d4,d5,d6)))); ...
-                                    zeros(1,chansselect(i))])*signaldata.fs/2/pi, 5);
+                                    zeros(1,chansselect(i))])*signaldata.fs/2/pi;
+                                
                             end
                         end
                     end
                 end
+                if smoothingmethod > 1
+                    signaldata.audio = ...
+                            medfilt1(signaldata.audio,...
+                            smoothingmethod);
+                end
             end
             if plottype == 6
-                signaldata.audio = abs(signaldata.audio);
+                if smoothingmethod > 1
+                    signaldata.audio = filter(ones(1,smoothingmethod)/smoothingmethod,...
+                                1,abs(signaldata.audio));
+                else
+                    signaldata.audio = abs(signaldata.audio);
+                end
             end
             if plottype == 7
                 signaldata.audio = imag(signaldata.audio);
@@ -1847,9 +1928,38 @@ if handles.compareaudio == 1
                     end
                 end
             end
-            if plottype == 8, signaldata.audio = 10*log10(abs(signaldata.audio.*spectscale).^2); end %freq
-            if plottype == 9, signaldata.audio = (abs(signaldata.audio).*spectscale).^2; end
-            if plottype == 10, signaldata.audio = abs(signaldata.audio).*spectscale; end
+            if plottype == 8
+                if smoothingmethod < 1
+                signaldata.audio = 10*log10(abs(signaldata.audio.*spectscale).^2); 
+                else
+                    signaldata.audio = octavesmoothing(abs(signaldata.audio).^2,...
+                    smoothingmethod, signaldata.fs);
+                        lowlimit = 128/(len(i)/signaldata.fs); % avoid very low freq hump error
+                        signaldata.audio = signaldata.audio(f>lowlimit,:,:,:,:,:);
+                        f = f(f>lowlimit);
+                        signaldata.audio = 10*log10(signaldata.audio);
+                end
+            end 
+            if plottype == 9
+                signaldata.audio = (abs(signaldata.audio).*spectscale).^2;
+                if smoothingmethod >= 1
+                    signaldata.audio = octavesmoothing(signaldata.audio,...
+                    smoothingmethod, signaldata.fs);
+                        lowlimit = 128/(len(i)/signaldata.fs); % avoid very low freq hump error
+                        signaldata.audio = signaldata.audio(f>lowlimit,:,:,:,:,:);
+                        f = f(f>lowlimit);
+                end
+            end
+            if plottype == 10
+                signaldata.audio = abs(signaldata.audio).*spectscale; 
+                if smoothingmethod >= 1
+                    signaldata.audio = octavesmoothing(signaldata.audio,...
+                    smoothingmethod, signaldata.fs);
+                        lowlimit = 128/(len(i)/signaldata.fs); % avoid very low freq hump error
+                        signaldata.audio = signaldata.audio(f>lowlimit,:,:,:,:,:);
+                        f = f(f>lowlimit);
+                end
+            end
             if plottype == 11, signaldata.audio = real(signaldata.audio).*spectscale; end
             if plottype == 12, signaldata.audio = imag(signaldata.audio).*spectscale; end
             if plottype == 13, signaldata.audio = angle(signaldata.audio); end
@@ -1860,15 +1970,15 @@ if handles.compareaudio == 1
                 signaldata.audio = -diff(unwrap(angle(signaldata.audio))).*length(signaldata.audio)/(signaldata.fs*2*pi).*1000;
                 f = f(1:end-1);
             end
-            if strcmp(get(handles.(matlab.lang.makeValidName(['smooth' axes '_popup'])),'Visible'),'on')
-                smoothfactor = get(handles.(matlab.lang.makeValidName(['smooth' axes '_popup'])),'Value');
-                if smoothfactor == 2, octsmooth = 1; end
-                if smoothfactor == 3, octsmooth = 3; end
-                if smoothfactor == 4, octsmooth = 6; end
-                if smoothfactor == 5, octsmooth = 12; end
-                if smoothfactor == 6, octsmooth = 24; end
-                if smoothfactor ~= 1, signaldata.audio = octavesmoothing(signaldata.audio, octsmooth, signaldata.fs); end
-            end
+%             if strcmp(get(handles.(matlab.lang.makeValidName(['smooth' axes '_popup'])),'Visible'),'on')    
+%                 smoothfactor = get(handles.(matlab.lang.makeValidName(['smooth' axes '_popup'])),'Value');
+%                 if smoothfactor == 2, octsmooth = 1; end
+%                 if smoothfactor == 3, octsmooth = 3; end
+%                 if smoothfactor == 4, octsmooth = 6; end
+%                 if smoothfactor == 5, octsmooth = 12; end
+%                 if smoothfactor == 6, octsmooth = 24; end
+%                 if smoothfactor ~= 1, signaldata.audio = octavesmoothing(signaldata.audio, octsmooth, signaldata.fs); end
+%             end
             
             for ch = 1:chansselect(i)
                 for b = 1:bandsselect(i)
@@ -2051,7 +2161,6 @@ if handles.compareaudio == 1
                 end
             end
         end
-        
     end
         
     iplots = get(compplot,'Children');

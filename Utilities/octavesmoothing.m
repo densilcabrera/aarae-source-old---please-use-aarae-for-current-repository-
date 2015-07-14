@@ -1,7 +1,10 @@
 function [smoothmagspectrum]= octavesmoothing(fftdbin, octsmooth,fs)
 
 % fftdbin is the fft of the signal in dB
-
+% this function goes a bit funny in the very low frequency range, so it's
+% best to throw that data out after running this function.
+% Also, it makes more sense to use this to smooth the power spectrum rather
+% than level spectrum.
 fftpoints = length(fftdbin);
 
 freqeval = linspace(0,fs/2,fftpoints);
