@@ -1712,8 +1712,46 @@ if handles.compareaudio == 1
     axes = 'time';
     plottype = get(handles.(matlab.lang.makeValidName([axes '_popup'])),'Value');
     
+    switch plottype
+        case 1
+            figurename = 'Real amplitude';
+        case 2
+            figurename = 'Squared amplitude';
+        case 3
+            figurename = 'Level [dB]';
+        case 4
+            figurename = 'Envelope';
+        case 5
+            figurename = 'Instantaneous frequency [Hz]';
+        case 6
+            figurename = 'Absolute amplitude';
+        case 7
+            figurename = 'Imaginary amplitude';
+        case 8
+            figurename = 'Level spectrum [dB]';
+        case 9
+            figurename = 'Squared spectrum';
+        case 10
+            figurename = 'Absolute spectrum';
+        case 11
+            figurename = 'Real spectrum';
+        case 12
+            figurename = 'Imaginary spectrum';
+        case 13
+            figurename = 'Phase spectrum [radians]';
+        case 14
+            figurename = 'Unwrapped phase spectrum [radians]';
+        case 15
+            figurename = 'Phase spectrum [degrees]';
+        case 16
+            figurename = 'Unwrapped phase spectrum [rad/2pi]';
+        case 17
+            figurename = 'Group delay [ms]';
+    end
+    
+    
     % make the figure
-    compplot = figure;
+    compplot = figure('Name',figurename);
     for i = 1:numberofnodes
         if valid(i)
             signaldata = selectedNodes(i).handle.UserData;
@@ -1745,9 +1783,15 @@ if handles.compareaudio == 1
                     otherwise
                         spectscale = 1;
                 end
-                if plottype == 1, signaldata.audio = real(signaldata.audio); end
-                if plottype == 2, signaldata.audio = signaldata.audio.^2; end
-                if plottype == 3, signaldata.audio = 10.*log10(signaldata.audio.^2); end
+                if plottype == 1
+                    signaldata.audio = real(signaldata.audio);
+                end
+                if plottype == 2
+                    signaldata.audio = signaldata.audio.^2; 
+                end
+                if plottype == 3
+                    signaldata.audio = 10.*log10(signaldata.audio.^2); 
+                end
                 if plottype == 4
                     for b = 1:bandsselect(i)
                         for d4 = 1:cyclesselect(i)
@@ -1774,8 +1818,12 @@ if handles.compareaudio == 1
                         end
                     end
                 end
-                if plottype == 6, signaldata.audio = abs(signaldata.audio); end
-                if plottype == 7, signaldata.audio = imag(signaldata.audio); end
+                if plottype == 6
+                    signaldata.audio = abs(signaldata.audio); 
+                end
+                if plottype == 7
+                    signaldata.audio = imag(signaldata.audio); 
+                end
                 if plottype >= 8,
                     % try to avoid out-of-memory error by limiting the maximum
                     % size of the fft).
@@ -1969,13 +2017,17 @@ if handles.compareaudio == 1
                                         plot(t,real(signaldata.audio(:,ch,b,d4,d5,d6)), ...
                                             'color',permute(linecolor(Hind,Sind,Vind,:),[1,4,2,3]),...
                                         'DisplayName',labelstring);
-                                        xlabel('Time [s]');
+                                        if numberofsubplots-c < plotnum
+                                            xlabel('Time [s]');
+                                        end
                                     elseif plottype >= 8
                                         h=subplot(r,c,plotnum);
                                         plot(f,real(signaldata.audio(:,ch,b,d4,d5,d6)), ...
                                             'color',permute(linecolor(Hind,Sind,Vind,:),[1,4,2,3]),...
                                             'DisplayName',labelstring);
-                                        xlabel('Frequency [Hz]');
+                                        if numberofsubplots-c < plotnum
+                                            xlabel('Frequency [Hz]');
+                                        end
                                         if ischar(handles.Settings.frequencylimits)
                                             xlim([f(2) signaldata.fs/2])
                                         else
