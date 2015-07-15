@@ -1,4 +1,4 @@
-function OUT = bandpass(IN, flo, fhi, orderout, fs)
+function OUT = bandpass(IN, flo, fhi, orderout, fs, phase)
 % This function applies a zero phase bandpass filter in the frequency
 % domain to the input audio.
 %
@@ -30,10 +30,11 @@ end
 if nargin ==1
     param = inputdlg({'High frequency limit (Hz)';...
         'Low frequency limit (Hz)';...
-        'Filter pseudo-order'},...
+        'Filter pseudo-order';
+        'Maximum phase [-1], Zero phase [0] or Mimimum phase [1]'},...
         'Band Limit Settings',...
-        [1 30],...
-        {num2str(fs/2);'0';'24'});
+        [1 60],...
+        {num2str(fs/2);'0';'24';'0'});
     
     param = str2num(char(param));
     
@@ -43,6 +44,7 @@ if nargin ==1
         fhi = param(1);
         flo = param(2);
         orderout = param(3);
+        phase = param(4);
     else
         OUT = [];
         return
@@ -115,6 +117,14 @@ if ~isempty(audio) && ~isempty(fs) && ~isempty(orderout) && ok ==1
     % above Nyquist frequency
     mag(fftlen/2+2:end) = flipud(mag(2:fftlen/2));
     
+    % phase
+    switch phase
+        case 1
+            mag = minphasefreqdomain(mag);
+        case -1
+            mag = conj(minphasefreqdomain(mag));
+    end
+    
     
     % apply the filter
     audio = ifft(fft(audio).* repmat(mag,[1,chans,bands,dim4,dim5,dim6]));
@@ -123,7 +133,7 @@ if ~isempty(audio) && ~isempty(fs) && ~isempty(orderout) && ok ==1
         OUT = IN;
         OUT.audio = audio;
         OUT.funcallback.name = 'bandpass.m';
-        OUT.funcallback.inarg = {flo,fhi,orderout,fs};
+        OUT.funcallback.inarg = {flo,fhi,orderout,fs,phase};
     else
         OUT = audio;
     end
