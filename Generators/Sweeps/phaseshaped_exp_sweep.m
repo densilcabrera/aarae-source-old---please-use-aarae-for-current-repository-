@@ -9,7 +9,45 @@ function OUT = phaseshaped_exp_sweep(dur,start_freq,end_freq,overshoot,order,fs,
 % measurements (between 20 Hz and 500 Hz), using maximum phase. The
 % resulting sweep and inverse sweep yield a very high numerical signal to
 % noise ratio in the time period immediately following the impulse.
+% In other words, the numerical noise is shifted away from the part of the
+% impulse response that is of interest in the analysis of a system's decay 
+% rate (e.g. for low frequency reverberation time measurement).
 %
+% This is a preliminary version of the concept, and the implementation
+% probably can be significantly improved. In the current method, a sweep is
+% generated, and filtered using a high-order bandpass filter. The inverse
+% sweep is filtered separately, so that their phase responses reinforce
+% (rather than cancel) each other (in the case of minimum or maximum phase
+% filters).
+%
+% INPUTS
+%
+% Duration - in seconds, is the total duration of the waveform including
+% the overshoot periods
+%
+% Start frequency - in Hz, is the low pass-band limit frequency of the
+% filter.
+%
+% End frequency - in Hz, is the high pass-band limit frequency of the
+% filter.
+%
+% Overshoot - is the number of octaves (or fractional octaves) used for the
+% sweep beyond the passband. Note that this limits the possible upper
+% frequency of the sweep (e.g., if the overshoot is 2 octaves, then the
+% highest possible passband frequency is fs/8).
+%
+% Filter order - is the filter 'order' used for the filter (where the
+% skirts are order*6 dB/octave). Note that since the filter is applied to
+% both the sweep and inverse sweep, the skirt slope of them convolved is
+% double that implied by the filter order.
+%
+% fs is the sampling rate in Hz.
+%
+% The sweep may be ascending or descending (reverse).
+%
+% The filter may be maximum, minimum or zero phase.
+
+
 
 
 if nargin == 0
