@@ -1,4 +1,4 @@
-function OUT = phaseshaped_exp_sweep(dur,start_freq,end_freq,overshoot,fs,reverse,phase)
+function OUT = phaseshaped_exp_sweep(dur,start_freq,end_freq,overshoot,order,fs,reverse,phase)
 % This function generates an exponential sweep and its inverse filter,
 % providing for maximum phase and minimum phase solutions (as well as the
 % usual zero phase solution). This may be useful in situations where the
@@ -17,20 +17,22 @@ if nargin == 0
                        'Start frequency [Hz]';...
                        'End frequency [Hz]';...
                        'Overshoot (octaves)';...
+                       'Filter order';...
                        'Sampling Frequency [samples/s]';...
                        'Ascending [0] or descending [1] sweep';...
                        'Maximum [-1], zero [0] or minimum [1] phase'},...
-                       'Sine sweep input parameters',1,{'60';'20';'500';'2';'48000';'0';'-1'});
+                       'Sine sweep input parameters',1,{'60';'20';'500';'2';'24';'48000';'0';'-1'});
     param = str2num(char(param));
-    if length(param) < 7, param = []; end
+    if length(param) < 8, param = []; end
     if ~isempty(param)
         dur = param(1);
         start_freq = param(2);
         end_freq = param(3);
         overshoot = param(4);
-        fs = param(5);
-        reverse = param(6);
-        phase = param(7);
+        order = param(5);
+        fs = param(6);
+        reverse = param(7);
+        phase = param(8);
     end
 else
     param = [];
@@ -43,13 +45,13 @@ if ~isempty(param) || nargin ~=0
     end
     SI = 1/fs;
     ampl = 0.5;
-    %rcos_ms = 15;
     scale_inv = 0;
-%    if 2*round((rcos_ms*1e-3))>dur, rcos_ms = 15; end
+    maxfreq = (fs/2) / 2^overshoot; % maximum possible frequency, taking overshoot into account
+    if end_freq > maxfreq, end_freq = maxfreq; end
     
     % generate sweep in time domain
     w1 = 2*pi*start_freq / 2^overshoot; w2 = 2*pi*end_freq * 2^overshoot;
-    if w2 > pi*fs, w2=pi*fs; end
+    if w2 > pi*fs, w2=pi*fs; end % this should not be necessary
     K = (dur*w1)/(log(w2/w1));
     L = log(w2/w1)/dur;
     t = (0:round(dur/SI)-1)'*SI;
@@ -60,9 +62,13 @@ if ~isempty(param) || nargin ~=0
     S = ampl*sin(phi);
     Sinv = flipud(S).*amp_env;
     
-    filterorder = 24;
-    S = bandpass(S, start_freq, end_freq, filterorder, fs, phase);
-    Sinv = bandpass(Sinv, start_freq, end_freq, filterorder, fs, phase);
+    S = bandpass(S, start_freq, end_freq, order, fs, phase);
+    Sinv = bandpass(Sinv, start_freq, end_freq, order, fs, phase);
+    
+    % clean up the ends in the time domain?
+%     win = tukeywin(length(S),0.05);
+%     S = S.*win;
+%     Sinv = Sinv.*win;
     
 %     rcos_len = round(length(S)*((rcos_ms*1e-3)/dur));
      sig_len = length(S);
@@ -75,15 +81,15 @@ if ~isempty(param) || nargin ~=0
 %     Sinvfft = Sinvfft.*exp(1i*2*pi*(0:(sig_len-1))'*(sig_len-1)/sig_len);
 %     Sinv = real(ifft(Sinvfft));
 
-%     if scale_inv == 1
-%        fftS = fft(S);
-%        mid_freq = (start_freq + end_freq)/2;
-%        index = round(mid_freq/(fs/sig_len));
-%        const1 = abs(conj(fftS(index))/(abs(fftS(index))^2));
-%        const2 = abs(Sinvfft(index));
-%        ratio = const1/const2;
-%        Sinv = Sinv * ratio;
-%     end
+    if scale_inv == 1
+       fftS = fft(S);
+       mid_freq = (start_freq + end_freq)/2;
+       index = round(mid_freq/(fs/sig_len));
+       const1 = abs(conj(fftS(index))/(abs(fftS(index))^2));
+       const2 = abs(Sinvfft(index));
+       ratio = const1/const2;
+       Sinv = Sinv * ratio;
+    end
     
     if reverse
         S = fliplr(S);
@@ -99,13 +105,16 @@ if ~isempty(param) || nargin ~=0
     OUT.properties.freq = [start_freq, end_freq];
     OUT.properties.reverse = reverse;
     OUT.properties.overshoot = overshoot;
+    OUT.properties.filter_order = order;
     OUT.properties.overshoot = phase;
     OUT.funcallback.name = 'phaseshaped_exp_sweep.m';
-    OUT.funcallback.inarg = {dur,start_freq,end_freq,overshoot,fs,reverse,phase};
+    OUT.funcallback.inarg = {dur,start_freq,end_freq,overshoot,order,fs,reverse,phase};
 else
     OUT = [];
 end
 
+% This function is adapted from an exponential sweep function written by
+% Nicolas Epain.
 %**************************************************************************
 % Copyright (c) 2015, Densil Cabrera
 % All rights reserved.
