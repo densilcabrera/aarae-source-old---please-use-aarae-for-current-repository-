@@ -1965,7 +1965,10 @@ if handles.compareaudio == 1
             if plottype == 13, signaldata.audio = angle(signaldata.audio); end
             if plottype == 14, signaldata.audio = unwrap(angle(signaldata.audio)); end
             if plottype == 15, signaldata.audio = angle(signaldata.audio) .* 180/pi; end
-            if plottype == 16, signaldata.audio = unwrap(angle(signaldata.audio)) ./(2*pi); end
+            if plottype == 16
+                %signaldata.audio = unwrap(angle(signaldata.audio)) ./(2*pi); end
+                [signaldata.audio,f] = phasedelay(signaldata.audio,1,length(signaldata.audio),signaldata.fs);
+            end
             if plottype == 17
                 signaldata.audio = -diff(unwrap(angle(signaldata.audio))).*length(signaldata.audio)/(signaldata.fs*2*pi).*1000;
                 f = f(1:end-1);
@@ -3201,6 +3204,9 @@ for nleafs = 1:length(selectedNodes)
         %         end
         for i = 1:length(h)
             % Write figure's UserData property
+            if ~exist('callbackstring','var')
+                callbackstring = '';
+            end
             UserData = {'Environment','AARAE';...
                 'Function name',funname;...
                 'Input',char(selectedNodes(nleafs).getName);...
@@ -3490,6 +3496,9 @@ for nleafs = 1:length(selectedNodes)
                     %                 end
                     for i = 1:length(h)
                         % Write figure's UserData property
+                        if ~exist('callbackstring','var')
+                            callbackstring = '';
+                        end
                         UserData = {'Environment','AARAE';...
                             'Function name',funname;...
                             'Input',char(selectedNodes(nleafs).getName);...
