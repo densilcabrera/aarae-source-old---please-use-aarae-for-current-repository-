@@ -14,7 +14,7 @@ handles = guidata(findobj('Tag','aarae'));
 
 
 
-
+callbackstring = [];
 if isfield(signaldata,'funcallback')
     if isfield(signaldata.funcallback,'name')
         callbackstring = signaldata.funcallback.name;
