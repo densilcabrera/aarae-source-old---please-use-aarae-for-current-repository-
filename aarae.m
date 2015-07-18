@@ -3237,10 +3237,6 @@ for nleafs = 1:length(selectedNodes)
             catch
             end
         end
-        
-        
-        
-        
         results = dir([cd '/Utilities/Temp']);
         set(handles.result_box,'String',[' ';cellstr({results(3:length(results)).name}')]);
     end
@@ -3393,7 +3389,18 @@ for nleafs = 1:length(selectedNodes)
                 end
             else
                 out = [];
-                feval(funname,audiodata);
+                try
+                    feval(funname,audiodata);
+                catch err
+                    out = [];
+                    msgString = getReport(err);
+                    disp(['AARAE analyser error running ' funname '.']);
+                    disp(msgString); % displays the error message without creating an error.
+                    fprintf(handles.fid,['AARAE analyser error running ' funname '.\n']);
+                    fprintf(handles.fid,msgString);
+                    fprintf(handles.fid,'.\n');
+                    errorflag = true;
+                end
             end
             aarae_fig = findobj('Tag','aarae');
             handles = guidata(aarae_fig);
