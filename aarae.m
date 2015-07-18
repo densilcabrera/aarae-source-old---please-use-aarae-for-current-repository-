@@ -1970,7 +1970,7 @@ if handles.compareaudio == 1
                 %[signaldata.audio,f] = ...
                 %phasedelay(signaldata.audio,1,length(signaldata.audio),signaldata.fs);
                 % (just an idea)
-            end
+            %end
             if plottype == 17
                 signaldata.audio = -diff(unwrap(angle(signaldata.audio))).*length(signaldata.audio)/(signaldata.fs*2*pi).*1000;
                 f = f(1:end-1);
