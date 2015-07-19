@@ -103,7 +103,7 @@ else
     save([cd '/Settings.mat'],'Settings')
 end
 
-    handles.compareaudio = -1; % prevents a timing bug when large files are loaded and the compare button pressed immediately
+handles.compareaudio = -1; % prevents a timing bug when large files are loaded and the compare button pressed immediately
 
 if ~isdir([cd '/Log']), mkdir([cd '/Log']); end
 if ~isdir([cd '/Utilities/Temp'])
@@ -361,6 +361,7 @@ function export_btn_Callback(hObject, ~, handles)
 % hObject    handle to export_btn (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
+uitreedescription
 
 root = handles.root; % Get selected leaf
 root = root(1);
@@ -1515,32 +1516,32 @@ function compare_btn_Callback(hObject, ~, handles) %#ok
 selectedNodes = handles.mytree.getSelectedNodes;
 if handles.compareaudio == 1
     % ******* Determine the size of the audio to be compared
-        numberofnodes = length(selectedNodes);
-        if numberofnodes > handles.Settings.maxlines
-            numberofnodes = handles.Settings.maxlines;
-        end
-
-        [len,chans,bands,cycles,outchans,dim6] = deal(ones(numberofnodes,1));
-%         bandIDs = cell(numberofnodes,1);
-        for i = 1:numberofnodes
-            if handles.alternate==1 && isfield(selectedNodes(i).handle.UserData,'audio2')
-                [len(i), chans(i), bands(i),cycles(i),outchans(i),dim6(i)] = ...
-                    size(selectedNodes(i).handle.UserData.audio2);
-            else
-                [len(i), chans(i), bands(i),cycles(i),outchans(i),dim6(i)] = ...
-                    size(selectedNodes(i).handle.UserData.audio);
-%                 if isfield(selectedNodes(i).handle.UserData,'bandID'
-%                     % need to try to match bandIDs
-%                     bandIDs{i} = selectedNodes(i).handle.UserData.bandID(:)';
-%                 end
-            end
-        end
+    numberofnodes = length(selectedNodes);
+    if numberofnodes > handles.Settings.maxlines
+        numberofnodes = handles.Settings.maxlines;
+    end
     
-           % get plottype from the 'time' chart (the upper chart) in the AARAE GUI
+    [len,chans,bands,cycles,outchans,dim6] = deal(ones(numberofnodes,1));
+    %         bandIDs = cell(numberofnodes,1);
+    for i = 1:numberofnodes
+        if handles.alternate==1 && isfield(selectedNodes(i).handle.UserData,'audio2')
+            [len(i), chans(i), bands(i),cycles(i),outchans(i),dim6(i)] = ...
+                size(selectedNodes(i).handle.UserData.audio2);
+        else
+            [len(i), chans(i), bands(i),cycles(i),outchans(i),dim6(i)] = ...
+                size(selectedNodes(i).handle.UserData.audio);
+            %                 if isfield(selectedNodes(i).handle.UserData,'bandID'
+            %                     % need to try to match bandIDs
+            %                     bandIDs{i} = selectedNodes(i).handle.UserData.bandID(:)';
+            %                 end
+        end
+    end
+    
+    % get plottype from the 'time' chart (the upper chart) in the AARAE GUI
     axes = 'time';
     plottype = get(handles.(matlab.lang.makeValidName([axes '_popup'])),'Value');
     
-    parameterstring10 = ''; 
+    parameterstring10 = '';
     switch plottype
         case 1
             figurename = 'Real amplitude';
@@ -1698,7 +1699,8 @@ if handles.compareaudio == 1
             parameterstring7;...
             parameterstring8;...
             parameterstring9;...
-            parameterstring10},...% inputdlg window.
+            parameterstring10;...
+            'Change the plot type [0 | 1]'},...% inputdlg window.
             'Data Mapping & Selection',...
             [1 90],...
             {default1;default2;default3;default4;...
@@ -1707,11 +1709,12 @@ if handles.compareaudio == 1
             defaultcycles;...
             defaultoutchans;...
             defaultdim6;...
-            defaultsmoothing});
+            defaultsmoothing;...
+            '0'});
         
         
         
-        if length(param) < 10, param = []; end
+        if length(param) < 11, param = []; end
         if ~isempty(param)
             subplotdim = str2num(char(param(1)));
             Hdim = str2num(char(param(2)));
@@ -1723,6 +1726,7 @@ if handles.compareaudio == 1
             outchanplot = str2num(char(param(8)));
             dim6plot = str2num(char(param(9)));
             smoothingmethod = str2num(char(param(10)));
+            changeplottype = str2num(char(param(11)));
         else
             % get out of here if the user presses 'cancel'
             return
@@ -1730,19 +1734,109 @@ if handles.compareaudio == 1
     else
         [subplotdim, Hdim, Sdim, Vdim, chanplot, bandplot, cycleplot,...
             outchanplot, dim6plot] = deal(1);
-        if ~isempty(parameterstring10)
-            % Dialog box for selection
-            param = inputdlg({parameterstring10},...% inputdlg window.
-                'Smoothing',...
-                [1 90],...
-                {defaultsmoothing});
-            if ~isempty(param)
-                smoothingmethod = str2num(char(param(1)));
-            else
-                smoothingmethod = str2num(defaultsmoothing);
+        
+        % Dialog box for selection
+        param = inputdlg({parameterstring10;...
+            'Change the plot type [0 | 1]'},...% inputdlg window.
+            'Smoothing & plot type',...
+            [1 90],...
+            {defaultsmoothing;'0'});
+        if ~isempty(param)
+            smoothingmethod = str2num(char(param(1)));
+            changeplottype = str2num(char(param(2)));
+        else
+            smoothingmethod = str2num(defaultsmoothing);
+        end
+    end
+    
+    if changeplottype == 1
+        str = {'1. Time - Real amplitude';...
+            '2. Time  - Squared amplitude';...
+            '3. Time - Level';...
+            '4. Time - Hilbert envelope';...
+            '5. Time - Instantaneous frequency';...
+            '6. Time - Absolute amplitude';...
+            '7. Time - Imaginary amplitude';...
+            '8. Frequency - Level';...
+            '9. Frequency - Squared magnitude';...
+            '10. Frequency - Absolute magnitude';...
+            '11. Frequency - Real';...
+            '12. Frequency - Imaginary';...
+            '13. Frequency - Phase [radians]';...
+            '14. Frequency - Unwrapped phase [radians]';...
+            '15. Frequency - Phase [degrees]';...
+            '16. Frequency - Unwrapped phase [rad/2pi]';...
+            '17. Frequency - Group delay'};
+        
+        % To Do: Put other special plots on this list. possibilities
+        % include:
+        % * Frequency - Octave band level
+        % * Frequency - 1/3-octave band level
+        % * Frequency - phase delay
+        % * Quefrency - complex / real cepstrum (might not be useful)
+        % * Spectrogram (requires quite different code, so might be
+        %      inappropriate)
+        % * Complex spectrum (using 3d plot?) - might be too slow/big
+        % * analytic signal (same issues as above)
+        % * Step response (maybe trivial in LTI)
+        % * Simple numerical comparisons (e.g. SPL - like levelstats), eg
+        %       cumulative level dist, or barplots
+        % * spectrum stats expressed graphically (centroid, stdev, etc)
+        % * Spatial analysis of multichannel signals (e.g. 2chan level diff
+        %       using a temporal integrator, HOA analysis).
+        % * Autocorrelation analysis
+        % * Special comparison analyses using a reference: level diff from
+        %       ref in time & freq, xcorr, tf, etc. However we need a way
+        %       of identifying the reference audio
+        % 
+        
+        
+        [plottypeselection,ok] = listdlg('PromptString','Select the plot type',...
+            'SelectionMode','single',...
+            'ListString',str);
+        if ok
+            plottype = plottypeselection;
+            switch plottype
+                case 1
+                    figurename = 'Real amplitude';
+                case 2
+                    figurename = 'Squared amplitude';
+                case 3
+                    figurename = 'Level [dB]';
+                case 4
+                    figurename = 'Envelope';
+                case 5
+                    figurename = 'Instantaneous frequency [Hz]';
+                case 6
+                    figurename = 'Absolute amplitude';
+                case 7
+                    figurename = 'Imaginary amplitude';
+                case 8
+                    figurename = 'Level spectrum [dB]';
+                case 9
+                    figurename = 'Squared spectrum';
+                case 10
+                    figurename = 'Absolute spectrum';
+                case 11
+                    figurename = 'Real spectrum';
+                case 12
+                    figurename = 'Imaginary spectrum';
+                case 13
+                    figurename = 'Phase spectrum [radians]';
+                case 14
+                    figurename = 'Unwrapped phase spectrum [radians]';
+                case 15
+                    figurename = 'Phase spectrum [degrees]';
+                case 16
+                    figurename = 'Unwrapped phase spectrum [rad/2pi]';
+                case 17
+                    figurename = 'Group delay [ms]';
+                otherwise
+                    figurename = '';
             end
         end
     end
+    
     % size of selected audio
     [chansselect,bandsselect,cyclesselect,outchansselect,dim6select] =...
         deal(ones(numberofnodes,1));
@@ -1793,11 +1887,11 @@ if handles.compareaudio == 1
     else
         numberofV = 1;
     end
-
+    
     [r, c] = subplotpositions(numberofsubplots, 0.5);
     linecolor = HSVplotcolours2(numberofH, numberofS, numberofV);
     
-
+    
     
     
     % make the figure
@@ -1844,17 +1938,17 @@ if handles.compareaudio == 1
             if plottype == 2
                 if smoothingmethod > 1
                     signaldata.audio = filter(ones(1,smoothingmethod)/smoothingmethod,...
-                                1,signaldata.audio.^2);
+                        1,signaldata.audio.^2);
                 else
-                signaldata.audio = signaldata.audio.^2;
+                    signaldata.audio = signaldata.audio.^2;
                 end
             end
             
             if plottype == 3
                 if smoothingmethod > 1
                     signaldata.audio = 10.*log10(...
-                    filter(ones(1,smoothingmethod)/smoothingmethod,...
-                                1,signaldata.audio.^2));
+                        filter(ones(1,smoothingmethod)/smoothingmethod,...
+                        1,signaldata.audio.^2));
                 else
                     signaldata.audio = 10.*log10(signaldata.audio.^2);
                 end
@@ -1873,7 +1967,7 @@ if handles.compareaudio == 1
                 end
                 if smoothingmethod > 1
                     signaldata.audio = filter(ones(1,smoothingmethod)/smoothingmethod,...
-                                1,signaldata.audio);
+                        1,signaldata.audio);
                 end
             end
             
@@ -1893,14 +1987,14 @@ if handles.compareaudio == 1
                 end
                 if smoothingmethod > 1
                     signaldata.audio = ...
-                            medfilt1(signaldata.audio,...
-                            smoothingmethod);
+                        medfilt1(signaldata.audio,...
+                        smoothingmethod);
                 end
             end
             if plottype == 6
                 if smoothingmethod > 1
                     signaldata.audio = filter(ones(1,smoothingmethod)/smoothingmethod,...
-                                1,abs(signaldata.audio));
+                        1,abs(signaldata.audio));
                 else
                     signaldata.audio = abs(signaldata.audio);
                 end
@@ -1930,34 +2024,34 @@ if handles.compareaudio == 1
             end
             if plottype == 8
                 if smoothingmethod < 1
-                signaldata.audio = 10*log10(abs(signaldata.audio.*spectscale).^2); 
+                    signaldata.audio = 10*log10(abs(signaldata.audio.*spectscale).^2);
                 else
                     signaldata.audio = octavesmoothing(abs(signaldata.audio).^2,...
-                    smoothingmethod, signaldata.fs);
-                        lowlimit = 128/(len(i)/signaldata.fs); % avoid very low freq hump error
-                        signaldata.audio = signaldata.audio(f>lowlimit,:,:,:,:,:);
-                        f = f(f>lowlimit);
-                        signaldata.audio = 10*log10(signaldata.audio);
+                        smoothingmethod, signaldata.fs);
+                    lowlimit = 128/(len(i)/signaldata.fs); % avoid very low freq hump error
+                    signaldata.audio = signaldata.audio(f>lowlimit,:,:,:,:,:);
+                    f = f(f>lowlimit);
+                    signaldata.audio = 10*log10(signaldata.audio);
                 end
-            end 
+            end
             if plottype == 9
                 signaldata.audio = (abs(signaldata.audio).*spectscale).^2;
                 if smoothingmethod >= 1
                     signaldata.audio = octavesmoothing(signaldata.audio,...
-                    smoothingmethod, signaldata.fs);
-                        lowlimit = 128/(len(i)/signaldata.fs); % avoid very low freq hump error
-                        signaldata.audio = signaldata.audio(f>lowlimit,:,:,:,:,:);
-                        f = f(f>lowlimit);
+                        smoothingmethod, signaldata.fs);
+                    lowlimit = 128/(len(i)/signaldata.fs); % avoid very low freq hump error
+                    signaldata.audio = signaldata.audio(f>lowlimit,:,:,:,:,:);
+                    f = f(f>lowlimit);
                 end
             end
             if plottype == 10
-                signaldata.audio = abs(signaldata.audio).*spectscale; 
+                signaldata.audio = abs(signaldata.audio).*spectscale;
                 if smoothingmethod >= 1
                     signaldata.audio = octavesmoothing(signaldata.audio,...
-                    smoothingmethod, signaldata.fs);
-                        lowlimit = 128/(len(i)/signaldata.fs); % avoid very low freq hump error
-                        signaldata.audio = signaldata.audio(f>lowlimit,:,:,:,:,:);
-                        f = f(f>lowlimit);
+                        smoothingmethod, signaldata.fs);
+                    lowlimit = 128/(len(i)/signaldata.fs); % avoid very low freq hump error
+                    signaldata.audio = signaldata.audio(f>lowlimit,:,:,:,:,:);
+                    f = f(f>lowlimit);
                 end
             end
             if plottype == 11, signaldata.audio = real(signaldata.audio).*spectscale; end
@@ -1967,23 +2061,23 @@ if handles.compareaudio == 1
             if plottype == 15, signaldata.audio = angle(signaldata.audio) .* 180/pi; end
             if plottype == 16
                 signaldata.audio = unwrap(angle(signaldata.audio)) ./(2*pi); end
-                %[signaldata.audio,f] = ...
-                %phasedelay(signaldata.audio,1,length(signaldata.audio),signaldata.fs);
-                % (just an idea)
+            %[signaldata.audio,f] = ...
+            %phasedelay(signaldata.audio,1,length(signaldata.audio),signaldata.fs);
+            % (just an idea)
             %end
             if plottype == 17
                 signaldata.audio = -diff(unwrap(angle(signaldata.audio))).*length(signaldata.audio)/(signaldata.fs*2*pi).*1000;
                 f = f(1:end-1);
             end
-%             if strcmp(get(handles.(matlab.lang.makeValidName(['smooth' axes '_popup'])),'Visible'),'on')    
-%                 smoothfactor = get(handles.(matlab.lang.makeValidName(['smooth' axes '_popup'])),'Value');
-%                 if smoothfactor == 2, octsmooth = 1; end
-%                 if smoothfactor == 3, octsmooth = 3; end
-%                 if smoothfactor == 4, octsmooth = 6; end
-%                 if smoothfactor == 5, octsmooth = 12; end
-%                 if smoothfactor == 6, octsmooth = 24; end
-%                 if smoothfactor ~= 1, signaldata.audio = octavesmoothing(signaldata.audio, octsmooth, signaldata.fs); end
-%             end
+            %             if strcmp(get(handles.(matlab.lang.makeValidName(['smooth' axes '_popup'])),'Visible'),'on')
+            %                 smoothfactor = get(handles.(matlab.lang.makeValidName(['smooth' axes '_popup'])),'Value');
+            %                 if smoothfactor == 2, octsmooth = 1; end
+            %                 if smoothfactor == 3, octsmooth = 3; end
+            %                 if smoothfactor == 4, octsmooth = 6; end
+            %                 if smoothfactor == 5, octsmooth = 12; end
+            %                 if smoothfactor == 6, octsmooth = 24; end
+            %                 if smoothfactor ~= 1, signaldata.audio = octavesmoothing(signaldata.audio, octsmooth, signaldata.fs); end
+            %             end
             
             for ch = 1:chansselect(i)
                 for b = 1:bandsselect(i)
@@ -2167,7 +2261,7 @@ if handles.compareaudio == 1
             end
         end
     end
-        
+    
     iplots = get(compplot,'Children');
     if length(iplots) > 1
         xlims = cell2mat(get(iplots,'Xlim'));
@@ -2179,145 +2273,145 @@ if handles.compareaudio == 1
             'Callback', 'setaxeslimits');
     end
     
-
+    
     % **************************************************
     % THE FOLLOWING IS THE PREVIOUS AUDIO COMPARISON PLOT
     
-%     compplot = figure;
-%     for i = 1:length(selectedNodes)
-%         linea = [];
-%         axes = 'time';
-%         signaldata = selectedNodes(i).handle.UserData;
-%         if ~isempty(signaldata) && isfield(signaldata,'audio')
-%             plottype = get(handles.(matlab.lang.makeValidName([axes '_popup'])),'Value');
-%             t = linspace(0,length(signaldata.audio),length(signaldata.audio))./signaldata.fs;
-%             f = signaldata.fs .* ((1:length(signaldata.audio))-1) ./ length(signaldata.audio);
-%             if ~ismatrix(signaldata.audio)
-%                 if ndims(signaldata.audio) == 3, cmap = colormap(hsv(size(signaldata.audio,3))); end
-%                 if ndims(signaldata.audio) >= 4, cmap = colormap(copper(size(signaldata.audio,4))); end
-%                 try
-%                     linea(:,:) = signaldata.audio(:,str2double(get(handles.IN_nchannel,'String')),:);
-%                 catch
-%                     linea = zeros(size(t));
-%                 end
-%             else
-%                 cmap = colormap(lines(size(signaldata.audio,2)));
-%                 linea = signaldata.audio;
-%             end
-%             if isfield(signaldata,'cal') && handles.Settings.calibrationtoggle == 1
-%                 if size(linea,2) == length(signaldata.cal)
-%                     signaldata.cal(isnan(signaldata.cal)) = 0;
-%                     linea = linea.*repmat(10.^(signaldata.cal(:)'./20),length(linea),1);
-%                 elseif ~ismatrix(signaldata.audio) && size(signaldata.audio,2) == length(signaldata.cal)
-%                     signaldata.cal(isnan(signaldata.cal)) = 0;
-%                     cal = repmat(signaldata.cal(str2double(get(handles.IN_nchannel,'String'))),1,size(linea,2));
-%                     linea = linea.*repmat(10.^(cal(:)'./20),length(linea),1);
-%                 end
-%             end
-%             switch handles.Settings.specmagscale;
-%                 case {'Divided by length'}
-%                     spectscale = 1./length(linea);
-%                 case {'Times sqrt2/length'}
-%                     spectscale = 2.^0.5./length(linea);
-%                 otherwise
-%                     spectscale = 1;
-%             end
-%             if plottype == 1, linea = real(linea); end
-%             if plottype == 2, linea = linea.^2; end
-%             if plottype == 3, linea = 10.*log10(linea.^2); end
-%             if plottype == 4, linea = abs(hilbert(real(linea))); end
-%             if plottype == 5, linea = medfilt1(diff([angle(hilbert(real(linea))); zeros(1,size(linea,2))])*signaldata.fs/2/pi, 5); end
-%             if plottype == 6, linea = abs(linea); end
-%             if plottype == 7, linea = imag(linea); end
-%             if plottype == 8, linea = 10*log10(abs(fft(linea).*spectscale).^2); end %freq
-%             if plottype == 9, linea = (abs(fft(linea)).*spectscale).^2; end
-%             if plottype == 10, linea = abs(fft(linea)).*spectscale; end
-%             if plottype == 11, linea = real(fft(linea)).*spectscale; end
-%             if plottype == 12, linea = imag(fft(linea)).*spectscale; end
-%             if plottype == 13, linea = angle(fft(linea)); end
-%             if plottype == 14, linea = unwrap(angle(fft(linea))); end
-%             if plottype == 15, linea = angle(fft(linea)) .* 180/pi; end
-%             if plottype == 16, linea = unwrap(angle(fft(linea))) ./(2*pi); end
-%             if plottype == 17, linea = -diff(unwrap(angle(fft(linea)))).*length(linea)/(signaldata.fs*2*pi).*1000; end
-%             if strcmp(get(handles.(matlab.lang.makeValidName(['smooth' axes '_popup'])),'Visible'),'on')
-%                 smoothfactor = get(handles.(matlab.lang.makeValidName(['smooth' axes '_popup'])),'Value');
-%                 if smoothfactor == 2, octsmooth = 1; end
-%                 if smoothfactor == 3, octsmooth = 3; end
-%                 if smoothfactor == 4, octsmooth = 6; end
-%                 if smoothfactor == 5, octsmooth = 12; end
-%                 if smoothfactor == 6, octsmooth = 24; end
-%                 if smoothfactor ~= 1, linea = octavesmoothing(linea, octsmooth, signaldata.fs); end
-%             end
-%             if length(selectedNodes) == 1
-%                 [r, c] = subplotpositions(size(linea,2), 0.5);
-%                 for j = 1:size(linea,2)
-%                     if plottype <= 7
-%                         subplot(r,c,j);
-%                         set(gca,'NextPlot','replacechildren','ColorOrder',cmap(j,:))
-%                         plot(t,real(linea(:,j))) % Plot signal in time domain
-%                         if ismatrix(signaldata.audio) && isfield(signaldata,'chanID'), title(signaldata.chanID{j,1}); end
-%                         if ~ismatrix(signaldata.audio) && isfield(signaldata,'bandID'), title(num2str(signaldata.bandID(1,j))); end
-%                         xlabel('Time [s]');
-%                     end
-%                     if plottype >= 8
-%                         h = subplot(r,c,j);
-%                         set(gca,'NextPlot','replacechildren','ColorOrder',cmap(j,:))
-%                         plot(f(1:length(linea(:,j))),linea(:,j));% Plot signal in frequency domain
-%                         if ismatrix(signaldata.audio) && isfield(signaldata,'chanID'), title(signaldata.chanID{j,1}); end
-%                         if ~ismatrix(signaldata.audio) && isfield(signaldata,'bandID'), title(num2str(signaldata.bandID(1,j))); end
-%                         xlabel('Frequency [Hz]');
-%                         if ischar(handles.Settings.frequencylimits)
-%                             xlim([f(2) signaldata.fs/2])
-%                         else
-%                             xlim(handles.Settings.frequencylimits)
-%                         end
-%                         log_check = get(handles.(matlab.lang.makeValidName(['log' axes '_chk'])),'Value');
-%                         if log_check == 1
-%                             set(h,'XScale','log')
-%                         else
-%                             set(h,'XScale','linear','XTickLabelMode','auto')
-%                         end
-%                     end
-%                 end
-%             else
-%                 if plottype <= 7
-%                     subplot(length(selectedNodes),1,i);
-%                     set(gca,'NextPlot','replacechildren','ColorOrder',cmap)
-%                     plot(t,real(linea)) % Plot signal in time domain
-%                     title(strrep(selectedNodes(i).getName.char,'_',' '))
-%                     xlabel('Time [s]');
-%                 end
-%                 if plottype >= 8
-%                     h = subplot(length(selectedNodes),1,i);
-%                     set(gca,'NextPlot','replacechildren','ColorOrder',cmap)
-%                     plot(f(1:length(linea)),linea);% Plot signal in frequency domain
-%                     title(strrep(selectedNodes(i).getName.char,'_',' '))
-%                     xlabel('Frequency [Hz]');
-%                     if ischar(handles.Settings.frequencylimits)
-%                         xlim([f(2) signaldata.fs/2])
-%                     else
-%                         xlim(handles.Settings.frequencylimits)
-%                     end
-%                     log_check = get(handles.(matlab.lang.makeValidName(['log' axes '_chk'])),'Value');
-%                     if log_check == 1
-%                         set(h,'XScale','log')
-%                     else
-%                         set(h,'XScale','linear','XTickLabelMode','auto')
-%                     end
-%                 end
-%             end
-%         end
-%     end
-%     iplots = get(compplot,'Children');
-%     if length(iplots) > 1
-%         xlims = cell2mat(get(iplots,'Xlim'));
-%         set(iplots,'Xlim',[min(xlims(:,1)) max(xlims(:,2))])
-%         ylims = cell2mat(get(iplots,'Ylim'));
-%         set(iplots,'Ylim',[min(ylims(:,1)) max(ylims(:,2))])
-%         uicontrol('Style', 'pushbutton', 'String', 'Axes limits',...
-%             'Position', [0 0 65 30],...
-%             'Callback', 'setaxeslimits');
-%     end
+    %     compplot = figure;
+    %     for i = 1:length(selectedNodes)
+    %         linea = [];
+    %         axes = 'time';
+    %         signaldata = selectedNodes(i).handle.UserData;
+    %         if ~isempty(signaldata) && isfield(signaldata,'audio')
+    %             plottype = get(handles.(matlab.lang.makeValidName([axes '_popup'])),'Value');
+    %             t = linspace(0,length(signaldata.audio),length(signaldata.audio))./signaldata.fs;
+    %             f = signaldata.fs .* ((1:length(signaldata.audio))-1) ./ length(signaldata.audio);
+    %             if ~ismatrix(signaldata.audio)
+    %                 if ndims(signaldata.audio) == 3, cmap = colormap(hsv(size(signaldata.audio,3))); end
+    %                 if ndims(signaldata.audio) >= 4, cmap = colormap(copper(size(signaldata.audio,4))); end
+    %                 try
+    %                     linea(:,:) = signaldata.audio(:,str2double(get(handles.IN_nchannel,'String')),:);
+    %                 catch
+    %                     linea = zeros(size(t));
+    %                 end
+    %             else
+    %                 cmap = colormap(lines(size(signaldata.audio,2)));
+    %                 linea = signaldata.audio;
+    %             end
+    %             if isfield(signaldata,'cal') && handles.Settings.calibrationtoggle == 1
+    %                 if size(linea,2) == length(signaldata.cal)
+    %                     signaldata.cal(isnan(signaldata.cal)) = 0;
+    %                     linea = linea.*repmat(10.^(signaldata.cal(:)'./20),length(linea),1);
+    %                 elseif ~ismatrix(signaldata.audio) && size(signaldata.audio,2) == length(signaldata.cal)
+    %                     signaldata.cal(isnan(signaldata.cal)) = 0;
+    %                     cal = repmat(signaldata.cal(str2double(get(handles.IN_nchannel,'String'))),1,size(linea,2));
+    %                     linea = linea.*repmat(10.^(cal(:)'./20),length(linea),1);
+    %                 end
+    %             end
+    %             switch handles.Settings.specmagscale;
+    %                 case {'Divided by length'}
+    %                     spectscale = 1./length(linea);
+    %                 case {'Times sqrt2/length'}
+    %                     spectscale = 2.^0.5./length(linea);
+    %                 otherwise
+    %                     spectscale = 1;
+    %             end
+    %             if plottype == 1, linea = real(linea); end
+    %             if plottype == 2, linea = linea.^2; end
+    %             if plottype == 3, linea = 10.*log10(linea.^2); end
+    %             if plottype == 4, linea = abs(hilbert(real(linea))); end
+    %             if plottype == 5, linea = medfilt1(diff([angle(hilbert(real(linea))); zeros(1,size(linea,2))])*signaldata.fs/2/pi, 5); end
+    %             if plottype == 6, linea = abs(linea); end
+    %             if plottype == 7, linea = imag(linea); end
+    %             if plottype == 8, linea = 10*log10(abs(fft(linea).*spectscale).^2); end %freq
+    %             if plottype == 9, linea = (abs(fft(linea)).*spectscale).^2; end
+    %             if plottype == 10, linea = abs(fft(linea)).*spectscale; end
+    %             if plottype == 11, linea = real(fft(linea)).*spectscale; end
+    %             if plottype == 12, linea = imag(fft(linea)).*spectscale; end
+    %             if plottype == 13, linea = angle(fft(linea)); end
+    %             if plottype == 14, linea = unwrap(angle(fft(linea))); end
+    %             if plottype == 15, linea = angle(fft(linea)) .* 180/pi; end
+    %             if plottype == 16, linea = unwrap(angle(fft(linea))) ./(2*pi); end
+    %             if plottype == 17, linea = -diff(unwrap(angle(fft(linea)))).*length(linea)/(signaldata.fs*2*pi).*1000; end
+    %             if strcmp(get(handles.(matlab.lang.makeValidName(['smooth' axes '_popup'])),'Visible'),'on')
+    %                 smoothfactor = get(handles.(matlab.lang.makeValidName(['smooth' axes '_popup'])),'Value');
+    %                 if smoothfactor == 2, octsmooth = 1; end
+    %                 if smoothfactor == 3, octsmooth = 3; end
+    %                 if smoothfactor == 4, octsmooth = 6; end
+    %                 if smoothfactor == 5, octsmooth = 12; end
+    %                 if smoothfactor == 6, octsmooth = 24; end
+    %                 if smoothfactor ~= 1, linea = octavesmoothing(linea, octsmooth, signaldata.fs); end
+    %             end
+    %             if length(selectedNodes) == 1
+    %                 [r, c] = subplotpositions(size(linea,2), 0.5);
+    %                 for j = 1:size(linea,2)
+    %                     if plottype <= 7
+    %                         subplot(r,c,j);
+    %                         set(gca,'NextPlot','replacechildren','ColorOrder',cmap(j,:))
+    %                         plot(t,real(linea(:,j))) % Plot signal in time domain
+    %                         if ismatrix(signaldata.audio) && isfield(signaldata,'chanID'), title(signaldata.chanID{j,1}); end
+    %                         if ~ismatrix(signaldata.audio) && isfield(signaldata,'bandID'), title(num2str(signaldata.bandID(1,j))); end
+    %                         xlabel('Time [s]');
+    %                     end
+    %                     if plottype >= 8
+    %                         h = subplot(r,c,j);
+    %                         set(gca,'NextPlot','replacechildren','ColorOrder',cmap(j,:))
+    %                         plot(f(1:length(linea(:,j))),linea(:,j));% Plot signal in frequency domain
+    %                         if ismatrix(signaldata.audio) && isfield(signaldata,'chanID'), title(signaldata.chanID{j,1}); end
+    %                         if ~ismatrix(signaldata.audio) && isfield(signaldata,'bandID'), title(num2str(signaldata.bandID(1,j))); end
+    %                         xlabel('Frequency [Hz]');
+    %                         if ischar(handles.Settings.frequencylimits)
+    %                             xlim([f(2) signaldata.fs/2])
+    %                         else
+    %                             xlim(handles.Settings.frequencylimits)
+    %                         end
+    %                         log_check = get(handles.(matlab.lang.makeValidName(['log' axes '_chk'])),'Value');
+    %                         if log_check == 1
+    %                             set(h,'XScale','log')
+    %                         else
+    %                             set(h,'XScale','linear','XTickLabelMode','auto')
+    %                         end
+    %                     end
+    %                 end
+    %             else
+    %                 if plottype <= 7
+    %                     subplot(length(selectedNodes),1,i);
+    %                     set(gca,'NextPlot','replacechildren','ColorOrder',cmap)
+    %                     plot(t,real(linea)) % Plot signal in time domain
+    %                     title(strrep(selectedNodes(i).getName.char,'_',' '))
+    %                     xlabel('Time [s]');
+    %                 end
+    %                 if plottype >= 8
+    %                     h = subplot(length(selectedNodes),1,i);
+    %                     set(gca,'NextPlot','replacechildren','ColorOrder',cmap)
+    %                     plot(f(1:length(linea)),linea);% Plot signal in frequency domain
+    %                     title(strrep(selectedNodes(i).getName.char,'_',' '))
+    %                     xlabel('Frequency [Hz]');
+    %                     if ischar(handles.Settings.frequencylimits)
+    %                         xlim([f(2) signaldata.fs/2])
+    %                     else
+    %                         xlim(handles.Settings.frequencylimits)
+    %                     end
+    %                     log_check = get(handles.(matlab.lang.makeValidName(['log' axes '_chk'])),'Value');
+    %                     if log_check == 1
+    %                         set(h,'XScale','log')
+    %                     else
+    %                         set(h,'XScale','linear','XTickLabelMode','auto')
+    %                     end
+    %                 end
+    %             end
+    %         end
+    %     end
+    %     iplots = get(compplot,'Children');
+    %     if length(iplots) > 1
+    %         xlims = cell2mat(get(iplots,'Xlim'));
+    %         set(iplots,'Xlim',[min(xlims(:,1)) max(xlims(:,2))])
+    %         ylims = cell2mat(get(iplots,'Ylim'));
+    %         set(iplots,'Ylim',[min(ylims(:,1)) max(ylims(:,2))])
+    %         uicontrol('Style', 'pushbutton', 'String', 'Axes limits',...
+    %             'Position', [0 0 65 30],...
+    %             'Callback', 'setaxeslimits');
+    %     end
     
     % **************************************************
     
@@ -2885,11 +2979,11 @@ for nleafs = 1:length(selectedNodes)
         set(handles.result_box,'String',[' ';cellstr({results(3:length(results)).name}')]);
     end
     if length(selectedNodes) > 1, delete(h); end
-    set(hObject,'BackgroundColor',[0.94 0.94 0.94]);
+end
+set(hObject,'BackgroundColor',[0.94 0.94 0.94]);
     set(hObject,'Enable','on');
-    if ~isempty(newleaf{1,1})
+if ~isempty(newleaf{1,1})
         handles.mytree.setSelectedNode(handles.(matlab.lang.makeValidName(newleaf{1,1})));
-    end
 end
 set(handles.CloseFiguresButton,'Enable','on');
 java.lang.Runtime.getRuntime.gc % Java garbage collection
