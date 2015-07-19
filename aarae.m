@@ -1781,6 +1781,7 @@ if handles.compareaudio == 1
         % * Step response (maybe trivial in LTI)
         % * Simple numerical comparisons (e.g. SPL - like levelstats), eg
         %       cumulative level dist, or barplots
+        %
         % * spectrum stats expressed graphically (centroid, stdev, etc)
         % * Spatial analysis of multichannel signals (e.g. 2chan level diff
         %       using a temporal integrator, HOA analysis).
@@ -1790,6 +1791,14 @@ if handles.compareaudio == 1
         %       of identifying the reference audio
         % 
         
+        
+        %  % LEVEL CUMULATIVE DISTRIBUTION
+        %  signaldata.audio = sort(10*log10(signaldata.audio.^2));
+        %
+        %  % STEP FUNCTION
+        %  signaldata.audio =
+        %  ifft(fft(signaldata.audio,len*2-1).*fft(ones(len,1),len*2-1);
+        %  signaldata.audio = signaldata.audio(1:len,:,:,:,:,:);
         
         [plottypeselection,ok] = listdlg('PromptString','Select the plot type',...
             'SelectionMode','single',...
@@ -2013,8 +2022,8 @@ if handles.compareaudio == 1
                             for d4 = 1:cyclesselect(i)
                                 for d5 = 1:outchansselect(i)
                                     for d6 = 1:dim6select(i)
-                                        signaldata.audio(:,:,b,d4,d5,d6) = ...
-                                            fft(signaldata.audio(:,:,b,d4,d5,d6));
+                                        signaldata.audio(:,ch,b,d4,d5,d6) = ...
+                                            fft(signaldata.audio(:,ch,b,d4,d5,d6));
                                     end
                                 end
                             end
@@ -2024,10 +2033,22 @@ if handles.compareaudio == 1
             end
             if plottype == 8
                 if smoothingmethod < 1
-                    signaldata.audio = 10*log10(abs(signaldata.audio.*spectscale).^2);
+                    
+                    signaldata.audio =...
+                        10*log10(abs(signaldata.audio.*spectscale).^2);
+                    
                 else
-                    signaldata.audio = octavesmoothing(abs(signaldata.audio).^2,...
-                        smoothingmethod, signaldata.fs);
+                    for b = 1:bandsselect(i)
+                        for d4 = 1:cyclesselect(i)
+                            for d5 = 1:outchansselect(i)
+                                for d6 = 1:dim6select(i)
+                                    % need to vectorize octavesmoothing!
+                                    signaldata.audio(:,:,b,d4,d5,d6) = octavesmoothing(abs(signaldata.audio(:,:,b,d4,d5,d6)).^2,...
+                                        smoothingmethod, signaldata.fs);
+                                end
+                            end
+                        end
+                    end
                     lowlimit = 128/(len(i)/signaldata.fs); % avoid very low freq hump error
                     signaldata.audio = signaldata.audio(f>lowlimit,:,:,:,:,:);
                     f = f(f>lowlimit);
@@ -2037,8 +2058,17 @@ if handles.compareaudio == 1
             if plottype == 9
                 signaldata.audio = (abs(signaldata.audio).*spectscale).^2;
                 if smoothingmethod >= 1
-                    signaldata.audio = octavesmoothing(signaldata.audio,...
-                        smoothingmethod, signaldata.fs);
+                    for b = 1:bandsselect(i)
+                        for d4 = 1:cyclesselect(i)
+                            for d5 = 1:outchansselect(i)
+                                for d6 = 1:dim6select(i)
+                                    % need to vectorize octavesmoothing!
+                                    signaldata.audio(:,:,b,d4,d5,d6) = octavesmoothing(signaldata.audio(:,:,b,d4,d5,d6),...
+                                        smoothingmethod, signaldata.fs);
+                                end
+                            end
+                        end
+                    end
                     lowlimit = 128/(len(i)/signaldata.fs); % avoid very low freq hump error
                     signaldata.audio = signaldata.audio(f>lowlimit,:,:,:,:,:);
                     f = f(f>lowlimit);
@@ -2047,8 +2077,17 @@ if handles.compareaudio == 1
             if plottype == 10
                 signaldata.audio = abs(signaldata.audio).*spectscale;
                 if smoothingmethod >= 1
-                    signaldata.audio = octavesmoothing(signaldata.audio,...
-                        smoothingmethod, signaldata.fs);
+                    for b = 1:bandsselect(i)
+                        for d4 = 1:cyclesselect(i)
+                            for d5 = 1:outchansselect(i)
+                                for d6 = 1:dim6select(i)
+                                    % need to vectorize octavesmoothing!
+                                    signaldata.audio(:,:,b,d4,d5,d6) = octavesmoothing(signaldata.audio(:,:,b,d4,d5,d6),...
+                                        smoothingmethod, signaldata.fs);
+                                end
+                            end
+                        end
+                    end
                     lowlimit = 128/(len(i)/signaldata.fs); % avoid very low freq hump error
                     signaldata.audio = signaldata.audio(f>lowlimit,:,:,:,:,:);
                     f = f(f>lowlimit);
@@ -2988,7 +3027,6 @@ end
 set(handles.CloseFiguresButton,'Enable','on');
 java.lang.Runtime.getRuntime.gc % Java garbage collection
 guidata(hObject,handles);
-%disp('hello')
 
 
 
