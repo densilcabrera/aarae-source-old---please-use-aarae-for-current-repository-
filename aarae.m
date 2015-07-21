@@ -2954,10 +2954,14 @@ for nleafs = 1:length(selectedNodes)
             handles.(matlab.lang.makeValidName(newleaf{1,1})) = uitreenode('v0', newleaf{1,1},  newleaf{1,1},  iconPath, true);
             handles.(matlab.lang.makeValidName(newleaf{1,1})).UserData = newdata;
             handles.testsignals.add(handles.(matlab.lang.makeValidName(newleaf{1,1})));
+            handles.mytree.reloadNode(handles.testsignals);
+            handles.mytree.expand(handles.testsignals);
         elseif strcmp(newdata.datatype,'measurements')
             handles.(matlab.lang.makeValidName(newleaf{1,1})) = uitreenode('v0', newleaf{1,1},  newleaf{1,1},  iconPath, true);
             handles.(matlab.lang.makeValidName(newleaf{1,1})).UserData = newdata;
             handles.measurements.add(handles.(matlab.lang.makeValidName(newleaf{1,1})));
+            handles.mytree.reloadNode(handles.measurements);
+            handles.mytree.expand(handles.measurements);
         elseif strcmp(newdata.datatype,'results')
             if isfield(newdata,'audio')
                 iconPath = fullfile(matlabroot,'/toolbox/fixedpoint/fixedpointtool/resources/plot.png');
@@ -2969,21 +2973,15 @@ for nleafs = 1:length(selectedNodes)
             handles.(matlab.lang.makeValidName(newleaf{1,1})) = uitreenode('v0', newleaf{1,1},  newleaf{1,1},  iconPath, true);
             handles.(matlab.lang.makeValidName(newleaf{1,1})).UserData = newdata;
             handles.results.add(handles.(matlab.lang.makeValidName(newleaf{1,1})));
+            handles.mytree.reloadNode(handles.results);
+            handles.mytree.expand(handles.results);
         else
             handles.(matlab.lang.makeValidName(newleaf{1,1})) = uitreenode('v0', newleaf{1,1},  newleaf{1,1},  iconPath, true);
             handles.(matlab.lang.makeValidName(newleaf{1,1})).UserData = newdata;
             handles.processed.add(handles.(matlab.lang.makeValidName(newleaf{1,1})));
+            handles.mytree.reloadNode(handles.processed);
+            handles.mytree.expand(handles.processed);
         end
-        
-        handles.mytree.reloadNode(handles.testsignals);
-        handles.mytree.expand(handles.testsignals);
-        handles.mytree.reloadNode(handles.measurements);
-        handles.mytree.expand(handles.measurements);
-        handles.mytree.reloadNode(handles.processed);
-        handles.mytree.expand(handles.processed);
-        handles.mytree.reloadNode(handles.results);
-        handles.mytree.expand(handles.results);
-
         fprintf(handles.fid, ['%% ' datestr(now,16) ' - Ran ' newdata.funcallback.inarg{1,1} ' (AARAE workflow)\n']);
         % Log verbose metadata
         %callbackstring = logaudioleaffields(newdata);
@@ -3053,9 +3051,9 @@ for nleafs = 1:length(selectedNodes)
 end
 set(hObject,'BackgroundColor',[0.94 0.94 0.94]);
 set(hObject,'Enable','on');
-if ~isempty(newleaf{1,1})
-    handles.mytree.setSelectedNode(handles.(matlab.lang.makeValidName(newleaf{1,1})));
-end
+% if ~isempty(newleaf{1,1})
+%     handles.mytree.setSelectedNode(handles.(matlab.lang.makeValidName(newleaf{1,1})));
+% end
 set([handles.clrall_btn,handles.export_btn],'Enable','on')
 set(handles.CloseFiguresButton,'Enable','on');
 java.lang.Runtime.getRuntime.gc % Java garbage collection
