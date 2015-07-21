@@ -1766,7 +1766,12 @@ if handles.compareaudio == 1
             '14. Frequency - Unwrapped phase [radians]';...
             '15. Frequency - Phase [degrees]';...
             '16. Frequency - Unwrapped phase [rad/2pi]';...
-            '17. Frequency - Group delay'};
+            '17. Frequency - Group delay';...
+            '18. Cumulative time-distribution of real amplitude';...
+            '19. Cumulative time-distribution of level';...
+            '20. Cumulative time-distribution of Hilbert envelope'};
+
+            
         
         % To Do: Put other special plots on this list. possibilities
         % include:
@@ -1791,18 +1796,25 @@ if handles.compareaudio == 1
         %       of identifying the reference audio
         % 
         
-        
+        %  % AMPLITUDE CUMULATIVE DISTRIBUTION
+        %  signaldata.audio = sort(signaldata.audio);
         %  % LEVEL CUMULATIVE DISTRIBUTION
         %  signaldata.audio = sort(10*log10(signaldata.audio.^2));
         %
-        %  % STEP FUNCTION
+        %  % STEP FUNCTION (if input is IR)
         %  signaldata.audio =
         %  ifft(fft(signaldata.audio,len*2-1).*fft(ones(len,1),len*2-1);
         %  signaldata.audio = signaldata.audio(1:len,:,:,:,:,:);
+        % % PHASE DELAY
+        %[signaldata.audio,f] = ...
+            %phasedelay(signaldata.audio,1,length(signaldata.audio),signaldata.fs);
+            % (just an idea)
+            %end
         
         [plottypeselection,ok] = listdlg('PromptString','Select the plot type',...
             'SelectionMode','single',...
-            'ListString',str);
+            'ListString',str,...
+            'ListSize', [400,400]);
         if ok
             plottype = plottypeselection;
             switch plottype
@@ -1840,6 +1852,12 @@ if handles.compareaudio == 1
                     figurename = 'Unwrapped phase spectrum [rad/2pi]';
                 case 17
                     figurename = 'Group delay [ms]';
+                case 18
+                    figurename = 'Cumulative time distribution (real amplitude)';
+                case 19
+                    figurename = 'Cumulative time distribution [dB]';
+                case 20
+                    figurename = 'Cumulative time distribution (Hilbert envelope)';
                 otherwise
                     figurename = '';
             end
@@ -2011,7 +2029,10 @@ if handles.compareaudio == 1
             if plottype == 7
                 signaldata.audio = imag(signaldata.audio);
             end
-            if plottype >= 8,
+            if plottype == 8 || plottype == 9 || plottype == 10 ||...
+                    plottype == 11 || plottype == 12 || plottype == 13 ||...
+                    plottype == 14 || plottype == 15 || plottype ==16 ||...
+                    plottype == 17
                 % try to avoid out-of-memory error by limiting the maximum
                 % size of the fft).
                 if numel(signaldata.audio) < 1e6
@@ -2100,14 +2121,27 @@ if handles.compareaudio == 1
             if plottype == 15, signaldata.audio = angle(signaldata.audio) .* 180/pi; end
             if plottype == 16
                 signaldata.audio = unwrap(angle(signaldata.audio)) ./(2*pi); end
-            %[signaldata.audio,f] = ...
-            %phasedelay(signaldata.audio,1,length(signaldata.audio),signaldata.fs);
-            % (just an idea)
-            %end
+            
             if plottype == 17
                 signaldata.audio = -diff(unwrap(angle(signaldata.audio))).*length(signaldata.audio)/(signaldata.fs*2*pi).*1000;
                 f = f(1:end-1);
             end
+            if plottype == 18, signaldata.audio = sort(real(signaldata.audio)); end
+            if plottype == 19, signaldata.audio = sort(10*log10(abs(signaldata.audio).^2)); end
+            if plottype == 20
+                for b = 1:bandsselect(i)
+                    for d4 = 1:cyclesselect(i)
+                        for d5 = 1:outchansselect(i)
+                            for d6 = 1:dim6select(i)
+                                signaldata.audio(:,:,b,d4,d5,d6) = ...
+                                    hilbert(real(signaldata.audio(:,:,b,d4,d5,d6)));
+                            end
+                        end
+                    end
+                end
+                signaldata.audio = sort(abs(signaldata.audio));
+            end
+            
             %             if strcmp(get(handles.(matlab.lang.makeValidName(['smooth' axes '_popup'])),'Visible'),'on')
             %                 smoothfactor = get(handles.(matlab.lang.makeValidName(['smooth' axes '_popup'])),'Value');
             %                 if smoothfactor == 2, octsmooth = 1; end
@@ -2129,7 +2163,7 @@ if handles.compareaudio == 1
                                     case 1
                                         plotnum = i;
                                         if isfield(signaldata,'name')
-                                            titlestring = signaldata.name;
+                                            titlestring = strrep(signaldata.name,'_',' ');
                                         end
                                         if max(chansselect(i)) > 1
                                             if isfield(signaldata,'chanID')
@@ -2263,7 +2297,7 @@ if handles.compareaudio == 1
                                     otherwise
                                         Vind = 1;
                                 end
-                                if plottype <= 7
+                                if plottype <= 7 || plottype == 18 || plottype == 19 || plottype == 20
                                     subplot(r,c,plotnum)
                                     plot(t,real(signaldata.audio(:,ch,b,d4,d5,d6)), ...
                                         'color',permute(linecolor(Hind,Sind,Vind,:),[1,4,2,3]),...
@@ -2838,8 +2872,10 @@ for nleafs = 1:length(selectedNodes)
         name = [];
         errorflag = false;
         funname = 'AARAE_workflow_processor';
+        guidata(hObject,handles)
         try
             processed = feval(funname,[]);
+            %handles = guidata(hObject,handles);
             if isfield(processed,'funcallback')
                 funcallback = processed.funcallback;
                 [~,funcallback.name] = fileparts(funcallback.name);
@@ -2855,6 +2891,8 @@ for nleafs = 1:length(selectedNodes)
             errorflag = true;
         end
     end
+    aarae_fig = findobj('Tag','aarae');
+    handles = guidata(aarae_fig);
     if ~isempty(processed)
         % Generate new leaf and update tree
         newleaf = cell(1,1);
@@ -2911,22 +2949,15 @@ for nleafs = 1:length(selectedNodes)
         
         % Save as you go
         save([cd '/Utilities/Backup/' newleaf{1,1} '.mat'], 'newdata','-v7.3');
-        
-        
+
         if strcmp(newdata.datatype,'testsignals')
             handles.(matlab.lang.makeValidName(newleaf{1,1})) = uitreenode('v0', newleaf{1,1},  newleaf{1,1},  iconPath, true);
             handles.(matlab.lang.makeValidName(newleaf{1,1})).UserData = newdata;
             handles.testsignals.add(handles.(matlab.lang.makeValidName(newleaf{1,1})));
-            handles.mytree.reloadNode(handles.testsignals);
-            handles.mytree.expand(handles.testsignals);
-            set([handles.clrall_btn,handles.export_btn],'Enable','on')
         elseif strcmp(newdata.datatype,'measurements')
             handles.(matlab.lang.makeValidName(newleaf{1,1})) = uitreenode('v0', newleaf{1,1},  newleaf{1,1},  iconPath, true);
             handles.(matlab.lang.makeValidName(newleaf{1,1})).UserData = newdata;
             handles.measurements.add(handles.(matlab.lang.makeValidName(newleaf{1,1})));
-            handles.mytree.reloadNode(handles.measurements);
-            handles.mytree.expand(handles.measurements);
-            set([handles.clrall_btn,handles.export_btn],'Enable','on')
         elseif strcmp(newdata.datatype,'results')
             if isfield(newdata,'audio')
                 iconPath = fullfile(matlabroot,'/toolbox/fixedpoint/fixedpointtool/resources/plot.png');
@@ -2938,18 +2969,21 @@ for nleafs = 1:length(selectedNodes)
             handles.(matlab.lang.makeValidName(newleaf{1,1})) = uitreenode('v0', newleaf{1,1},  newleaf{1,1},  iconPath, true);
             handles.(matlab.lang.makeValidName(newleaf{1,1})).UserData = newdata;
             handles.results.add(handles.(matlab.lang.makeValidName(newleaf{1,1})));
-            handles.mytree.reloadNode(handles.results);
-            handles.mytree.expand(handles.results);
-            set([handles.clrall_btn,handles.export_btn],'Enable','on')
         else
             handles.(matlab.lang.makeValidName(newleaf{1,1})) = uitreenode('v0', newleaf{1,1},  newleaf{1,1},  iconPath, true);
             handles.(matlab.lang.makeValidName(newleaf{1,1})).UserData = newdata;
             handles.processed.add(handles.(matlab.lang.makeValidName(newleaf{1,1})));
-            handles.mytree.reloadNode(handles.processed);
-            handles.mytree.expand(handles.processed);
-            set([handles.clrall_btn,handles.export_btn],'Enable','on')
         end
         
+        handles.mytree.reloadNode(handles.testsignals);
+        handles.mytree.expand(handles.testsignals);
+        handles.mytree.reloadNode(handles.measurements);
+        handles.mytree.expand(handles.measurements);
+        handles.mytree.reloadNode(handles.processed);
+        handles.mytree.expand(handles.processed);
+        handles.mytree.reloadNode(handles.results);
+        handles.mytree.expand(handles.results);
+
         fprintf(handles.fid, ['%% ' datestr(now,16) ' - Ran ' newdata.funcallback.inarg{1,1} ' (AARAE workflow)\n']);
         % Log verbose metadata
         %callbackstring = logaudioleaffields(newdata);
@@ -2960,12 +2994,10 @@ for nleafs = 1:length(selectedNodes)
     else
         newleaf{1,1} = [];
     end
-    
     if errorflag
         h=warndlg('One or more attempts to run a workflow processor failed due to an error. Please refer to the error report in the Matlab Command Window.','AARAE info','modal');
         uiwait(h)
     end
-    
     h = findobj('type','figure','-not','tag','aarae');
     if ~isempty(h)
         %         index = 1;
@@ -3020,10 +3052,11 @@ for nleafs = 1:length(selectedNodes)
     if length(selectedNodes) > 1, delete(h); end
 end
 set(hObject,'BackgroundColor',[0.94 0.94 0.94]);
-    set(hObject,'Enable','on');
+set(hObject,'Enable','on');
 if ~isempty(newleaf{1,1})
-        handles.mytree.setSelectedNode(handles.(matlab.lang.makeValidName(newleaf{1,1})));
+    handles.mytree.setSelectedNode(handles.(matlab.lang.makeValidName(newleaf{1,1})));
 end
+set([handles.clrall_btn,handles.export_btn],'Enable','on')
 set(handles.CloseFiguresButton,'Enable','on');
 java.lang.Runtime.getRuntime.gc % Java garbage collection
 guidata(hObject,handles);
@@ -3209,6 +3242,8 @@ for nleafs = 1:length(selectedNodes)
             else
                 processed = [];
             end
+            aarae_fig = findobj('Tag','aarae');
+            handles = guidata(aarae_fig);
             if ~isempty(processed)
                 % Generate new leaf and update tree
                 newleaf = cell(1,1);
@@ -3377,9 +3412,9 @@ for nleafs = 1:length(selectedNodes)
     if length(selectedNodes) > 1 || size(file,1) > 1, delete(h); end
     set(hObject,'BackgroundColor',[0.94 0.94 0.94]);
     set(hObject,'Enable','on');
-    if ~isempty(newleaf{1,1})
-        handles.mytree.setSelectedNode(handles.(matlab.lang.makeValidName(newleaf{1,1})));
-    end
+end
+if ~isempty(newleaf{1,1})
+    handles.mytree.setSelectedNode(handles.(matlab.lang.makeValidName(newleaf{1,1})));
 end
 set(handles.CloseFiguresButton,'Enable','on');
 java.lang.Runtime.getRuntime.gc % Java garbage collection
