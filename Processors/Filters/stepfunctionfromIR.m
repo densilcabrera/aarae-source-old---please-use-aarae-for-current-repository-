@@ -1,21 +1,61 @@
-function OUT = stepfunctionfromIR(IN)
+function OUT = stepfunctionfromIR(IN,dur,method,fs)
 % This function filters the input audio with ones, matching the length of
 % the input. Hence it may be used to derive the step function from an
 % impulse response. 
+%
+% INPUTS:
+% dur - output duration (and length of the ones vector) in seconds
+%
+% method - either filter in the time domain (method 1) or multiply in the
+% frequency domain (method 2). Method 2 is usually faster (but uses more
+% memory)
+%
+% fs -  audio sampling rate
 
 
 if isstruct(IN) 
     audio = IN.audio;
+    fs = IN.fs;
 elseif  nargin > 1
     audio = IN;
 end
-if ~isempty(audio)
-    audio = filter(ones(size(audio,1),1),1,audio);
+[len,chans,bands,dim4,dim5,dim6] = size(audio);
+if nargin ==1 
+    param = inputdlg({'Output duration';... 
+        'Method: Filter with ones [1], Frequency domain multiplication [2]'},...
+        'Step Function from IR Settings',...
+        [1 60],...
+        {num2str(len./fs);'2'});
+    param = str2num(char(param)); 
+    if length(param) < 2, param = []; end 
+    if ~isempty(param) 
+        dur = param(1);
+        method = param(2);
+    else
+        OUT = [];
+        return
+    end
+end
+
+
+if ~isempty(audio) && ~isempty(method)
+    outlen = round(dur*fs);
+    if outlen < len
+        audio = audio(1:outlen,:,:,:,:,:);
+    elseif outlen > len
+        audio = [audio;zeros(outlen-len,chans,bands,dim4,dim5,dim6)];
+    end
+    if method == 2
+        audio = ifft(fft(audio,2*outlen) .* fft(ones(size(audio)),2*outlen));
+        audio = audio(1:outlen,:,:,:,:,:);
+    else
+        audio = filter(ones(outlen,1),1,audio);
+    end
     if isstruct(IN)
         OUT = IN; 
         OUT.audio = audio; 
         OUT.funcallback.name = 'stepfunctionfromIR.m'; 
-        OUT.funcallback.inarg = {}; 
+        OUT.funcallback.inarg = {dur,method,fs}; 
     else
         OUT = audio;
     end

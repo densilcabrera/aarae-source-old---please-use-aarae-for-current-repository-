@@ -3051,6 +3051,7 @@ for nleafs = 1:length(selectedNodes)
 end
 set(hObject,'BackgroundColor',[0.94 0.94 0.94]);
 set(hObject,'Enable','on');
+% The following causes problems, so we won't change the selected node
 % if ~isempty(newleaf{1,1})
 %     handles.mytree.setSelectedNode(handles.(matlab.lang.makeValidName(newleaf{1,1})));
 % end
