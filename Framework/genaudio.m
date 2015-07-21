@@ -197,7 +197,8 @@ else
     setappdata(hMain,'testsignal',handles.signaldata);
     if isfield(handles.signaldata,'audio2')
         h = msgbox('Companion signal loaded into audio2','AARAE info','modal');
-        uiwait(h);
+        uiwait(h,1.5);
+        delete(h);
     end
 end
 guidata(hObject,handles);
