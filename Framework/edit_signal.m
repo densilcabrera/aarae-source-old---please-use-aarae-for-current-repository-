@@ -992,7 +992,7 @@ else
 end
 % handles.testsignal.name = [handles.selNodeName '_edit'];
 % fprintf(handles.fid,['%% New name: ', [handles.selNodeName '_edit'],'\n']);
-handles.testsignal.name = handles.selNodeName;
+handles.testsignal(2).name = handles.selNodeName;
 fprintf(handles.fid,['%% New name: ', handles.selNodeName,'\n']);
 guidata(hObject,handles)
 
