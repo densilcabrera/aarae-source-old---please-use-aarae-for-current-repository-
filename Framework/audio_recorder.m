@@ -308,7 +308,7 @@ if get(handles.SilenceRequestCheckBox,'Value') == 1
     % Initialize playback routine
     pause on
         %UserData = get(handles.stop_btn,'UserData');
-        h = helpdlg('Silence request','AARAE info');
+        h = helpdlg('Silence request. Press OK to start recording.','AARAE info');
         for i = 1:ncycles
            UserData = get(handles.stop_btn,'UserData');
            if UserData.state == false
@@ -319,11 +319,12 @@ if get(handles.SilenceRequestCheckBox,'Value') == 1
            %waitbar(i/ncycles,h)
            pause(0.0000001)
         end
-        if i == ncycles, delete(h); end
+        %if i == ncycles, delete(h); end
     pause off
     % Release playback and audio data objects
     release(handles.hap)
     release(handles.hsr1)
+    uiwait(h)
 end
 
 
