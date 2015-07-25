@@ -75,6 +75,8 @@ try
     %OUT.workflowname = filename;
     % classify as 'results' if the output does not have audio, or does have
     % tables
+    
+
     if isfield(OUT,'audio')
         if isempty(OUT.audio)
             % empty audio field
@@ -101,6 +103,7 @@ try
         datatype = 1;
         OUT.datatype = datatypefield(datatype);
     end
+
 
 catch err
     h=warndlg('AARAE workflow abandoned either because of an error in the workflow function or because the selected input data was inappropriate for the workflow function. Please refer to the Matlab error report in the Command Window.','AARAE info','modal');

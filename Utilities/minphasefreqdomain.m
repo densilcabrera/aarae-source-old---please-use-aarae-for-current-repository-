@@ -3,7 +3,7 @@ function H = minphasefreqdomain(mag)
 % equivalent to a minimum phase filter, using a magnitude spectrum as input.
 
 % make sure mag does not contain any zeros, or this won't work!
-mag(mag==0) = 1e-99;
+mag(mag==0) = 1e-200;
 
 [n,chans] = size(mag);
 % CALCULATE THE CEPSTRUM, Y

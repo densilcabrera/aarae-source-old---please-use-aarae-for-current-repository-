@@ -28,22 +28,20 @@ function X = workflow_example3(X)
 % infrastructure that makes them behave more flexibly than processors or
 % analysers.
 %
-% In this example, it is assumed that the user has generated a sweep test
-% signal (e.g. the exponential sweep with default settings), and then has
-% used this sweep in one or more sound recordings. The following
-% work-flow processes the recording(s), as commented below.
+% In this example, it is assumed that the user has generated a room impulse
+% response (or more than one). They are interested in calculating
+% reverberation time and STI using particular settings. The following
+% work-flow processes the room impulse response(s), as commented below.
 
 % LOGGING DIRECTLY FROM THIS FUNCTION
 % Log file information is automatically written from the output of the
 % aarae_workflow_processor function, but you may wish to write additional
 % information from within this function (especially if your workflow
-% involves several AARAE function calls). If you wish to write directly to
-% the log file, you will need the file identifier fid, which can be found
-% from
-handles = guidata(findobj('Tag','aarae'));
-% the file identifier is handles.fid, which can be used, for example, as
-% follows:
-fprintf(handles.fid,['%% This is a test of using fprintf to write to the log file.','\n']);
+% involves several AARAE function calls). The simplest way of doing this is
+% to use the AARAE utility logtext, which takes a string as its input
+% argument.
+logtext('%% Let''s see if this works!.\n');
+
 
 % USING AARAE's LOGAUDIOLEAFFIELDS FUNCTION
 % AARAE's logaudioleaffields is the function that is used in the AARAE
@@ -65,20 +63,7 @@ fprintf(handles.fid,['%% This is a test of using fprintf to write to the log fil
 % *************************************************************************
 % The following is code adapted from AARAE's log file (as an example)
 
-% The assumption is that we have a swept sinusoid measurement, of several
-% seconds' duration. Now we derive the impulse response. The following is
-% exactly the same as the code written in the log file.
-%X = convolveaudiowithaudio2(X,1);
 
-% Let's truncate the audio (get rid of the first half, and make it 2 s
-% long. The following try-catch avoids an error if the impulse response is
-% not long enough for this operation. X.fs is the audio sampling rate of
-% the AARAE stucture X.
-% try
-%     X.audio = X.audio(round(end/2):round(end/2)+2*X.fs,:,:,:,:,:);
-% catch
-%     X.audio = X.audio(round(end/2):end,:,:,:,:,:);
-% end
 
 % Now calculate reverberation time - here we could use custom settings if
 % we wanted to. Note that analysers usually remove the audio field from the
@@ -94,8 +79,8 @@ Y = ReverberationTime_IR1(X,48000,-20,1,1,1,0,0,0,125,8000);
 speech = [55         52.9         49.2         43.2         37.2         31.2         25.2];
 noise = [30  25  20  15  10  8  5];
 % Log the values that you are interested in:
-fprintf(handles.fid,['Speech spectrum: ',num2str(speech),' dB \n']);
-fprintf(handles.fid,['Noise spectrum: ',num2str(noise),' dB \n']);
+logtext(['Speech spectrum: ',num2str(speech),' dB \n']);
+logtext(['Noise spectrum: ',num2str(noise),' dB \n']);
 % Run the analysis
 X = STI_IR(X,48000,speech,noise,2011,1,1,2,1,0);
 
@@ -106,7 +91,7 @@ if isfield(Y,'tables')
     X.tables = [Y.tables X.tables];
 end
 % These concatenated tables will be written to the log file, and also will
-% be available in the GUI if you don't return an audio field in the output.
+% be available in the GUI.
 % Note that if you return a tables field, then the audio field will be
 % automatically deleted from the structure.
 
@@ -117,6 +102,13 @@ end
 % empty output to the AARAE workspace, then use logaudioleaffields (as
 % described above) after each analysis.
 
-closefigures('C')
+% Many analysers generate figures, but if you do not want the figures to be
+% preserved, you can call the closefigures utility within the workflow
+% function. This closes the figures before AARAE automatically saves
+% currently open figures.
+% closefigures % close (and forget) all figures
+% closefigures('C') % just close (and forget) charts
+% closefigures('T') % just close table figures (tables data is still stored
+% % in the log file and potentially as an output leaf)
 
 end

@@ -23,7 +23,7 @@ function varargout = audio_recorder(varargin)
 
 % Edit the above text to modify the response to help audio_recorder
 
-% Last Modified by GUIDE v2.5 18-Jun-2015 09:14:44
+% Last Modified by GUIDE v2.5 25-Jul-2015 18:45:39
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -142,6 +142,11 @@ else
         set(handles.IN_buffer,'String',num2str(getappdata(hMain,'audio_recorder_buffer')));
         handles.numchs = str2num(get(handles.IN_numchs,'String'));
         handles.addtime = str2double(get(handles.IN_duration,'String'));
+        set(handles.SilenceRequestCheckBox,'Value',getappdata(hMain,'audio_recorder_silencerequest'));
+        handles.silenceplease.audio = mainHandles.silenceplease.audio;
+        handles.silenceplease.fs = mainHandles.silenceplease.fs;
+        handles.thankyou.audio = mainHandles.thankyou.audio;
+        handles.thankyou.fs = mainHandles.thankyou.fs;
         handles.fs = handles.outputdata.fs;
         %handles.nbits = handles.outputdata.nbits;
         handles.qdur = str2double(get(handles.IN_qdur,'String'));
@@ -165,7 +170,12 @@ else
         set(handles.IN_qdur,'String',num2str(getappdata(hMain,'audio_recorder_qdur')));
         set(handles.IN_buffer,'String',num2str(getappdata(hMain,'audio_recorder_buffer')));
         set(handles.OUT_axes,'Visible','off');
-        set(handles.audio_recorder,'Position',handles.position-[0 0 0 handles.OUT_axes_position(4)])
+        set(handles.audio_recorder,'Position',handles.position-[0 0 0 handles.OUT_axes_position(4)]);
+        set(handles.SilenceRequestCheckBox,'Value',getappdata(hMain,'audio_recorder_silencerequest'));
+        handles.silenceplease.audio = mainHandles.silenceplease.audio;
+        handles.silenceplease.fs = mainHandles.silenceplease.fs;
+        handles.thankyou.audio = mainHandles.thankyou.audio;
+        handles.thankyou.fs = mainHandles.thankyou.fs;
         handles.numchs = str2num(get(handles.IN_numchs,'String'));
         handles.duration = str2double(get(handles.IN_duration,'String'));
         handles.fs = str2double(get(handles.IN_fs,'String'));
@@ -252,6 +262,71 @@ function record_btn_Callback(hObject, ~, handles) %#ok : called with record butt
 % Call handles from main window
 %mainHandles = guidata(handles.main_stage1);
 set([handles.cancel_btn handles.load_btn handles.preview_btn handles.syscal_btn],'Enable','off')
+
+
+% ASK FOR SILENCE
+if get(handles.SilenceRequestCheckBox,'Value') == 1
+    %SilenceRequestCheckBox
+    set(hObject,'Enable','off');
+    pause on
+    pause(0.000001)
+    pause off
+    % Set playback object
+    if isfield(handles,'outputdata')
+        fs = handles.outputdata.fs;
+    else
+        fs = handles.fs;
+    end
+    outputs = cellstr(get(handles.outputdev_popup,'String'));
+    outputdevname = outputs{get(handles.outputdev_popup,'Value')};
+    
+        % Set playback audio
+    handles.hsr1 = dsp.SignalSource;
+    if handles.silenceplease.fs ~= fs
+        gcd_fs = gcd(handles.silenceplease.fs,fs); % greatest common denominator
+        thankyou = resample(handles.silenceplease.audio,fs/gcd_fs,handles.silenceplease.fs/gcd_fs);
+    else
+        thankyou = handles.silenceplease.audio;
+    end
+    thankyou = thankyou(:,1,1,1,1,1); % make sure it is 1 channel (it should be anyway)
+    if length(str2num(get(handles.IN_numchsout,'String'))) > 1
+            thankyou = repmat(thankyou,1,length(str2num(get(handles.IN_numchsout,'String'))));
+    end
+    handles.hap = dsp.AudioPlayer('DeviceName',outputdevname,...
+        'SampleRate',fs,...
+        'QueueDuration',handles.qdur,...
+        'BufferSizeSource','Property',...
+        'BufferSize',handles.buffer);
+    
+    %if get(handles.invfilter_chk,'Value') == 1, quietplease = filter(handles.syscalstats.audio2,1,quietplease); end
+    handles.hsr1.Signal = [thankyou;zeros(floor(handles.hap.QueueDuration*handles.fs),1)];
+    handles.hsr1.SamplesPerFrame = 2048;
+    guidata(hObject,handles)
+    ncycles = ceil(length(handles.hsr1.Signal)/handles.hsr1.SamplesPerFrame);
+    set(hObject,'BackgroundColor','red');
+    set(handles.stop_btn,'Visible','on');
+    % Initialize playback routine
+    pause on
+        %UserData = get(handles.stop_btn,'UserData');
+        h = helpdlg('Silence request','AARAE info');
+        for i = 1:ncycles
+           UserData = get(handles.stop_btn,'UserData');
+           if UserData.state == false
+               step(handles.hap,step(handles.hsr1));
+           else
+               break
+           end
+           %waitbar(i/ncycles,h)
+           pause(0.0000001)
+        end
+        if i == ncycles, delete(h); end
+    pause off
+    % Release playback and audio data objects
+    release(handles.hap)
+    release(handles.hsr1)
+end
+
+
 if get(handles.pb_enable,'Value') == 1
     % Simultaneous playback and record routine
     set(hObject,'Enable','off');
@@ -425,6 +500,71 @@ else
     % Release record object
     release(handles.har)
 end
+
+
+% SAY THANKYOU
+if get(handles.SilenceRequestCheckBox,'Value') == 1
+    %SilenceRequestCheckBox
+    set(hObject,'Enable','off');
+    pause on
+    pause(0.000001)
+    pause off
+    % Set playback object
+    if isfield(handles,'outputdata')
+        fs = handles.outputdata.fs;
+    else
+        fs = handles.fs;
+    end
+    outputs = cellstr(get(handles.outputdev_popup,'String'));
+    outputdevname = outputs{get(handles.outputdev_popup,'Value')};
+    
+        % Set playback audio
+    handles.hsr1 = dsp.SignalSource;
+    if handles.thankyou.fs ~= fs
+        gcd_fs = gcd(handles.thankyou.fs,fs); % greatest common denominator
+        thankyou = resample(handles.thankyou.audio,fs/gcd_fs,handles.thankyou.fs/gcd_fs);
+    else
+        thankyou = handles.thankyou.audio;
+    end
+    thankyou = thankyou(:,1,1,1,1,1); % make sure it is 1 channel (it should be anyway)
+    if length(str2num(get(handles.IN_numchsout,'String'))) > 1
+            thankyou = repmat(thankyou,1,length(str2num(get(handles.IN_numchsout,'String'))));
+    end
+    handles.hap = dsp.AudioPlayer('DeviceName',outputdevname,...
+        'SampleRate',fs,...
+        'QueueDuration',handles.qdur,...
+        'BufferSizeSource','Property',...
+        'BufferSize',handles.buffer);
+    
+    %if get(handles.invfilter_chk,'Value') == 1, quietplease = filter(handles.syscalstats.audio2,1,quietplease); end
+    handles.hsr1.Signal = [thankyou;zeros(floor(handles.hap.QueueDuration*handles.fs),1)];
+    handles.hsr1.SamplesPerFrame = 2048;
+    guidata(hObject,handles)
+    ncycles = ceil(length(handles.hsr1.Signal)/handles.hsr1.SamplesPerFrame);
+    set(hObject,'BackgroundColor','red');
+    set(handles.stop_btn,'Visible','on');
+    % Initialize playback routine
+    pause on
+        h = helpdlg('Thankyou!','AARAE info');
+        for i = 1:ncycles
+           UserData = get(handles.stop_btn,'UserData');
+           if UserData.state == false
+               step(handles.hap,step(handles.hsr1));
+           else
+               break
+           end
+           pause(0.0000001)
+        end
+        if i == ncycles, delete(h); end
+    pause off
+    % Release playback and audio data objects
+    release(handles.hap)
+    release(handles.hsr1)
+end
+
+
+
+
 set(handles.record_btn,'BackgroundColor',[0.94 0.94 0.94]);
 set(handles.record_btn,'Enable','on');
 set(handles.stop_btn,'Visible','off');
@@ -1049,3 +1189,23 @@ function sim_chk_Callback(~, ~, ~) %#ok : Executed when simultaneous playback ch
 % handles    structure with handles and user data (see GUIDATA)
 
 % Hint: get(hObject,'Value') returns toggle state of sim_chk
+
+
+% --- Executes on button press in SilenceRequestCheckBox.
+function SilenceRequestCheckBox_Callback(hObject, ~, ~)
+% hObject    handle to SilenceRequestCheckBox (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hint: get(hObject,'Value') returns toggle state of SilenceRequestCheckBox
+hMain = getappdata(0,'hMain');
+setappdata(hMain,'audio_recorder_silencerequest',get(hObject,'Value'));
+
+    
+
+
+% --- Executes during object creation, after setting all properties.
+function SilenceRequestCheckBox_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to SilenceRequestCheckBox (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called

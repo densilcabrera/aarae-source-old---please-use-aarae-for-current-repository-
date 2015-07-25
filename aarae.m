@@ -85,6 +85,7 @@ setappdata(hMain,'audio_recorder_fs',48000)
 %setappdata(hMain,'audio_recorder_nbits',16)
 setappdata(hMain,'audio_recorder_qdur',1)
 setappdata(hMain,'audio_recorder_buffer',1024)
+setappdata(hMain,'audio_recorder_silencerequest',0)
 setappdata(hMain,'trim_method_after_convolution',1)
 set(hObject,'Name','AARAE')
 % Read settings file
@@ -123,7 +124,38 @@ end
 % Add folder paths for filter functions and signal analyzers
 addpath(genpath(cd));
 handles.player = audioplayer(0,48000);
-[handles.reference_audio.audio, handles.reference_audio.fs] = audioread('REFERENCE_AUDIO.wav');
+
+if ~isdir([cd '/Audio/REQUIRED_AUDIO'])
+    mkdir([cd '/Audio/REQUIRED_AUDIO']);
+end
+
+try
+    [handles.reference_audio.audio, handles.reference_audio.fs] = audioread('/Audio/REQUIRED_AUDIO/REFERENCE_AUDIO.wav');
+catch
+    h = warndlg('REFERENCE_AUDIO.wav is missing from the REQUIRED_AUDIO directory (within AARAE''s Audio directory). Please select an alternative reference audio recording.');
+    uiwait(h)
+    audiochoice = importaudio;
+    if ~isempty(audiochoice)
+        handles.reference_audio = audiochoice(:,1,1,1,1,1);
+    else
+        handles.reference_audio.audio = sin(2*pi*1000*(0:48000)'./48000); %1 kHz sine
+        handles.reference_audio.fs = 48000;
+    end
+end
+
+try
+    [handles.silenceplease.audio, handles.silenceplease.fs] = audioread('/Audio/REQUIRED_AUDIO/SILENCE_PLEASE.wav');
+catch
+    handles.silenceplease.audio = sin(2*pi*1000*(0:48000)'./48000);
+    handles.silenceplease.fs = 48000;
+end
+
+try
+    [handles.thankyou.audio, handles.thankyou.fs] = audioread('/Audio/REQUIRED_AUDIO/THANKYOU.wav');
+catch
+    handles.thankyou.audio = sin(2*pi*1000*(0:48000)'./48000);
+    handles.thankyou.fs = 48000;
+end
 
 % Setup for Densil's tree
 iconPath = fullfile(matlabroot,'/toolbox/matlab/icons/matlabicon.gif');
@@ -2750,7 +2782,12 @@ else
     if size(testsignal,2) > 2, testsignal = mean(testsignal,2); end
     testsignal = testsignal./max(max(abs(testsignal)));
     fs = audiodata.fs;
-    reference_audio = resample(handles.reference_audio.audio,fs,handles.reference_audio.fs);
+    if handles.reference_audio.fs ~= fs
+        gcd_fs = gcd(handles.reference_audio.fs,fs); % greatest common denominator
+        reference_audio = resample(handles.reference_audio.audio,fs/gcd_fs,handles.reference_audio.fs/gcd_fs);
+    else
+        reference_audio = handles.reference_audio.audio;
+    end
     reference_audio = repmat(reference_audio,1,size(testsignal,2));
     len1 = length(testsignal);
     len2 = length(reference_audio);

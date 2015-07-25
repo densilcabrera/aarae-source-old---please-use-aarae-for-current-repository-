@@ -37,6 +37,9 @@ input = varargin(4:end);
 out.data = varargin{1};
 out.datainfo.units = varargin{2};
 out.datainfo.dimensions = varargin{3};
+
+% uitreedescription % debug
+
 % Get the new leaf name
 hasleafname = find(strcmp(varargin,'name'));
 if ~isempty(hasleafname), leafname = varargin{hasleafname+1}; end
@@ -86,3 +89,5 @@ handles.results.add(handles.(matlab.lang.makeValidName(leafname)));
 handles.mytree.reloadNode(handles.results);
 handles.mytree.expand(handles.results);
 guidata(aarae_fig, handles);
+
+% uitreedescription % debug
