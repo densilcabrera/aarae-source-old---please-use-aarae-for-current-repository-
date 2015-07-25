@@ -240,7 +240,7 @@ if ~isempty(audio) && ~isempty(fs) && ~isempty(filteriterations) && ~isempty(avm
     % individual decays are also prepared for processing
     levdecay = 10*log10(decay);
     levdecay = levdecay - repmat(max(levdecay), [len,1,1,1]);
-    
+    SNR = -10*log10(mean(mean(10.^(levdecay(round(0.9*len):end,:,:,:)./10)),4)); % last 10 %
     clear decay decaymix
     
     
@@ -377,7 +377,7 @@ if ~isempty(audio) && ~isempty(fs) && ~isempty(filteriterations) && ~isempty(avm
                 end
             end
             
-            x = find(levdecay(:,dim2,dim3) == 0, 1, 'first'); % 0 dB
+            x = find(levdecaymix(:,dim2,dim3) == 0, 1, 'first'); % 0 dB
             if isempty(x)
                 irstart1(dim2,dim3) = nan;
             else
@@ -388,28 +388,28 @@ if ~isempty(audio) && ~isempty(fs) && ~isempty(filteriterations) && ~isempty(avm
             if isempty(x)
                 tstart1(dim2,dim3) = nan;
             else
-                tstart1(dim2,dim3) = x;
+                tstart1(dim2,dim3) = x+irstart1(dim2,dim3)-1;
             end
             
             x = find(levdecaymix(irstart1(dim2,dim3):end,dim2,dim3) <= -10, 1, 'first'); % -10 dB
             if isempty(x)
                 edtend1(dim2,dim3) = nan;
             else
-                edtend1(dim2,dim3) = x;
+                edtend1(dim2,dim3) = x+irstart1(dim2,dim3)-1;
             end
             
             t20end1(dim2,dim3) = find(levdecaymix(irstart1(dim2,dim3):end,dim2,dim3) <= -25, 1, 'first'); % -25 dB
             if isempty(x)
                 t20end1(dim2,dim3) = nan;
             else
-                t20end1(dim2,dim3) = x;
+                t20end1(dim2,dim3) = x+irstart1(dim2,dim3)-1;
             end
             
             t30end1(dim2,dim3) = find(levdecaymix(irstart1(dim2,dim3):end,dim2,dim3) <= -35, 1, 'first'); % -35 dB
             if isempty(x)
                 t30end1(dim2,dim3) = nan;
             else
-                t30end1(dim2,dim3) = x;
+                t30end1(dim2,dim3) = x+irstart1(dim2,dim3)-1;
             end
             
             %******************************************************************
@@ -448,13 +448,13 @@ if ~isempty(audio) && ~isempty(fs) && ~isempty(filteriterations) && ~isempty(avm
                 if tstart1(dim2,dim3)<t20end1(dim2,dim3)
                     try
                         pp(:,dim2,dim3) = polyfit((tstart1(dim2,dim3):t20end1(dim2,dim3))', ...
-                            levdecay(tstart1(dim2,dim3):t20end1(dim2,dim3),dim2,dim3),1)';
+                            levdecaymix(tstart1(dim2,dim3):t20end1(dim2,dim3),dim2,dim3),1)';
                         
                         T20mix(1,dim2, dim3) = 3*((pp(2,dim2,dim3)-25)/pp(1,dim2,dim3) ...
                             -(pp(2,dim2,dim3)-5)/ ...
                             pp(1,dim2,dim3))/fs; % reverberation time, T20
                         
-                        T20r2mix(1,dim2, dim3) = corr(levdecay(tstart1(dim2,dim3):t20end1(dim2,dim3),dim2,dim3), ...
+                        T20r2mix(1,dim2, dim3) = corr(levdecaymix(tstart1(dim2,dim3):t20end1(dim2,dim3),dim2,dim3), ...
                             (tstart1(dim2,dim3):t20end1(dim2,dim3))'*pp(1,dim2,dim3) ...
                             + pp(2,dim2,dim3)).^2; % correlation coefficient, T20
                     catch
@@ -478,13 +478,13 @@ if ~isempty(audio) && ~isempty(fs) && ~isempty(filteriterations) && ~isempty(avm
                 if tstart1(dim2,dim3)<t30end1(dim2,dim3)
                     try
                         qq(:,dim2,dim3) = polyfit((tstart1(dim2,dim3):t30end1(dim2,dim3))', ...
-                            levdecay(tstart1(dim2,dim3):t30end1(dim2,dim3),dim2,dim3),1)'; % linear regression
+                            levdecaymix(tstart1(dim2,dim3):t30end1(dim2,dim3),dim2,dim3),1)'; % linear regression
                         
                         T30mix(1,dim2, dim3) = 2*((qq(2,dim2,dim3)-35)/qq(1,dim2,dim3) ...
                             -(qq(2,dim2,dim3)-5)/ ...
                             qq(1,dim2,dim3))/fs; % reverberation time, T30
                         
-                        T30r2mix(1,dim2, dim3) = corr(levdecay(tstart1(dim2,dim3):t30end1(dim2,dim3),dim2,dim3), ...
+                        T30r2mix(1,dim2, dim3) = corr(levdecaymix(tstart1(dim2,dim3):t30end1(dim2,dim3),dim2,dim3), ...
                             (tstart1(dim2,dim3):t30end1(dim2,dim3))'*qq(1,dim2,dim3) ...
                             + qq(2,dim2,dim3)).^2; % correlation coefficient, T30
                         
@@ -531,6 +531,12 @@ if ~isempty(audio) && ~isempty(fs) && ~isempty(filteriterations) && ~isempty(avm
     EDTr2 = permute(EDTr2mix,[2,3,1]);
     T20r2 = permute(T20r2mix,[2,3,1]);
     T30r2 = permute(T30r2mix,[2,3,1]);
+    SNR = permute(SNR,[2,3,1]);
+    [SNR_EDTok, SNRT20ok, SNRT30ok] = deal(zeros(size(SNR)));
+    
+    SNR_EDTok(SNR>20) = 1;
+    SNRT20ok(SNR>35) = 1;
+    SNRT30ok(SNR>45) = 1;
     
     % -------------------------------------------------------------------------
     % Create output structure
@@ -548,31 +554,37 @@ if ~isempty(audio) && ~isempty(fs) && ~isempty(filteriterations) && ~isempty(avm
     
     % Table of results
     fig1 = figure('Name','Reverberation Parameters');
-    table1 = uitable('Data',[T30;T30r2;avT30;stdT30;ndecaysT30],...
+    table1 = uitable('Data',[T30;T30r2;avT30;stdT30;ndecaysT30;SNR;SNRT30ok],...
         'ColumnName',num2cell(flist),...
         'RowName',{[repmat('T30 derived from averaged decays      ',[chans,1]);...
         repmat('T30 r^2 (from averaged decays)        ',[chans,1]);...
         repmat('Average of T30 derived from each decay',[chans,1]);...
         repmat('St dev. of T30 derived from each decay',[chans,1]);...
-        repmat('Number of valid decays                ',[chans,1])]});
+        repmat('Number of valid decays                ',[chans,1]);...
+        repmat('Signal-to-noise ratio (N = last 10%)  ',[chans,1]);...
+        repmat('SNR > 45 dB                           ',[chans,1])]});
     set(table1,'ColumnWidth',{60});
     
-    table2 = uitable('Data',[T20;T20r2;avT20;stdT20;ndecaysT20],...
+    table2 = uitable('Data',[T20;T20r2;avT20;stdT20;ndecaysT20;SNR;SNRT20ok],...
         'ColumnName',num2cell(flist),...
         'RowName',{[repmat('T20 derived from averaged decays      ',[chans,1]);...
         repmat('T20 r^2 (from averaged decays)        ',[chans,1]);...
         repmat('Average of T20 derived from each decay',[chans,1]);...
         repmat('St dev. of T20 derived from each decay',[chans,1]);...
-        repmat('Number of valid decays                ',[chans,1])]});
+        repmat('Number of valid decays                ',[chans,1]);...
+        repmat('Signal-to-noise ratio (N = last 10%)  ',[chans,1]);...
+        repmat('SNR > 35 dB                           ',[chans,1])]});
     set(table2,'ColumnWidth',{60});
     
-    table3 = uitable('Data',[EDT;EDTr2;avEDT;stdEDT;ndecaysEDT],...
+    table3 = uitable('Data',[EDT;EDTr2;avEDT;stdEDT;ndecaysEDT;SNR;SNR_EDTok],...
         'ColumnName',num2cell(flist),...
         'RowName',{[repmat('EDT derived from averaged decays      ',[chans,1]);...
         repmat('EDT r^2 (from averaged decays)        ',[chans,1]);...
         repmat('Average of EDT derived from each decay',[chans,1]);...
         repmat('St dev. of EDT derived from each decay',[chans,1]);...
-        repmat('Number of valid decays                ',[chans,1])]});
+        repmat('Number of valid decays                ',[chans,1]);...
+        repmat('Signal-to-noise ratio (N = last 10%)  ',[chans,1]);...
+        repmat('SNR > 20 dB                           ',[chans,1])]});
     set(table3,'ColumnWidth',{60});
     
     
@@ -598,37 +610,43 @@ if ~isempty(audio) && ~isempty(fs) && ~isempty(filteriterations) && ~isempty(avm
             plot(t,permute(levdecay(:,ch,bnd,:),[1,4,2,3]),...
                 'Color',[0.7, 0.7, 0.7])
             hold on
-            plot(t,levdecaymix(:,ch,bnd),'Color',[1, 0, 0],'LineWidth',1.5)
+            plot(t(1:irstart1(ch,bnd)),...
+                levdecaymix(1:irstart1(ch,bnd),ch,bnd),...
+                'Color',[1, 0, 0],'LineWidth',0.5);
+            
+            plot(t(irstart1(ch,bnd):end),...
+                levdecaymix((irstart1(ch,bnd):end),ch,bnd),...
+                'Color',[1, 0, 0],'LineWidth',1.5)
             
             if ~isnan(oo(1,ch,bnd))
                 plot(t(irstart1(ch,bnd):edtend1(ch,bnd)), ...
                     (irstart1(ch,bnd):edtend1(ch,bnd)) * oo(1,ch,bnd) + ...
-                    oo(2,ch,bnd), 'LineWidth',2,'LineStyle','--','Color', [0.6 0.6 0])
+                    oo(2,ch,bnd), 'LineWidth',1.5,'LineStyle','-','Color', [1 0 1])
             end
             
             if ~isnan(pp(1,ch,bnd))
                 plot(t(tstart1(ch,bnd):t20end1(ch,bnd)), ...
                     (tstart1(ch,bnd):t20end1(ch,bnd)) * pp(1,ch,bnd) + ...
-                    pp(2,ch,bnd), 'LineWidth',2,'LineStyle','--','Color', [0 0.6 0])
+                    pp(2,ch,bnd), 'LineWidth',1.5,'LineStyle','-','Color', [0 0.7 0])
             end
             
             if ~isnan(qq(1,ch,bnd))
                 plot(t(tstart1(ch,bnd):t30end1(ch,bnd)), ...
                     (tstart1(ch,bnd):t30end1(ch,bnd)) * qq(1,ch,bnd) + ...
-                    qq(2,ch,bnd), 'LineWidth',2,'LineStyle','--','Color', [0 0.6 0.6])
+                    qq(2,ch,bnd), 'LineWidth',1.5,'LineStyle','-','Color', [0 0 1])
             end
             
             text(t(edtend1(ch,bnd))+0.1, -5, ...
                 ['EDT: ', num2str(round(10*EDT(ch,bnd))/10), ' s'], ...
-                'Color', [0.6 0.6 0])
+                'Color', [1 0 1])
             
             text(t(t20end1(ch,bnd))+0.1, -25, ...
                 ['T20: ', num2str(round(10*T20(ch,bnd))/10), ' s'], ...
-                'Color', [0 0.6 0])
+                'Color', [0 0.7 0])
             
             text(t(t30end1(ch,bnd))+0.1, -35, ...
                 ['T30: ', num2str(round(10*T30(ch,bnd))/10), ' s'], ...
-                'Color', [0 0.6 0.6])
+                'Color', [0 0 1])
             
             %grid on
             
