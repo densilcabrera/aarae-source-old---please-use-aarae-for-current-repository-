@@ -135,9 +135,9 @@ else
     end
 end
 
-out.transposesubplots = transposesubplots;
-out.yscaling = yscaling;
-out.nbars = nbars;
+% out.transposesubplots = transposesubplots;
+% out.yscaling = yscaling;
+% out.nbars = nbars;
 out.funcallback.name = 'histogram_of_wave_simple.m';
 out.funcallback.inarg = {transposesubplots,yscaling,nbars,normdist};
 
