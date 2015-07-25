@@ -136,9 +136,9 @@ catch
     uiwait(h)
     audiochoice = importaudio;
     if ~isempty(audiochoice)
-        handles.reference_audio = audiochoice(:,1,1,1,1,1);
+        handles.reference_audio = mean(audiochoice(:,:,1,1,1,1),2); %mixdown if multichan
     else
-        handles.reference_audio.audio = sin(2*pi*1000*(0:48000)'./48000); %1 kHz sine
+        handles.reference_audio.audio = sin(2*pi*1000*(0:48000)'./48000); % 1 kHz sine
         handles.reference_audio.fs = 48000;
     end
 end
@@ -146,7 +146,8 @@ end
 try
     [handles.silenceplease.audio, handles.silenceplease.fs] = audioread('/Audio/REQUIRED_AUDIO/SILENCE_PLEASE.wav');
 catch
-    handles.silenceplease.audio = sin(2*pi*1000*(0:48000)'./48000);
+    modulator = 10*sin(2*pi*8*(0:48000)'./48000); % 8 Hz freq modulation
+    handles.silenceplease.audio = sin(modulator+2*pi*1000*(0:48000)'./48000);
     handles.silenceplease.fs = 48000;
 end
 
@@ -187,11 +188,11 @@ handles.mytree.setMultipleSelectionEnabled(true);
 % Generate activity log
 activity = dir([cd '/Log' '/activity log.txt']);
 if isempty(activity)
-    activitylog = '/activity log.txt';
+    activitylog = '/activity log 1.txt';
     handles.fid = fopen([cd '/Log' activitylog], 'w');
     handles.activitylog = activitylog; % used for export all
 else
-    index = 1;
+    index = 2;
     % This while cycle is just to make sure no files are overwriten
     while isempty(dir([cd '/Log' '/activity log ',num2str(index),'.txt'])) == 0
         index = index + 1;
