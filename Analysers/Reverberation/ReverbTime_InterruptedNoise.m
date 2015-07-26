@@ -388,28 +388,28 @@ if ~isempty(audio) && ~isempty(fs) && ~isempty(filteriterations) && ~isempty(avm
             if isempty(x)
                 tstart1(dim2,dim3) = nan;
             else
-                tstart1(dim2,dim3) = x+irstart1(dim2,dim3)-1;
+                tstart1(dim2,dim3) = x;%+irstart1(dim2,dim3)-1;
             end
             
             x = find(levdecaymix(irstart1(dim2,dim3):end,dim2,dim3) <= -10, 1, 'first'); % -10 dB
             if isempty(x)
                 edtend1(dim2,dim3) = nan;
             else
-                edtend1(dim2,dim3) = x+irstart1(dim2,dim3)-1;
+                edtend1(dim2,dim3) = x;%+irstart1(dim2,dim3)-1;
             end
             
-            t20end1(dim2,dim3) = find(levdecaymix(irstart1(dim2,dim3):end,dim2,dim3) <= -25, 1, 'first'); % -25 dB
+            x = find(levdecaymix(irstart1(dim2,dim3):end,dim2,dim3) <= -25, 1, 'first'); % -25 dB
             if isempty(x)
                 t20end1(dim2,dim3) = nan;
             else
-                t20end1(dim2,dim3) = x+irstart1(dim2,dim3)-1;
+                t20end1(dim2,dim3) = x;%+irstart1(dim2,dim3)-1;
             end
             
-            t30end1(dim2,dim3) = find(levdecaymix(irstart1(dim2,dim3):end,dim2,dim3) <= -35, 1, 'first'); % -35 dB
+            x = find(levdecaymix(irstart1(dim2,dim3):end,dim2,dim3) <= -35, 1, 'first'); % -35 dB
             if isempty(x)
                 t30end1(dim2,dim3) = nan;
             else
-                t30end1(dim2,dim3) = x+irstart1(dim2,dim3)-1;
+                t30end1(dim2,dim3) = x;%+irstart1(dim2,dim3)-1;
             end
             
             %******************************************************************
