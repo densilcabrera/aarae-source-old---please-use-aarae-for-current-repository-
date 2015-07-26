@@ -1829,15 +1829,7 @@ if handles.compareaudio == 1
         %       of identifying the reference audio
         % 
         
-        %  % AMPLITUDE CUMULATIVE DISTRIBUTION
-        %  signaldata.audio = sort(signaldata.audio);
-        %  % LEVEL CUMULATIVE DISTRIBUTION
-        %  signaldata.audio = sort(10*log10(signaldata.audio.^2));
-        %
-        %  % STEP FUNCTION (if input is IR)
-        %  signaldata.audio =
-        %  ifft(fft(signaldata.audio,len*2-1).*fft(ones(len,1),len*2-1);
-        %  signaldata.audio = signaldata.audio(1:len,:,:,:,:,:);
+      
         % % PHASE DELAY
         %[signaldata.audio,f] = ...
             %phasedelay(signaldata.audio,1,length(signaldata.audio),signaldata.fs);

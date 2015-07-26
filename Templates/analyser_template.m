@@ -108,6 +108,8 @@ if isstruct(IN) % You should check that the function is being called within
         % or make a chanID using AARAE's utility function
         chanID = makechanID(size(audio,2),0);
     end
+    % if you wish to interpret a pre-defined format of chanID, use AARAE's
+    % utility function readchanID
     
     % bandID is a vector, usually listing the centre frequencies of the
     % bands
@@ -168,7 +170,7 @@ elseif ~isempty(param) || nargin > 1
     cal = input_4;
     chanID = makechanID(size(audio,2),0);
     bandID = 1:size(audio,3);
-    name = [];
+    name = '';
 end
 % *************************************************************************
 
@@ -193,7 +195,8 @@ if ~isempty(audio) && ~isempty(fs) && ~isempty(cal)
         audio = mean(audio,2); % mixdown channels
     end
     
-    audio = flipdim(audio,1);
+    % here are some trivial operations
+    audio = flip(audio,1);
     duration = length(audio)/fs;
     maximum = max(audio);
     minimum = min(audio);
@@ -276,13 +279,18 @@ if ~isempty(audio) && ~isempty(fs) && ~isempty(cal)
     % You may export these tables to be displayed as bar plots as if you
     % were doing it for a single table:
     %       [~,tables] = disptables(fig1,[table3 table2 table1]);
-    %       OUT.tables = tables;
+    % In the output section, we will use:      OUT.tables = tables;
     %
     % The disptables function will take care of allocating each table to a
     % different barplot, there is no need to generate more than one .tables
     % field to display all your tables.
     
-    
+    % *** WRITING TO THE LOG FILE ***
+    % There is usually no reason to write to the log file, because a lot of
+    % information is automatically written to it (depending on the outputs,
+    % including tables). However, if you wish to write to the log file,
+    % this is easily done using AARAE's logtext utility:
+    logtext('%% This is a test of writing to the log file.\n');
     
     % *** MAKING PLOTS ***
     % You may also include figures to display your results as plots.
@@ -332,17 +340,41 @@ if ~isempty(audio) && ~isempty(fs) && ~isempty(cal)
     % And once you have your result, you should set it up in an output form
     % that AARAE can understand.
     if isstruct(IN)
+        % The output of this function, running within AARAE, is a
+        % structure. As a minimum, the structure requires the function 
+        % callback. However, in the unusual event that you wish to
+        % replicate the input structre before adding to it, it is easiest
+        % to do this first:
         
         % *** OUTPUTTING AUDIO ***
         % Most analysers do not output audio. If you wish to output audio,
         % first consider whether your analyser should be a processor
         % instead. If it should be an analyser, then audio can be output as
         % follows:
-        OUT = IN; % You can replicate the input structure for your output
-        OUT.audio = audio; % And modify the fields you processed
+        % OUT = IN; % You can replicate the input structure for your output
+        % OUT.audio = audio; % And modify the fields you processed
         % However, for an analyser, you might not wish to output audio (in
         % which case the two lines above might not be wanted.
         
+        % *** FUNCTION CALLBACKS ***
+        % The following outputs are required so that AARAE can repeat the
+        % analysis without user interaction (e.g. for batch processing),
+        % and for writing the log file (and hence for generating
+        % workflows).
+        OUT.funcallback.name = 'analyser_template.m'; % Provide AARAE
+        % with the name of your function 
+        OUT.funcallback.inarg = {input_1,input_2,input_3,input_4}; 
+        % assign all of the input parameters that could be used to call the
+        % function without dialog box to the output field param (as a cell
+        % array) in order to allow batch analysing. Do not include the
+        % first (audio) input here. If there are no input arguments (apart
+        % from the audio input), then use: 
+        % OUT.funcallback.inarg = {};
+        
+        
+        % If you generated tables using AARAE's disptables (as described 
+        % above, you can attach the tables to the output structure
+        %       OUT.tables = tables;
         
         
         % *** OUTPUTTING NEW FIELDS ***
@@ -367,23 +399,6 @@ if ~isempty(audio) && ~isempty(fs) && ~isempty(cal)
         % results leaf is is best for big data.
         
         
-        
-        % *** FUNCTION CALLBACKS ***
-        % The following outputs are required so that AARAE can repeat the
-        % analysis without user interaction (e.g. for batch processing),
-        % and for writing the log file.
-        OUT.funcallback.name = 'analyser_template.m'; % Provide AARAE
-        % with the name of your function 
-        OUT.funcallback.inarg = {input_1,input_2,input_3,input_4}; 
-        % assign all of the input parameters that could be used to call the
-        % function without dialog box to the output field param (as a cell
-        % array) in order to allow batch analysing. Do not include the
-        % first (audio) input here. If there are no input arguments (apart
-        % from the audio input), then use: 
-        % OUT.funcallback.inarg = {};
-        
-        
-        
         % AARAE will only display the output in the main GUI if it includes
         % tables, audio or other fields. It will not display if only
         % function callbacks are returned. Result leaves are not created by
@@ -397,6 +412,7 @@ if ~isempty(audio) && ~isempty(fs) && ~isempty(cal)
         % arguments instead of a structure.
         OUT = audio;
     end
+    % some additional outputs (not used by AARAE)
     varargout{1} = duration;
     varargout{2} = maximum;
     varargout{3} = minimum;
