@@ -276,6 +276,7 @@ function signalcat_box_Callback(hObject, ~, handles) %#ok : Executed when catego
 contents = cellstr(get(hObject,'String'));
 signalcat = contents{get(hObject,'Value')};
 signals = what([cd '/Generators/' signalcat]);
+try
 if ~isempty(cellstr(signals.m))
     set(handles.signal_box,'Visible','on','String',[' ';cellstr(signals.m)],'Value',1,'Tooltip','');
     set([handles.gen_btn,handles.help_btn],'Visible','off');
@@ -284,6 +285,8 @@ else
     set([handles.gen_btn,handles.help_btn],'Visible','off');
 end
 guidata(hObject,handles);
+catch
+end
 
 % --- Executes during object creation, after setting all properties.
 function signalcat_box_CreateFcn(hObject, ~, handles) %#ok : Signal generator categories selection box creation
@@ -299,8 +302,9 @@ end
 
 % Populate function box with the function available in the folder 'Analysis'
 curdir = cd;
-signals = dir([curdir '/Generators']);
-set(hObject,'String',[' ';cellstr({signals(3:length(signals)).name}')]);
+signals = removedotfiles(dir([curdir '/Generators']));
+%set(hObject,'String',[' ';cellstr({signals(3:length(signals)).name}')]);
+set(hObject,'String',[' ';cellstr({signals.name}')]);
 handles.funname = [];
 guidata(hObject,handles)
 
@@ -314,6 +318,7 @@ function signal_box_Callback(hObject, ~, handles) %#ok : Executed when selection
 % Hints: contents = cellstr(get(hObject,'String')) returns signal_box contents as cell array
 %        contents{get(hObject,'Value')} returns selected item from signal_box
 % Allows 'help' display when mouse is hoovered over fun_box
+try
 contents = cellstr(get(hObject,'String'));
 selection = contents{get(hObject,'Value')};
 [~,funname] = fileparts(selection);
@@ -328,6 +333,8 @@ else
     set([handles.gen_btn,handles.help_btn],'Visible','off');
 end
 guidata(hObject,handles);
+catch
+end
 
 % --- Executes during object creation, after setting all properties.
 function signal_box_CreateFcn(hObject, ~, ~) %#ok : Signal selection box creation
@@ -495,3 +502,28 @@ function help_btn_Callback(~, ~, handles) %#ok : Executed when help button is cl
 contents = cellstr(get(handles.signal_box,'String'));
 selection = contents{get(handles.signal_box,'Value')};
 eval(['doc ' selection])
+
+
+
+% *************************************************************************
+% Local utility functions
+% *************************************************************************
+
+function OUT = removedotfiles(IN)
+% This function takes a structure that was created by Matlab's dir function
+% and removes all items that have a period at the start of the name field.
+% The purpose of this is to remove system files from the list
+try
+    include = true(length(IN),1);
+    for n = 1:length(IN)
+        ind = strfind(IN(n).name,'.');
+        if ~isempty(ind)
+            if ind(1) == 1
+                include(n)= false;
+            end
+        end
+    end
+    OUT = IN(include);
+catch
+    OUT = IN;
+end

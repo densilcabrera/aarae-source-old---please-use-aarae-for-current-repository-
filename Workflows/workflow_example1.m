@@ -20,6 +20,10 @@ function X = workflow_example1(X)
 % called AARAE_workflow_processor, which is in the Processors/Basic
 % directory. 
 %
+% You should give your function an intuitively understandable name, because
+% this is what you will see when you browse the Workflows folder. The file
+% name and function name must be identical.
+%
 % An obvious alternative to writing a workflow function is to write your
 % own AARAE function and place it within a sub-directory of the Processors
 % or Analysers directories. The advantage of that is that it is accessed in
@@ -64,6 +68,15 @@ logtext('%% This is a test of using fprintf to write to AARAE''s log file.\n');
 % immediately after the function that you are interested in logging.
 
 % *************************************************************************
+% Let's check if our input is suitable - it must have an audio2 field or we
+% can't run this workflow. If there is no audio2 field, then return an
+% empty output and abandon the workflow.
+if ~isfield(X,'audio2')
+    X = [];
+    logtext('%% Selected audio does not have an audio2 field, and so it cannot be processed by workflow example 1');
+    return
+end
+
 % The following is code adapted from AARAE's log file (as an example)
 
 % The assumption is that we have a swept sinusoid measurement, of several

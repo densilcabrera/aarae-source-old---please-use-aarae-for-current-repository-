@@ -1206,7 +1206,7 @@ setappdata(hMain,'audio_recorder_silencerequest',get(hObject,'Value'));
 
 
 % --- Executes during object creation, after setting all properties.
-function SilenceRequestCheckBox_CreateFcn(hObject, eventdata, handles)
+function SilenceRequestCheckBox_CreateFcn(~, ~, ~)
 % hObject    handle to SilenceRequestCheckBox (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    empty - handles not created until after all CreateFcns called

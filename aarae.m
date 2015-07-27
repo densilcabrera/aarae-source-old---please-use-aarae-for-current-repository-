@@ -2166,6 +2166,15 @@ if handles.compareaudio == 1
                 end
                 signaldata.audio = sort(abs(signaldata.audio));
             end
+%             if plottype == 21
+%                 % plot a point representing Leq & power spectral centroid
+%                 ydata = 20*log10(rms(real(signaldata.audio)));
+%                 spectrum = abs(fft(signaldata.audio)).^2;
+%                 xdata = spectrum(1:round(end/2),:,:,:,:,:).*...
+%                     repmat(f(1:round(size(signaldata.audio,1)/2)),...
+%                     [1,chansselect(i),bandsselect(i),cyclesselect(i),outchansselect(i),dim6select(i)]);
+%                     
+%             end
             
             %             if strcmp(get(handles.(matlab.lang.makeValidName(['smooth' axes '_popup'])),'Visible'),'on')
             %                 smoothfactor = get(handles.(matlab.lang.makeValidName(['smooth' axes '_popup'])),'Value');
@@ -3130,12 +3139,15 @@ contents = cellstr(get(hObject,'String'));
 handles.procat = contents{get(hObject,'Value')};
 processes = what([cd '/Processors/' handles.procat]);
 
-if ~isempty(processes.m)
-    set(handles.proc_box,'Visible','on','String',[' ';cellstr(processes.m)],'Value',1);
-    set([handles.proc_btn,handles.proc_help_btn],'Visible','off');
-else
-    set(handles.proc_box,'Visible','off');
-    set([handles.proc_btn,handles.proc_help_btn],'Visible','off');
+try
+    if ~isempty(processes.m)
+        set(handles.proc_box,'Visible','on','String',[' ';cellstr(processes.m)],'Value',1);
+        set([handles.proc_btn,handles.proc_help_btn],'Visible','off');
+    else
+        set(handles.proc_box,'Visible','off');
+        set([handles.proc_btn,handles.proc_help_btn],'Visible','off');
+    end
+catch
 end
 guidata(hObject,handles);
 
@@ -3155,8 +3167,9 @@ end
 % Displays the process categories available in the Processors folder
 
 curdir = cd;
-processes = dir([curdir '/Processors']);
-set(hObject,'String',[' ';cellstr({processes(3:length(processes)).name}')]);
+processes = removedotfiles(dir([curdir '/Processors']));
+%set(hObject,'String',[' ';cellstr({processes(3:length(processes)).name}')]);
+set(hObject,'String',[' ';cellstr({processes.name}')]);
 handles.funname = [];
 guidata(hObject,handles)
 
@@ -3501,12 +3514,15 @@ function funcat_box_Callback(hObject, ~, handles) %#ok
 contents = cellstr(get(hObject,'String'));
 handles.funcat = contents{get(hObject,'Value')};
 analyzers = what([cd '/Analysers/' handles.funcat]);
-if ~isempty(cellstr(analyzers.m))
-    set(handles.fun_box,'Visible','on','String',[' ';cellstr(analyzers.m)],'Value',1,'Tooltip','');
-    set([handles.analyze_btn,handles.analyser_help_btn],'Visible','off');
-else
-    set(handles.fun_box,'Visible','off');
-    set([handles.analyze_btn,handles.analyser_help_btn],'Visible','off');
+try
+    if ~isempty(cellstr(analyzers.m))
+        set(handles.fun_box,'Visible','on','String',[' ';cellstr(analyzers.m)],'Value',1,'Tooltip','');
+        set([handles.analyze_btn,handles.analyser_help_btn],'Visible','off');
+    else
+        set(handles.fun_box,'Visible','off');
+        set([handles.analyze_btn,handles.analyser_help_btn],'Visible','off');
+    end
+catch
 end
 guidata(hObject,handles);
 
@@ -3524,12 +3540,14 @@ end
 
 % Populate function box with the function available in the folder 'Analysers'
 curdir = cd;
-analyzers = dir([curdir '/Analysers']);
-set(hObject,'String',[' ';cellstr({analyzers(3:length(analyzers)).name}')]);
+analyzers = removedotfiles(dir([curdir '/Analysers']));
+%set(hObject,'String',[' ';cellstr({analyzers(3:length(analyzers)).name}')]);
+set(hObject,'String',[' ';cellstr({analyzers.name}')]);
 handles.funname = [];
 guidata(hObject,handles)
 
-
+% To do: review whether these spaces at the top of the list are of any use
+% - perhaps they should not be added.
 
 
 % *************************************************************************
@@ -4828,4 +4846,27 @@ if size(eventdata.Indices,1) ~= 0 && eventdata.Indices(1,2) == 4
     else
         doresultplot(handles,handles.axesdata)
     end
+end
+
+% *************************************************************************
+% Local utility functions
+% *************************************************************************
+
+function OUT = removedotfiles(IN)
+% This function takes a structure that was created by Matlab's dir function
+% and removes all items that have a period at the start of the name field.
+% The purpose of this is to remove system files from the list
+try
+    include = true(length(IN),1);
+    for n = 1:length(IN)
+        ind = strfind(IN(n).name,'.');
+        if ~isempty(ind)
+            if ind(1) == 1
+                include(n)= false;
+            end
+        end
+    end
+    OUT = IN(include);
+catch
+    OUT = IN;
 end

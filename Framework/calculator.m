@@ -204,6 +204,7 @@ function signalcat_box_Callback(hObject, ~, handles) %#ok : Calculator categorie
 contents = cellstr(get(hObject,'String'));
 calccat = contents{get(hObject,'Value')};
 calculators = what([cd '/Calculators/' calccat]);
+try
 if ~isempty(cellstr(calculators.m))
     set(handles.signal_box,'Visible','on','String',[' ';cellstr(calculators.m)],'Value',1,'Tooltip','');
     set(handles.calc_btn,'Visible','off');
@@ -212,6 +213,8 @@ else
     set(handles.calc_btn,'Visible','off');
 end
 guidata(hObject,handles);
+catch
+end
 
 % --- Executes during object creation, after setting all properties.
 function signalcat_box_CreateFcn(hObject, ~, handles) %#ok : Calculator categories box creation
@@ -227,8 +230,9 @@ end
 
 % Populate function box with the function available in the folder 'Calculators'
 curdir = cd;
-signals = dir([curdir '/Calculators']);
-set(hObject,'String',[' ';cellstr({signals(3:length(signals)).name}')]);
+signals = removedotfiles(dir([curdir '/Calculators']));
+%set(hObject,'String',[' ';cellstr({signals(3:length(signals)).name}')]);
+set(hObject,'String',[' ';cellstr({signals.name}')]);
 handles.funname = [];
 guidata(hObject,handles)
 
@@ -242,6 +246,7 @@ function signal_box_Callback(hObject, ~, handles) %#ok : Calculator list selecti
 % Hints: contents = cellstr(get(hObject,'String')) returns signal_box contents as cell array
 %        contents{get(hObject,'Value')} returns selected item from signal_box
 % Allows 'help' display when mouse is hoovered over fun_box
+try
 contents = cellstr(get(hObject,'String'));
 selection = contents{get(hObject,'Value')};
 [~,funname] = fileparts(selection);
@@ -256,6 +261,8 @@ else
     set(handles.calc_btn,'Visible','off');
 end
 guidata(hObject,handles);
+catch
+end
 
 % --- Executes during object creation, after setting all properties.
 function signal_box_CreateFcn(hObject, ~, ~) %#ok : Calculator selection box creation
@@ -267,4 +274,29 @@ function signal_box_CreateFcn(hObject, ~, ~) %#ok : Calculator selection box cre
 %       See ISPC and COMPUTER.
 if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
     set(hObject,'BackgroundColor','white');
+end
+
+
+
+% *************************************************************************
+% Local utility functions
+% *************************************************************************
+
+function OUT = removedotfiles(IN)
+% This function takes a structure that was created by Matlab's dir function
+% and removes all items that have a period at the start of the name field.
+% The purpose of this is to remove system files from the list
+try
+    include = true(length(IN),1);
+    for n = 1:length(IN)
+        ind = strfind(IN(n).name,'.');
+        if ~isempty(ind)
+            if ind(1) == 1
+                include(n)= false;
+            end
+        end
+    end
+    OUT = IN(include);
+catch
+    OUT = IN;
 end

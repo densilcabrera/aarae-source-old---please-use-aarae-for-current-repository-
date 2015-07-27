@@ -1,32 +1,6 @@
 function X = workflow_example3(X)
-% This is an example of how a processing and analysis workflow can be written,
+% This is an example of how an analysis workflow can be written,
 % by adapting code that was written to AARAE's log file.
-%
-% Many of the operations that are done in AARAE are automatically
-% documented in the log file for the session, and operations that can be done
-% equivalently with simple function calls are written as such (without a %
-% comment symbol at the start of the line).
-%
-% You can use these function calls in a workflow function (which this is an
-% example of). That way, a sequence of operations that might involve
-% tedious data entry can become streamlined into a single quick operation.
-%
-% An AARAE workflow function (like this function) is stored in the
-% Workflows directory. To run it from the AARAE GUI, use the processor
-% called AARAE_workflow_processor, which is in the Processors/Basic
-% directory. 
-%
-% An obvious alternative to writing a workflow function is to write your
-% own AARAE function and place it within a sub-directory of the Processors
-% or Analysers directories. The advantage of that is that it is accessed in
-% exactly the same way as any other AARAE analyser or processor. Perhaps
-% there are disadvantages to that, such as a build-up of clutter in the
-% AARAE Analysers or Processors directories, and potential confusion
-% between types of functions - so you need to decide what works best for
-% you. The AARAE workflow functions have the advantage of being in an
-% obvious and easily accessed directory, and a small amount of
-% infrastructure that makes them behave more flexibly than processors or
-% analysers.
 %
 % In this example, it is assumed that the user has generated a room impulse
 % response (or more than one). They are interested in calculating
