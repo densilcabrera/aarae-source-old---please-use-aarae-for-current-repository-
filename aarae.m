@@ -1778,8 +1778,9 @@ if handles.compareaudio == 1
             smoothingmethod = str2num(char(param(1)));
             changeplottype = str2num(char(param(2)));
         else
-            smoothingmethod = str2num(defaultsmoothing);
-            changeplottype = 0;
+%             smoothingmethod = str2num(defaultsmoothing);
+%             changeplottype = 0;
+            return
         end
     end
     
