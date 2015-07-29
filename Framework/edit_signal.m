@@ -450,9 +450,9 @@ else % Display out of boundaries warnings
             handles.testsignal(handles.version) = handles.testsignal(handles.version - 1);
             sizeprever = size(handles.testsignal(handles.version-1).audio);
             if get(handles.timescale_popup,'Value') == 1
-                handles.testsignal(handles.version).audio = cat(1,handles.testsignal(handles.version - 1).audio,zeros([abs(xf-max(handles.rel_time))*handles.fs,sizeprever(2:end)]));
+                handles.testsignal(handles.version).audio = cat(1,handles.testsignal(handles.version - 1).audio,zeros([round(abs(xf-max(handles.rel_time))*handles.fs),sizeprever(2:end)]));
             elseif get(handles.timescale_popup,'Value') == 2
-                handles.testsignal(handles.version).audio = cat(1,handles.testsignal(handles.version - 1).audio,zeros([abs(xf-max(handles.rel_time)),sizeprever(2:end)]));
+                handles.testsignal(handles.version).audio = cat(1,handles.testsignal(handles.version - 1).audio,zeros([round(abs(xf-max(handles.rel_time))),sizeprever(2:end)]));
             end
             handles.rel_time = linspace(xi,xf,length(handles.testsignal(handles.version).audio));
             handles.xi(handles.version) = handles.xi(handles.version - 1);
