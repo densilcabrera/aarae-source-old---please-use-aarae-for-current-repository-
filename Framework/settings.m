@@ -303,7 +303,7 @@ function specmagscale_popup_CreateFcn(hObject, eventdata, handles)
 if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
     set(hObject,'BackgroundColor','white');
 end
-scalingmethod = {'Raw','Divided by length','Times sqrt2/length'};
+scalingmethod = {'Raw','Divided by length','x sqrt2/length','x 2/length'};
 set(hObject,'String',scalingmethod)
 guidata(hObject,handles)
 

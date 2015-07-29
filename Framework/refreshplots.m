@@ -39,8 +39,10 @@ set(handles.(matlab.lang.makeValidName(['smooth' axes '_popup'])),'Visible','off
 switch handles.Settings.specmagscale;
     case {'Divided by length'}
         spectscale = 1./length(linea);
-    case {'Times sqrt2/length'}
+    case {'x sqrt2/length'}
         spectscale = 2.^0.5./length(linea);
+    case {'x 2/length'}
+        spectscale = 2./length(linea);
     otherwise
         spectscale = 1;
 end

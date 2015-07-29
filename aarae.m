@@ -1978,8 +1978,10 @@ if handles.compareaudio == 1
             switch handles.Settings.specmagscale;
                 case {'Divided by length'}
                     spectscale = 1./len(i);
-                case {'Times sqrt2/length'}
+                case {'x sqrt2/length'}
                     spectscale = 2.^0.5./len(i);
+                case {'x 2/length'}
+                    spectscale = 2./len(i);
                 otherwise
                     spectscale = 1;
             end
@@ -3974,8 +3976,10 @@ if ~isempty(click) && ((click == handles.axestime) || (get(click,'Parent') == ha
         switch handles.Settings.specmagscale;
             case {'Divided by length'}
                 spectscale = 1./length(linea);
-            case {'Times sqrt2/length'}
+            case {'x sqrt2/length'}
                 spectscale = 2.^0.5./length(linea);
+            case {'x 2/length'}
+                spectscale = 2./length(linea);
             otherwise
                 spectscale = 1;
         end
@@ -4099,8 +4103,10 @@ if ~isempty(click) && ((click == handles.axesfreq) || (get(click,'Parent') == ha
         switch handles.Settings.specmagscale;
             case {'Divided by length'}
                 spectscale = 1./length(linea);
-            case {'Times sqrt2/length'}
+            case {'x sqrt2/length'}
                 spectscale = 2.^0.5./length(linea);
+            case {'x 2/length'}
+                spectscale = 2./length(linea);
             otherwise
                 spectscale = 1;
         end
