@@ -16,9 +16,9 @@ function X = workflow_example1(X)
 % tedious data entry can become streamlined into a single quick operation.
 %
 % An AARAE workflow function (like this function) is stored in the
-% Workflows directory. To run it from the AARAE GUI, use the processor
-% called AARAE_workflow_processor, which is in the Processors/Basic
-% directory. 
+% Workflows directory. To run it from the AARAE GUI, press the 'Run
+% Workflow' button. This button calls the AARAE_workflow_processor, which
+% is in the Processors/Basic directory.
 %
 % You should give your function an intuitively understandable name, because
 % this is what you will see when you browse the Workflows folder. The file
@@ -108,8 +108,8 @@ Y = ReverberationTime_IR1(X,48000,-20,1,1,1,0,0,0,125,8000);
 speech = [55         52.9         49.2         43.2         37.2         31.2         25.2];
 noise = [30  25  20  15  10  8  5];
 % Log the values that you are interested in:
-fprintf(handles.fid,['Speech spectrum: ',num2str(speech),' dB \n']);
-fprintf(handles.fid,['Noise spectrum: ',num2str(noise),' dB \n']);
+logtext(['Speech spectrum: ',num2str(speech),' dB \n']);
+logtext(['Noise spectrum: ',num2str(noise),' dB \n']);
 % Run the analysis
 X = STI_IR(X,48000,speech,noise,2011,1,1,2,1,0);
 
