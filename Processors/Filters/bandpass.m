@@ -1,4 +1,4 @@
-function OUT = bandpass(IN, flo, fhi, orderout, fs, phase)
+function OUT = bandpass(IN, flo, fhi, order, fs, phase)
 % This function applies a zero phase bandpass filter in the frequency
 % domain to the input audio.
 %
@@ -30,27 +30,26 @@ end
 if nargin ==1
     param = inputdlg({'High frequency limit (Hz)';...
         'Low frequency limit (Hz)';...
-        'Filter pseudo-order';
+        'Filter pseudo-order in-band';...
+        'Filter pseudo-order out-of-band';...
         'Maximum phase [-1], Zero phase [0] or Mimimum phase [1]'},...
         'Band Limit Settings',...
         [1 60],...
-        {num2str(fs/2);'0';'24';'0'});
+        {num2str(fs/2);'0';'24';'24';'0'});
     
     param = str2num(char(param));
     
-    if length(param) < 3, param = []; end
+    if length(param) < 5, param = []; end
     
     if ~isempty(param)
         fhi = param(1);
         flo = param(2);
-        orderout = param(3);
-        phase = param(4);
+        order = [param(3) param(4)];
+        phase = param(5);
     else
         OUT = [];
         return
     end
-else
-    param = [];
 end
 
 if fhi > flo ...
@@ -61,15 +60,15 @@ else
     ok = 0;
 end
 
-if ~isempty(audio) && ~isempty(fs) && ~isempty(orderout) && ok ==1
+if ~isempty(audio) && ~isempty(fs) && ~isempty(order) && ok ==1
     [len,chans,bands,dim4,dim5,dim6] = size(audio);
     
-    
-    if mod(len,2) == 1
-        % use an even length signal
-        audio = [audio;ones(1,chans,bands,dim4,dim5,dim6)];       
-    end
-    fftlen = size(audio,1);
+    if length(order) == 1, order = [order order]; end
+%     if mod(len,2) == 1
+%         % use an even length signal
+%         audio = [audio;ones(1,chans,bands,dim4,dim5,dim6)];       
+%     end
+    fftlen = 2*len; % note that fftlen must be even
     
     % list of fft component frequencies
     f = ((1:fftlen)'-1) * fs / fftlen;
@@ -92,21 +91,20 @@ if ~isempty(audio) && ~isempty(fs) && ~isempty(orderout) && ok ==1
     % below centre frequency
     % out-of-band, using exact 6n dB/oct skirts
     mag(2:indlo-1) = ...
-        (f(2:indlo-1)./ flo ).^(orderout) ./2.^0.5;
+        (f(2:indlo-1)./ flo ).^(order(2)) ./2.^0.5;
     
     % in-band
-    orderin = orderout; % change this later if needed
     mag(indlo:indfc-1) = ...
-        (1 ./ (1 + (f(indlo:indfc-1)./ flo ).^(-2*orderin))).^0.5;
+        (1 ./ (1 + (f(indlo:indfc-1)./ flo ).^(-2*order(1)))).^0.5;
     
     % from centre frequency to Nyquist frequency
     % in-band
     mag(indfc:indhi) = ...
-        (1 ./ (1 + (f(indfc:indhi)./ fhi ).^(2*orderin))).^0.5;
+        (1 ./ (1 + (f(indfc:indhi)./ fhi ).^(2*order(1)))).^0.5;
     
     % out-of-band, using exact 6n dB/oct skirts
     mag(indhi+1:fftlen/2+1) = ...
-        (f(indhi+1:fftlen/2+1) ./ fhi).^(-orderout) ./ 2.^0.5;
+        (f(indhi+1:fftlen/2+1) ./ fhi).^(-order(2)) ./ 2.^0.5;
     
     % normalize gain to 0 dB at fc
     % note that if flo and fhi are too close together (or the in-band
@@ -127,13 +125,13 @@ if ~isempty(audio) && ~isempty(fs) && ~isempty(orderout) && ok ==1
     
     
     % apply the filter
-    audio = ifft(fft(audio).* repmat(mag,[1,chans,bands,dim4,dim5,dim6]));
-    
+    audio = ifft(fft(audio,fftlen).* repmat(mag,[1,chans,bands,dim4,dim5,dim6]));
+    audio = audio(1:len,:,:,:,:,:);
     if isstruct(IN)
         OUT = IN;
         OUT.audio = audio;
         OUT.funcallback.name = 'bandpass.m';
-        OUT.funcallback.inarg = {flo,fhi,orderout,fs,phase};
+        OUT.funcallback.inarg = {flo,fhi,order,fs,phase};
     else
         OUT = audio;
     end

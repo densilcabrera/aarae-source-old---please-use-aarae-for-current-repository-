@@ -1,5 +1,5 @@
 function OUT = AARAE_workflow_processor(IN,filename)
-% This function provides a simple method for running custom-written
+% This function provides a simple method for running user-written
 % workflow functions, using code adapted from AARAE's log file (or code in 
 % a similar style).
 %
@@ -72,7 +72,7 @@ try
     end
     OUT.funcallback.name = 'AARAE_workflow_processor.m';
     OUT.funcallback.inarg = {filename};
-    %OUT.workflowname = filename;
+
     % classify as 'results' if the output does not have audio, or does have
     % tables
     

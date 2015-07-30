@@ -186,7 +186,7 @@ handles.mytree.setSelectedNode(handles.root);
 handles.mytree.setMultipleSelectionEnabled(true);
 
 % Generate activity log
-activity = dir([cd '/Log' '/activity log.txt']);
+activity = dir([cd '/Log' '/activity log 1.txt']);
 if isempty(activity)
     activitylog = '/activity log 1.txt';
     handles.fid = fopen([cd '/Log' activitylog], 'w');
