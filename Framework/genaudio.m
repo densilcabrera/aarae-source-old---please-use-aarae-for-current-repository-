@@ -198,7 +198,7 @@ else
     if isfield(handles.signaldata,'audio2')
         h = msgbox('Companion signal loaded into audio2','AARAE info','modal');
         uiwait(h,1.5);
-        delete(h);
+        if ishandle(h), delete(h); end
     end
 end
 guidata(hObject,handles);
