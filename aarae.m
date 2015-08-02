@@ -1967,14 +1967,14 @@ if handles.compareaudio == 1
                 dim6plot(dim6plot<=dim6(i)));
             t = linspace(0,length(signaldata.audio),length(signaldata.audio))./signaldata.fs;
             f = signaldata.fs .* ((1:length(signaldata.audio))-1) ./ length(signaldata.audio);
-            if isfield(signaldata,'cal') && handles.Settings.calibrationtoggle == 1
-                if size(chans(i),2) == length(signaldata.cal)
-                    signaldata.cal(isnan(signaldata.cal)) = 0;
-                    signaldata.cal = signaldata.cal(chanplot(i));
-                    linea = linea.*repmat(10.^(signaldata.cal(:)'./20),...
-                        [len(i),1,bandsselect,cyclesselect,outchansselect,dim6elect]);
-                end
-            end
+%             if isfield(signaldata,'cal') && handles.Settings.calibrationtoggle == 1
+%                 if size(chans(i),2) == length(signaldata.cal)
+%                     signaldata.cal(isnan(signaldata.cal)) = 0;
+%                     signaldata.cal = signaldata.cal(chanplot(i));
+%                     signaldata.audio = signaldata.audio.*repmat(10.^(signaldata.cal(:)'./20),...
+%                         [len(i),1,bandsselect,cyclesselect,outchansselect,dim6select]);
+%                 end
+%             end
             switch handles.Settings.specmagscale;
                 case {'Divided by length'}
                     spectscale = 1./len(i);
