@@ -109,6 +109,12 @@ else
         set(handles.pb_enable,'Visible','on','Value',1);
         set(handles.IN_name,'String',['rec_' selectednode(1).getName.char])
         handles.outputdata = handles.signaldata;
+        if mainHandles.alternate==1 && isfield(handles.outputdata,'audio2')
+            % swap audio with audio2
+            audio = handles.outputdata.audio2;
+            handles.outputdata.audio2 = handles.outputdata.audio;
+            handles.outputdata.audio = audio;
+        end
         handles.dur = length(handles.outputdata.audio)/handles.outputdata.fs;
         handles.t = linspace(0,handles.dur,length(handles.outputdata.audio));
         output_settings{1} = ['Playback audio loaded: ' selectednode(1).getName.char];

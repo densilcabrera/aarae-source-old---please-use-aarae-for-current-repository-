@@ -1642,7 +1642,7 @@ if handles.compareaudio == 1
     
     dimsize = [numberofnodes;max(chans);max(bands);max(cycles);max(outchans);max(dim6)];
     
-    if handles.Settings.calibrationtoggle == 1
+    if handles.Settings.calibrationtoggle == 1 && handles.alternate~=1
         default11 = '1';
     else
         default11 = '0';
@@ -1964,7 +1964,8 @@ if handles.compareaudio == 1
         if handles.alternate==1 && isfield(selectedNodes(i).handle.UserData,'audio2')
             signaldata.audio = signaldata.audio2;
         end
-        if ~isempty(signaldata) && isfield(signaldata,'audio')
+        % apply calibration (if requested and if possible)
+        if ~isempty(signaldata) && isfield(signaldata,'audio') && handles.alternate~=1
             if isfield(signaldata,'cal') && cal_or_norm == 1
                 if size(signaldata.audio,2) == length(signaldata.cal)
                     signaldata.cal(isnan(signaldata.cal)) = 0;
@@ -1998,6 +1999,7 @@ if handles.compareaudio == 1
             
             
             if plottype == 1
+                % REAL AMPLITUDE AS A FUNCTION OF TIME
                 signaldata.audio = real(signaldata.audio);
                 if cal_or_norm == 2
                     signaldata.audio = signaldata.audio...
@@ -2006,6 +2008,7 @@ if handles.compareaudio == 1
             end
             
             if plottype == 2
+                % SQUARED AMPLITUDE AS A FUNCTION OF TIME
                 if smoothingmethod > 1
                     signaldata.audio = filter(ones(1,smoothingmethod)/smoothingmethod,...
                         1,signaldata.audio.^2);
@@ -2019,6 +2022,7 @@ if handles.compareaudio == 1
             end
             
             if plottype == 3
+                % LEVEL AS A FUNCTION OF TIME
                 if smoothingmethod > 1
                     signaldata.audio = 10.*log10(...
                         filter(ones(1,smoothingmethod)/smoothingmethod,...
@@ -2033,6 +2037,7 @@ if handles.compareaudio == 1
             end
             
             if plottype == 4
+                % TIME ENVELOPE (VIA HILBERT)
                 for b = 1:bandsselect(i)
                     for d4 = 1:cyclesselect(i)
                         for d5 = 1:outchansselect(i)
@@ -2054,6 +2059,7 @@ if handles.compareaudio == 1
             end
             
             if plottype == 5
+                % INSTANTANEOUS FREQUENCY
                 for b = 1:bandsselect(i)
                     for d4 = 1:cyclesselect(i)
                         for d5 = 1:outchansselect(i)
@@ -2074,6 +2080,7 @@ if handles.compareaudio == 1
             end
             
             if plottype == 6
+                % ABSOLUTE AMPLITUDE AS A FUNCTION OF TIME
                 if smoothingmethod > 1
                     signaldata.audio = filter(ones(1,smoothingmethod)/smoothingmethod,...
                         1,abs(signaldata.audio));
@@ -2087,6 +2094,7 @@ if handles.compareaudio == 1
             end
             
             if plottype == 7
+                % IMAGINARY AMPLITUDE AS A FUNCTION OF TIME
                 signaldata.audio = imag(signaldata.audio);
                 if cal_or_norm == 2 && mean(mean(mean(mean(mean(max(abs(signaldata.audio))))))) > 0
                     signaldata.audio = signaldata.audio...
@@ -2094,6 +2102,7 @@ if handles.compareaudio == 1
                 end
             end
             
+            % DO THE FFT HERE FOR THE SPECTRUM PLOTS
             if plottype == 8 || plottype == 9 || plottype == 10 ||...
                     plottype == 11 || plottype == 12 || plottype == 13 ||...
                     plottype == 14 || plottype == 15 || plottype ==16 ||...
@@ -2117,7 +2126,9 @@ if handles.compareaudio == 1
                     end
                 end
             end
+            
             if plottype == 8
+                % LEVEL AS A FUNCTION OF FREQUENCY
                 if smoothingmethod < 1
                     signaldata.audio =...
                         10*log10(abs(signaldata.audio.*spectscale).^2);
@@ -2143,7 +2154,9 @@ if handles.compareaudio == 1
                         - repmat(max(signaldata.audio),[size(signaldata.audio,1),1,1,1,1,1]);
                 end
             end
+            
             if plottype == 9
+                % SQUARED MAGNITUDE AS A FUNCTION OF FREQUENCY (POWER SPECTRUM)
                 signaldata.audio = (abs(signaldata.audio).*spectscale).^2;
                 if smoothingmethod >= 1
                     for b = 1:bandsselect(i)
@@ -2166,7 +2179,9 @@ if handles.compareaudio == 1
                         ./ repmat(max(abs(signaldata.audio)),[size(signaldata.audio,1),1,1,1,1,1]);
                 end
             end
+            
             if plottype == 10
+                % MAGNITUDE AS A FUNCTION OF FREQUENCY
                 signaldata.audio = abs(signaldata.audio).*spectscale;
                 if smoothingmethod >= 1
                     for b = 1:bandsselect(i)
@@ -2189,20 +2204,26 @@ if handles.compareaudio == 1
                         ./ repmat(max(abs(signaldata.audio)),[size(signaldata.audio,1),1,1,1,1,1]);
                 end
             end
+            
             if plottype == 11
+                % REAL SPECTRUM
                 signaldata.audio = real(signaldata.audio).*spectscale; 
                 if cal_or_norm == 2
                     signaldata.audio = signaldata.audio...
                         ./ repmat(max(abs(signaldata.audio)),[size(signaldata.audio,1),1,1,1,1,1]);
                 end
             end
+            
             if plottype == 12
+                % IMAGINARY SPECTRUM
                 signaldata.audio = imag(signaldata.audio).*spectscale;
                 if cal_or_norm == 2
                     signaldata.audio = signaldata.audio...
                         ./ repmat(max(abs(signaldata.audio)),[size(signaldata.audio,1),1,1,1,1,1]);
                 end
             end
+            
+            % VARIOUS PHASE SPECTRA
             if plottype == 13, signaldata.audio = angle(signaldata.audio); end
             if plottype == 14, signaldata.audio = unwrap(angle(signaldata.audio)); end
             if plottype == 15, signaldata.audio = angle(signaldata.audio) .* 180/pi; end
@@ -2210,24 +2231,31 @@ if handles.compareaudio == 1
                 signaldata.audio = unwrap(angle(signaldata.audio)) ./(2*pi); end
             
             if plottype == 17
+                % GROUP DELAY
                 signaldata.audio = -diff(unwrap(angle(signaldata.audio))).*length(signaldata.audio)/(signaldata.fs*2*pi).*1000;
                 f = f(1:end-1);
             end
+            
             if plottype == 18
+                % CUMULATIVE TIME DISTRIBUTION OF AMPLITUDE
                 signaldata.audio = sort(real(signaldata.audio));
                 if cal_or_norm == 2
                     signaldata.audio = signaldata.audio...
                         ./ repmat(max(abs(signaldata.audio)),[size(signaldata.audio,1),1,1,1,1,1]);
                 end
             end
+            
             if plottype == 19
+                % CUMULATIVE TIME DISTRIBUTION OF LEVEL
                 signaldata.audio = sort(10*log10(abs(signaldata.audio).^2)); 
                 if cal_or_norm == 2
                     signaldata.audio = signaldata.audio...
                         - repmat(max(signaldata.audio),[size(signaldata.audio,1),1,1,1,1,1]);
                 end
             end
+            
             if plottype == 20
+                % CUMULATIVE TIME DISTRIBUTION OF ENVELOPE
                 for b = 1:bandsselect(i)
                     for d4 = 1:cyclesselect(i)
                         for d5 = 1:outchansselect(i)
@@ -2642,15 +2670,18 @@ function play_btn_Callback(hObject, ~, handles) %#ok
 
 % Call the 'desktop'
 hMain = getappdata(0,'hMain');
+% Retrieve information from the selected leaf
 audiodata = getappdata(hMain,'testsignal');
-
 if isempty(audiodata)
     warndlg('No signal loaded!');
 else
-    % Retrieve information from the selected leaf
-    testsignal = real(audiodata.audio);
-    if size(testsignal,3) > 1, testsignal = sum(testsignal,3); end
-    if size(testsignal,2) > 2, testsignal = mean(testsignal,2); end
+    if handles.alternate==1 && isfield(audiodata,'audio2')
+        testsignal = real(audiodata.audio2);
+    else
+        testsignal = real(audiodata.audio);
+    end
+    testsignal = sum(sum(sum(sum(testsignal,3),4),5),6); % sum higher dimensions
+    if size(testsignal,2) > 2, testsignal = sum(testsignal,2); end % mix channels if > 2
     testsignal = testsignal./max(max(abs(testsignal)));
     fs = audiodata.fs;
     nbits = 16;
@@ -2709,10 +2740,13 @@ audiodata = getappdata(hMain,'testsignal');
 if isempty(audiodata)
     warndlg('No signal loaded!');
 else
-    % Retrieve information from the selected leaf
-    testsignal = real(audiodata.audio);
-    if size(testsignal,3) > 1, testsignal = sum(testsignal,3); end
-    if size(testsignal,2) > 2, testsignal = mean(testsignal,2); end
+    if handles.alternate==1 && isfield(audiodata,'audio2')
+        testsignal = real(audiodata.audio2);
+    else
+        testsignal = real(audiodata.audio);
+    end
+    testsignal = sum(sum(sum(sum(testsignal,3),4),5),6); % sum higher dimensions
+    if size(testsignal,2) > 2, testsignal = sum(testsignal,2); end % mix channels if > 2
     testsignal = flipud(testsignal)./max(max(abs(testsignal)));
     fs = audiodata.fs;
     nbits = 16;
@@ -2751,10 +2785,13 @@ audiodata = getappdata(hMain,'testsignal');
 if isempty(audiodata)
     warndlg('No signal loaded!');
 else
-    % Retrieve information from the selected leaf
-    testsignal = real(audiodata.audio);
-    if size(testsignal,3) > 1, testsignal = sum(testsignal,3); end
-    if size(testsignal,2) > 2, testsignal = mean(testsignal,2); end
+    if handles.alternate==1 && isfield(audiodata,'audio2')
+        testsignal = real(audiodata.audio2);
+    else
+        testsignal = real(audiodata.audio);
+    end
+    testsignal = sum(sum(sum(sum(testsignal,3),4),5),6); % sum higher dimensions
+    if size(testsignal,2) > 2, testsignal = sum(testsignal,2); end % mix channels if > 2
     testsignal = testsignal./max(max(abs(testsignal)));
     len = length(testsignal);
     len = 2 * ceil(len/2);
@@ -2802,10 +2839,13 @@ audiodata = getappdata(hMain,'testsignal');
 if isempty(audiodata)
     warndlg('No signal loaded!');
 else
-    % Retrieve information from the selected leaf
-    testsignal = real(audiodata.audio);
-    if size(testsignal,3) > 1, testsignal = sum(testsignal,3); end
-    if size(testsignal,2) > 2, testsignal = mean(testsignal,2); end
+    if handles.alternate==1 && isfield(audiodata,'audio2')
+        testsignal = real(audiodata.audio2);
+    else
+        testsignal = real(audiodata.audio);
+    end
+    testsignal = sum(sum(sum(sum(testsignal,3),4),5),6); % sum higher dimensions
+    if size(testsignal,2) > 2, testsignal = sum(testsignal,2); end % mix channels if > 2
     testsignal = testsignal./max(max(abs(testsignal)));
     len = length(testsignal);
     %len = 2 .* ceil(len./2);
@@ -2856,10 +2896,13 @@ audiodata = getappdata(hMain,'testsignal');
 if isempty(audiodata)
     warndlg('No signal loaded!');
 else
-    % Retrieve information from the selected leaf
-    testsignal = real(audiodata.audio);
-    if size(testsignal,3) > 1, testsignal = sum(testsignal,3); end
-    if size(testsignal,2) > 2, testsignal = mean(testsignal,2); end
+    if handles.alternate==1 && isfield(audiodata,'audio2')
+        testsignal = real(audiodata.audio2);
+    else
+        testsignal = real(audiodata.audio);
+    end
+    testsignal = sum(sum(sum(sum(testsignal,3),4),5),6); % sum higher dimensions
+    if size(testsignal,2) > 2, testsignal = sum(testsignal,2); end % mix channels if > 2
     testsignal = testsignal./max(max(abs(testsignal)));
     fs = audiodata.fs;
     if handles.reference_audio.fs ~= fs
