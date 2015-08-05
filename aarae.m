@@ -1642,6 +1642,12 @@ if handles.compareaudio == 1
     
     dimsize = [numberofnodes;max(chans);max(bands);max(cycles);max(outchans);max(dim6)];
     
+    if handles.Settings.calibrationtoggle == 1
+        default11 = '1';
+    else
+        default11 = '0';
+    end
+    
     if max(dimsize) > 1
         % ******* Make a dialog box
         parameterstring1 = 'Generate subplots for Nothing [0]';
@@ -1733,6 +1739,7 @@ if handles.compareaudio == 1
             parameterstring8;...
             parameterstring9;...
             parameterstring10;...
+            'Raw values [0]; Use calibration if available [1]; or Normalise [2] (if relevant to plot type)';...
             'Change the plot type [0 | 1]'},...% inputdlg window.
             'Data Mapping & Selection',...
             [1 90],...
@@ -1743,11 +1750,11 @@ if handles.compareaudio == 1
             defaultoutchans;...
             defaultdim6;...
             defaultsmoothing;...
-            '0'});
+            default11;'0'});
         
         
         
-        if length(param) < 11, param = []; end
+        if length(param) < 12, param = []; end
         if ~isempty(param)
             subplotdim = str2num(char(param(1)));
             Hdim = str2num(char(param(2)));
@@ -1759,7 +1766,8 @@ if handles.compareaudio == 1
             outchanplot = str2num(char(param(8)));
             dim6plot = str2num(char(param(9)));
             smoothingmethod = str2num(char(param(10)));
-            changeplottype = str2num(char(param(11)));
+            cal_or_norm = str2num(char(param(11)));
+            changeplottype = str2num(char(param(12)));
         else
             % get out of here if the user presses 'cancel'
             return
@@ -1770,16 +1778,17 @@ if handles.compareaudio == 1
         
         % Dialog box for selection
         param = inputdlg({parameterstring10;...
+            'Raw values [0]; Use calibration if available [1]; or Normalise [2] (if relevant to plot type)';...
             'Change the plot type [0 | 1]'},...% inputdlg window.
             'Smoothing & plot type',...
             [1 90],...
-            {defaultsmoothing;'0'});
+            {defaultsmoothing;default11;'0'});
         if ~isempty(param)
             smoothingmethod = str2num(char(param(1)));
-            changeplottype = str2num(char(param(2)));
+            cal_or_norm = str2num(char(param(2)));
+            changeplottype = str2num(char(param(3)));
         else
-%             smoothingmethod = str2num(defaultsmoothing);
-%             changeplottype = 0;
+            % cancel
             return
         end
     end
@@ -1956,7 +1965,7 @@ if handles.compareaudio == 1
             signaldata.audio = signaldata.audio2;
         end
         if ~isempty(signaldata) && isfield(signaldata,'audio')
-            if isfield(signaldata,'cal') && handles.Settings.calibrationtoggle == 1
+            if isfield(signaldata,'cal') && cal_or_norm == 1
                 if size(signaldata.audio,2) == length(signaldata.cal)
                     signaldata.cal(isnan(signaldata.cal)) = 0;
                     signaldata.audio = signaldata.audio .* ...
@@ -1990,6 +1999,10 @@ if handles.compareaudio == 1
             
             if plottype == 1
                 signaldata.audio = real(signaldata.audio);
+                if cal_or_norm == 2
+                    signaldata.audio = signaldata.audio...
+                        ./ repmat(max(abs(signaldata.audio)),[size(signaldata.audio,1),1,1,1,1,1]);
+                end
             end
             
             if plottype == 2
@@ -1998,6 +2011,10 @@ if handles.compareaudio == 1
                         1,signaldata.audio.^2);
                 else
                     signaldata.audio = signaldata.audio.^2;
+                end
+                if cal_or_norm == 2
+                    signaldata.audio = signaldata.audio...
+                        ./ repmat(max(abs(signaldata.audio)),[size(signaldata.audio,1),1,1,1,1,1]);
                 end
             end
             
@@ -2008,6 +2025,10 @@ if handles.compareaudio == 1
                         1,signaldata.audio.^2));
                 else
                     signaldata.audio = 10.*log10(signaldata.audio.^2);
+                end
+                if cal_or_norm == 2
+                    signaldata.audio = signaldata.audio...
+                        - repmat(max(signaldata.audio),[size(signaldata.audio,1),1,1,1,1,1]);
                 end
             end
             
@@ -2026,6 +2047,10 @@ if handles.compareaudio == 1
                     signaldata.audio = filter(ones(1,smoothingmethod)/smoothingmethod,...
                         1,signaldata.audio);
                 end
+                if cal_or_norm == 2
+                    signaldata.audio = signaldata.audio...
+                        ./ repmat(max(abs(signaldata.audio)),[size(signaldata.audio,1),1,1,1,1,1]);
+                end
             end
             
             if plottype == 5
@@ -2037,7 +2062,6 @@ if handles.compareaudio == 1
                                     diff([angle(hilbert(real(...
                                     signaldata.audio(:,:,b,d4,d5,d6)))); ...
                                     zeros(1,chansselect(i))])*signaldata.fs/2/pi;
-                                
                             end
                         end
                     end
@@ -2048,6 +2072,7 @@ if handles.compareaudio == 1
                         smoothingmethod);
                 end
             end
+            
             if plottype == 6
                 if smoothingmethod > 1
                     signaldata.audio = filter(ones(1,smoothingmethod)/smoothingmethod,...
@@ -2055,10 +2080,20 @@ if handles.compareaudio == 1
                 else
                     signaldata.audio = abs(signaldata.audio);
                 end
+                if cal_or_norm == 2
+                    signaldata.audio = signaldata.audio...
+                        ./ repmat(max(abs(signaldata.audio)),[size(signaldata.audio,1),1,1,1,1,1]);
+                end
             end
+            
             if plottype == 7
                 signaldata.audio = imag(signaldata.audio);
+                if cal_or_norm == 2 && mean(mean(mean(mean(mean(max(abs(signaldata.audio))))))) > 0
+                    signaldata.audio = signaldata.audio...
+                        ./ repmat(max(abs(signaldata.audio)),[size(signaldata.audio,1),1,1,1,1,1]);
+                end
             end
+            
             if plottype == 8 || plottype == 9 || plottype == 10 ||...
                     plottype == 11 || plottype == 12 || plottype == 13 ||...
                     plottype == 14 || plottype == 15 || plottype ==16 ||...
@@ -2084,10 +2119,8 @@ if handles.compareaudio == 1
             end
             if plottype == 8
                 if smoothingmethod < 1
-                    
                     signaldata.audio =...
                         10*log10(abs(signaldata.audio.*spectscale).^2);
-                    
                 else
                     for b = 1:bandsselect(i)
                         for d4 = 1:cyclesselect(i)
@@ -2104,6 +2137,10 @@ if handles.compareaudio == 1
                     signaldata.audio = signaldata.audio(f>lowlimit,:,:,:,:,:);
                     f = f(f>lowlimit);
                     signaldata.audio = 10*log10(signaldata.audio);
+                end
+                if cal_or_norm == 2
+                    signaldata.audio = signaldata.audio...
+                        - repmat(max(signaldata.audio),[size(signaldata.audio,1),1,1,1,1,1]);
                 end
             end
             if plottype == 9
@@ -2124,6 +2161,10 @@ if handles.compareaudio == 1
                     signaldata.audio = signaldata.audio(f>lowlimit,:,:,:,:,:);
                     f = f(f>lowlimit);
                 end
+                if cal_or_norm == 2
+                    signaldata.audio = signaldata.audio...
+                        ./ repmat(max(abs(signaldata.audio)),[size(signaldata.audio,1),1,1,1,1,1]);
+                end
             end
             if plottype == 10
                 signaldata.audio = abs(signaldata.audio).*spectscale;
@@ -2143,9 +2184,25 @@ if handles.compareaudio == 1
                     signaldata.audio = signaldata.audio(f>lowlimit,:,:,:,:,:);
                     f = f(f>lowlimit);
                 end
+                if cal_or_norm == 2
+                    signaldata.audio = signaldata.audio...
+                        ./ repmat(max(abs(signaldata.audio)),[size(signaldata.audio,1),1,1,1,1,1]);
+                end
             end
-            if plottype == 11, signaldata.audio = real(signaldata.audio).*spectscale; end
-            if plottype == 12, signaldata.audio = imag(signaldata.audio).*spectscale; end
+            if plottype == 11
+                signaldata.audio = real(signaldata.audio).*spectscale; 
+                if cal_or_norm == 2
+                    signaldata.audio = signaldata.audio...
+                        ./ repmat(max(abs(signaldata.audio)),[size(signaldata.audio,1),1,1,1,1,1]);
+                end
+            end
+            if plottype == 12
+                signaldata.audio = imag(signaldata.audio).*spectscale;
+                if cal_or_norm == 2
+                    signaldata.audio = signaldata.audio...
+                        ./ repmat(max(abs(signaldata.audio)),[size(signaldata.audio,1),1,1,1,1,1]);
+                end
+            end
             if plottype == 13, signaldata.audio = angle(signaldata.audio); end
             if plottype == 14, signaldata.audio = unwrap(angle(signaldata.audio)); end
             if plottype == 15, signaldata.audio = angle(signaldata.audio) .* 180/pi; end
@@ -2156,8 +2213,20 @@ if handles.compareaudio == 1
                 signaldata.audio = -diff(unwrap(angle(signaldata.audio))).*length(signaldata.audio)/(signaldata.fs*2*pi).*1000;
                 f = f(1:end-1);
             end
-            if plottype == 18, signaldata.audio = sort(real(signaldata.audio)); end
-            if plottype == 19, signaldata.audio = sort(10*log10(abs(signaldata.audio).^2)); end
+            if plottype == 18
+                signaldata.audio = sort(real(signaldata.audio));
+                if cal_or_norm == 2
+                    signaldata.audio = signaldata.audio...
+                        ./ repmat(max(abs(signaldata.audio)),[size(signaldata.audio,1),1,1,1,1,1]);
+                end
+            end
+            if plottype == 19
+                signaldata.audio = sort(10*log10(abs(signaldata.audio).^2)); 
+                if cal_or_norm == 2
+                    signaldata.audio = signaldata.audio...
+                        - repmat(max(signaldata.audio),[size(signaldata.audio,1),1,1,1,1,1]);
+                end
+            end
             if plottype == 20
                 for b = 1:bandsselect(i)
                     for d4 = 1:cyclesselect(i)
@@ -2170,6 +2239,10 @@ if handles.compareaudio == 1
                     end
                 end
                 signaldata.audio = sort(abs(signaldata.audio));
+                if cal_or_norm == 2
+                    signaldata.audio = signaldata.audio...
+                        ./ repmat(max(abs(signaldata.audio)),[size(signaldata.audio,1),1,1,1,1,1]);
+                end
             end
 %             if plottype == 21
 %                 % plot a point representing Leq & power spectral centroid
