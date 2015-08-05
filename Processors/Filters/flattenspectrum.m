@@ -1,6 +1,6 @@
 function OUT = flattenspectrum(IN,writeaudio2)
 % This function returns a flat spectrum magnitude audio signal, while
-% retaining the phase of the input.
+% retaining the phase of the input. DC is zeroed.
 %
 % Optionally, an audio2 field is written (as a kind of inverse filter, for
 % educational demonstration purposes).
@@ -23,7 +23,9 @@ end
 if ~isempty(audio)
     audio = fft(audio);
     meanval = rms(abs(audio));
-    audio = real(ifft(repmat(meanval,[size(audio,1),1]) .* exp(1i .* angle(audio))));
+    audio = real(ifft([zeros(size(meanval));...
+        repmat(meanval,[size(audio,1)-1,1])]...
+        .* exp(1i .* angle(audio))));
     if isstruct(IN)
         OUT = IN;
         OUT.audio = audio;
