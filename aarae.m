@@ -1964,10 +1964,10 @@ if handles.compareaudio == 1
         signaldata = selectedNodes(i).handle.UserData;
         if handles.alternate==1 && isfield(selectedNodes(i).handle.UserData,'audio2')
             signaldata.audio = signaldata.audio2;
-        end
-        % apply calibration (if requested and if possible)
-        if ~isempty(signaldata) && isfield(signaldata,'audio') && handles.alternate~=1
-            if isfield(signaldata,'cal') && cal_or_norm == 1
+        end 
+        if ~isempty(signaldata) && isfield(signaldata,'audio')
+            % apply calibration (if requested and if possible)
+            if isfield(signaldata,'cal') && cal_or_norm == 1  && handles.alternate~=1
                 if size(signaldata.audio,2) == length(signaldata.cal)
                     signaldata.cal(isnan(signaldata.cal)) = 0;
                     signaldata.audio = signaldata.audio .* ...
