@@ -277,7 +277,7 @@ function aarae_WindowKeyPressFcn(hObject, eventdata, handles) %#ok
 %	Modifier: name(s) of the modifier key(s) (i.e., control, shift) pressed
 % handles    structure with handles and user data (see GUIDATA)
 handles = guidata(hObject);
-if strcmp(eventdata.Modifier,'shift')
+if strcmp(eventdata.Modifier,'alt')
     handles.alternate = 1;
 else
     handles.alternate = 0;
