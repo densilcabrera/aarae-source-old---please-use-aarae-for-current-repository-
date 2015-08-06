@@ -968,6 +968,7 @@ if ~isempty(audiodata)
     % Log verbose metadata
     logaudioleaffields(audiodata);
 end
+handles.alternate=0; % 
 java.lang.Runtime.getRuntime.gc % Java garbage collection
 guidata(hObject, handles);
 
@@ -2632,8 +2633,8 @@ if handles.compareaudio == 1
 elseif handles.compareaudio == 0
     comparedata('main_stage1', handles.aarae);
 end
-
-
+handles.alternate = 0;
+guidata(hObject, handles);
 
 
 
@@ -2697,6 +2698,7 @@ else
         warndlg('Device not supported for playback!');
     end
 end
+handles.alternate = 0;
 guidata(hObject, handles);
 
 
@@ -2762,6 +2764,7 @@ else
         warndlg('Device not supported for playback!');
     end
 end
+handles.alternate = 0;
 guidata(hObject, handles);
 
 
@@ -2815,6 +2818,7 @@ else
         warndlg('Device not supported for playback!');
     end
 end
+handles.alternate = 0;
 guidata(hObject, handles);
 
 
@@ -2872,6 +2876,7 @@ else
         warndlg('Device not supported for playback!');
     end
 end
+handles.alternate = 0;
 guidata(hObject, handles);
 
 
@@ -2930,6 +2935,7 @@ else
         warndlg('Device not supported for playback!');
     end
 end
+handles.alternate = 0;
 guidata(hObject, handles);
 
 
@@ -4349,6 +4355,7 @@ if ~isempty(click) && strcmp(get(click,'Type'),'text')
         end
     end
 end
+handles.alternate = 0;
 guidata(hObject,handles)
 
 
