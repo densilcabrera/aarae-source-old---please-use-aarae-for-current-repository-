@@ -1900,9 +1900,9 @@ if handles.compareaudio == 1
                 case 20
                     figurename = 'Cumulative time distribution (Hilbert envelope)';
                 case 21
-                    figurename = 'Time and freq Centroids and Leq';
+                    figurename = 'Time and freq power centroids and levels';
                 case 22
-                    figurename = 'A-weighted time and freq Centroids and Leq';
+                    figurename = 'A-weighted time and freq power centroids and levels';
                 otherwise
                     figurename = '';
             end
@@ -2319,8 +2319,8 @@ if handles.compareaudio == 1
                     size(signaldata.audio,3),size(signaldata.audio,4),...
                     size(signaldata.audio,5),size(signaldata.audio,6)]);
                 spectrum = abs(signaldata.audio(1:length(f),:,:,:,:,:)).^2;
-                fcentroid = sum(f.*spectrum(1:length(f),:,:,:,:,:)) ./ ...
-                    sum(spectrum(1:length(f),:,:,:,:,:));
+                fcentroid = sum(f.*spectrum(1:size(f,1),:,:,:,:,:)) ./ ...
+                    sum(spectrum(1:size(f,1),:,:,:,:,:));
 
                 
             end
@@ -2550,7 +2550,7 @@ if handles.compareaudio == 1
                                         'MarkerFaceColor',colr,...
                                         'DisplayName',labelstring);
                                     xlabel('Time [s]');
-                                    ylabel('Leq (Lmax & L50) [dB]');
+                                    ylabel('Leq (L50 & Lmax) [dB]');
                                     
                                     hold on
                                     
@@ -2564,7 +2564,7 @@ if handles.compareaudio == 1
                                         'MarkerFaceColor',colr,...
                                         'DisplayName',labelstring);
                                     xlabel('Frequency [Hz]');
-                                    ylabel('Leq (Lmax & L50) [dB]');
+                                    ylabel('Leq (L50 & Lmax) [dB]');
                                     hold on
                                 
                                     h=subplot(2,2,4); % legend plot
