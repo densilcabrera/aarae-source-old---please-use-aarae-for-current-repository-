@@ -1741,7 +1741,7 @@ if handles.compareaudio == 1
             parameterstring9;...
             parameterstring10;...
             'Raw values [0]; Use calibration if available [1]; or Normalise [2] (if relevant to plot type)';...
-            'Change the plot type [0 | 1]'},...% inputdlg window.
+            'Change the plot type [0 | 1] (some extra plot types are also available)'},...% inputdlg window.
             'Data Mapping & Selection',...
             [1 90],...
             {default1;default2;default3;default4;...
@@ -2558,8 +2558,18 @@ if handles.compareaudio == 1
                                     ylabel('Level [dB]');
                                     hold on
                                 
-                                    %subplot(2,2,4) % legend plot
-                                    
+                                    h=subplot(2,2,4); % legend plot
+                                    ylim([0 1]);
+                                    xlim([0 1]);
+                                    plot(0.03, plotnum/(numberofsubplots+1),'marker',mark,'color','k')
+                                    hold on
+                                    text(0.06,plotnum/(numberofsubplots+1),titlestring)
+                                    text(0.6,Hind/(numberofH+1),labelstring,'color',colr)
+                                    set(h,'YTickLabel','',...
+                                        'YTick',zeros(1,0),...
+                                        'XTickLabel','',...
+                                        'XTick',zeros(1,0))
+                                    title('Legend');
                                 end
                                 if plottype ~= 21
                                     title(titlestring)
