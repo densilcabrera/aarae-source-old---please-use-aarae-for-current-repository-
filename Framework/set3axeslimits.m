@@ -6,7 +6,7 @@ iplots = findobj(compplot,'Type','axes');
 xlims = cell2mat(get(iplots,'Xlim'));
 ylims = cell2mat(get(iplots,'Ylim'));
 Levellims = ylims(2,:);
-Timelims = xlims(1,:);
+Timelims = xlims(4,:);
 Freqlims = xlims(2,:);
 prompt = {'Level min','Level max','Freq min',...
     'Freq max','Time min','Time max'};
