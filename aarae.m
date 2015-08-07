@@ -1814,7 +1814,8 @@ if handles.compareaudio == 1
             '17. Frequency - Group delay';...
             '18. Cumulative time-distribution of real amplitude';...
             '19. Cumulative time-distribution of level';...
-            '20. Cumulative time-distribution of Hilbert envelope'};
+            '20. Cumulative time-distribution of Hilbert envelope';...
+            '21. Scatter plots of time and frequency power centroid and Leq'};
 
             
         
@@ -1847,6 +1848,8 @@ if handles.compareaudio == 1
             %phasedelay(signaldata.audio,1,length(signaldata.audio),signaldata.fs);
             % (just an idea)
             %end
+            
+            
         
         [plottypeselection,ok] = listdlg('PromptString','Select the plot type',...
             'SelectionMode','single',...
@@ -1895,6 +1898,8 @@ if handles.compareaudio == 1
                     figurename = 'Cumulative time distribution [dB]';
                 case 20
                     figurename = 'Cumulative time distribution (Hilbert envelope)';
+                case 21
+                    figurename = 'Time and freq Centroids and Leq';
                 otherwise
                     figurename = '';
             end
@@ -1960,6 +1965,7 @@ if handles.compareaudio == 1
     
     % make the figure
     compplot = figure('Name',figurename);
+    pointmark = {'o';'x';'^';'s';'p';'hexagram';'d';'v';'>';'<';'+';'*'}; % if markers are needed (note that there are only 12 here)
     for i = 1:numberofnodes
         signaldata = selectedNodes(i).handle.UserData;
         if handles.alternate==1 && isfield(selectedNodes(i).handle.UserData,'audio2')
@@ -2273,6 +2279,47 @@ if handles.compareaudio == 1
                         ./ repmat(max(abs(signaldata.audio)),[size(signaldata.audio,1),1,1,1,1,1]);
                 end
             end
+            
+            if plottype == 21
+                % Leq
+                Leq = 10*log10(mean(signaldata.audio.^2));
+                
+                % power temporal centroid (centre time)
+                t=repmat(t',[1,size(signaldata.audio,2),...
+                    size(signaldata.audio,3),size(signaldata.audio,4),...
+                    size(signaldata.audio,5),size(signaldata.audio,6)]);
+                tcentroid = sum(t.*signaldata.audio.^2) ./ ...
+                    sum(signaldata.audio.^2);
+                
+                % power spectral centroid
+                if numel(signaldata.audio) < 1e6
+                    signaldata.audio = fft(signaldata.audio);
+                else
+                    for ch = 1:chansselect(i)
+                        for b = 1:bandsselect(i)
+                            for d4 = 1:cyclesselect(i)
+                                for d5 = 1:outchansselect(i)
+                                    for d6 = 1:dim6select(i)
+                                        signaldata.audio(:,ch,b,d4,d5,d6) = ...
+                                            fft(signaldata.audio(:,ch,b,d4,d5,d6));
+                                    end
+                                end
+                            end
+                        end
+                    end
+                end
+                f=repmat(f(1:round(end/2))',[1,size(signaldata.audio,2),...
+                    size(signaldata.audio,3),size(signaldata.audio,4),...
+                    size(signaldata.audio,5),size(signaldata.audio,6)]);
+                spectrum = abs(signaldata.audio(1:length(f),:,:,:,:,:)).^2;
+                fcentroid = sum(f.*spectrum(1:length(f),:,:,:,:,:)) ./ ...
+                    sum(spectrum(1:length(f),:,:,:,:,:));
+
+                
+            end
+            
+            
+            
 %             if plottype == 21
 %                 % plot a point representing Leq & power spectral centroid
 %                 ydata = 20*log10(rms(real(signaldata.audio)));
@@ -2306,24 +2353,35 @@ if handles.compareaudio == 1
                                         if isfield(signaldata,'name')
                                             titlestring = strrep(signaldata.name,'_',' ');
                                         end
-                                        if max(chansselect(i)) > 1
-                                            if isfield(signaldata,'chanID')
-                                                labelstring = [labelstring signaldata.chanID{ch,1}];
+                                        if handles.alternate==1 && isfield(signaldata,'audio2')
+                                            titlestring = [titlestring ' audio2'];
+                                            if max(chansselect(i)) > 1
+                                                labelstring = [labelstring ' chan ' num2str(ch)];
                                             end
-                                        end
-                                        if max(bandsselect(i)) > 1
-                                            if isfield(signaldata,'bandID')
-                                                labelstring = [labelstring num2str(signaldata.bandID(b))  ' Hz'];
+                                        else
+                                            if max(chansselect(i)) > 1
+                                                if isfield(signaldata,'chanID')
+                                                    labelstring = [labelstring signaldata.chanID{ch,1}];
+                                                end
+                                            end
+                                            if max(bandsselect(i)) > 1
+                                                if isfield(signaldata,'bandID')
+                                                    labelstring = [labelstring num2str(signaldata.bandID(b))  ' Hz'];
+                                                end
                                             end
                                         end
                                     case 2
                                         plotnum = ch;
-                                        if isfield(signaldata,'chanID')
-                                            titlestring = signaldata.chanID{ch,1};
-                                        end
-                                        if max(bandsselect(i)) > 1
-                                            if isfield(signaldata,'bandID')
-                                                labelstring = [labelstring num2str(signaldata.bandID(b)) ' Hz'];
+                                        if handles.alternate==1 && isfield(signaldata,'audio2')
+                                            titlestring = ['audio2 chan ' num2str(ch)];
+                                        else
+                                            if isfield(signaldata,'chanID')
+                                                titlestring = signaldata.chanID{ch,1};
+                                            end
+                                            if max(bandsselect(i)) > 1
+                                                if isfield(signaldata,'bandID')
+                                                    labelstring = [labelstring num2str(signaldata.bandID(b)) ' Hz'];
+                                                end
                                             end
                                         end
                                     case 3
@@ -2439,6 +2497,7 @@ if handles.compareaudio == 1
                                         Vind = 1;
                                 end
                                 if plottype <= 7 || plottype == 18 || plottype == 19 || plottype == 20
+                                    % TIME X-AXIS
                                     subplot(r,c,plotnum)
                                     plot(t,real(signaldata.audio(:,ch,b,d4,d5,d6)), ...
                                         'color',permute(linecolor(Hind,Sind,Vind,:),[1,4,2,3]),...
@@ -2446,7 +2505,10 @@ if handles.compareaudio == 1
                                     if numberofsubplots-c < plotnum
                                         xlabel('Time [s]');
                                     end
-                                elseif plottype >= 8
+                                elseif plottype == 8 || plottype == 9 || plottype == 10 || plottype == 11 ||...
+                                        plottype == 12 || plottype == 13 || plottype == 14 || plottype == 15 ||...
+                                        plottype == 16 || plottype == 17
+                                    % FREQ X-AXIS
                                     h=subplot(r,c,plotnum);
                                     plot(f,real(signaldata.audio(:,ch,b,d4,d5,d6)), ...
                                         'color',permute(linecolor(Hind,Sind,Vind,:),[1,4,2,3]),...
@@ -2465,9 +2527,44 @@ if handles.compareaudio == 1
                                     else
                                         set(h,'XScale','linear','XTickLabelMode','auto')
                                     end
+                                elseif plottype == 21
+                                    mark = pointmark{mod(plotnum-1,12)+1};
+                                    colr = permute(linecolor(Hind,Sind,Vind,:),[1,4,2,3]);
+                                    %h=subplot(r,c,plotnum);
+                                    subplot(2,2,1)
+                                    plot(tcentroid(1,ch,b,d4,d5,d6),fcentroid(1,ch,b,d4,d5,d6), ...
+                                        'marker',mark,...
+                                        'color',colr,...
+                                        'DisplayName',labelstring);
+                                    xlabel('Time [s]');
+                                    ylabel('Frequency [Hz]');
+                                    hold on
+                                    
+                                    subplot(2,2,2)
+                                    plot(tcentroid(1,ch,b,d4,d5,d6),Leq(1,ch,b,d4,d5,d6), ...
+                                        'marker',mark,...
+                                        'color',colr,...
+                                        'DisplayName',labelstring);
+                                    xlabel('Time [s]');
+                                    ylabel('Level [dB]');
+                                    hold on
+                                    
+                                    subplot(2,2,3)
+                                    plot(fcentroid(1,ch,b,d4,d5,d6),Leq(1,ch,b,d4,d5,d6), ...
+                                        'marker',mark,...
+                                        'color',colr,...
+                                        'DisplayName',labelstring);
+                                    xlabel('Frequency [Hz]');
+                                    ylabel('Level [dB]');
+                                    hold on
+                                
+                                    %subplot(2,2,4) % legend plot
+                                    
                                 end
-                                title(titlestring)
-                                hold on
+                                if plottype ~= 21
+                                    title(titlestring)
+                                    hold on
+                                end
                             end
                         end
                     end
@@ -2476,15 +2573,17 @@ if handles.compareaudio == 1
         end
     end
     
-    iplots = get(compplot,'Children');
-    if length(iplots) > 1
-        xlims = cell2mat(get(iplots,'Xlim'));
-        set(iplots,'Xlim',[min(xlims(:,1)) max(xlims(:,2))])
-        ylims = cell2mat(get(iplots,'Ylim'));
-        set(iplots,'Ylim',[min(ylims(:,1)) max(ylims(:,2))])
-        uicontrol('Style', 'pushbutton', 'String', 'Axes limits',...
-            'Position', [0 0 65 30],...
-            'Callback', 'setaxeslimits');
+    if plottype ~= 21
+        iplots = get(compplot,'Children');
+        if length(iplots) > 1
+            xlims = cell2mat(get(iplots,'Xlim'));
+            set(iplots,'Xlim',[min(xlims(:,1)) max(xlims(:,2))])
+            ylims = cell2mat(get(iplots,'Ylim'));
+            set(iplots,'Ylim',[min(ylims(:,1)) max(ylims(:,2))])
+            uicontrol('Style', 'pushbutton', 'String', 'Axes limits',...
+                'Position', [0 0 65 30],...
+                'Callback', 'setaxeslimits');
+        end
     end
     
     
