@@ -1815,7 +1815,8 @@ if handles.compareaudio == 1
             '18. Cumulative time-distribution of real amplitude';...
             '19. Cumulative time-distribution of level';...
             '20. Cumulative time-distribution of Hilbert envelope';...
-            '21. Scatter plots of time and frequency power centroid and Leq'};
+            '21. Scatter plots of time and frequency power centroid and Leq';...
+            '22. Scatter plots (A-weighted) of time and frequency power centroid and Leq'};
 
             
         
@@ -1900,6 +1901,8 @@ if handles.compareaudio == 1
                     figurename = 'Cumulative time distribution (Hilbert envelope)';
                 case 21
                     figurename = 'Time and freq Centroids and Leq';
+                case 22
+                    figurename = 'A-weighted time and freq Centroids and Leq';
                 otherwise
                     figurename = '';
             end
@@ -2280,7 +2283,8 @@ if handles.compareaudio == 1
                 end
             end
             
-            if plottype == 21
+            if plottype == 22, signaldata.audio = Aweight(signaldata.audio,signaldata.fs); end
+            if plottype == 21 || plottype == 22
                 % Leq
                 Leq = 10*log10(mean(signaldata.audio.^2));
                 
@@ -2320,15 +2324,6 @@ if handles.compareaudio == 1
             
             
             
-%             if plottype == 21
-%                 % plot a point representing Leq & power spectral centroid
-%                 ydata = 20*log10(rms(real(signaldata.audio)));
-%                 spectrum = abs(fft(signaldata.audio)).^2;
-%                 xdata = spectrum(1:round(end/2),:,:,:,:,:).*...
-%                     repmat(f(1:round(size(signaldata.audio,1)/2)),...
-%                     [1,chansselect(i),bandsselect(i),cyclesselect(i),outchansselect(i),dim6select(i)]);
-%                     
-%             end
             
             %             if strcmp(get(handles.(matlab.lang.makeValidName(['smooth' axes '_popup'])),'Visible'),'on')
             %                 smoothfactor = get(handles.(matlab.lang.makeValidName(['smooth' axes '_popup'])),'Value');
@@ -2527,7 +2522,7 @@ if handles.compareaudio == 1
                                     else
                                         set(h,'XScale','linear','XTickLabelMode','auto')
                                     end
-                                elseif plottype == 21
+                                elseif plottype == 21 || plottype == 22
                                     mark = pointmark{mod(plotnum-1,12)+1};
                                     colr = permute(linecolor(Hind,Sind,Vind,:),[1,4,2,3]);
                                     %h=subplot(r,c,plotnum);
@@ -2571,7 +2566,7 @@ if handles.compareaudio == 1
                                         'XTick',zeros(1,0))
                                     title('Legend');
                                 end
-                                if plottype ~= 21
+                                if plottype ~= 21 && plottype ~= 22
                                     title(titlestring)
                                     hold on
                                 end
@@ -2583,7 +2578,7 @@ if handles.compareaudio == 1
         end
     end
     
-    if plottype ~= 21
+    if plottype ~= 21 && plottype ~= 22
         iplots = get(compplot,'Children');
         if length(iplots) > 1
             xlims = cell2mat(get(iplots,'Xlim'));
