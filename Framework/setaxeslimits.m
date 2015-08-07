@@ -1,4 +1,5 @@
 function setaxeslimits
+% For the main audio comparison plots created by AARAE's '=' button
 compplot = gcf;
 iplots = findobj(compplot,'Type','axes');
 xlims = cell2mat(get(iplots,'Xlim'));

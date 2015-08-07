@@ -2528,8 +2528,7 @@ if handles.compareaudio == 1
                                 elseif plottype == 21 || plottype == 22
                                     mark = pointmark{mod(plotnum-1,12)+1};
                                     colr = permute(linecolor(Hind,Sind,Vind,:),[1,4,2,3]);
-                                    %h=subplot(r,c,plotnum);
-                                    subplot(2,2,1)
+                                    subplot(2,2,1);
                                     plot(tcentroid(1,ch,b,d4,d5,d6),fcentroid(1,ch,b,d4,d5,d6), ...
                                         'Marker',mark,...
                                         'MarkerSize',8,...
@@ -2540,7 +2539,7 @@ if handles.compareaudio == 1
                                     ylabel('Frequency [Hz]');
                                     hold on
                                     
-                                    subplot(2,2,2)
+                                    subplot(2,2,2);
                                     errorbar(tcentroid(1,ch,b,d4,d5,d6),Leq(1,ch,b,d4,d5,d6), ...
                                         Leq(1,ch,b,d4,d5,d6)-L50(1,ch,b,d4,d5,d6),...
                                         Lmax(1,ch,b,d4,d5,d6)-Leq(1,ch,b,d4,d5,d6),...
@@ -2554,7 +2553,7 @@ if handles.compareaudio == 1
                                     
                                     hold on
                                     
-                                    subplot(2,2,3)
+                                    hsubplot3 = subplot(2,2,3);
                                     errorbar(fcentroid(1,ch,b,d4,d5,d6),Leq(1,ch,b,d4,d5,d6), ...
                                         Leq(1,ch,b,d4,d5,d6)-L50(1,ch,b,d4,d5,d6),...
                                         Lmax(1,ch,b,d4,d5,d6)-Leq(1,ch,b,d4,d5,d6),...
@@ -2567,7 +2566,7 @@ if handles.compareaudio == 1
                                     ylabel('Leq (L50 & Lmax) [dB]');
                                     hold on
                                 
-                                    h=subplot(2,2,4); % legend plot
+                                    hsubplot4 = subplot(2,2,4); % legend plot
                                     ylim([0 1]);
                                     xlim([0 1]);
                                     if ~isempty(labelstring)
@@ -2583,7 +2582,7 @@ if handles.compareaudio == 1
                                     hold on
                                     text(0.06,plotnum/(numberofsubplots+1),titlestring)
                                     text(0.6,Hind/(numberofH+1),labelstring,'color',colr)
-                                    set(h,'YTickLabel','',...
+                                    set(hsubplot4,'YTickLabel','',...
                                         'YTick',zeros(1,0),...
                                         'XTickLabel','',...
                                         'XTick',zeros(1,0))
@@ -2612,6 +2611,11 @@ if handles.compareaudio == 1
                 'Position', [0 0 65 30],...
                 'Callback', 'setaxeslimits');
         end
+    end
+    if plottype == 21 || plottype == 22
+        uicontrol('Style', 'pushbutton', 'String', 'Axes limits',...
+                'Position', [0 0 65 30],...
+                'Callback', 'set3axeslimits');
     end
     
     
