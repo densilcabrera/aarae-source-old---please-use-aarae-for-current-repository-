@@ -1580,64 +1580,82 @@ if handles.compareaudio == 1
         case 1
             figurename = 'Real amplitude';
             defaultsmoothing = '0';
+            plotcategory = 'Timeaxis';
         case 2
             figurename = 'Squared amplitude';
             parameterstring10 = 'Smoothing filter length [samples]';
             defaultsmoothing = '0';
+            plotcategory = 'Timeaxis';
         case 3
             figurename = 'Level [dB]';
             parameterstring10 = 'Smoothing filter length [samples]';
             defaultsmoothing = '0';
+            plotcategory = 'Timeaxis';
         case 4
             figurename = 'Envelope';
             parameterstring10 = 'Smoothing filter length [samples]';
             defaultsmoothing = '0';
+            plotcategory = 'Timeaxis';
         case 5
             figurename = 'Instantaneous frequency [Hz]';
             parameterstring10 = 'Smoothing filter length [samples]';
             defaultsmoothing = '5';
+            plotcategory = 'Timeaxis';
         case 6
             figurename = 'Absolute amplitude';
             parameterstring10 = 'Smoothing filter length [samples]';
             defaultsmoothing = '0';
+            plotcategory = 'Timeaxis';
         case 7
             figurename = 'Imaginary amplitude';
             defaultsmoothing = '0';
+            plotcategory = 'Timeaxis';
         case 8
             figurename = 'Level spectrum [dB]';
             parameterstring10 = 'Fractional octave band smoothing (e.g. 1 for octave, 3 for 1/3 octave, etc)';
             defaultsmoothing = '0';
+            plotcategory = 'Freqaxis';
         case 9
             figurename = 'Squared spectrum';
             parameterstring10 = 'Fractional octave band smoothing (e.g. 1 for octave, 3 for 1/3 octave, etc)';
             defaultsmoothing = '0';
+            plotcategory = 'Freqaxis';
         case 10
             figurename = 'Absolute spectrum';
             parameterstring10 = 'Fractional octave band smoothing (e.g. 1 for octave, 3 for 1/3 octave, etc)';
             defaultsmoothing = '0';
+            plotcategory = 'Freqaxis';
         case 11
             figurename = 'Real spectrum';
             defaultsmoothing = '0';
+            plotcategory = 'Freqaxis';
         case 12
             figurename = 'Imaginary spectrum';
             defaultsmoothing = '0';
+            plotcategory = 'Freqaxis';
         case 13
             figurename = 'Phase spectrum [radians]';
             defaultsmoothing = '0';
+            plotcategory = 'Freqaxis';
         case 14
             figurename = 'Unwrapped phase spectrum [radians]';
             defaultsmoothing = '0';
+            plotcategory = 'Freqaxis';
         case 15
             figurename = 'Phase spectrum [degrees]';
             defaultsmoothing = '0';
+            plotcategory = 'Freqaxis';
         case 16
             figurename = 'Unwrapped phase spectrum [rad/2pi]';
             defaultsmoothing = '0';
+            plotcategory = 'Freqaxis';
         case 17
             figurename = 'Group delay [ms]';
             defaultsmoothing = '0';
+            plotcategory = 'Freqaxis';
         otherwise
             figurename = '';
+            plotcategory = '';
     end
     
     
@@ -1861,50 +1879,73 @@ if handles.compareaudio == 1
             switch plottype
                 case 1
                     figurename = 'Real amplitude';
+                    plotcategory = 'Timeaxis';
                 case 2
                     figurename = 'Squared amplitude';
+                    plotcategory = 'Timeaxis';
                 case 3
                     figurename = 'Level [dB]';
+                    plotcategory = 'Timeaxis';
                 case 4
                     figurename = 'Envelope';
+                    plotcategory = 'Timeaxis';
                 case 5
                     figurename = 'Instantaneous frequency [Hz]';
+                    plotcategory = 'Timeaxis';
                 case 6
                     figurename = 'Absolute amplitude';
+                    plotcategory = 'Timeaxis';
                 case 7
                     figurename = 'Imaginary amplitude';
+                    plotcategory = 'Timeaxis';
                 case 8
                     figurename = 'Level spectrum [dB]';
+                    plotcategory = 'Freqaxis';
                 case 9
                     figurename = 'Squared spectrum';
+                    plotcategory = 'Freqaxis';
                 case 10
                     figurename = 'Absolute spectrum';
+                    plotcategory = 'Freqaxis';
                 case 11
                     figurename = 'Real spectrum';
+                    plotcategory = 'Freqaxis';
                 case 12
                     figurename = 'Imaginary spectrum';
+                    plotcategory = 'Freqaxis';
                 case 13
                     figurename = 'Phase spectrum [radians]';
+                    plotcategory = 'Freqaxis';
                 case 14
                     figurename = 'Unwrapped phase spectrum [radians]';
+                    plotcategory = 'Freqaxis';
                 case 15
                     figurename = 'Phase spectrum [degrees]';
+                    plotcategory = 'Freqaxis';
                 case 16
                     figurename = 'Unwrapped phase spectrum [rad/2pi]';
+                    plotcategory = 'Freqaxis';
                 case 17
                     figurename = 'Group delay [ms]';
+                    plotcategory = 'Freqaxis';
                 case 18
                     figurename = 'Cumulative time distribution (real amplitude)';
+                    plotcategory = 'Timeaxis';
                 case 19
                     figurename = 'Cumulative time distribution [dB]';
+                    plotcategory = 'Timeaxis';
                 case 20
                     figurename = 'Cumulative time distribution (Hilbert envelope)';
+                    plotcategory = 'Timeaxis';
                 case 21
                     figurename = 'Time and freq power centroids and levels';
+                    plotcategory = 'Scatter3axis';
                 case 22
                     figurename = 'A-weighted time and freq power centroids and levels';
+                    plotcategory = 'Scatter3axis';
                 otherwise
                     figurename = '';
+                    plotcategory = '';
             end
         end
     end
@@ -2113,10 +2154,7 @@ if handles.compareaudio == 1
             end
             
             % DO THE FFT HERE FOR THE SPECTRUM PLOTS
-            if plottype == 8 || plottype == 9 || plottype == 10 ||...
-                    plottype == 11 || plottype == 12 || plottype == 13 ||...
-                    plottype == 14 || plottype == 15 || plottype ==16 ||...
-                    plottype == 17
+            if strcmp(plotcategory,'Freqaxis')
                 % try to avoid out-of-memory error by limiting the maximum
                 % size of the fft).
                 if numel(signaldata.audio) < 1e6
@@ -2494,7 +2532,7 @@ if handles.compareaudio == 1
                                     otherwise
                                         Vind = 1;
                                 end
-                                if plottype <= 7 || plottype == 18 || plottype == 19 || plottype == 20
+                                if strcmp(plotcategory,'Timeaxis')
                                     % TIME X-AXIS
                                     subplot(r,c,plotnum)
                                     plot(t,real(signaldata.audio(:,ch,b,d4,d5,d6)), ...
@@ -2503,9 +2541,7 @@ if handles.compareaudio == 1
                                     if numberofsubplots-c < plotnum
                                         xlabel('Time [s]');
                                     end
-                                elseif plottype == 8 || plottype == 9 || plottype == 10 || plottype == 11 ||...
-                                        plottype == 12 || plottype == 13 || plottype == 14 || plottype == 15 ||...
-                                        plottype == 16 || plottype == 17
+                                elseif strcmp(plotcategory,'Freqaxis')
                                     % FREQ X-AXIS
                                     h=subplot(r,c,plotnum);
                                     plot(f,real(signaldata.audio(:,ch,b,d4,d5,d6)), ...
@@ -2525,7 +2561,7 @@ if handles.compareaudio == 1
                                     else
                                         set(h,'XScale','linear','XTickLabelMode','auto')
                                     end
-                                elseif plottype == 21 || plottype == 22
+                                elseif plottype == 21 || plottype == 22 % strcmp(plotcategory,'Scatter3axis')
                                     mark = pointmark{mod(plotnum-1,12)+1};
                                     colr = permute(linecolor(Hind,Sind,Vind,:),[1,4,2,3]);
                                     subplot(2,2,1);
@@ -2600,7 +2636,7 @@ if handles.compareaudio == 1
         end
     end
     
-    if plottype ~= 21 && plottype ~= 22
+    if strcmp(plotcategory,'Timeaxis') || strcmp(plotcategory,'Freqaxis')
         iplots = get(compplot,'Children');
         if length(iplots) > 1
             xlims = cell2mat(get(iplots,'Xlim'));
@@ -2612,7 +2648,21 @@ if handles.compareaudio == 1
                 'Callback', 'setaxeslimits');
         end
     end
-    if plottype == 21 || plottype == 22
+    if plottype == 21 || plottype == 22 % strcmp(plotcategory,'Scatter3axis')
+        iplots = get(compplot,'Children');
+        xlims = cell2mat(get(iplots,'Xlim'));
+        ylims = cell2mat(get(iplots,'Ylim'));
+        %Levellims = ylims(2,:);
+        Timelims = xlims(4,:);
+        Freqlims = xlims(2,:);
+        if Timelims(1) < 0
+            set(iplots(3),'Xlim',[0,Timelims(2)])
+            set(iplots(4),'Xlim',[0,Timelims(2)])
+        end
+        if Freqlims(1) < 0
+            set(iplots(2),'Xlim',[0,Freqlims(2)])
+            set(iplots(4),'Ylim',[0,Freqlims(2)])
+        end
         uicontrol('Style', 'pushbutton', 'String', 'Axes limits',...
                 'Position', [0 0 65 30],...
                 'Callback', 'set3axeslimits');
