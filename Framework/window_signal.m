@@ -23,7 +23,7 @@ function varargout = window_signal(varargin)
 
 % Edit the above text to modify the response to help window_signal
 
-% Last Modified by GUIDE v2.5 06-Jul-2015 22:35:43
+% Last Modified by GUIDE v2.5 10-Aug-2015 18:05:25
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -676,3 +676,13 @@ function Dim6TextBox_CreateFcn(hObject, eventdata, handles)
 if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
     set(hObject,'BackgroundColor','white');
 end
+
+
+% --- Executes on button press in Cancel_pushbutton.
+function Cancel_pushbutton_Callback(hObject, eventdata, handles)
+% hObject    handle to Cancel_pushbutton (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+handles.slow = [];
+guidata(hObject, handles);
+uiresume(handles.window_signal);

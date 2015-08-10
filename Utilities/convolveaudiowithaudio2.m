@@ -1,4 +1,4 @@
-function [OUT,method,scalingmethod] = convolveaudiowithaudio2(IN,method,scalingmethod)
+function [OUT,method,scalingmethod] = convolveaudiowithaudio2(IN,method,scalingmethod,alternativemethod)
 % This function is used by AARAE's convolve audio with audio2 button
 % (called from aarae.m). It can also be called with two or three input
 % arguments to replicate most of what is done by the GUI button (apart from
@@ -161,42 +161,77 @@ else
 end
 
 
-% DO THE CONVOLUTION
+if ~exist('alternativemethod','var'), alternativemethod = 0; end
 
-maxsize = 1e6; % this could be a user setting
-% (maximum size that can be handled to avoid
-% out-of-memory error from convolution process)
-if numel(S) <= maxsize
-    S_pad = [S; zeros(size(invS))];
-    invS_pad = [invS; zeros(size(S))];
-    IR = ifft(fft(S_pad) .* fft(invS_pad)); % this replaces the old function call in the next line, which seems to do twice the zero-padding necessary
-    %IR = convolvedemo(S_pad, invS_pad, 2, fs); % Calls convolvedemo.m
-else
-    % use nested for-loops instead of doing everything at once (could
-    % be very slow!) if the audio is too big for vectorized processing
-    [~,chans,bands,dim4,dim5,dim6] = size(S);
-    %IR = zeros(2*(length(S)+length(invS))-1,chans,bands,dim4,dim5,dim6);
-    IR = zeros(length(S)+length(invS),chans,bands,dim4,dim5,dim6);
-    for ch = 1:chans
-        for b = 1:bands
-            for d4 = 1:dim4
-                for d5 = 1:dim5
-                    for d6 = 1:dim6
-                        S_pad = [S(:,ch,b,d4,d5,d6);zeros(length(invS),1)];
-                        invS_pad = [invS(:,ch,b,d4,d5,d6); zeros(length(S),1)];
-                        IR(:,ch,b,d4,d5,d6) = ifft(fft(S_pad) .* fft(invS_pad));
-                        %                             IR(:,ch,b,d4,d5,d6) =...
-                        %                                 convolvedemo(S_pad, invS_pad, 2, fs);
+switch alternativemethod
+    % the normal method is within 'otherwise'. The specified cases are for
+    % other methods
+    
+    case {3,4,5,6} % includes cases 7,8,9 & 10 which are the same, but with time-reversed audio2
+        % TF from audio2 to audio
+        % This is done by dividing the cross-spectrum by the auto-spectrum
+        % of audio2
+        switch alternativemethod
+            case 3
+                threshdB = -200; % essentially no threshold (-200 dB)
+            case 4
+                threshdB = -90;
+            case 5
+                threshdB = -80;
+            case 6
+                threshdB = -70;
+        end
+        fftlen = size(S,1);
+        S = fft(S,fftlen);
+        invS = fft(invS(:,1,1,1,1,1),fftlen); % restrict to first channel for now
+        below_threshold = abs(invS) < abs(invS) * 10.^(threshdB/20); % 80 dB threshold
+        IR = repmat(conj(invS),[1,size(S,2),size(S,3),size(S,4),size(S,5),size(S,6)])...
+            .* S ./ ...
+            repmat((conj(invS).*invS),[1,size(S,2),size(S,3),size(S,4),size(S,5),size(S,6)]);
+        IR(repmat(below_threshold,[1,size(S,2),size(S,3),size(S,4),size(S,5),size(S,6)])) = 0; % zero all values below input wave threshold
+        IR = ifftshift(ifft(IR)); % the ifftshift is done for compatability with the other methods, so that zero time (the peak) is in the middle
+%     case x
+%         % TF (magnitude only) from audio2 to audio
+%     case x
+%         % TF (phase only) from audio2 to audio
+%     case x
+%         % TF from user-selected audio to audio
+%     case x
+          % circular convolution
+          % circular cross correlation
+    otherwise
+        % linear convolution of audio with audio2
+        % this is for alternativemethod = 0, 1, 2
+        
+        maxsize = 1e6; % this could be a user setting
+        % (maximum size that can be handled to avoid
+        % out-of-memory error from convolution process)
+        if numel(S) <= maxsize
+            S_pad = [S; zeros(size(invS))];
+            invS_pad = [invS; zeros(size(S))];
+            IR = ifft(fft(S_pad) .* fft(invS_pad)); 
+        else
+            % use nested for-loops instead of doing everything at once (could
+            % be very slow!) if the audio is too big for vectorized processing
+            [~,chans,bands,dim4,dim5,dim6] = size(S);
+            IR = zeros(length(S)+length(invS),chans,bands,dim4,dim5,dim6);
+            for ch = 1:chans
+                for b = 1:bands
+                    for d4 = 1:dim4
+                        for d5 = 1:dim5
+                            for d6 = 1:dim6
+                                S_pad = [S(:,ch,b,d4,d5,d6);zeros(length(invS),1)];
+                                invS_pad = [invS(:,ch,b,d4,d5,d6); zeros(length(S),1)];
+                                IR(:,ch,b,d4,d5,d6) = ifft(fft(S_pad) .* fft(invS_pad));
+                            end
+                        end
                     end
                 end
             end
         end
-    end
+        indices = cat(2,{1:length(S_pad)},repmat({':'},1,ndims(IR)-1));
+        IR = IR(indices{:});
 end
-indices = cat(2,{1:length(S_pad)},repmat({':'},1,ndims(IR)-1));
-IR = IR(indices{:});
-
-
 
 
 % SCALE THE IR
@@ -238,6 +273,7 @@ elseif scalingmethod ~= -1
             % normalize the IR
             scalingfactor = 1/(max(max(max(max(max(max(abs(IR))))))));
         otherwise
+            % no scaling
             scalingmethod = 0;
             scalingfactor = 1;
     end
@@ -337,7 +373,7 @@ end
 
 
 
-if nargin == 1
+if nargin == 1 || nargin == 4
     % output audio only
     OUT = IR;
 else

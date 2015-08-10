@@ -1188,8 +1188,64 @@ hMain = getappdata(0,'hMain');
 audiodata = getappdata(hMain,'testsignal');
 selectedNodes = handles.mytree.getSelectedNodes;
 
-% convolveaudiowithaudio2 is an AARAE utility
-[IR,method,scalingmethod] = convolveaudiowithaudio2(audiodata);
+if handles.alternate ~= 1
+    % convolveaudiowithaudio2 is an AARAE utility
+    [IR,method,scalingmethod] = convolveaudiowithaudio2(audiodata);
+else
+    % select an alternative operation
+    str = {'1. Convolve audio with audio2';... % same as default
+            '2. Cross-correlate audio with audio2';...
+            '3. Transfer function from audio2 to audio (-200 dB threshold)';...
+            '4. Transfer function from audio2 to audio (-90 dB threshold)';...
+            '5. Transfer function from audio2 to audio (-80 dB threshold)';...
+            '6. Transfer function from audio2 to audio (-70 dB threshold)';...
+            '7. Transfer function from reversed audio2 to audio (-200 dB threshold)';...
+            '8. Transfer function from reversed audio2 to audio (-90 dB threshold)';...
+            '9. Transfer function from reversed audio2 to audio (-80 dB threshold)';...
+            '10. Transfer function from reversed audio2 to audio (-70 dB threshold)'};
+        [calcmethod,ok] = listdlg('PromptString','Select the processing method',...
+            'SelectionMode','single',...
+            'ListString',str,...
+            'ListSize', [400,400]);
+        if ok
+            switch calcmethod
+                case 1
+                    % same as normal method
+                    [IR,method,scalingmethod] = convolveaudiowithaudio2(audiodata);
+                case 2
+                    % cross-correlate audio with audio2
+                    % this can be achieved by time-reversal, and proceeding
+                    % with convolution as usual
+                    audiodata.audio2 = flipud(audiodata.audio2);
+                    [IR,method,scalingmethod] = convolveaudiowithaudio2(audiodata);
+                case 3
+                    % Transfer function from audio2 to audio with no
+                    % threshold
+                    [IR,method,scalingmethod] = convolveaudiowithaudio2(audiodata,[],[],3);
+                case 4
+                    [IR,method,scalingmethod] = convolveaudiowithaudio2(audiodata,[],[],4);
+                case 5
+                    [IR,method,scalingmethod] = convolveaudiowithaudio2(audiodata,[],[],5);
+                case 6
+                    [IR,method,scalingmethod] = convolveaudiowithaudio2(audiodata,[],[],6);
+                case 7
+                    audiodata.audio2 = flipud(audiodata.audio2);
+                    [IR,method,scalingmethod] = convolveaudiowithaudio2(audiodata,[],[],3);
+                case 8
+                    audiodata.audio2 = flipud(audiodata.audio2);
+                    [IR,method,scalingmethod] = convolveaudiowithaudio2(audiodata,[],[],4);
+                case 9
+                    audiodata.audio2 = flipud(audiodata.audio2);
+                    [IR,method,scalingmethod] = convolveaudiowithaudio2(audiodata,[],[],5);
+                case 10
+                    audiodata.audio2 = flipud(audiodata.audio2);
+                    [IR,method,scalingmethod] = convolveaudiowithaudio2(audiodata,[],[],6);
+                otherwise
+                    [IR,method,scalingmethod] = convolveaudiowithaudio2(audiodata);
+            end
+        end
+    
+end
 if ishandle(h), close(h); end
 if ~isempty(IR)
     % Trim the IR. tempIR is used for visual display in window_signal
@@ -1204,6 +1260,15 @@ if ~isempty(IR)
         'cycles',size(IR,4),...
         'outchans',size(IR,5),...
         'dim6',size(IR,6));  % Calls the trimming GUI window to trim the IR
+    if isempty(trimsamp_low)
+        % the 'cancel' button makes trimsamp_low empty
+        handles.alternate = 0;
+        set(hObject,'BackgroundColor',[0.94 0.94 0.94]);
+        set(hObject,'Enable','on');
+        java.lang.Runtime.getRuntime.gc % Java garbage collection
+        guidata(hObject, handles);
+        return
+    end
     IR = IR(trimsamp_low:trimsamp_high,chanind,bandind,cycind,outchanind,dim6ind);
     IRlength = length(IR);
     
@@ -1314,7 +1379,7 @@ if ~isempty(IR)
         % logaudioleaffields(signaldata);
     end
 end
-
+handles.alternate = 0;
 set(hObject,'BackgroundColor',[0.94 0.94 0.94]);
 set(hObject,'Enable','on');
 java.lang.Runtime.getRuntime.gc % Java garbage collection
