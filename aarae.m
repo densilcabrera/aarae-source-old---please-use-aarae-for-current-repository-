@@ -1191,18 +1191,23 @@ selectedNodes = handles.mytree.getSelectedNodes;
 if handles.alternate ~= 1
     % convolveaudiowithaudio2 is an AARAE utility
     [IR,method,scalingmethod] = convolveaudiowithaudio2(audiodata);
+    calcmethod = 1;
+    nameprefix = 'IR_';
 else
     % select an alternative operation
     str = {'1. Convolve audio with audio2';... % same as default
             '2. Cross-correlate audio with audio2';...
-            '3. Transfer function from audio2 to audio (-200 dB threshold)';...
-            '4. Transfer function from audio2 to audio (-90 dB threshold)';...
-            '5. Transfer function from audio2 to audio (-80 dB threshold)';...
-            '6. Transfer function from audio2 to audio (-70 dB threshold)';...
-            '7. Transfer function from reversed audio2 to audio (-200 dB threshold)';...
-            '8. Transfer function from reversed audio2 to audio (-90 dB threshold)';...
-            '9. Transfer function from reversed audio2 to audio (-80 dB threshold)';...
-            '10. Transfer function from reversed audio2 to audio (-70 dB threshold)'};
+            '3. Circular convolution of audio with audio2';... 
+            '4. Circular cross-correlation of audio with audio2';...
+            '5. Transfer function from audio2 to audio (-200 dB threshold)';...
+            '6. Transfer function from audio2 to audio (-90 dB threshold)';...
+            '7. Transfer function from audio2 to audio (-80 dB threshold)';...
+            '8. Transfer function from audio2 to audio (-70 dB threshold)';...
+            '9. Transfer function from reversed audio2 to audio (-200 dB threshold)';...
+            '10. Transfer function from reversed audio2 to audio (-90 dB threshold)';...
+            '11. Transfer function from reversed audio2 to audio (-80 dB threshold)';...
+            '12. Transfer function from reversed audio2 to audio (-70 dB threshold)'};
+        
         [calcmethod,ok] = listdlg('PromptString','Select the processing method',...
             'SelectionMode','single',...
             'ListString',str,...
@@ -1212,36 +1217,58 @@ else
                 case 1
                     % same as normal method
                     [IR,method,scalingmethod] = convolveaudiowithaudio2(audiodata);
+                    nameprefix = 'IR_';
                 case 2
                     % cross-correlate audio with audio2
                     % this can be achieved by time-reversal, and proceeding
                     % with convolution as usual
                     audiodata.audio2 = flipud(audiodata.audio2);
                     [IR,method,scalingmethod] = convolveaudiowithaudio2(audiodata);
+                    nameprefix = 'X_';
                 case 3
+                    % circular convolution
+                    [IR,method,scalingmethod] = convolveaudiowithaudio2(audiodata,[],[],3);
+                    nameprefix = 'IR_';
+                case 4
+                    % circularly cross-correlate audio with audio2
+                    % this can be achieved by time-reversal, and proceeding
+                    % with circular convolution
+                    audiodata.audio2 = flipud(audiodata.audio2);
+                    [IR,method,scalingmethod] = convolveaudiowithaudio2(audiodata,[],[],4);
+                    nameprefix = 'X_';
+                case 5
                     % Transfer function from audio2 to audio with no
                     % threshold
-                    [IR,method,scalingmethod] = convolveaudiowithaudio2(audiodata,[],[],3);
-                case 4
-                    [IR,method,scalingmethod] = convolveaudiowithaudio2(audiodata,[],[],4);
-                case 5
                     [IR,method,scalingmethod] = convolveaudiowithaudio2(audiodata,[],[],5);
+                    nameprefix = 'IR_';
                 case 6
                     [IR,method,scalingmethod] = convolveaudiowithaudio2(audiodata,[],[],6);
+                    nameprefix = 'IR_';
                 case 7
-                    audiodata.audio2 = flipud(audiodata.audio2);
-                    [IR,method,scalingmethod] = convolveaudiowithaudio2(audiodata,[],[],3);
+                    [IR,method,scalingmethod] = convolveaudiowithaudio2(audiodata,[],[],7);
+                    nameprefix = 'IR_';
                 case 8
-                    audiodata.audio2 = flipud(audiodata.audio2);
-                    [IR,method,scalingmethod] = convolveaudiowithaudio2(audiodata,[],[],4);
+                    [IR,method,scalingmethod] = convolveaudiowithaudio2(audiodata,[],[],8);
+                    nameprefix = 'IR_';
                 case 9
                     audiodata.audio2 = flipud(audiodata.audio2);
                     [IR,method,scalingmethod] = convolveaudiowithaudio2(audiodata,[],[],5);
+                    nameprefix = 'IR_';
                 case 10
                     audiodata.audio2 = flipud(audiodata.audio2);
                     [IR,method,scalingmethod] = convolveaudiowithaudio2(audiodata,[],[],6);
+                    nameprefix = 'IR_';
+                case 11
+                    audiodata.audio2 = flipud(audiodata.audio2);
+                    [IR,method,scalingmethod] = convolveaudiowithaudio2(audiodata,[],[],7);
+                    nameprefix = 'IR_';
+                case 12
+                    audiodata.audio2 = flipud(audiodata.audio2);
+                    [IR,method,scalingmethod] = convolveaudiowithaudio2(audiodata,[],[],8);
+                    nameprefix = 'IR_';
                 otherwise
                     [IR,method,scalingmethod] = convolveaudiowithaudio2(audiodata);
+                    nameprefix = 'IR_';
             end
         end
     
@@ -1274,7 +1301,7 @@ if ~isempty(IR)
     
     % Create new leaf and update the tree
     handles.mytree.setSelectedNode(handles.root);
-    newleaf = ['IR_' selectedNodes(1).getName.char];
+    newleaf = [nameprefix selectedNodes(1).getName.char];
     leafname = isfield(handles,matlab.lang.makeValidName(newleaf));
     if leafname == 1
         index = 1;
@@ -1345,6 +1372,32 @@ if ~isempty(IR)
         handles.mytree.setSelectedNode(handles.(matlab.lang.makeValidName(newleaf)));
         set([handles.clrall_btn,handles.export_btn],'Enable','on')
         fprintf(handles.fid, ['%% ' datestr(now,16) ' - Processed "' char(selectedNodes(1).getName) '" to generate an impulse response of ' num2str(IRlength) ' points\n']);
+        switch calcmethod
+            case 1
+                fprintf(handles.fid,'calcmethod = 1; %% Convolve audio with audio2\n');
+            case 2
+                fprintf(handles.fid,'calcmethod = 2; %% Cross-correlate audio with audio2\n');
+            case 3
+                fprintf(handles.fid,'calcmethod = 3; %% Circular convolution of audio with audio2 (based on the length of audio2)\n');
+            case 4
+                fprintf(handles.fid,'calcmethod = 4; %% Circular cross-correlation of audio with audio2 (based on the length of audio2)\n');
+            case 5
+                fprintf(handles.fid,'calcmethod = 5; %% Transfer function from audio2 to audio (-200 dB threshold)\n');
+            case 6
+                fprintf(handles.fid,'calcmethod = 6; %% Transfer function from audio2 to audio (-90 dB threshold)\n');
+            case 7
+                fprintf(handles.fid,'calcmethod = 7; %% Transfer function from audio2 to audio (-80 dB threshold)\n');
+            case 8
+                fprintf(handles.fid,'calcmethod = 8; %% Transfer function from audio2 to audio (-70 dB threshold)\n');
+            case 9
+                fprintf(handles.fid,'calcmethod = 9; %% Transfer function from reversed audio2 to audio (-200 dB threshold)\n');
+            case 10
+                fprintf(handles.fid,'calcmethod = 10; %% Transfer function from reversed audio2 to audio (-90 dB threshold)\n');
+            case 11
+                fprintf(handles.fid,'calcmethod = 11; %% Transfer function from reversed audio2 to audio (-80 dB threshold)\n');
+            case 12
+                fprintf(handles.fid,'calcmethod = 12; %% Transfer function from reversed audio2 to audio (-70 dB threshold)\n');
+        end
         switch method
             case 1
                 fprintf(handles.fid,'method = 1; %% Synchronous average of cycles (excluding silent cycle)\n');
@@ -1364,7 +1417,7 @@ if ~isempty(IR)
                 fprintf(handles.fid,'method = 8; %% Select the silent cycle or the IR with the lowest SNR (multichannel)\n');
         end
         
-        fprintf(handles.fid,['X = convolveaudiowithaudio2(X,','method',',',num2str(scalingmethod),');\n']);
+        fprintf(handles.fid,['X = convolveaudiowithaudio2(X,','method',',',num2str(scalingmethod),',calcmethod);\n']);
         
         fprintf(handles.fid,['X.audio = X.audio(',num2str(trimsamp_low),':',num2str(trimsamp_high),...
             ',[',num2str(chanind),...

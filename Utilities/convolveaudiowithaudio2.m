@@ -166,39 +166,61 @@ if ~exist('alternativemethod','var'), alternativemethod = 0; end
 switch alternativemethod
     % the normal method is within 'otherwise'. The specified cases are for
     % other methods
-    
-    case {3,4,5,6} % includes cases 7,8,9 & 10 which are the same, but with time-reversed audio2
+    case {3, 4}
+        % circular convolution, based on length of audio2
+        % (also circular cross correlation if one input has previously been
+        % time-reversed)
+        len2 = size(invS,1);
+        len = size(S,1);
+        ncycles = ceil(len/len2);
+        % wrap the audio
+        if ncycles > 1
+            for n = 2:ncycles
+                startind = (n-1)*len2 + 1;
+                endind = startind + len2-1;
+                if endind < len
+                    S(1:len2,:,:,:,:,:) = S(1:len2,:,:,:,:,:) + S(startind:endind,:,:,:,:,:);
+                else
+                    lenlast = 1+len-startind;
+                    S(1:lenlast,:,:,:,:,:) = S(1:lenlast,:,:,:,:,:) + S(startind:end,:,:,:,:,:);
+                end
+            end
+            S = S(1:len2,:,:,:,:,:)./ncycles; % truncate and average
+        end
+        % The ifftshift puts zero time in the middle of the response
+        IR = ifftshift(ifft(fft(S) .* fft(repmat(invS,[1,size(S,2),size(S,3),size(S,4),size(S,5),size(S,6)]))));
+        
+    case {5,6,7,8} % includes cases 9-12 which are the same, but with time-reversed audio2
         % TF from audio2 to audio
         % This is done by dividing the cross-spectrum by the auto-spectrum
         % of audio2
         switch alternativemethod
-            case 3
-                threshdB = -200; % essentially no threshold (-200 dB)
-            case 4
-                threshdB = -90;
             case 5
-                threshdB = -80;
+                threshdB = -200; % essentially no threshold (-200 dB)
             case 6
+                threshdB = -90;
+            case 7
+                threshdB = -80;
+            case 8
                 threshdB = -70;
         end
         fftlen = size(S,1);
         S = fft(S,fftlen);
         invS = fft(invS(:,1,1,1,1,1),fftlen); % restrict to first channel for now
-        below_threshold = abs(invS) < abs(invS) * 10.^(threshdB/20); % 80 dB threshold
+        below_threshold = abs(invS) < abs(invS) * 10.^(threshdB/20);
         IR = repmat(conj(invS),[1,size(S,2),size(S,3),size(S,4),size(S,5),size(S,6)])...
             .* S ./ ...
             repmat((conj(invS).*invS),[1,size(S,2),size(S,3),size(S,4),size(S,5),size(S,6)]);
         IR(repmat(below_threshold,[1,size(S,2),size(S,3),size(S,4),size(S,5),size(S,6)])) = 0; % zero all values below input wave threshold
         IR = ifftshift(ifft(IR)); % the ifftshift is done for compatability with the other methods, so that zero time (the peak) is in the middle
-%     case x
-%         % TF (magnitude only) from audio2 to audio
-%     case x
-%         % TF (phase only) from audio2 to audio
-%     case x
-%         % TF from user-selected audio to audio
-%     case x
-          % circular convolution
-          % circular cross correlation
+        %     case x
+        %         % TF (magnitude only) from audio2 to audio
+        %     case x
+        %         % TF (phase only) from audio2 to audio
+        %     case x
+        %         % TF from user-selected audio to audio
+        
+        
     otherwise
         % linear convolution of audio with audio2
         % this is for alternativemethod = 0, 1, 2
@@ -209,7 +231,7 @@ switch alternativemethod
         if numel(S) <= maxsize
             S_pad = [S; zeros(size(invS))];
             invS_pad = [invS; zeros(size(S))];
-            IR = ifft(fft(S_pad) .* fft(invS_pad)); 
+            IR = ifft(fft(S_pad) .* fft(invS_pad));
         else
             % use nested for-loops instead of doing everything at once (could
             % be very slow!) if the audio is too big for vectorized processing
