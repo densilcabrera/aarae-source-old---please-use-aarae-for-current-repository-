@@ -1,4 +1,4 @@
-function [OUT,method,scalingmethod] = convolveaudiowithaudio2(IN,method,scalingmethod,alternativemethod)
+function [OUT,method,scalingmethod] = convolveaudiowithaudio2(IN,method,scalingmethod,alternativemethod,outputaudioonly)
 % This function is used by AARAE's convolve audio with audio2 button
 % (called from aarae.m). It can also be called with two or three input
 % arguments to replicate most of what is done by the GUI button (apart from
@@ -15,10 +15,29 @@ function [OUT,method,scalingmethod] = convolveaudiowithaudio2(IN,method,scalingm
 %     7. 'Select the cleanest single IR (best channel)'
 %     8. 'Select the silent cycle or the IR with the lowest SNR (multichannel)'
 %
+% ALTERNATIVEMETHOD
+% This function does not only do convolution of audio with audio2 - some
+% alternative methods are also available (e.g. cross-correlation, transfer
+% function method)
+% 1. Convolve audio with audio2 (same as default)
+% 2. Cross-correlate audio with audio2
+% 3. Circular convolution of audio with audio2 
+% 4. Circular cross-correlation of audio with audio2
+% 5. Transfer function from audio2 to audio (-200 dB threshold)
+% 6. Transfer function from audio2 to audio (-90 dB threshold)
+% 7. Transfer function from audio2 to audio (-80 dB threshold)
+% 8. Transfer function from audio2 to audio (-70 dB threshold)
+% 9. Transfer function from reversed audio2 to audio (-200 dB threshold)
+% 10. Transfer function from reversed audio2 to audio (-90 dB threshold)
+% 11. Transfer function from reversed audio2 to audio (-80 dB threshold)
+% 12. Transfer function from reversed audio2 to audio (-70 dB threshold)
+%
 % SCALINGMETHOD:
 % This is not fully implemented yet and the particular scaling methods are
 % likely to change in a future revision. Currenly aarae.m does not use
 % scalingmethod (i.e. scalingmethod = 0, no scaling).
+%
+%
 
 
 S = IN.audio;
@@ -162,7 +181,12 @@ end
 
 
 if ~exist('alternativemethod','var'), alternativemethod = 0; end
-
+if isempty(alternativemethod), alternativemethod = 0; end
+% time reversal methods (e.g. cross correlation)
+if alternativemethod == 2 || alternativemethod == 4 || alternativemethod == 9 ...
+        ||alternativemethod == 10 || alternativemethod == 11 || alternativemethod == 12
+    invS = flipud(invS);
+end
 switch alternativemethod
     % the normal method is within 'otherwise'. The specified cases are for
     % other methods
@@ -190,18 +214,18 @@ switch alternativemethod
         % The ifftshift puts zero time in the middle of the response
         IR = ifftshift(ifft(fft(S) .* fft(repmat(invS,[1,size(S,2),size(S,3),size(S,4),size(S,5),size(S,6)]))));
         
-    case {5,6,7,8} % includes cases 9-12 which are the same, but with time-reversed audio2
+    case {5,6,7,8,9,10,11,12}
         % TF from audio2 to audio
         % This is done by dividing the cross-spectrum by the auto-spectrum
         % of audio2
         switch alternativemethod
-            case 5
+            case {5,9}
                 threshdB = -200; % essentially no threshold (-200 dB)
-            case 6
+            case {6,10}
                 threshdB = -90;
-            case 7
+            case {7,11}
                 threshdB = -80;
-            case 8
+            case {8,12}
                 threshdB = -70;
         end
         fftlen = size(S,1);
@@ -271,6 +295,8 @@ end
 
 if ~exist('scalingmethod','var')
     scalingmethod = 0; % no scaling
+elseif isempty(scalingmethod)
+    scalingmethod = 0;
 elseif scalingmethod ~= -1
     switch scalingmethod
         case 1
@@ -395,9 +421,16 @@ end
 
 
 
-if nargin == 1 || nargin == 4
-    % output audio only
-    OUT = IR;
+if exist('outputaudioonly','var')
+    if outputaudioonly~=0
+        % output audio only
+        OUT = IR;
+    else
+        % output AARAE audio structure
+        OUT = IN;
+        OUT = rmfield(OUT,'audio2');
+        OUT.audio = IR;
+    end
 else
     % output AARAE audio structure
     OUT = IN;

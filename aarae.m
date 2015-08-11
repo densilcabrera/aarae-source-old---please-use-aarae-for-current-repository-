@@ -1190,7 +1190,7 @@ selectedNodes = handles.mytree.getSelectedNodes;
 
 if handles.alternate ~= 1
     % convolveaudiowithaudio2 is an AARAE utility
-    [IR,method,scalingmethod] = convolveaudiowithaudio2(audiodata);
+    [IR,method,scalingmethod] = convolveaudiowithaudio2(audiodata,[],0,0,1);
     calcmethod = 1;
     nameprefix = 'IR_';
 else
@@ -1216,58 +1216,48 @@ else
             switch calcmethod
                 case 1
                     % same as normal method
-                    [IR,method,scalingmethod] = convolveaudiowithaudio2(audiodata);
+                    [IR,method,scalingmethod] = convolveaudiowithaudio2(audiodata,[],0,0,1);
                     nameprefix = 'IR_';
                 case 2
                     % cross-correlate audio with audio2
-                    % this can be achieved by time-reversal, and proceeding
-                    % with convolution as usual
-                    audiodata.audio2 = flipud(audiodata.audio2);
-                    [IR,method,scalingmethod] = convolveaudiowithaudio2(audiodata);
+                    [IR,method,scalingmethod] = convolveaudiowithaudio2(audiodata,[],0,0,1);
                     nameprefix = 'X_';
                 case 3
                     % circular convolution
-                    [IR,method,scalingmethod] = convolveaudiowithaudio2(audiodata,[],[],3);
+                    [IR,method,scalingmethod] = convolveaudiowithaudio2(audiodata,[],0,3,1);
                     nameprefix = 'IR_';
                 case 4
                     % circularly cross-correlate audio with audio2
-                    % this can be achieved by time-reversal, and proceeding
-                    % with circular convolution
-                    audiodata.audio2 = flipud(audiodata.audio2);
-                    [IR,method,scalingmethod] = convolveaudiowithaudio2(audiodata,[],[],4);
+                    [IR,method,scalingmethod] = convolveaudiowithaudio2(audiodata,[],0,4,1);
                     nameprefix = 'X_';
                 case 5
                     % Transfer function from audio2 to audio with no
                     % threshold
-                    [IR,method,scalingmethod] = convolveaudiowithaudio2(audiodata,[],[],5);
+                    [IR,method,scalingmethod] = convolveaudiowithaudio2(audiodata,[],0,5,1);
                     nameprefix = 'IR_';
                 case 6
-                    [IR,method,scalingmethod] = convolveaudiowithaudio2(audiodata,[],[],6);
+                    [IR,method,scalingmethod] = convolveaudiowithaudio2(audiodata,[],0,6,1);
                     nameprefix = 'IR_';
                 case 7
-                    [IR,method,scalingmethod] = convolveaudiowithaudio2(audiodata,[],[],7);
+                    [IR,method,scalingmethod] = convolveaudiowithaudio2(audiodata,[],0,7,1);
                     nameprefix = 'IR_';
                 case 8
-                    [IR,method,scalingmethod] = convolveaudiowithaudio2(audiodata,[],[],8);
+                    [IR,method,scalingmethod] = convolveaudiowithaudio2(audiodata,[],0,8,1);
                     nameprefix = 'IR_';
                 case 9
-                    audiodata.audio2 = flipud(audiodata.audio2);
-                    [IR,method,scalingmethod] = convolveaudiowithaudio2(audiodata,[],[],5);
+                    [IR,method,scalingmethod] = convolveaudiowithaudio2(audiodata,[],0,9,1);
                     nameprefix = 'IR_';
                 case 10
-                    audiodata.audio2 = flipud(audiodata.audio2);
-                    [IR,method,scalingmethod] = convolveaudiowithaudio2(audiodata,[],[],6);
+                    [IR,method,scalingmethod] = convolveaudiowithaudio2(audiodata,[],0,10,1);
                     nameprefix = 'IR_';
                 case 11
-                    audiodata.audio2 = flipud(audiodata.audio2);
-                    [IR,method,scalingmethod] = convolveaudiowithaudio2(audiodata,[],[],7);
+                    [IR,method,scalingmethod] = convolveaudiowithaudio2(audiodata,[],0,11,1);
                     nameprefix = 'IR_';
                 case 12
-                    audiodata.audio2 = flipud(audiodata.audio2);
-                    [IR,method,scalingmethod] = convolveaudiowithaudio2(audiodata,[],[],8);
+                    [IR,method,scalingmethod] = convolveaudiowithaudio2(audiodata,[],0,12,1);
                     nameprefix = 'IR_';
                 otherwise
-                    [IR,method,scalingmethod] = convolveaudiowithaudio2(audiodata);
+                    [IR,method,scalingmethod] = convolveaudiowithaudio2(audiodata,[],0,0,1);
                     nameprefix = 'IR_';
             end
         end
