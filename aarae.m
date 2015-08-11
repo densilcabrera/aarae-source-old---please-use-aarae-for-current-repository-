@@ -1277,7 +1277,7 @@ else
                 nameprefix = 'IR_';
             case 2
                 % cross-correlate audio with audio2
-                [IR,method,scalingmethod] = convolveaudiowithaudio2(audiodata,[],0,0,1);
+                [IR,method,scalingmethod] = convolveaudiowithaudio2(audiodata,[],0,2,1);
                 nameprefix = 'X_';
             case 3
                 % circular convolution
