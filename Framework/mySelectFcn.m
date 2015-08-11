@@ -144,11 +144,11 @@ function mySelectFcn(tree, ~)
             refreshplots(mainHandles,'time')
             pause(0.001)
             refreshplots(mainHandles,'freq')
-            if isfield(audiodata,'audio2') && ~isempty(audiodata.audio2)% && ismatrix(audiodata.audio)
+            %if isfield(audiodata,'audio2') && ~isempty(audiodata.audio2)% && ismatrix(audiodata.audio)
                 set(mainHandles.IR_btn,'Enable','on');
-            else
-                set(mainHandles.IR_btn,'Enable','off');% Display process IR button if selection is a measurement based on a sine sweep
-            end
+            %else
+            %    set(mainHandles.IR_btn,'Enable','off');% Display process IR button if selection is a measurement based on a sine sweep
+            %end
             pause(0.001)
         elseif ~isempty(audiodata) && ~isfield(audiodata,'audio')% If there's data saved in the leaf but not audio...
             plot(mainHandles.axestime,0,0)

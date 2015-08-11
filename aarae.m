@@ -1183,11 +1183,55 @@ function IR_btn_Callback(hObject, ~, handles) %#ok
 
 set(hObject,'BackgroundColor','red');
 set(hObject,'Enable','off');
-h = msgbox('Computing impulse response, please wait...','AARAE info','modal');
+
 hMain = getappdata(0,'hMain');
 audiodata = getappdata(hMain,'testsignal');
 selectedNodes = handles.mytree.getSelectedNodes;
-
+if ~isfield(audiodata,'audio2'), audiodata.audio2 = []; end
+if isempty(audiodata.audio2)
+    % there is no secondary audio field, so let's get something instead
+    selection = choose_audio;
+    if isempty(selection)
+        handles.alternate = 0;
+        set(hObject,'BackgroundColor',[0.94 0.94 0.94]);
+        set(hObject,'Enable','on');
+        java.lang.Runtime.getRuntime.gc % Java garbage collection
+        guidata(hObject, handles);
+        return
+    else
+        [~,chans,bands,dim4,dim5,dim6]= size(selection.audio);
+        if chans + bands + dim4 + dim5 + dim6 > 5
+            param = inputdlg({['Select channel (up to ' num2str(chans) ')'];...
+                ['Select band (up to ' num2str(bands) ')'];...
+                ['Select dim 4 cycle (up to ' num2str(dim4) ')'];...
+                ['Select dim 5 (up to ' num2str(dim5) ')'];...
+                ['Select dim 6 (up to ' num2str(dim6) ')']},...
+                'Select just 1 column of audio',... % window title.
+                [1 60],...
+                {'1';'1';'1';'1';'1'}); % Preset answers
+            
+            param = str2num(char(param));
+            if length(param) ~= 5
+                handles.alternate = 0;
+                set(hObject,'BackgroundColor',[0.94 0.94 0.94]);
+                set(hObject,'Enable','on');
+                java.lang.Runtime.getRuntime.gc % Java garbage collection
+                guidata(hObject, handles);
+                return
+            else
+                selection.audio = selection.audio(:,param(1),param(2),param(3),param(4),param(5)); % additional audio data
+            end
+        end
+        if selection.fs ~= audiodata.fs
+            gcd_fs = gcd(audiodata.fs,selection.fs); % greatest common denominator
+            audiodata.audio2 = resample(selection.audio,audiodata.fs/gcd_fs,selection.fs/gcd_fs);
+        else
+            audiodata.audio2 = selection.audio;
+        end
+    end
+    handles.alternate = 1; % we must choose the processing method.
+end
+h = msgbox('Computing impulse response, please wait...','AARAE info','modal');
 if handles.alternate ~= 1
     % convolveaudiowithaudio2 is an AARAE utility
     [IR,method,scalingmethod] = convolveaudiowithaudio2(audiodata,[],0,0,1);
