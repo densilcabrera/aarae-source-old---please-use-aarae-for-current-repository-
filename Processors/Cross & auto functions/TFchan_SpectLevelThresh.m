@@ -1,4 +1,4 @@
-function OUT = TFchan_SpectLevelThresh(in,fs,RefChan,Threshold,Duration,doplot)
+function OUT = TFchan_SpectLevelThresh(in,fs,RefChan,Threshold,Duration,partialTF,doplot)
 % Calculates the transfer function between pairs of audio channels, by
 % frequency domain division of cross spectrum by the reference autospectrum,
 % but removing spectral components for which the
@@ -41,17 +41,22 @@ if nargin < 3
     if defaultDuration > maxDuration, defaultDuration = maxDuration; end
     
     %dialog box for settings
-    prompt = {'Reference channel, OR 0 for additional audio input', 'Level threshold (dB)', 'Output duration (s) OR 0 for full duration', 'Plot (0 | 1)'};
+    prompt = {'Reference channel, OR 0 for additional audio input',...
+        'Level threshold (dB)',...
+        'Output duration (s) OR 0 for full duration',...
+        'Full transfer function [0], Phase only (and retain magnitude) [1], or Magnitude only (and retain phase) [2]',...
+        'Plot (0 | 1)'};
     dlg_title = 'Settings';
     num_lines = 1;
-    def = {'1','-60', num2str(defaultDuration),'0'};
+    def = {'1','-60', num2str(defaultDuration),'0','0'};
     answer = inputdlg(prompt,dlg_title,num_lines,def);
     
     if ~isempty(answer)
         RefChan = str2num(answer{1,1});
         Threshold = str2num(answer{2,1});
         Duration = str2num(answer{3,1});
-        doplot = str2num(answer{4,1});
+        partialTF = str2num(answer{4,1});
+        doplot = str2num(answer{5,1});
     else
         OUT = [];
         return
@@ -141,6 +146,7 @@ if size(refspectrum,3) ==1
     refspectrumk = repmat(refspectrum, [1,chans,bands]);
     TF = conj(refspectrumk) .* spectrum ./ (conj(refspectrumk) .* refspectrumk);
     TF(below_threshold,:,:) = 0; % zero all values below input wave threshold
+
 else
     for k = 1:bands
         magnitude_ref = abs(refspectrum(:,1,k));
@@ -152,8 +158,15 @@ else
         TF(:,:,k) = conj(refspectrumk) .* spectrum(:,:,k) ./ (conj(refspectrumk) .* refspectrumk);
         
         TF(below_threshold,:,k) = 0; % zero all values below input wave threshold
+        
     end
 end
+if partialTF == 1
+    TF = abs(spectrum) .* exp(1i*angle(TF));
+elseif partialTF == 2
+    TF = abs(TF) .* exp(1i*angle(spectrum));
+end
+
 
 % Return to time domain
 out = ifft(TF);
@@ -165,7 +178,7 @@ if isstruct(in)
     OUT = in; % replicate input structure
     OUT.audio = out;
     OUT.funcallback.name = 'TFchan_SpectLevelThresh.m';
-    OUT.funcallback.inarg = {fs,RefChan,Threshold,Duration,doplot};
+    OUT.funcallback.inarg = {fs,RefChan,Threshold,Duration,partialTF,doplot};
 else
     OUT = out;
 end
