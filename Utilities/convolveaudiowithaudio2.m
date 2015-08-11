@@ -243,10 +243,14 @@ switch alternativemethod
         %         % TF (phase only) from audio2 to audio
         %     case x
         %         % TF from user-selected audio to audio
-        
-        
+%     case 13
+%         IR = conv(S,invS); % only works on vectors - need a nested for
+%         loop - or run it using filter instead?
+%     case 14
+%         IR = deconv(S,invS); % only works on vectors - need a nested for loop
     otherwise
-        % linear convolution of audio with audio2
+        % linear convolution of audio with audio2 by spectrum
+        % multiplication
         % this is for alternativemethod = 0, 1, 2
         
         maxsize = 1e6; % this could be a user setting

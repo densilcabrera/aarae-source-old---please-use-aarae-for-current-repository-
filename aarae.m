@@ -1189,7 +1189,11 @@ audiodata = getappdata(hMain,'testsignal');
 selectedNodes = handles.mytree.getSelectedNodes;
 if ~isfield(audiodata,'audio2'), audiodata.audio2 = []; end
 if isempty(audiodata.audio2)
-    % there is no secondary audio field, so let's get something instead
+    % there is no secondary audio field, so let's get something as a
+    % substitute - this is envisaged to be expecially useful for transfer
+    % function based calculations (where the recorded audio is compared
+    % with the original audio). Currently this is restricted to only one
+    % column of audio.
     selection = choose_audio;
     if isempty(selection)
         handles.alternate = 0;
@@ -1210,7 +1214,7 @@ if isempty(audiodata.audio2)
                 [1 60],...
                 {'1';'1';'1';'1';'1'}); % Preset answers
             
-            param = str2num(char(param));
+            param = round(abs(str2num(char(param))));
             if length(param) ~= 5
                 handles.alternate = 0;
                 set(hObject,'BackgroundColor',[0.94 0.94 0.94]);
@@ -1219,6 +1223,11 @@ if isempty(audiodata.audio2)
                 guidata(hObject, handles);
                 return
             else
+                if param(1) < 1 || param(1) > chans, param(1) = 1; end
+                if param(2) < 1 || param(2) > bands, param(2) = 1; end
+                if param(3) < 1 || param(3) > dim4, param(3) = 1; end
+                if param(4) < 1 || param(4) > dim5, param(4) = 1; end
+                if param(5) < 1 || param(5) > dim6, param(5) = 1; end
                 selection.audio = selection.audio(:,param(1),param(2),param(3),param(4),param(5)); % additional audio data
             end
         end
@@ -1231,9 +1240,10 @@ if isempty(audiodata.audio2)
     end
     handles.alternate = 1; % we must choose the processing method.
 end
-h = msgbox('Computing impulse response, please wait...','AARAE info','modal');
+
 if handles.alternate ~= 1
     % convolveaudiowithaudio2 is an AARAE utility
+    h = msgbox('Computing impulse response, please wait...','AARAE info','modal');
     [IR,method,scalingmethod] = convolveaudiowithaudio2(audiodata,[],0,0,1);
     calcmethod = 1;
     nameprefix = 'IR_';
@@ -1251,12 +1261,15 @@ else
         '10. Transfer function from reversed audio2 to audio (-90 dB threshold)';...
         '11. Transfer function from reversed audio2 to audio (-80 dB threshold)';...
         '12. Transfer function from reversed audio2 to audio (-70 dB threshold)'};
+%         '13. Convolution using Matlab''s conv funciton';
+%         '14. Deconvolution using Matlab''s deconv function'};
     
     [calcmethod,ok] = listdlg('PromptString','Select the processing method',...
         'SelectionMode','single',...
         'ListString',str,...
         'ListSize', [400,400]);
     if ok
+        h = msgbox('Computing impulse response (or other cross function), please wait...','AARAE info','modal');
         switch calcmethod
             case 1
                 % same as normal method
@@ -1300,10 +1313,23 @@ else
             case 12
                 [IR,method,scalingmethod] = convolveaudiowithaudio2(audiodata,[],0,12,1);
                 nameprefix = 'IR_';
+%             case 13
+%                 [IR,method,scalingmethod] = convolveaudiowithaudio2(audiodata,[],0,13,1);
+%                 nameprefix = 'IR_';
+%             case 14
+%                 [IR,method,scalingmethod] = convolveaudiowithaudio2(audiodata,[],0,14,1);
+%                 nameprefix = 'IR_';
             otherwise
                 [IR,method,scalingmethod] = convolveaudiowithaudio2(audiodata,[],0,0,1);
                 nameprefix = 'IR_';
         end
+    else
+        handles.alternate = 0;
+        set(hObject,'BackgroundColor',[0.94 0.94 0.94]);
+        set(hObject,'Enable','on');
+        java.lang.Runtime.getRuntime.gc % Java garbage collection
+        guidata(hObject, handles);
+        return
     end
     
 end
@@ -1431,6 +1457,10 @@ if ~isempty(IR)
                 fprintf(handles.fid,'calcmethod = 11; %% Transfer function from reversed audio2 to audio (-80 dB threshold)\n');
             case 12
                 fprintf(handles.fid,'calcmethod = 12; %% Transfer function from reversed audio2 to audio (-70 dB threshold)\n');
+%             case 13
+%                 fprintf(handles.fid,'calcmethod = 13; %% Convolution of audio2 with audio using Matlab''s conv function\n');
+%             case 14
+%                 fprintf(handles.fid,'calcmethod = 14; %% Deconvolution of audio2 from audio using Matlab''s conv function\n');
         end
         switch method
             case 1

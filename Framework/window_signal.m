@@ -217,6 +217,8 @@ else
     L = 10*log10(handles.IR(:).^2);
     minL = min(L);
     maxL = max(L);
+    % we get an error here if handles.IR is very short ( e.g. 1 sample
+    % long). Probably need to ensure that it is at least 5 samples long.
     B=interp1([0 trimsamp_low trimsamp_low+1 trimsamp_high-2 trimsamp_high-1 t(end)],...
         [minL minL maxL maxL minL minL],t,'linear');
     hold(handles.IN_axes,'on')
