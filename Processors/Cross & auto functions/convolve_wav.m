@@ -99,6 +99,9 @@ if ~isempty(wave1) && ~isempty(fs) && ~isempty(wave2) && ~isempty(fs2)
     if isstruct(in)
         OUT = in; % replicate input structure, to preserve fields
     end
+    if size(y,2) ~= size(wave1,2)
+        OUT.chanID = makechanID(size(y,2),0);
+    end
     OUT.audio = y;
     OUT.funcallback.name = 'convolve_wav.m';
     OUT.funcallback.inarg = {fs,wave2,fs2,more_options};

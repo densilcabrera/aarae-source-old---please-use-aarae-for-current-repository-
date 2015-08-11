@@ -33,7 +33,7 @@ if nargin < 3
         end
         bandID = [];
     end
-    [len,chans,bands] = size(S);
+    [len,chans,bands] = size(S); % need to update this for 6 dimensional input
     
     
     maxDuration = floor((len) / in.fs);
@@ -141,7 +141,7 @@ magThreshold = 10.^(Threshold / 20);
 TF = zeros(len,chans,bands);
 if size(refspectrum,3) ==1
     magnitude_ref = abs(refspectrum);
-    maxmagnitude_ref = max(magnitude_ref);
+    maxmagnitude_ref = max(max(magnitude_ref));
     below_threshold = magnitude_ref < maxmagnitude_ref * magThreshold;
     refspectrumk = repmat(refspectrum, [1,chans,bands]);
     TF = conj(refspectrumk) .* spectrum ./ (conj(refspectrumk) .* refspectrumk);
@@ -166,7 +166,9 @@ if partialTF == 1
 elseif partialTF == 2
     TF = abs(TF) .* exp(1i*angle(spectrum));
 end
-
+if rem(size(TF,1),2)== 0
+    TF(1+end/2,:,:,:,:,:)=0; % zero the Nyquist frequency because of potential (otherwise) for 'slightly complex' waveform
+end
 
 % Return to time domain
 out = ifft(TF);

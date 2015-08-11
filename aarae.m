@@ -968,7 +968,7 @@ if ~isempty(audiodata)
     % Log verbose metadata
     logaudioleaffields(audiodata);
 end
-handles.alternate=0; % 
+handles.alternate=0; %
 java.lang.Runtime.getRuntime.gc % Java garbage collection
 guidata(hObject, handles);
 
@@ -1196,71 +1196,71 @@ if handles.alternate ~= 1
 else
     % select an alternative operation
     str = {'1. Convolve audio with audio2';... % same as default
-            '2. Cross-correlate audio with audio2';...
-            '3. Circular convolution of audio with audio2';... 
-            '4. Circular cross-correlation of audio with audio2';...
-            '5. Transfer function from audio2 to audio (-200 dB threshold)';...
-            '6. Transfer function from audio2 to audio (-90 dB threshold)';...
-            '7. Transfer function from audio2 to audio (-80 dB threshold)';...
-            '8. Transfer function from audio2 to audio (-70 dB threshold)';...
-            '9. Transfer function from reversed audio2 to audio (-200 dB threshold)';...
-            '10. Transfer function from reversed audio2 to audio (-90 dB threshold)';...
-            '11. Transfer function from reversed audio2 to audio (-80 dB threshold)';...
-            '12. Transfer function from reversed audio2 to audio (-70 dB threshold)'};
-        
-        [calcmethod,ok] = listdlg('PromptString','Select the processing method',...
-            'SelectionMode','single',...
-            'ListString',str,...
-            'ListSize', [400,400]);
-        if ok
-            switch calcmethod
-                case 1
-                    % same as normal method
-                    [IR,method,scalingmethod] = convolveaudiowithaudio2(audiodata,[],0,0,1);
-                    nameprefix = 'IR_';
-                case 2
-                    % cross-correlate audio with audio2
-                    [IR,method,scalingmethod] = convolveaudiowithaudio2(audiodata,[],0,0,1);
-                    nameprefix = 'X_';
-                case 3
-                    % circular convolution
-                    [IR,method,scalingmethod] = convolveaudiowithaudio2(audiodata,[],0,3,1);
-                    nameprefix = 'IR_';
-                case 4
-                    % circularly cross-correlate audio with audio2
-                    [IR,method,scalingmethod] = convolveaudiowithaudio2(audiodata,[],0,4,1);
-                    nameprefix = 'X_';
-                case 5
-                    % Transfer function from audio2 to audio with no
-                    % threshold
-                    [IR,method,scalingmethod] = convolveaudiowithaudio2(audiodata,[],0,5,1);
-                    nameprefix = 'IR_';
-                case 6
-                    [IR,method,scalingmethod] = convolveaudiowithaudio2(audiodata,[],0,6,1);
-                    nameprefix = 'IR_';
-                case 7
-                    [IR,method,scalingmethod] = convolveaudiowithaudio2(audiodata,[],0,7,1);
-                    nameprefix = 'IR_';
-                case 8
-                    [IR,method,scalingmethod] = convolveaudiowithaudio2(audiodata,[],0,8,1);
-                    nameprefix = 'IR_';
-                case 9
-                    [IR,method,scalingmethod] = convolveaudiowithaudio2(audiodata,[],0,9,1);
-                    nameprefix = 'IR_';
-                case 10
-                    [IR,method,scalingmethod] = convolveaudiowithaudio2(audiodata,[],0,10,1);
-                    nameprefix = 'IR_';
-                case 11
-                    [IR,method,scalingmethod] = convolveaudiowithaudio2(audiodata,[],0,11,1);
-                    nameprefix = 'IR_';
-                case 12
-                    [IR,method,scalingmethod] = convolveaudiowithaudio2(audiodata,[],0,12,1);
-                    nameprefix = 'IR_';
-                otherwise
-                    [IR,method,scalingmethod] = convolveaudiowithaudio2(audiodata,[],0,0,1);
-                    nameprefix = 'IR_';
-            end
+        '2. Cross-correlate audio with audio2';...
+        '3. Circular convolution of audio with audio2';...
+        '4. Circular cross-correlation of audio with audio2';...
+        '5. Transfer function from audio2 to audio (-200 dB threshold)';...
+        '6. Transfer function from audio2 to audio (-90 dB threshold)';...
+        '7. Transfer function from audio2 to audio (-80 dB threshold)';...
+        '8. Transfer function from audio2 to audio (-70 dB threshold)';...
+        '9. Transfer function from reversed audio2 to audio (-200 dB threshold)';...
+        '10. Transfer function from reversed audio2 to audio (-90 dB threshold)';...
+        '11. Transfer function from reversed audio2 to audio (-80 dB threshold)';...
+        '12. Transfer function from reversed audio2 to audio (-70 dB threshold)'};
+    
+    [calcmethod,ok] = listdlg('PromptString','Select the processing method',...
+        'SelectionMode','single',...
+        'ListString',str,...
+        'ListSize', [400,400]);
+    if ok
+        switch calcmethod
+            case 1
+                % same as normal method
+                [IR,method,scalingmethod] = convolveaudiowithaudio2(audiodata,[],0,0,1);
+                nameprefix = 'IR_';
+            case 2
+                % cross-correlate audio with audio2
+                [IR,method,scalingmethod] = convolveaudiowithaudio2(audiodata,[],0,0,1);
+                nameprefix = 'X_';
+            case 3
+                % circular convolution
+                [IR,method,scalingmethod] = convolveaudiowithaudio2(audiodata,[],0,3,1);
+                nameprefix = 'IR_';
+            case 4
+                % circularly cross-correlate audio with audio2
+                [IR,method,scalingmethod] = convolveaudiowithaudio2(audiodata,[],0,4,1);
+                nameprefix = 'X_';
+            case 5
+                % Transfer function from audio2 to audio with no
+                % threshold
+                [IR,method,scalingmethod] = convolveaudiowithaudio2(audiodata,[],0,5,1);
+                nameprefix = 'IR_';
+            case 6
+                [IR,method,scalingmethod] = convolveaudiowithaudio2(audiodata,[],0,6,1);
+                nameprefix = 'IR_';
+            case 7
+                [IR,method,scalingmethod] = convolveaudiowithaudio2(audiodata,[],0,7,1);
+                nameprefix = 'IR_';
+            case 8
+                [IR,method,scalingmethod] = convolveaudiowithaudio2(audiodata,[],0,8,1);
+                nameprefix = 'IR_';
+            case 9
+                [IR,method,scalingmethod] = convolveaudiowithaudio2(audiodata,[],0,9,1);
+                nameprefix = 'IR_';
+            case 10
+                [IR,method,scalingmethod] = convolveaudiowithaudio2(audiodata,[],0,10,1);
+                nameprefix = 'IR_';
+            case 11
+                [IR,method,scalingmethod] = convolveaudiowithaudio2(audiodata,[],0,11,1);
+                nameprefix = 'IR_';
+            case 12
+                [IR,method,scalingmethod] = convolveaudiowithaudio2(audiodata,[],0,12,1);
+                nameprefix = 'IR_';
+            otherwise
+                [IR,method,scalingmethod] = convolveaudiowithaudio2(audiodata,[],0,0,1);
+                nameprefix = 'IR_';
         end
+    end
     
 end
 if ishandle(h), close(h); end
@@ -1943,8 +1943,8 @@ if handles.compareaudio == 1
             '20. Cumulative time-distribution of Hilbert envelope';...
             '21. Scatter plots of time and frequency power centroid and Leq';...
             '22. Scatter plots (A-weighted) of time and frequency power centroid and Leq'};
-
-            
+        
+        
         
         % To Do: Put other special plots on this list. possibilities
         % include:
@@ -1967,16 +1967,16 @@ if handles.compareaudio == 1
         % * Special comparison analyses using a reference: level diff from
         %       ref in time & freq, xcorr, tf, etc. However we need a way
         %       of identifying the reference audio
-        % 
+        %
         
-      
+        
         % % PHASE DELAY
         %[signaldata.audio,f] = ...
-            %phasedelay(signaldata.audio,1,length(signaldata.audio),signaldata.fs);
-            % (just an idea)
-            %end
-            
-            
+        %phasedelay(signaldata.audio,1,length(signaldata.audio),signaldata.fs);
+        % (just an idea)
+        %end
+        
+        
         
         [plottypeselection,ok] = listdlg('PromptString','Select the plot type',...
             'SelectionMode','single',...
@@ -2122,7 +2122,7 @@ if handles.compareaudio == 1
         signaldata = selectedNodes(i).handle.UserData;
         if handles.alternate==1 && isfield(selectedNodes(i).handle.UserData,'audio2')
             signaldata.audio = signaldata.audio2;
-        end 
+        end
         if ~isempty(signaldata) && isfield(signaldata,'audio')
             % apply calibration (if requested and if possible)
             if isfield(signaldata,'cal') && cal_or_norm == 1  && handles.alternate~=1
@@ -2363,7 +2363,7 @@ if handles.compareaudio == 1
             
             if plottype == 11
                 % REAL SPECTRUM
-                signaldata.audio = real(signaldata.audio).*spectscale; 
+                signaldata.audio = real(signaldata.audio).*spectscale;
                 if cal_or_norm == 2
                     signaldata.audio = signaldata.audio...
                         ./ repmat(max(abs(signaldata.audio)),[size(signaldata.audio,1),1,1,1,1,1]);
@@ -2403,7 +2403,7 @@ if handles.compareaudio == 1
             
             if plottype == 19
                 % CUMULATIVE TIME DISTRIBUTION OF LEVEL
-                signaldata.audio = sort(10*log10(abs(signaldata.audio).^2)); 
+                signaldata.audio = sort(10*log10(abs(signaldata.audio).^2));
                 if cal_or_norm == 2
                     signaldata.audio = signaldata.audio...
                         - repmat(max(signaldata.audio),[size(signaldata.audio,1),1,1,1,1,1]);
@@ -2467,7 +2467,7 @@ if handles.compareaudio == 1
                 spectrum = abs(signaldata.audio(1:length(f),:,:,:,:,:)).^2;
                 fcentroid = sum(f.*spectrum(1:size(f,1),:,:,:,:,:)) ./ ...
                     sum(spectrum(1:size(f,1),:,:,:,:,:));
-
+                
                 
             end
             
@@ -2505,12 +2505,18 @@ if handles.compareaudio == 1
                                         else
                                             if max(chansselect(i)) > 1
                                                 if isfield(signaldata,'chanID')
-                                                    labelstring = [labelstring signaldata.chanID{ch,1}];
+                                                    try
+                                                        labelstring = [labelstring signaldata.chanID{ch,1}];
+                                                    catch
+                                                    end
                                                 end
                                             end
                                             if max(bandsselect(i)) > 1
                                                 if isfield(signaldata,'bandID')
-                                                    labelstring = [labelstring num2str(signaldata.bandID(b))  ' Hz'];
+                                                    try
+                                                        labelstring = [labelstring num2str(signaldata.bandID(b))  ' Hz'];
+                                                    catch
+                                                    end
                                                 end
                                             end
                                         end
@@ -2520,75 +2526,114 @@ if handles.compareaudio == 1
                                             titlestring = ['audio2 chan ' num2str(ch)];
                                         else
                                             if isfield(signaldata,'chanID')
-                                                titlestring = signaldata.chanID{ch,1};
+                                                try
+                                                    titlestring = signaldata.chanID{ch,1};
+                                                catch
+                                                end
                                             end
                                             if max(bandsselect(i)) > 1
                                                 if isfield(signaldata,'bandID')
-                                                    labelstring = [labelstring num2str(signaldata.bandID(b)) ' Hz'];
+                                                    try
+                                                        labelstring = [labelstring num2str(signaldata.bandID(b)) ' Hz'];
+                                                    catch
+                                                    end
                                                 end
                                             end
                                         end
                                     case 3
                                         plotnum = b;
                                         if isfield(signaldata,'bandID')
-                                            titlestring = [num2str(signaldata.bandID(b)) ' Hz'];
+                                            try
+                                                titlestring = [num2str(signaldata.bandID(b)) ' Hz'];
+                                            catch
+                                            end
                                         end
                                         if max(chansselect(i)) > 1
                                             if isfield(signaldata,'chanID')
-                                                labelstring = [labelstring signaldata.chanID{ch,1}];
+                                                try
+                                                    labelstring = [labelstring signaldata.chanID{ch,1}];
+                                                catch
+                                                end
                                             end
                                         end
                                     case 4
                                         plotnum = d4;
                                         if isfield(signaldata,'properties')
                                             if isfield(signaldata.properties,'relgain')
-                                                titlestring = [num2str(signaldata.properties.relgain(d4)) ' dB'];
+                                                try
+                                                    titlestring = [num2str(signaldata.properties.relgain(d4)) ' dB'];
+                                                catch
+                                                end
                                             end
                                         end
                                         if max(chansselect(i)) > 1
                                             if isfield(signaldata,'chanID')
-                                                labelstring = [labelstring signaldata.chanID{ch,1}];
+                                                try
+                                                    labelstring = [labelstring signaldata.chanID{ch,1}];
+                                                catch
+                                                end
                                             end
                                         end
                                         if max(bandsselect(i)) > 1
                                             if isfield(signaldata,'bandID')
-                                                labelstring = [labelstring num2str(signaldata.bandID(b)) ' Hz'];
+                                                try
+                                                    labelstring = [labelstring num2str(signaldata.bandID(b)) ' Hz'];
+                                                catch
+                                                end
                                             end
                                         end
                                     case 5
                                         plotnum = d5;
                                         if max(chansselect(i)) > 1
                                             if isfield(signaldata,'chanID')
-                                                labelstring = [labelstring signaldata.chanID{ch,1}];
+                                                try
+                                                    labelstring = [labelstring signaldata.chanID{ch,1}];
+                                                catch
+                                                end
                                             end
                                         end
                                         if max(bandsselect(i)) > 1
                                             if isfield(signaldata,'bandID')
-                                                labelstring = [labelstring num2str(signaldata.bandID(b)) ' Hz'];
+                                                try
+                                                    labelstring = [labelstring num2str(signaldata.bandID(b)) ' Hz'];
+                                                catch
+                                                end
                                             end
                                         end
                                     case 6
                                         plotnum = d6;
                                         if max(chansselect(i)) > 1
                                             if isfield(signaldata,'chanID')
-                                                labelstring = [labelstring signaldata.chanID{ch,1}];
+                                                try
+                                                    labelstring = [labelstring signaldata.chanID{ch,1}];
+                                                catch
+                                                end
                                             end
                                         end
                                         if max(bandsselect(i)) > 1
                                             if isfield(signaldata,'bandID')
-                                                labelstring = [labelstring num2str(signaldata.bandID(b)) ' Hz'];
+                                                try
+                                                    labelstring = [labelstring num2str(signaldata.bandID(b)) ' Hz'];
+                                                catch
+                                                end
                                             end
                                         end
                                     otherwise
                                         plotnum = 1;
                                         if max(chansselect(i)) > 1
                                             if isfield(signaldata,'chanID')
-                                                labelstring = [labelstring signaldata.chanID{ch,1}];
+                                                try
+                                                    labelstring = [labelstring signaldata.chanID{ch,1}];
+                                                catch
+                                                end
                                             end
                                         end
                                         if max(bandsselect(i)) > 1
                                             if isfield(signaldata,'bandID')
-                                                labelstring = [labelstring num2str(signaldata.bandID(b)) ' Hz'];
+                                                try
+                                                    labelstring = [labelstring num2str(signaldata.bandID(b)) ' Hz'];
+                                                catch
+                                                end
                                             end
                                         end
                                 end
@@ -2709,7 +2754,7 @@ if handles.compareaudio == 1
                                     xlabel('Frequency [Hz]');
                                     ylabel('Leq (L50 & Lmax) [dB]');
                                     hold on
-                                
+                                    
                                     hsubplot4 = subplot(2,2,4); % legend plot
                                     ylim([0 1]);
                                     xlim([0 1]);
@@ -2772,8 +2817,8 @@ if handles.compareaudio == 1
             set(iplots(4),'Ylim',[0,Freqlims(2)])
         end
         uicontrol('Style', 'pushbutton', 'String', 'Axes limits',...
-                'Position', [0 0 65 30],...
-                'Callback', 'set3axeslimits');
+            'Position', [0 0 65 30],...
+            'Callback', 'set3axeslimits');
     end
     
     
@@ -3404,7 +3449,7 @@ for nleafs = 1:length(selectedNodes)
         
         % Save as you go
         save([cd '/Utilities/Backup/' newleaf{1,1} '.mat'], 'newdata','-v7.3');
-
+        
         if strcmp(newdata.datatype,'testsignals')
             handles.(matlab.lang.makeValidName(newleaf{1,1})) = uitreenode('v0', newleaf{1,1},  newleaf{1,1},  iconPath, true);
             handles.(matlab.lang.makeValidName(newleaf{1,1})).UserData = newdata;
