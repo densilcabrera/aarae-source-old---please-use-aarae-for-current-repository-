@@ -184,7 +184,10 @@ if ~exist('alternativemethod','var'), alternativemethod = 0; end
 if isempty(alternativemethod), alternativemethod = 0; end
 % time reversal methods (e.g. cross correlation)
 if alternativemethod == 2 || alternativemethod == 4 || alternativemethod == 9 ...
-        ||alternativemethod == 10 || alternativemethod == 11 || alternativemethod == 12
+        ||alternativemethod == 10 || alternativemethod == 11 || alternativemethod == 12 ...
+        ||alternativemethod == 17 || alternativemethod == 18 || alternativemethod == 19 ...
+        ||alternativemethod == 20 || alternativemethod == 23 || alternativemethod == 24 ...
+        ||alternativemethod == 26
     invS = flipud(invS);
 end
 switch alternativemethod
@@ -236,18 +239,106 @@ switch alternativemethod
             .* S ./ ...
             repmat((conj(invS).*invS),[1,size(S,2),size(S,3),size(S,4),size(S,5),size(S,6)]);
         IR(repmat(below_threshold,[1,size(S,2),size(S,3),size(S,4),size(S,5),size(S,6)])) = 0; % zero all values below input wave threshold
-        IR = ifftshift(ifft(IR)); % the ifftshift is done for compatability with the other methods, so that zero time (the peak) is in the middle
-        %     case x
-        %         % TF (magnitude only) from audio2 to audio
-        %     case x
-        %         % TF (phase only) from audio2 to audio
-        %     case x
-        %         % TF from user-selected audio to audio
-%     case 13
-%         IR = conv(S,invS); % only works on vectors - need a nested for
-%         loop - or run it using filter instead?
-%     case 14
-%         IR = deconv(S,invS); % only works on vectors - need a nested for loop
+        IR = ifftshift(real(ifft(IR)));
+        % vary small imaginary values can occur due to precision - hence
+        % 'real' to remove them
+        % the ifftshift is done for compatability with the other methods, so that zero time (the peak) is in the middle
+
+    case {13,14,15,16,17,18,19,20}
+        % TF from audio to audio2
+        % This is done by dividing the auto-spectrum of the input
+        % by the cross-spectrum
+        switch alternativemethod
+            case {13,17}
+                threshdB = -200; % essentially no threshold (-200 dB)
+            case {14,18}
+                threshdB = -90;
+            case {15,19}
+                threshdB = -80;
+            case {16,20}
+                threshdB = -70;
+        end
+        fftlen = size(S,1);
+        S = fft(S,fftlen);
+        invS = fft(invS(:,1,1,1,1,1),fftlen); % restrict to first channel for now
+        denominator = repmat(conj(invS),[1,size(S,2),size(S,3),size(S,4),size(S,5),size(S,6)]).* S;
+        IR = (repmat(conj(invS),[1,size(S,2),size(S,3),size(S,4),size(S,5),size(S,6)]) .*...
+            repmat(invS,[1,size(S,2),size(S,3),size(S,4),size(S,5),size(S,6)])) ./ denominator;
+        below_threshold = abs(denominator) < max(max(max(max(max(abs(denominator)))))) * 10.^(threshdB/10);
+        IR(below_threshold) = 0; % zero all values below cross spectrum (denominator) threshold
+        IR = ifftshift(real(ifft(IR)));
+    case {21, 23}
+        % deconvolve audio2 from audio, using Matlab's deconv
+        [~,chans,bands,dim4,dim5,dim6] = size(S);
+        len1 = size(S,1); len2 = size(invS,1); 
+        minlen = 10;
+        if len1 < len2+minlen
+            S = [S;zeros(minlen,chans,bands,dim4,dim5,dim6)];
+        end
+        IR = zeros(size(S,1) - size(invS,1)+1,chans,bands,dim4,dim5,dim6);
+        for ch = 1:chans
+            for b = 1:bands
+                for d4 = 1:dim4
+                    for d5 = 1:dim5
+                        for d6 = 1:dim6
+                            IR(:,ch,b,d4,d5,d6) = deconv(S(:,ch,b,d4,d5,d6),invS(:,1,1,1,1,1));
+                        end
+                    end
+                end
+            end
+        end
+        case {22, 24}
+        % deconvolve audio from audio2, using Matlab's deconv
+        [~,chans,bands,dim4,dim5,dim6] = size(S);
+        len1 = size(invS,1); len2 = size(S,1); 
+        minlen = 10;
+        if len1 < len2+minlen
+            invS = [invS;zeros(minlen,chans,bands,dim4,dim5,dim6)];
+        end
+        IR = zeros(size(invS,1) - size(S,1)+1,chans,bands,dim4,dim5,dim6);
+        for ch = 1:chans
+            for b = 1:bands
+                for d4 = 1:dim4
+                    for d5 = 1:dim5
+                        for d6 = 1:dim6
+                            IR(:,ch,b,d4,d5,d6) = deconv(invS(:,1,1,1,1,1),S(:,ch,b,d4,d5,d6));
+                        end
+                    end
+                end
+            end
+        end
+    case {25, 26}
+        % time domain convolution (using filter) of audio with audio2
+        IR = filter(invS(:,1,1,1,1,1),1,[S;zeros(size(invS,1)-1, ...
+            size(S,2),size(S,3),size(S,4),size(S,5),size(S,6))]);
+        
+        
+% AUTO FUNCTIONS - Probably not appropriate here        
+%     case {27, 28, 29, 30}
+%         if alternativemethod == 27 || alternativemethod == 29
+%             % linear
+%             fftlen = 2*size(S,1)-1;
+%         else
+%             % circular
+%             fftlen = size(S,1);
+%         end
+%         if alternativemethod == 27 || alternativemethod == 28
+%             % autocorrelation
+%             S = fft(S,fftlen);
+%             IR = ifft(S .* conj(S));
+%         else
+%             % autoconvolution
+%             IR = ifft(fft(S,fftlen).^2);
+%         end
+%     case 31
+%           % spectrum inversion
+%         % TO DO: smoothing, threshold, mag only, phase only, min/zero/max phase
+%         S = fft(S);
+%         S = 1./S;
+%         IR = ifft(S);
+%         
+%         % time reverse, mag correction, then error correction
+        
     otherwise
         % linear convolution of audio with audio2 by spectrum
         % multiplication
@@ -282,6 +373,11 @@ switch alternativemethod
         indices = cat(2,{1:length(S_pad)},repmat({':'},1,ndims(IR)-1));
         IR = IR(indices{:});
 end
+
+
+
+
+
 
 
 % SCALE THE IR

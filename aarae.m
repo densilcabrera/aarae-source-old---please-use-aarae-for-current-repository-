@@ -1260,9 +1260,22 @@ else
         '9. Transfer function from reversed audio2 to audio (-200 dB threshold)';...
         '10. Transfer function from reversed audio2 to audio (-90 dB threshold)';...
         '11. Transfer function from reversed audio2 to audio (-80 dB threshold)';...
-        '12. Transfer function from reversed audio2 to audio (-70 dB threshold)'};
-%         '13. Convolution using Matlab''s conv funciton';
-%         '14. Deconvolution using Matlab''s deconv function'};
+        '12. Transfer function from reversed audio2 to audio (-70 dB threshold)';...
+        '13. Transfer function from audio to audio2 (-200 dB threshold)';...
+        '14. Transfer function from audio to audio2 (-90 dB threshold)';...
+        '15. Transfer function from audio to audio2 (-80 dB threshold)';...
+        '16. Transfer function from audio to audio2 (-70 dB threshold)';...
+        '17. Transfer function from reversed audio to audio2 (-200 dB threshold)';...
+        '18. Transfer function from reversed audio to audio2 (-90 dB threshold)';...
+        '19. Transfer function from reversed audio to audio2 (-80 dB threshold)';...
+        '20. Transfer function from reversed audio to audio2 (-70 dB threshold)';...
+        '21. Time domain deconvolution of audio2 from audio';...
+        '22. Time domain deconvolution of audio from audio2';...
+        '23. Time domain deconvolution of time-reversed audio2 from audio';...
+        '24. Time domain deconvolution of time-reversed audio from audio2';
+        '25. Time domain convolution of audio with audio2';...
+        '26. Time domain convolution of audio with time-reversed audio2'};
+
     
     [calcmethod,ok] = listdlg('PromptString','Select the processing method',...
         'SelectionMode','single',...
@@ -1270,6 +1283,9 @@ else
         'ListSize', [400,400]);
     if ok
         h = msgbox('Computing impulse response (or other cross function), please wait...','AARAE info','modal');
+        % The following 'switch' is unnecessary at present, but may be
+        % useful if each method is customised further (e.g. the name
+        % prefix)
         switch calcmethod
             case 1
                 % same as normal method
@@ -1313,12 +1329,63 @@ else
             case 12
                 [IR,method,scalingmethod] = convolveaudiowithaudio2(audiodata,[],0,12,1);
                 nameprefix = 'IR_';
-%             case 13
-%                 [IR,method,scalingmethod] = convolveaudiowithaudio2(audiodata,[],0,13,1);
-%                 nameprefix = 'IR_';
-%             case 14
-%                 [IR,method,scalingmethod] = convolveaudiowithaudio2(audiodata,[],0,14,1);
-%                 nameprefix = 'IR_';
+            case 13
+                [IR,method,scalingmethod] = convolveaudiowithaudio2(audiodata,[],0,13,1);
+                nameprefix = 'IR_';
+            case 14
+                [IR,method,scalingmethod] = convolveaudiowithaudio2(audiodata,[],0,14,1);
+                nameprefix = 'IR_';
+            case 15
+                [IR,method,scalingmethod] = convolveaudiowithaudio2(audiodata,[],0,15,1);
+                nameprefix = 'IR_';
+            case 116
+                [IR,method,scalingmethod] = convolveaudiowithaudio2(audiodata,[],0,16,1);
+                nameprefix = 'IR_';
+            case 17
+                [IR,method,scalingmethod] = convolveaudiowithaudio2(audiodata,[],0,17,1);
+                nameprefix = 'IR_';
+            case 18
+                [IR,method,scalingmethod] = convolveaudiowithaudio2(audiodata,[],0,18,1);
+                nameprefix = 'IR_';
+            case 19
+                [IR,method,scalingmethod] = convolveaudiowithaudio2(audiodata,[],0,19,1);
+                nameprefix = 'IR_';
+            case 20
+                [IR,method,scalingmethod] = convolveaudiowithaudio2(audiodata,[],0,20,1);
+                nameprefix = 'IR_';
+            case 21
+                [IR,method,scalingmethod] = convolveaudiowithaudio2(audiodata,[],0,21,1);
+                nameprefix = 'X21_';
+            case 22
+                [IR,method,scalingmethod] = convolveaudiowithaudio2(audiodata,[],0,22,1);
+                nameprefix = 'X22_';
+            case 23
+                [IR,method,scalingmethod] = convolveaudiowithaudio2(audiodata,[],0,23,1);
+                nameprefix = 'X23_';
+            case 24
+                [IR,method,scalingmethod] = convolveaudiowithaudio2(audiodata,[],0,24,1);
+                nameprefix = 'X24_';
+            case 25
+                [IR,method,scalingmethod] = convolveaudiowithaudio2(audiodata,[],0,25,1);
+                nameprefix = 'X25_';
+            case 26
+                [IR,method,scalingmethod] = convolveaudiowithaudio2(audiodata,[],0,26,1);
+                nameprefix = 'X26_';
+%             case 27
+%                 [IR,method,scalingmethod] = convolveaudiowithaudio2(audiodata,[],0,27,1);
+%                 nameprefix = 'X27_';
+%             case 28
+%                 [IR,method,scalingmethod] = convolveaudiowithaudio2(audiodata,[],0,28,1);
+%                 nameprefix = 'X28_';
+%             case 29
+%                 [IR,method,scalingmethod] = convolveaudiowithaudio2(audiodata,[],0,29,1);
+%                 nameprefix = 'X29_';
+%             case 30
+%                 [IR,method,scalingmethod] = convolveaudiowithaudio2(audiodata,[],0,30,1);
+%                 nameprefix = 'X30_';
+%             case 31
+%                 [IR,method,scalingmethod] = convolveaudiowithaudio2(audiodata,[],0,31,1);
+%                 nameprefix = 'X31_';
             otherwise
                 [IR,method,scalingmethod] = convolveaudiowithaudio2(audiodata,[],0,0,1);
                 nameprefix = 'IR_';
