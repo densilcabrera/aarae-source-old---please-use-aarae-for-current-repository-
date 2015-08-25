@@ -3,7 +3,7 @@ function OUT = rectroommodesynthesiser(L,s,spattern,r,rpattern,alpha,c,maxf,maxf
 % amplitude and phase offsets for a set of source and receiver positions in
 % a rectangular room. A kind of impulse response (IR) is generated from this,
 % and a table of data is created. The pseudo-IR is created by additive
-% synthesis of exponentially decaying tones,corresponding to the calculated
+% synthesis of exponentially decaying tones, corresponding to the calculated
 % frequencies, amplitudes, phase offsets and decay rates. A high cutoff
 % frequency limits the calculation (this could potentially take a very long
 % time if the cutoff frequency is set high, especially if the room volume
@@ -14,7 +14,9 @@ function OUT = rectroommodesynthesiser(L,s,spattern,r,rpattern,alpha,c,maxf,maxf
 % multiple outputs are written as multiple channels (dimension 2), and 
 % multiple inputs are written in dimension 5. (Dimension 5 is used because
 % dimension 3 is used by AARAE for bands, and dimension 4 is used by AARAE
-% for multicycle signal measurements.)
+% for multicycle signal measurements. This is the same as the dimension
+% assignment used in AARAE's audio recording GUI for asynchronous output
+% channels.)
 %
 % INPUTS
 % L is the length, width and height of the room, in metres, as a row
@@ -26,10 +28,38 @@ function OUT = rectroommodesynthesiser(L,s,spattern,r,rpattern,alpha,c,maxf,maxf
 % corner, with positive values only within the room. If a single source is
 % specified, then input a 3-valued row vector, e.g. [1 2.3 1.2]. If you
 % wish to specify more than one source, then use a matrix with one
-% source's coordinates on each row. If you with source coordinates to be
+% source's coordinates on each row. If you wish source coordinates to be
 % automatically generated, then use a single number to specify the number
 % of sources to generate. The generation method is controlled by the
 % parameter spattern.
+%
+% r is re receiver coordinates (in Cartesian form), or the number of
+% receiver coordinates to generate. Its format and usage is essentially the
+% same as for s (described above).
+%
+% alpha is the sound absorption coefficient of the surfaces in each of the
+% three dimensions e.g. [0.3 0.2 0.25]. If a single value is input, then it
+% is used for all six surfaces.
+%
+% c is the speed of sound in m/s.
+%
+% maxf is the maximum frequency to synthesise. Note that the modal density
+% increases dramatically with frequency, so it is dangerous to set this
+% value high (please experiment with intermediate values to get a sense of
+% the computational resources required).
+%
+% maxftable is the maximum frequency to include in the output table of mode
+% frequency and individual mode reverberation time.
+%
+% dur is the duration of the audio that is generated in seconds.
+%
+% fs is the audio sampling rate in Hz.
+%
+% scaling is the method for amplitude scaling:
+%   0: no scaling (sum all of the individual modes)
+%   1: normalize
+%   2: divide by the number of synthesised modes (i.e., average)
+
 
 
 
@@ -181,7 +211,7 @@ for nx = (1:maxnx+1)-1
                 
                     A1 = repmat(permute(A,[5,2,3,4,1]),[len,1,1,1,1]);
                     phi1 = repmat(permute(phi,[5,2,3,4,1]),[len,1,1,1,1]);
-                    modaldensityestimate = 4*pi*L(1)*L(2)*L(3)*f.^2/c.^3;
+                    modaldensityestimate = 4*pi*L(1)*L(2)*L(3)*f.^2/c.^3; % this should probably be done a different way
                     OUT.audio = OUT.audio + A1.*sin(2*pi*f.*t + phi1)...
                         ./ (modaldensityestimate.^0.5 * exp(t.*delta));
                     
@@ -194,17 +224,22 @@ for nx = (1:maxnx+1)-1
         end
     end
 end
+
+% Table
 tabledata = tabledata(1:tablecount,:);
-[~,ind] = sort(tabledata(:,4),1,'ascend');
+[~,row] = sort(tabledata(:,4),1,'ascend');
 for col = 1:size(tabledata,2) % a very inelegant way of sorting!
-    tabledata(:,col) = tabledata(ind,col);
+    tabledata(:,col) = tabledata(row,col);
 end
 fig1 = figure('Name','Rectangular Room Modes');
-    table1 = uitable('Data',tabledata,...
-                'ColumnName',{'nx','ny','nz','f (Hz)','T (s)'},...
-                'RowName',{num2str((1:tablecount)')});
-    [~,table] = disptables(fig1,table1);
-    OUT.tables = table;
+table1 = uitable('Data',tabledata,...
+    'ColumnName',{'nx','ny','nz','f (Hz)','T (s)'},...
+    'RowName',{num2str((1:tablecount)')});
+[~,table] = disptables(fig1,table1);
+OUT.tables = table;
+
+
+
 switch scaling
     case 1 % normalize
         OUT.audio = OUT.audio ./ max(max(max(abs(OUT.audio))));
@@ -221,3 +256,33 @@ OUT.properties.speedofsound = c;
 OUT.properties.maximumfrequency = maxf;
 OUT.funcallback.name = 'rectroommodesynthesiser.m';
 OUT.funcallback.inarg = {L,s,spattern,r,rpattern,alpha,c,maxf,maxftable,dur,fs,scaling};
+
+%**************************************************************************
+% Copyright (c) 2015, Densil Cabrera
+% All rights reserved.
+%
+% Redistribution and use in source and binary forms, with or without
+% modification, are permitted provided that the following conditions are
+% met:
+%
+%  * Redistributions of source code must retain the above copyright notice,
+%    this list of conditions and the following disclaimer.
+%  * Redistributions in binary form must reproduce the above copyright
+%    notice, this list of conditions and the following disclaimer in the
+%    documentation and/or other materials provided with the distribution.
+%  * Neither the name of The University of Sydney nor the names of its contributors
+%    may be used to endorse or promote products derived from this software
+%    without specific prior written permission.
+%
+% THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+% "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED
+% TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A
+% PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER
+% OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+% EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+% PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+% PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+% LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+% NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+% SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+%**************************************************************************
