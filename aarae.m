@@ -2007,7 +2007,7 @@ if handles.compareaudio == 1
             parameterstring8;...
             parameterstring9;...
             parameterstring10;...
-            'Raw values [0]; Use calibration if available [1]; or Normalise [2] (if relevant to plot type)';...
+            'Raw values [0]; Use calibration if available [1]; or Normalise [2]; or Normalize to rms [3] (if relevant to plot type)';...
             'Change the plot type [0 | 1] (some extra plot types are also available)'},...% inputdlg window.
             'Data Mapping & Selection',...
             [1 90],...
@@ -2046,7 +2046,7 @@ if handles.compareaudio == 1
         
         % Dialog box for selection
         param = inputdlg({parameterstring10;...
-            'Raw values [0]; Use calibration if available [1]; or Normalise [2] (if relevant to plot type)';...
+            'Raw values [0]; Use calibration if available [1]; or Normalise [2]; or Normalize to rms [3] (if relevant to plot type)';...
             'Change the plot type [0 | 1]'},...% inputdlg window.
             'Smoothing & plot type',...
             [1 90],...
@@ -2304,6 +2304,9 @@ if handles.compareaudio == 1
                 if cal_or_norm == 2
                     signaldata.audio = signaldata.audio...
                         ./ repmat(max(abs(signaldata.audio)),[size(signaldata.audio,1),1,1,1,1,1]);
+                elseif cal_or_norm == 3
+                    signaldata.audio = signaldata.audio...
+                        ./ repmat(rms(abs(signaldata.audio)),[size(signaldata.audio,1),1,1,1,1,1]);
                 end
             end
             
@@ -2318,6 +2321,9 @@ if handles.compareaudio == 1
                 if cal_or_norm == 2
                     signaldata.audio = signaldata.audio...
                         ./ repmat(max(abs(signaldata.audio)),[size(signaldata.audio,1),1,1,1,1,1]);
+                elseif cal_or_norm == 3
+                    signaldata.audio = signaldata.audio...
+                        ./ repmat(mean(abs(signaldata.audio)),[size(signaldata.audio,1),1,1,1,1,1]);
                 end
             end
             
@@ -2333,6 +2339,9 @@ if handles.compareaudio == 1
                 if cal_or_norm == 2
                     signaldata.audio = signaldata.audio...
                         - repmat(max(signaldata.audio),[size(signaldata.audio,1),1,1,1,1,1]);
+                elseif cal_or_norm == 3
+                    signaldata.audio = signaldata.audio...
+                        - repmat(pow2db(mean(db2pow(signaldata.audio))),[size(signaldata.audio,1),1,1,1,1,1]);
                 end
             end
             
@@ -2355,6 +2364,9 @@ if handles.compareaudio == 1
                 if cal_or_norm == 2
                     signaldata.audio = signaldata.audio...
                         ./ repmat(max(abs(signaldata.audio)),[size(signaldata.audio,1),1,1,1,1,1]);
+                elseif cal_or_norm == 3
+                    signaldata.audio = signaldata.audio...
+                        ./ repmat(rms(abs(signaldata.audio)),[size(signaldata.audio,1),1,1,1,1,1]);
                 end
             end
             
@@ -2390,6 +2402,9 @@ if handles.compareaudio == 1
                 if cal_or_norm == 2
                     signaldata.audio = signaldata.audio...
                         ./ repmat(max(abs(signaldata.audio)),[size(signaldata.audio,1),1,1,1,1,1]);
+                elseif cal_or_norm == 3
+                    signaldata.audio = signaldata.audio...
+                        ./ repmat(rms(abs(signaldata.audio)),[size(signaldata.audio,1),1,1,1,1,1]);
                 end
             end
             
@@ -2399,6 +2414,9 @@ if handles.compareaudio == 1
                 if cal_or_norm == 2 && mean(mean(mean(mean(mean(max(abs(signaldata.audio))))))) > 0
                     signaldata.audio = signaldata.audio...
                         ./ repmat(max(abs(signaldata.audio)),[size(signaldata.audio,1),1,1,1,1,1]);
+                elseif cal_or_norm == 3
+                    signaldata.audio = signaldata.audio...
+                        ./ repmat(rms(abs(signaldata.audio)),[size(signaldata.audio,1),1,1,1,1,1]);
                 end
             end
             
@@ -2449,6 +2467,9 @@ if handles.compareaudio == 1
                 if cal_or_norm == 2
                     signaldata.audio = signaldata.audio...
                         - repmat(max(signaldata.audio),[size(signaldata.audio,1),1,1,1,1,1]);
+                elseif cal_or_norm == 3
+                    signaldata.audio = signaldata.audio...
+                        - repmat(pow2db(mean(db2pow(signaldata.audio))),[size(signaldata.audio,1),1,1,1,1,1]);
                 end
             end
             
@@ -2474,6 +2495,9 @@ if handles.compareaudio == 1
                 if cal_or_norm == 2
                     signaldata.audio = signaldata.audio...
                         ./ repmat(max(abs(signaldata.audio)),[size(signaldata.audio,1),1,1,1,1,1]);
+                elseif cal_or_norm == 3
+                    signaldata.audio = signaldata.audio...
+                        ./ repmat(mean(abs(signaldata.audio)),[size(signaldata.audio,1),1,1,1,1,1]);
                 end
             end
             
@@ -2499,6 +2523,9 @@ if handles.compareaudio == 1
                 if cal_or_norm == 2
                     signaldata.audio = signaldata.audio...
                         ./ repmat(max(abs(signaldata.audio)),[size(signaldata.audio,1),1,1,1,1,1]);
+                elseif cal_or_norm == 3
+                    signaldata.audio = signaldata.audio...
+                        ./ repmat(rms(abs(signaldata.audio)),[size(signaldata.audio,1),1,1,1,1,1]);
                 end
             end
             
@@ -2508,6 +2535,9 @@ if handles.compareaudio == 1
                 if cal_or_norm == 2
                     signaldata.audio = signaldata.audio...
                         ./ repmat(max(abs(signaldata.audio)),[size(signaldata.audio,1),1,1,1,1,1]);
+                elseif cal_or_norm == 3
+                    signaldata.audio = signaldata.audio...
+                        ./ repmat(rms(abs(signaldata.audio)),[size(signaldata.audio,1),1,1,1,1,1]);
                 end
             end
             
@@ -2517,6 +2547,9 @@ if handles.compareaudio == 1
                 if cal_or_norm == 2
                     signaldata.audio = signaldata.audio...
                         ./ repmat(max(abs(signaldata.audio)),[size(signaldata.audio,1),1,1,1,1,1]);
+                elseif cal_or_norm == 3
+                    signaldata.audio = signaldata.audio...
+                        ./ repmat(rms(abs(signaldata.audio)),[size(signaldata.audio,1),1,1,1,1,1]);
                 end
             end
             
@@ -2539,6 +2572,9 @@ if handles.compareaudio == 1
                 if cal_or_norm == 2
                     signaldata.audio = signaldata.audio...
                         ./ repmat(max(abs(signaldata.audio)),[size(signaldata.audio,1),1,1,1,1,1]);
+                elseif cal_or_norm == 3
+                    signaldata.audio = signaldata.audio...
+                        ./ repmat(rms(abs(signaldata.audio)),[size(signaldata.audio,1),1,1,1,1,1]);
                 end
             end
             
@@ -2548,6 +2584,9 @@ if handles.compareaudio == 1
                 if cal_or_norm == 2
                     signaldata.audio = signaldata.audio...
                         - repmat(max(signaldata.audio),[size(signaldata.audio,1),1,1,1,1,1]);
+                elseif cal_or_norm == 3
+                    signaldata.audio = signaldata.audio...
+                        - repmat(pow2db(mean(db2pow(signaldata.audio))),[size(signaldata.audio,1),1,1,1,1,1]);
                 end
             end
             
@@ -2567,6 +2606,9 @@ if handles.compareaudio == 1
                 if cal_or_norm == 2
                     signaldata.audio = signaldata.audio...
                         ./ repmat(max(abs(signaldata.audio)),[size(signaldata.audio,1),1,1,1,1,1]);
+                elseif cal_or_norm == 3
+                    signaldata.audio = signaldata.audio...
+                        ./ repmat(rms(abs(signaldata.audio)),[size(signaldata.audio,1),1,1,1,1,1]);
                 end
             end
             
