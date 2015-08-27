@@ -2082,8 +2082,9 @@ if handles.compareaudio == 1
             '18. Cumulative time-distribution of real amplitude';...
             '19. Cumulative time-distribution of level';...
             '20. Cumulative time-distribution of Hilbert envelope';...
-            '21. Scatter plots of time and frequency power centroid and Leq';...
-            '22. Scatter plots (A-weighted) of time and frequency power centroid and Leq'};
+            '21. Cumulative sum of energy over time [dB]';...
+            '22. Scatter plots of time and frequency power centroid and Leq';...
+            '23. Scatter plots (A-weighted) of time and frequency power centroid and Leq'};
         
         
         
@@ -2187,9 +2188,12 @@ if handles.compareaudio == 1
                     figurename = 'Cumulative time distribution (Hilbert envelope)';
                     plotcategory = 'Timeaxis';
                 case 21
+                    figurename = 'Cumulative sum of energy over time [dB]';
+                    plotcategory = 'Timeaxis';
+                case 22
                     figurename = 'Time and freq power centroids and levels';
                     plotcategory = 'Scatter3axis';
-                case 22
+                case 23
                     figurename = 'A-weighted time and freq power centroids and levels';
                     plotcategory = 'Scatter3axis';
                 otherwise
@@ -2611,9 +2615,20 @@ if handles.compareaudio == 1
                         ./ repmat(rms(abs(signaldata.audio)),[size(signaldata.audio,1),1,1,1,1,1]);
                 end
             end
+            if plottype == 21
+            % CUMULATIVE SUM OF ENERGY OVER TIME (in dB)
+                signaldata.audio = 10*log10(cumsum(abs(signaldata.audio).^2)./signaldata.fs);
+                if cal_or_norm == 2
+                    signaldata.audio = signaldata.audio...
+                        - repmat(max(signaldata.audio),[size(signaldata.audio,1),1,1,1,1,1]);
+                elseif cal_or_norm == 3
+                    signaldata.audio = signaldata.audio...
+                        - repmat(pow2db(mean(db2pow(signaldata.audio))),[size(signaldata.audio,1),1,1,1,1,1]);
+                end
+            end
             
-            if plottype == 22, signaldata.audio = Aweight(signaldata.audio,signaldata.fs); end
-            if plottype == 21 || plottype == 22
+            if plottype == 23, signaldata.audio = Aweight(signaldata.audio,signaldata.fs); end
+            if plottype == 22 || plottype == 23
                 % Leq
                 Leq = 10*log10(mean(signaldata.audio.^2));
                 Lmax = 10*log10(max(signaldata.audio.^2));
@@ -2984,7 +2999,7 @@ if handles.compareaudio == 1
                 'Callback', 'setaxeslimits');
         end
     end
-    if plottype == 21 || plottype == 22 % strcmp(plotcategory,'Scatter3axis')
+    if plottype == 22 || plottype == 23 % strcmp(plotcategory,'Scatter3axis')
         iplots = get(compplot,'Children');
         xlims = cell2mat(get(iplots,'Xlim'));
         ylims = cell2mat(get(iplots,'Ylim'));
