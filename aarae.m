@@ -1959,11 +1959,11 @@ if handles.compareaudio == 1
             parameterstring4 = [parameterstring4 ', Dimension 6 [6]'];
         end
         
-        parameterstring5 = ['Channel indices (up to ', num2str(max(chans))];
-        parameterstring6 = ['Band indices (up to ', num2str(max(bands))];
-        parameterstring7 = ['Cycle indices (up to ', num2str(max(cycles))];
-        parameterstring8 = ['Asynchonous output indices (up to ', num2str(max(outchans))];
-        parameterstring9 = ['Dimension 6 indices (up to ', num2str(max(dim6))];
+        parameterstring5 = ['Channel indices (up to ', num2str(max(chans)),')'];
+        parameterstring6 = ['Band indices (up to ', num2str(max(bands)),')'];
+        parameterstring7 = ['Cycle indices (up to ', num2str(max(cycles)),')'];
+        parameterstring8 = ['Asynchonous output indices (up to ', num2str(max(outchans)),')'];
+        parameterstring9 = ['Dimension 6 indices (up to ', num2str(max(dim6)),')'];
         
         
         nonsignletondims = find(dimsize>1,4,'first');
@@ -2975,7 +2975,7 @@ if handles.compareaudio == 1
                                         'XTick',zeros(1,0))
                                     title('Legend');
                                 end
-                                if plottype ~= 21 && plottype ~= 22
+                                if plottype ~= 22 && plottype ~= 23
                                     title(titlestring)
                                     hold on
                                 end
