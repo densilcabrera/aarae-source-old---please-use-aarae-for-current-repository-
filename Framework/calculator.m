@@ -107,6 +107,7 @@ function calc_btn_Callback(hObject, ~, handles) %#ok : Executes on Calculate but
 mainHandles = guidata(handles.main_stage1);
 set(hObject,'BackgroundColor','red');
 set(hObject,'Enable','off');
+already_logged = false;
 if nargout(handles.funname) == 1
     signaldata = feval(handles.funname);
     if ~isempty(signaldata)
@@ -114,9 +115,20 @@ if nargout(handles.funname) == 1
         if isfield(signaldata,'audio')
             %signaldata.nbits = 16;
             iconPath = fullfile(matlabroot,'/toolbox/fixedpoint/fixedpointtool/resources/plot.png');
+            if isfield(signaldata,'tables')
+                % if tables are ALSO present, then write to the log file
+                % before removing the tables field
+                % In a possible future revision, we could split the output
+                % into two leaves (one with tables, the other with audio)
+                fprintf(mainHandles.fid, ['%% ' datestr(now,16) ' - Used calculator ' handles.funname '\n']);  
+                logaudioleaffields(signaldata,0); % Log verbose metadata including tables
+                signaldata = rmfield(signaldata,'tables');
+                already_logged = true;
+            end
         else
             iconPath = fullfile(matlabroot,'/toolbox/matlab/icons/notesicon.gif');
         end
+
         if length(fieldnames(signaldata)) ~= 1
             signaldata.datatype = 'results';
             leafname = isfield(mainHandles,matlab.lang.makeValidName(handles.funname));
@@ -142,10 +154,12 @@ if nargout(handles.funname) == 1
             mainHandles.mytree.setSelectedNode(mainHandles.(matlab.lang.makeValidName(handles.funname)));
             set([mainHandles.clrall_btn,mainHandles.export_btn],'Enable','on')
         end
+        if ~already_logged
         fprintf(mainHandles.fid, ['%% ' datestr(now,16) ' - Used calculator ' handles.funname '\n']);
         
         % Log verbose metadata
         logaudioleaffields(signaldata,0);
+        end
     end
 else
     feval(handles.funname);
