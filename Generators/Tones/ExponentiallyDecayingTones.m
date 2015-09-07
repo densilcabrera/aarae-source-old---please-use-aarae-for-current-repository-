@@ -1,4 +1,4 @@
-function [OUT, varargout] = ExponentiallyDecayingTones(tpo, flow,fhigh,duration,fs,T)
+function [OUT, varargout] = ExponentiallyDecayingTones(tpo, flow,fhigh,duration,fs,SNR,T)
 % This function generates exponentially decaying tones for testing
 % impulse response analysis functions - such as reverberation time etc.
 %
@@ -24,20 +24,22 @@ if nargin == 0
         'Exact lowest frequency (Hz)';...
         'Highest frequency (Hz)';...
         'Duration (s)';...
-        'Sampling rate (Hz)'},...
+        'Sampling rate (Hz)';...
+        'SNR (dB)'},...
         'Settings 1',... % dialog window title.
         [1 60],...
-        {'1';'125';'8000';'2';'48000'}); % preset answers for dialog.
+        {'1';'125';'8000';'2';'48000';'inf'}); % preset answers for dialog.
     
     param = str2num(char(param));
     
-    if length(param) < 5, param = []; end
+    if length(param) < 6, param = []; end
     if ~isempty(param)
         tpo = param(1);
         flow = param(2);
         fhigh = param(3);
         duration = param(4);
         fs = param(5);
+        SNR = param(6);
     end
 else
     param = [];
@@ -104,15 +106,17 @@ end
 
 
 if (~isempty(param) && ~isempty(T)) || nargin ~= 0
-    
-    
+
     tau = 2*T / log(1e6); % decay constant
     
     IR = zeros(round(fs*duration),1);
     t = ((1:length(IR))-1)' ./ fs;
     for k = 1:length(freq)
-        IR = IR + sin(2*pi*freq(k).*t)./ exp(t./tau(k));
+        IR = IR + sin(2*pi*freq(k).*t)./ exp(t./tau(k))...
+            +db2mag(-SNR)*sin(2*pi*freq(k).*t);
     end
+%     rms_IR = rms (IR);
+%    IR = awgn (IR,SNR,rms_IR);
     IR = IR ./max(abs(IR)); % normalize
     
     
@@ -125,8 +129,8 @@ if (~isempty(param) && ~isempty(T)) || nargin ~= 0
         %OUT.audio2 = ?;     You may provide additional audio derived from your function.
         OUT.fs = fs;       % You NEED to provide the sampling frequency of your audio.
         %OUT.tag = tag;      You may assign it a name to be identified in AARAE.
-        OUT.funcallback.name = 'ExponentiallyDecayingTone.m';
-        OUT.funcallback.inarg = {tpo, flow,fhigh,duration,fs,T};
+        OUT.funcallback.name = 'ExponentiallyDecayingTones.m';
+        OUT.funcallback.inarg = {tpo, flow,fhigh,duration,fs,SNR,T};
     end
     
     % You may choose to increase the functionality of your code by allowing
