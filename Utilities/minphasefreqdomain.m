@@ -38,7 +38,7 @@ H = mag;
 if ~exist('thresholddB','var'), thresholddB = 120; end
 if isempty(thresholddB), thresholddB = 120; end
 threshold = db2mag(-abs(thresholddB));
-H(H<max(H)*threshold) = max(H)*threshold;
+H(H<max(max(H))*threshold) = max(max(H))*threshold;
 
 [n,chans] = size(mag);
 % CALCULATE THE CEPSTRUM
@@ -56,6 +56,8 @@ H = exp(fft(repmat(w,[1,chans]).*H));
 H(2:end,:) = (H(2:end,:)+flip(conj(H(2:end,:))))./2;
 
 % FORCE THE MAGNITUDE TO PRECISELY MATCH THE INPUT MAGNITUDE
+% Note that this may contribute to the impulse response wrapping around
+% (for components below thresholddB), although it is not the only cause of this.
 %H = H .* mag ./ abs(H);
 H = mag.*exp(1i*angle(H));
 
