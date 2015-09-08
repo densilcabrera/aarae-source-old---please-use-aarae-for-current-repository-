@@ -86,32 +86,25 @@ end
         % And once you have your result, you should set it up in an output form
         % that AARAE can understand.
         
-        if nargin == 0
-            OUT.audio = audio; % You NEED to provide the audio you generated.
-            %OUT.audio2 = ?;     You may provide additional audio derived from your function.
-            OUT.fs = fs;       % You NEED to provide the sampling frequency of your audio.
-            %OUT.tag = tag;      You may assign it a name to be identified in AARAE.
-            %OUT.properties.prop1 = prop1;
-            %OUT.properties.prop2 = prop2; You may provide additional info
-            %OUT.properties.prop3 = prop3; about your generated signal in
-            %                              a structure type field called
-            %                              .properties
-            OUT.funcallback.name = 'generator_template.m'; % Provide AARAE
-            % with the name of your function 
-            OUT.funcallback.inarg = {input_1,input_2}; % assign all of the 
-            % input parameters that could be used to call the function 
-            % without dialog box to the output field param (as a cell
-            % array).
-        end
         
-        % You may choose to increase the functionality of your code by allowing
-        % it to operate outside the AARAE environment you may want to output
-        % independent variables instead of a structure...
-        if nargin ~= 0
-            OUT = audio;
-            varargout{1} = fs;
-            %varargout{2} = ?;
-        end
+        OUT.audio = audio; % You NEED to provide the audio you generated.
+        %OUT.audio2 = ?;     You may provide additional audio derived from your function.
+        OUT.fs = fs;       % You NEED to provide the sampling frequency of your audio.
+        %OUT.tag = tag;      You may assign it a name to be identified in AARAE.
+        %OUT.properties.prop1 = prop1;
+        %OUT.properties.prop2 = prop2; You may provide additional info
+        %OUT.properties.prop3 = prop3; about your generated signal in
+        %                              a structure type field called
+        %                              .properties
+        OUT.funcallback.name = 'generator_template.m'; % Provide AARAE
+        % with the name of your function
+        OUT.funcallback.inarg = {input_1,input_2}; % assign all of the
+        % input parameters that could be used to call the function
+        % without dialog box to the output field param (as a cell
+        % array).
+
+        
+
     else
         % AARAE requires that in case that the user doesn't input enough
         % arguments to generate audio to output an empty variable.
