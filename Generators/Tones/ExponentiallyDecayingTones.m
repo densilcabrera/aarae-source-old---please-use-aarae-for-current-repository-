@@ -121,26 +121,14 @@ if (~isempty(param) && ~isempty(T)) || nargin ~= 0
     
     
     
-    % And once you have your result, you should set it up in an output form
-    % that AARAE can understand.
-    
-    if nargin == 0
+
         OUT.audio = IR; % You NEED to provide the audio you generated.
         %OUT.audio2 = ?;     You may provide additional audio derived from your function.
         OUT.fs = fs;       % You NEED to provide the sampling frequency of your audio.
         %OUT.tag = tag;      You may assign it a name to be identified in AARAE.
         OUT.funcallback.name = 'ExponentiallyDecayingTones.m';
         OUT.funcallback.inarg = {tpo, flow,fhigh,duration,fs,SNR,T};
-    end
-    
-    % You may choose to increase the functionality of your code by allowing
-    % it to operate outside the AARAE environment you may want to output
-    % independent variables instead of a structure...
-    if nargin ~= 0
-        OUT = IR;
-        varargout{1} = fs;
-        %varargout{2} = ?;
-    end
+
 else
     % AARAE requires that in case that the user doesn't input enough
     % arguments to generate audio to output an empty variable.
