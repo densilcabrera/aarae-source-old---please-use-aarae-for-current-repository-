@@ -1,4 +1,4 @@
-function OUT = IR_StackVariation(IN, autocropthresh, calval, scaling, domain, fs, cal)
+function OUT = IR_StackVariation(IN, autocropthresh, calval, windur,winhop,winfun,scaling, domain, fs, cal)
 % This function is designed to analyse an impulse response stack - either
 % in dimension 4 or dimension 2. The purpose of such an analysis would
 % probably be to assess time variance in a system.
@@ -30,20 +30,26 @@ if nargin ==1
 
     param = inputdlg({'Autocrop start threshold [-ve dB, or 0 to omit autocrop]';... 
                       'Reference calibration level [dB]';...
-                      'Amplitude [1],Power [2],Level [3]';...
-                      'Time domain wave [0] Time domain envelope [1] or Frequency domain [2]'},...
+                      'Window duration for time-variance level evolution (s)';...
+                      'Hop size between windows (s)';...
+                      'Window function for time-variance level evolution: Rectangular (0), Hann (1)';...
+                      'Result leaf stats for: Amplitude [1],Power [2],Level [3]';...
+                      'Result leaf stats for: Time domain wave [0] Time domain envelope [1] or Frequency domain [2]'},...
                       'IR stack variation analysis',... 
-                      [1 30],... 
-                      {'-20';'0';'1';'0'}); 
+                      [1 90],... 
+                      {'-20';'0';'0.02';'0.01';'0';'1';'0'}); 
 
     param = str2num(char(param)); 
 
-    if length(param) < 4, param = []; end 
+    if length(param) < 7, param = []; end 
     if ~isempty(param) 
         autocropthresh = param(1);
         calval = param(2);
-        scaling = param(3);
-        domain = param(4);
+        windur = param(3);
+        winhop = param(4);
+        winfun = param(5);
+        scaling = param(6);
+        domain = param(7);
     else
         OUT=[];
         return
@@ -69,9 +75,9 @@ if isstruct(IN)
     if isfield(IN,'chanID') % Get the channel ID if it exists
         chanID = IN.chanID;
     elseif size(audio,4) > 1
-        chanID = {1:size(audio,2)};
+        chanID = makechanID(size(audio,2),0);
     else
-        chanID = {'chan 1'};
+        chanID = makechanID(1,0);
     end
     % in this analyser, dim2 might be being used for the IRstack, rather
     % than for channels - in which case it probably won't have a chanID
@@ -109,9 +115,21 @@ if ~isempty(audio) && ~isempty(fs) && ~isempty(cal)
     if dim4 > 1
         % assume IR stack is in dimension 4
         stackdim = 4;
+        if isstruct(IN)
+            if isfield(IN.properties,'relgain')
+                if isinf(IN.properties.relgain(1))
+                    % remove silent cycle if it exists
+                    audio = audio(:,:,:,2:end);
+                    IN.properties.relgain = IN.properties.relgain(2:end);
+                    dim4 = dim4-1;
+                end
+            end
+        end
+        ncycles = dim4;
     elseif chans > 1
         % assume IR stack is in dimension 2
         stackdim = 2;
+        ncycles = chans;
     else
         disp('IR stack not found in dimensions 2 or 4 - unable to analyse')
         OUT = [];
@@ -128,15 +146,145 @@ if ~isempty(audio) && ~isempty(fs) && ~isempty(cal)
         len = size(audio,1);
     end
     
-    % frequency domain
+    % power vs synchronous averaging of the audio
+    audiosynchMS = mean(audio,stackdim).^2;
+    audiopowermean = mean(audio.^2,stackdim);
+    
+    % overall TV of the whole audio
+    TV = permute(10*log10(mean(audiopowermean)./mean(audiosynchMS)),[2,3,4,1])...
+        ./(10*log10(ncycles));
+    % chan in dim1, bands in dim 2, cycles (must be singleton) in dim 3
+    
+    % variation in audio gain (coefficient of variation, in dB)
+    if stackdim == 4
+        gainvar = permute(10*log10(mean(mean(audio.^2,1) ./ repmat(mean(audiopowermean,1),[1,1,1,dim4]),4)),[2,3,4,1]);
+    else
+        gainvar = permute(10*log10(mean(mean(audio.^2,1) ./ repmat(mean(audiopowermean,1),[1,chans,1,1]),2)),[2,3,4,1]);
+    end
+    
+    WindowLength = round(windur*fs);
+    Offset = round(winhop*fs); % hopefully no need for rounding!
+    nwin = round((len-WindowLength)/Offset); % number of windows
+    if nwin < 1
+        warndlg('Audio signal is shorter than the window length - unable to process with soundlogger')
+        OUT = [];
+        return
+    end
+    [TVtime, gainvartime, Lwindow] = deal(zeros(nwin,size(TV,1),size(TV,2)));
+    if winfun == 1
+        w = repmat(hann(WindowLength),size(TV,1),size(TV,2));
+    end
+    for n = 1:nwin
+        start = round((n-1)*Offset + 1);
+        finish = start + WindowLength - 1;
+        if winfun == 1
+            TVtime(n,:,:) = 10*log10(mean(w.^2.*audiopowermean(start:finish,:,:))./...
+                mean(w.^2.*audiosynchMS(start:finish,:,:)))./(10*log10(ncycles));
+%             TVtime(n,:,:) = ncycles * (mean(w.^2.*audiosynchMS(start:finish,:,:))./ ...
+%                  mean(w.^2.*audiopowermean(start:finish,:,:)) - (ncycles-1)/ncycles);
+            Lwindow(n,:,:) = 10*log10(mean(w.^2.*audiopowermean(start:finish,:,:)));
+            if stackdim == 4
+                gainvartime(n,:,:) = 10*log10(mean(mean(repmat(w,[1,1,1,dim4])...
+                    .*audio(start:finish,:,:,:).^2,1)./...
+                    repmat(mean(w.^2.*audiopowermean(start:finish,:,:),1),[1,1,1,dim4]),4));
+            else
+                gainvartime(n,:,:) = 10*log10(mean(mean(repmat(w,[1,chans,1])...
+                    .*audio(start:finish,:,:,:).^2,1)./...
+                    repmat(mean(w.^2.*audiopowermean(start:finish,:,:),1),[1,1,1,dim4]),2));
+            end
+        else
+            TVtime(n,:,:) = 10*log10(mean(audiopowermean(start:finish,:,:))./...
+                mean(audiosynchMS(start:finish,:,:)))./(10*log10(ncycles));
+%               TVtime(n,:,:) = ncycles * (mean(audiosynchMS(start:finish,:,:))./ ...
+%                  mean(audiopowermean(start:finish,:,:)) - (ncycles-1)/ncycles);
+            Lwindow(n,:,:) = 10*log10(mean(audiopowermean(start:finish,:,:)));
+            if stackdim == 4
+                gainvartime(n,:,:) = 10*log10(mean(mean(...
+                    audio(start:finish,:,:,:).^2,1)./...
+                    repmat(mean(audiopowermean(start:finish,:,:),1),[1,1,1,dim4]),4));
+            else
+                gainvartime(n,:,:) = 10*log10(mean(mean(...
+                    audio(start:finish,:,:,:).^2,1)./...
+                    repmat(mean(audiopowermean(start:finish,:,:),1),[1,1,1,dim4]),2));
+            end
+        end
+    end
+    
+    % calculate coherence (using mean spectrum as reference) - THIS
+    % IS USELESS
+%     Gy = fft(audio);
+%     if stackdim == 4
+%         Gx = repmat(mean(Gy,4),[1,1,1,ncycles]);
+%     else
+%         Gx = repmat(mean(Gy,2),[1,ncycles,1]);
+%     end
+%     coherence = abs(conj(Gx).*Gy).^2 ./ ...
+%         ((Gx.*conj(Gx)).*(Gy.*conj(Gy)));
+%     clear Gx Gy
+    
+    figure('Name','IR stack variation')
+    t = winhop*((1:nwin)-1)'; 
+    f = fs.*((1:len)'-1)./len;
+    M = HSVplotcolours2(size(TVtime,3), size(TVtime,2), 1);
+    subplot(3,1,1:2)
+    for ch = 1:size(TVtime,2)
+        for b = 1:size(TVtime,3)
+            plot(t,TVtime(:,ch,b),'Color',permute(M(b,ch,:),[1,3,2]),...
+                'DisplayName',[chanID{ch} ', ' num2str(bandID(b)) ' Hz'])
+            hold on
+        end
+    end
+    title(['Time Variance Index using ' num2str(ncycles) ' cycles'])
+    xlabel('Time (s)')
+    ylabel('TVI')
+    
+
+    
+    subplot(3,1,3)
+    for ch = 1:size(Lwindow,2)
+        for b = 1:size(Lwindow,3)
+            plot(t,Lwindow(:,ch,b),'Color',permute(M(b,ch,:),[1,3,2]),...
+                'DisplayName',[chanID{ch} ', ' num2str(bandID(b)) ' Hz'])
+            hold on
+        end
+    end
+    %title('Level in each window')
+    xlabel('Time (s)')
+    ylabel('Level (dB)')
+    
+    
+%         subplot(6,1,4:5)
+%     for ch = 1:size(coherence,2)
+%         for b = 1:size(coherence,3)
+%             plot(f(1:round(len/2)),coherence(1:round(len/2),ch,b),'Color',permute(M(b,ch,:),[1,3,2]),...
+%                 'DisplayName',[chanID{ch} ', ' num2str(bandID(b)) ' Hz'])
+%             hold on
+%         end
+%     end
+%     %title('Variation in level')
+%     xlabel('Frequency (Hz)')
+%     ylabel('Coherence')
+%     
+%         subplot(6,1,6)
+%         spectrum = mean(abs(fft(audio)).^2,4);
+%     for ch = 1:size(gainvartime,2)
+%         for b = 1:size(gainvartime,3)
+%             plot(f(1:round(len/2)),spectrum(1:round(len/2),:,:),'Color',permute(M(b,ch,:),[1,3,2]),...
+%                 'DisplayName',[chanID{ch} ', ' num2str(bandID(b)) ' Hz'])
+%             hold on
+%         end
+%     end
+%     xlabel('Frequency (Hz)')
+%     ylabel('Level (dB)')
+    
     switch domain 
-        case 2
+        case 2 % frequency domain
             audio = abs(fft(audio));
             audio = audio(1:ceil(end/2),:,:,:);
             xval = fs * ((1:length(audio))-1)./len; % frequencies
             xstring = 'Frequency';
             xunit = 'Hz';
-        case 1
+        case 1 % time domain, absolute values
             audio = abs(audio);
             xval = ((1:len)-1)./fs; % times
             xstring = 'Time';
@@ -254,10 +402,14 @@ if ~isempty(audio) && ~isempty(fs) && ~isempty(cal)
    
 
     if isstruct(IN)
-        
+        fig1 = figure('Name','Time variance');
+        table1 = uitable('Data',TV,...
+                'ColumnName',cellstr(num2str((bandID(:)))),...
+                'RowName',chanID);
+        OUT.tables = disptables(fig1,table1);
        
         OUT.funcallback.name = 'IR_StackVariation.m';
-        OUT.funcallback.inarg = {autocropthresh, calval, scaling, domain, fs, cal}; 
+        OUT.funcallback.inarg = {autocropthresh, calval, windur,winhop,winfun,scaling, domain, fs, cal}; 
        
     else
        
