@@ -80,7 +80,8 @@ if isfield(IN,'properties') && isfield(IN.properties,'startflag')
             'Select the cleanest cycle',...
             'Select the cleanest IR (multichannel)',...
             'Select the cleanest single IR (best channel)',...
-            'Select the silent cycle or the IR with the lowest SNR (multichannel)'},...
+            'Select the silent cycle or the IR with the lowest SNR (multichannel)',...
+            'Exclude the IR with the lowest SNR (multichannel)'},... % TO DO: 'Find the optimum combination for synchronous averaging for maximum SNR'
             'PromptString','Select the convolution method',...
             'Name','AARAE options',...
             'SelectionMode','single',...
@@ -97,7 +98,7 @@ if isfield(IN,'properties') && isfield(IN.properties,'startflag')
     if ok == 1
         if ndims(S) > 3 && method == 1
             method = 2;
-            average = true;
+            average = true; % average ALL of the cycles (apart from silent)
         else
             average = false;
         end
@@ -128,7 +129,7 @@ if isfield(IN,'properties') && isfield(IN.properties,'startflag')
                 %                 if isinf(IN.properties.relgain(1))
                 %
                 %                 end
-            case {2, 3, 5, 6, 7, 8}
+            case {2, 3, 5, 6, 7, 8, 9, 10}
                 % find the indices corresponding to cycles
                 indices = cat(2,{1:len*length(startflag)},repmat({':'},1,ndims(S)-1));
                 S = S(indices{:});
@@ -156,6 +157,7 @@ if isfield(IN,'properties') && isfield(IN.properties,'startflag')
                 end
                 S = newS;
                 invS = newinvS;
+                clear newS newinvS
                 if average
                     % ignore silent cycle if it exists
                     if isfield(IN.properties,'relgain')
@@ -517,6 +519,50 @@ switch method
             [~, ind] = min(Quality,[],4);
             IR = IRtemp(:,:,:,ind);
         end
+    case 9
+        % exclude the worst cycle (and the silent cycle if it exists)
+        % this needs more work!!
+        if isfield(IN.properties,'relgain')
+            if isinf(IN.properties.relgain(1))
+                IR = IR(:,:,:,2:end,:,:);
+            end
+        end
+        IRtemp = zeros(len,chans,bands,dim4*dim5*dim6);
+        for ch = 1:chans
+            for b = 1:bands
+                IRtemp(:,ch,b,:) = reshape(IR(:,ch,b,:,:,:),[len, 1, 1, dim4 * dim5 * dim6]);
+            end
+        end
+        Quality = max(IRtemp) ./ rms(IRtemp);
+        Quality = mean(Quality,2); % average across channels
+        Quality = mean(Quality,3); % average across bands
+        [~, ind] = min(Quality,[],4);
+        IRtemp(:,:,:,ind) = 0;
+        IR = sum(IRtemp,4) ./ (size(IRtemp,4)-1); % average across cycles
+%     case 10
+%         if isfield(IN.properties,'relgain')
+%             if isinf(IN.properties.relgain(1))
+%                 IR = IR(:,:,:,2:end,:,:);
+%             end
+%         end
+%         for ch = 1:chans
+%             for b = 1:bands
+%                 IRtemp(:,ch,b,:) = reshape(IR(:,ch,b,:,:,:),[len, 1, 1, dim4 * dim5 * dim6]);
+%             end
+%         end
+%         % brute force solution
+%         
+%         
+%         Quality = max(IRtemp) ./ rms(IRtemp);
+%         Quality = mean(Quality,2); % average across channels
+%         Quality = mean(Quality,3); % average across bands
+%         [Quality, Qind] = sort(Quality,'ascend');
+%         IRtemp2 = mean(IRtemp,4);
+%         meanQual = mean(mean(max(IRtemp2) ./ rms(IRtemp2),2),3);
+%         meanQual2 = 1e99;
+%         while meanQual2 > meanQual
+%             
+%         end
 end
 
 
