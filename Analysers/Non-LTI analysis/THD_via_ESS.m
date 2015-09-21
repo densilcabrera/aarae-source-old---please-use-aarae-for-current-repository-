@@ -63,7 +63,7 @@ if nargin ==1
         'Highest Harmonic Order to Evaluate';...
         'Average THD Over Frequency Bands? 1=Yes 0=No';...
         'Frequency Bands Per Octave (If THD is Averaged)';...
-        'Amplify Noise by' ;...
+        'Amplify Noise by (amplitude factor)';...
         'Window Size for Noise Floor Comparison (samples)';...
         'Plot Each Trimmed Pseudo-IR?';...
         'Plot the Transfer Function of Each Harmonic? 1=Yes 0=No';...
@@ -71,7 +71,7 @@ if nargin ==1
         'Plot Transfer Function of DUT? 1=Yes 0=No'},...
         'User Input Parameters',... % window title.
         [1 60],... %
-        {'6';'0';'24';'1'; '300'; '0';'0';'1';'0'}); % Default values
+        {'6';'0';'24';'1';'300';'0';'0';'1';'0'}); % Default values
     
     param = str2num(char(param));
     
@@ -109,12 +109,11 @@ c = c / 255; % rescale to 0-1 range
 
 
 % To make your function work as standalone you can check that the user has
-% either entered at least an audio variable and it's sampling frequency.
+% either entered at least an audio variable and its sampling frequency.
 if ~isempty(IR) && ~isempty(fs) && ~isempty(T) && ~isempty(freqs)&& ~isempty(relgain)
     
     if relgain(1,1) ~= -inf
         warndlg('The input audio does not include a silent cycle, which is required for THD_via_ESS.','AARAE info','modal');
-        %disp('Silent Sweep Too Noisy or Not Existent');
         OUT = [];
         return
     end
@@ -145,7 +144,7 @@ if ~isempty(IR) && ~isempty(fs) && ~isempty(T) && ~isempty(freqs)&& ~isempty(rel
     strt=zeros(nh,nswps);
     stp=zeros(nh,nswps);
     
-    % Channel loop (better to vectorise this, but measurements are likely to be single channel usually)
+    % Channel loop (better to vectorise this, but measurements are likely to be single channel anyway)
     for chn = 1:chans
         if exist('chanID','var')
             chanstring = char(chanID(chn));
