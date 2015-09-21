@@ -829,12 +829,12 @@ if f(1) > 0 && f(2) < fs/2
         f2e=f(2)+1;
     end
     % thersholding B with 1/3 octave interpolated transient edges 
-    B=interp1([0 f1e f(1) f(2) f2e freq(end)],[reg(2) reg(2) reg(1) reg(1) reg(2) reg(2)],freq,'cubic');
+    B=interp1([0 f1e f(1) f(2) f2e freq(end)],[reg(2) reg(2) reg(1) reg(1) reg(2) reg(2)],freq,'pchip');
     B=10.^(-B./20); % from dB to linear
     B=vertcat(B,B(end:-1:1)); 
     b=ifft(B,'symmetric');
     b=circshift(b,nfft/2);
-    b=0.5*(1-cos(2*pi*(1:nfft)'/(nfft+1))).*b;
+    b=0.5*(1-cos(2*pi*(1:nfft)'/(nfft+1))).*b; % window function
     b=minph(b); % make minimum phase thresholding
     B=fft(b,nfft);
 else
@@ -859,13 +859,7 @@ if smoothfactor == 5, octsmooth = 12; end
 if smoothfactor == 6, octsmooth = 24; end
 if smoothfactor ~= 1, H = octavesmoothing(H, octsmooth, fs); end
 iH=conj(H)./((conj(H).*H)+(conj(B).*B)); % calculating regulated spectral inverse
-% Densil's phylosophy
-%aboveone = find(freq > 1000);
-%iH = 20.*log10(iH);
-%iH = iH - iH(aboveone(1));
-%iH = 10.^(iH/20);
-% end
-iH = circshift(ifft(iH,'symmetric'),nfft/2);
+iH = circshift(ifft(iH,'symmetric'),nfft/2); % could use ifftshift instead
 if get(handles.invf_popup,'Value') == 1, handles.invfilter=minph(iH); end
 if get(handles.invf_popup,'Value') == 3, handles.invfilter = flipud(minph(iH)); end
 if get(handles.invf_popup,'Value') == 4 || get(handles.invf_popup,'Value') == 2, handles.invfilter = iH; end
@@ -922,6 +916,12 @@ odd = fix(rem(n,2));
 wn = [1; 2*ones((n+odd)/2-1,1) ; ones(1-rem(n,2),1); zeros((n+odd)/2-1,1)];
 h_min = zeros(size(h(:,1)));
 h_min(:) = real(ifft(exp(fft(wn.*h_cep(:)))));
+% Find the last zero-crossing & apply circular shift.
+% Although this compromises the minimum phase response, it reduces the
+% artefact from linear convolution of a circularly derived response
+s=find((abs(h_min)<abs([h_min(2:end);h_min(1)]))...
+    &(abs(h_min(:))<abs([h_min(end);h_min(1:end-1)])),1,'last');
+h_min = circshift(h_min,n-s);
 
 
 % --- Executes on button press in invfpreview_btn.
