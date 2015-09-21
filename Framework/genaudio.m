@@ -140,17 +140,30 @@ if ~isempty(handles.signaldata)
             end
         end
         lsilence = handles.lsilence*handles.signaldata.fs;
-        scdur = length(handles.signaldata.audio) + lsilence;
+        sigdur = length(handles.signaldata.audio);
+        scdur = sigdur + lsilence;
+        if scdur < 0, scdur = 0; end
         handles.signaldata.properties.startflag = ((0:cycles-1)*scdur)+1;
-        audio = zeros(scdur*cycles,numchannels);
+        %audio = zeros(scdur*cycles,numchannels);
+        audio = zeros(sigdur+scdur*(cycles-1),numchannels);
         for i = 1:cycles
             if ~chancycles
-                chunk = [handles.signaldata.audio;zeros(lsilence,numchannels)];
+                if lsilence>0
+                    chunk = [handles.signaldata.audio;zeros(lsilence,numchannels)];
+                else
+                    chunk = handles.signaldata.audio;
+                end
             else
-                chunk1 = [handles.signaldata.audio;zeros(lsilence,1)];
+                if lsilence>0
+                    chunk1 = [handles.signaldata.audio;zeros(lsilence,1)];
+                else
+                    chunk1 = handles.signaldata.audio;
+                end
                 chunk = [zeros(scdur,i-1),chunk1,zeros(scdur,cycles-i)];
             end
-            audio(handles.signaldata.properties.startflag(i):handles.signaldata.properties.startflag(i)+length(chunk)-1,:) = chunk.*10.^(levelrange(i)/20);
+            audio(handles.signaldata.properties.startflag(i):handles.signaldata.properties.startflag(i)+length(chunk)-1,:)...
+                = audio(handles.signaldata.properties.startflag(i):handles.signaldata.properties.startflag(i)+length(chunk)-1,:)...
+                + chunk.*10.^(levelrange(i)/20);
         end
         if silence_check == 1
             cycles = cycles + 1;
@@ -472,9 +485,12 @@ function lsilence_IN_Callback(hObject, ~, handles) %#ok : Executed when silence 
 lsilence = str2double(get(hObject, 'string'));
 
 % Check user's input
-if (isnan(lsilence)||lsilence<0)
+% if (isnan(lsilence)||lsilence<0)
+%     set(hObject,'String',num2str(handles.lsilence));
+%     warndlg('All inputs MUST be real positive numbers!');
+if (isnan(lsilence))
     set(hObject,'String',num2str(handles.lsilence));
-    warndlg('All inputs MUST be real positive numbers!');
+    warndlg('All inputs MUST be real numbers!');
 else
     handles.lsilence = lsilence;
 end

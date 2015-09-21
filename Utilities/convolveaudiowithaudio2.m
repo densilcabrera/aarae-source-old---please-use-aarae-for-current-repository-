@@ -14,6 +14,10 @@ function [OUT,method,scalingmethod] = convolveaudiowithaudio2(IN,method,scalingm
 %     6. 'Select the cleanest IR (multichannel)'
 %     7. 'Select the cleanest single IR (best channel)'
 %     8. 'Select the silent cycle or the IR with the lowest SNR (multichannel)'
+%     9. 'Exclude the IR with the lowest SNR (multichannel)'
+%
+% Note that this function was changed for AARAE Release 8 to allow for
+% overlapping cycles (or negative silence gap between cycles).
 %
 % ALTERNATIVEMETHOD
 % This function does not only do convolution of audio with audio2 - some
@@ -103,11 +107,13 @@ if isfield(IN,'properties') && isfield(IN.properties,'startflag')
             average = false;
         end
         startflag = IN.properties.startflag;
-        len = startflag(2)-startflag(1);
+        %len = startflag(2)-startflag(1);
+        len = size(S,1)-startflag(end);
         switch method
             case 1
                 % Synchronous average (excluding silent cycle)
-                cyclelen = startflag(2)-1;
+                %cyclelen = startflag(2)-1;
+                cyclelen = len;
                 % ignore silent cycle if it exists
                 if isfield(IN.properties,'relgain')
                     if isinf(IN.properties.relgain(1))
@@ -131,8 +137,8 @@ if isfield(IN,'properties') && isfield(IN.properties,'startflag')
                 %                 end
             case {2, 3, 5, 6, 7, 8, 9, 10}
                 % find the indices corresponding to cycles
-                indices = cat(2,{1:len*length(startflag)},repmat({':'},1,ndims(S)-1));
-                S = S(indices{:});
+%                 indices = cat(2,{1:len*length(startflag)},repmat({':'},1,ndims(S)-1));
+%                 S = S(indices{:});
                 sizeS = size(S);
                 if length(sizeS) == 2, sizeS = [sizeS,1]; end
                 if length(sizeS) < 3
@@ -145,9 +151,12 @@ if isfield(IN,'properties') && isfield(IN.properties,'startflag')
                 end
                 newindices = repmat({':'},1,ndims(newS));
                 for j = 1:size(S,2)
-                    indices{1,2} = j;
+                    %indices{1,2} = j;
                     newindices{1,2} = j;
-                    newS(newindices{:}) = reshape(S(indices{:}),[len,1,sizeS(3:end)]);
+                    %newS(newindices{:}) = reshape(S(indices{:}),[len,1,sizeS(3:end)]);
+                    for k = 1:length(startflag)
+                        newS(:,:,:,k,:,:) = S(startflag(k):startflag(k)+len-1,:,:,1,:,:);
+                    end
                     newsizeS = size(newS);
                     if size(S,2) == size(IN.audio2,2)
                         newinvS(newindices{:}) = repmat(IN.audio2(:,j),[1 1 newsizeS(3:end)]);
@@ -540,6 +549,10 @@ switch method
         IRtemp(:,:,:,ind) = 0;
         IR = sum(IRtemp,4) ./ (size(IRtemp,4)-1); % average across cycles
 %     case 10
+
+% sort the IRs in terms of quality
+% Create an IR stack of averages from best only to all
+
 %         if isfield(IN.properties,'relgain')
 %             if isinf(IN.properties.relgain(1))
 %                 IR = IR(:,:,:,2:end,:,:);
