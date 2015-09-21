@@ -173,8 +173,8 @@ end
 % Return to time domain
 out = ifft(TF);
 
-% Truncate to the desired length
-out = out(1:outlen,:,:);
+% Truncate to the desired length & make sure it is real valued
+out = real(out(1:outlen,:,:));
 
 if isstruct(in)
     OUT = in; % replicate input structure
