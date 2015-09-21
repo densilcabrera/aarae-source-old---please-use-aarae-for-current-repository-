@@ -19,10 +19,12 @@ function OUT = IR_StackVariation(IN, autocropthresh, calval, windur,winhop,winfu
 %   processor to derive an impulse response. Not all processors support the
 %   generation of IR stacks.
 %
-% Currently this function outputs a results leaf (but no plot or table).
+% This function outputs a results leaf with statistics for each time sample
+% (or spectrum component), as well as figures with results over time
+% periods.
 %
 % Code by Densil Cabrera
-% Version 0 beta (1 August 2014)
+% Version 1 beta (17 September 2015)
 
 
 
@@ -166,7 +168,7 @@ if ~isempty(audio) && ~isempty(fs) && ~isempty(cal)
     Offset = round(winhop*fs); % hopefully no need for rounding!
     nwin = round((len-WindowLength)/Offset); % number of windows
     if nwin < 1
-        warndlg('Audio signal is shorter than the window length - unable to process with soundlogger')
+        warndlg('Audio signal is shorter than the window length - unable to process with IR_StackVariation')
         OUT = [];
         return
     end
@@ -224,7 +226,7 @@ if ~isempty(audio) && ~isempty(fs) && ~isempty(cal)
     
     figure('Name','IR stack variation')
     t = winhop*((1:nwin)-1)'; 
-    f = fs.*((1:len)'-1)./len;
+    f = fs*((1:len)'-1)./len;
     M = HSVplotcolours2(size(TVtime,3), size(TVtime,2), 1);
     subplot(3,1,1:2)
     for ch = 1:size(TVtime,2)
@@ -422,7 +424,7 @@ else
 end
 
 %**************************************************************************
-% Copyright (c) 2014, Densil Cabrera
+% Copyright (c) 2014-15, Densil Cabrera
 % All rights reserved.
 %
 % Redistribution and use in source and binary forms, with or without 
