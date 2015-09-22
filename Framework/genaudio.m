@@ -144,8 +144,11 @@ if ~isempty(handles.signaldata)
         scdur = sigdur + lsilence;
         if scdur < 0, scdur = 0; end
         handles.signaldata.properties.startflag = ((0:cycles-1)*scdur)+1;
-        %audio = zeros(scdur*cycles,numchannels);
-        audio = zeros(sigdur+scdur*(cycles-1),numchannels);
+        if scdur >= sigdur
+            audio = zeros(scdur*cycles,numchannels);
+        else
+            audio = zeros(sigdur+scdur*(cycles-1),numchannels);
+        end
         for i = 1:cycles
             if ~chancycles
                 if lsilence>0
