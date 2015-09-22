@@ -15,6 +15,8 @@ function [OUT,method,scalingmethod] = convolveaudiowithaudio2(IN,method,scalingm
 %     7. 'Select the cleanest single IR (best channel)'
 %     8. 'Select the silent cycle or the IR with the lowest SNR (multichannel)'
 %     9. 'Exclude the IR with the lowest SNR (multichannel)'
+%     10.'Stack of IRs cumulatively averaged from best to worst SNR, with
+%     silent cycle (if available).'
 %
 % Note that this function was changed for AARAE Release 8 to allow for
 % overlapping cycles (or negative silence gap between cycles).
@@ -85,7 +87,8 @@ if isfield(IN,'properties') && isfield(IN.properties,'startflag')
             'Select the cleanest IR (multichannel)',...
             'Select the cleanest single IR (best channel)',...
             'Select the silent cycle or the IR with the lowest SNR (multichannel)',...
-            'Exclude the IR with the lowest SNR (multichannel)'},... % TO DO: 'Find the optimum combination for synchronous averaging for maximum SNR'
+            'Exclude the IR with the lowest SNR (multichannel)',...
+            'Stack the cumulatively averaged non-silent cycle IRs, sorted from best to worst cycle, in dimension4, and also return the silent cycle'},... % TO DO: 'Find the optimum combination for synchronous averaging for maximum SNR'
             'PromptString','Select the convolution method',...
             'Name','AARAE options',...
             'SelectionMode','single',...
@@ -548,34 +551,52 @@ switch method
         [~, ind] = min(Quality,[],4);
         IRtemp(:,:,:,ind) = 0;
         IR = sum(IRtemp,4) ./ (size(IRtemp,4)-1); % average across cycles
-%     case 10
-
-% sort the IRs in terms of quality
-% Create an IR stack of averages from best only to all
-
-%         if isfield(IN.properties,'relgain')
-%             if isinf(IN.properties.relgain(1))
-%                 IR = IR(:,:,:,2:end,:,:);
-%             end
-%         end
-%         for ch = 1:chans
-%             for b = 1:bands
-%                 IRtemp(:,ch,b,:) = reshape(IR(:,ch,b,:,:,:),[len, 1, 1, dim4 * dim5 * dim6]);
-%             end
-%         end
-%         % brute force solution
-%         
-%         
-%         Quality = max(IRtemp) ./ rms(IRtemp);
+    case 10
+    % cumulative mean of IRs, sorted from highest to lowest quality. Also
+    % including the silent cycle.
+        if isfield(IN.properties,'relgain')
+            if isinf(IN.properties.relgain(1))
+                %IR = IR(:,:,:,2:end,:,:);
+                firstIR = 2;
+            else
+                firstIR = 1;
+            end
+        else
+            firstIR = 1;
+        end
+        dim4a = dim4 - firstIR + 1;
+        weighting = repmat(window(@blackmanharris,len),[1,chans,bands,dim4a,dim5,dim6]);
+        Quality = max(abs(IR(:,:,:,firstIR:end,:,:))) ./ ...
+            rms(IR(round(0.45*len):end,:,:,firstIR:end,:,:)...
+            .* weighting(round(0.45*len):end,:,:,:,:,:));
+        Quality = mean(Quality,2); % average across channels
+        Quality = mean(Quality,3); % average across bands
+        Quality = mean(Quality,5); % average across asynchronous output cycles
+        Quality = mean(Quality,6); % average across dim6
+        [~, Qind] = sort(Quality,'descend');
+        if firstIR==1
+            IRtemp = IR(:,:,:,Qind,:,:);
+        else
+            IRtemp = IR;
+            IRtemp(:,:,:,2:end,:,:) = IR(:,:,:,Qind+1,:,:);
+        end
+        for k = firstIR:dim4-firstIR+1
+            % cumulative mean (could be done without a for loop using
+            % cumsum)
+            IR(:,:,:,k,:,:) = mean(IRtemp(:,:,:,firstIR:firstIR+k-1,:,:),4);
+        end
+        % calculate quality again for user information
+%         Quality = max(abs(IR(:,:,:,firstIR:end,:,:))) ./ ...
+%             rms(IR(round(0.45*len):end,:,:,firstIR:end,:,:)...
+%             .* weighting(round(0.45*len):end,:,:,:,:,:));
 %         Quality = mean(Quality,2); % average across channels
 %         Quality = mean(Quality,3); % average across bands
-%         [Quality, Qind] = sort(Quality,'ascend');
-%         IRtemp2 = mean(IRtemp,4);
-%         meanQual = mean(mean(max(IRtemp2) ./ rms(IRtemp2),2),3);
-%         meanQual2 = 1e99;
-%         while meanQual2 > meanQual
-%             
-%         end
+%         Quality = mean(Quality,5); % average across asynchronous output cycles
+%         Quality = mean(Quality,6); % average across dim6
+%         [~, Qind] = max(Quality,[],4);
+%         helpdlg(['In broad terms, the highest SNR appears to be on layer ', ...
+%             num2str(Qind+firstIR-1),...
+%             ' of the stack. However, it may be useful to examine the stack in detail to select the best result.']);
 end
 
 
