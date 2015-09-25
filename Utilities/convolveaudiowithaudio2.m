@@ -17,6 +17,14 @@ function [OUT,method,scalingmethod] = convolveaudiowithaudio2(IN,method,scalingm
 %     9. 'Exclude the IR with the lowest SNR (multichannel)'
 %     10.'Stack of IRs cumulatively averaged from best to worst SNR, with
 %     silent cycle (if available).'
+%     11. Same as 10, except that a visualization is also created to help
+%     with the selection of IR
+%
+% Methods that evaluate the quality of the IRs do so on the basis of the
+% time-weighted crest factor: i.e. a higher crest factor gives a crude
+% indication of greater signal-to-noise ratio. This can be useful when
+% measurements are subject to time-varying noise, resulting in some
+% cycles being substantially worse than others.
 %
 % Note that this function was changed for AARAE Release 8 to allow for
 % overlapping cycles (or negative silence gap between cycles).
@@ -57,8 +65,8 @@ if ~isequal(size(IN.audio),size(IN.audio2))
 else
     invS = IN.audio2;
 end
-%fs = IN.fs;
-%nbits = audiodata.nbits;
+fs = IN.fs;
+
 
 if isfield(IN,'properties') && isfield(IN.properties,'startflag')
     if ~exist('method','var')
@@ -88,7 +96,8 @@ if isfield(IN,'properties') && isfield(IN.properties,'startflag')
             'Select the cleanest single IR (best channel)',...
             'Select the silent cycle or the IR with the lowest SNR (multichannel)',...
             'Exclude the IR with the lowest SNR (multichannel)',...
-            'Stack the cumulatively averaged non-silent cycle IRs, sorted from best to worst cycle, in dimension4, and also return the silent cycle'},... % TO DO: 'Find the optimum combination for synchronous averaging for maximum SNR'
+            'Stack the cumulatively averaged non-silent cycle IRs, sorted from best to worst cycle, in dimension4, and also return the silent cycle',...
+            'Same as above, and also create a figure to allow visual comparison of the cumulatively averaged IRs'},... 
             'PromptString','Select the convolution method',...
             'Name','AARAE options',...
             'SelectionMode','single',...
@@ -138,7 +147,7 @@ if isfield(IN,'properties') && isfield(IN.properties,'startflag')
                 %                 if isinf(IN.properties.relgain(1))
                 %
                 %                 end
-            case {2, 3, 5, 6, 7, 8, 9, 10}
+            case {2, 3, 5, 6, 7, 8, 9, 10, 11}
                 % find the indices corresponding to cycles
 %                 indices = cat(2,{1:len*length(startflag)},repmat({':'},1,ndims(S)-1));
 %                 S = S(indices{:});
@@ -552,8 +561,56 @@ switch method
         IRtemp(:,:,:,ind) = 0;
         IR = sum(IRtemp,4) ./ (size(IRtemp,4)-1); % average across cycles
     case 10
-    % cumulative mean of IRs, sorted from highest to lowest quality. Also
-    % including the silent cycle.
+        % cumulative mean of IRs, sorted from highest to lowest quality. Also
+        % including the silent cycle.
+        if isfield(IN.properties,'relgain')
+            if isinf(IN.properties.relgain(1))
+                %IR = IR(:,:,:,2:end,:,:);
+                firstIR = 2;
+            else
+                firstIR = 1;
+            end
+        else
+            firstIR = 1;
+        end
+        dim4a = dim4 - firstIR + 1;
+        weighting = repmat(window(@blackmanharris,len),[1,chans,bands,dim4a,dim5,dim6]);
+        Quality = max(abs(IR(:,:,:,firstIR:end,:,:))) ./ ...
+            rms(IR(round(0.45*len):end,:,:,firstIR:end,:,:)...
+            .* weighting(round(0.45*len):end,:,:,:,:,:));
+        Quality = mean(Quality,2); % average across channels
+        Quality = mean(Quality,3); % average across bands
+        Quality = mean(Quality,5); % average across asynchronous output cycles
+        Quality = mean(Quality,6); % average across dim6
+        [~, Qind] = sort(Quality,'descend');
+        if firstIR==1
+            IRtemp = IR(:,:,:,Qind,:,:);
+        else
+            IRtemp = IR;
+            IRtemp(:,:,:,2:end,:,:) = IR(:,:,:,Qind+1,:,:);
+        end
+        for k = firstIR:dim4-firstIR+1
+            % cumulative mean (could be done without a for loop using
+            % cumsum)
+            IR(:,:,:,k,:,:) = mean(IRtemp(:,:,:,firstIR:firstIR+k-1,:,:),4);
+        end
+        % calculate quality again for user information
+        %         Quality = max(abs(IR(:,:,:,firstIR:end,:,:))) ./ ...
+        %             rms(IR(round(0.45*len):end,:,:,firstIR:end,:,:)...
+        %             .* weighting(round(0.45*len):end,:,:,:,:,:));
+        %         Quality = mean(Quality,2); % average across channels
+        %         Quality = mean(Quality,3); % average across bands
+        %         Quality = mean(Quality,5); % average across asynchronous output cycles
+        %         Quality = mean(Quality,6); % average across dim6
+        %         [~, Qind] = max(Quality,[],4);
+        %         helpdlg(['In broad terms, the highest SNR appears to be on layer ', ...
+        %             num2str(Qind+firstIR-1),...
+        %             ' of the stack. However, it may be useful to examine the stack in detail to select the best result.']);
+    case 11
+        % cumulative mean of IRs, sorted from highest to lowest quality. Also
+        % including the silent cycle.
+        % This is the same as method 10, except that a visualisation of the
+        % result is also created, to help the user decide which IR(s) to keep
         if isfield(IN.properties,'relgain')
             if isinf(IN.properties.relgain(1))
                 %IR = IR(:,:,:,2:end,:,:);
@@ -593,10 +650,53 @@ switch method
 %         Quality = mean(Quality,3); % average across bands
 %         Quality = mean(Quality,5); % average across asynchronous output cycles
 %         Quality = mean(Quality,6); % average across dim6
-%         [~, Qind] = max(Quality,[],4);
-%         helpdlg(['In broad terms, the highest SNR appears to be on layer ', ...
-%             num2str(Qind+firstIR-1),...
-%             ' of the stack. However, it may be useful to examine the stack in detail to select the best result.']);
+%         [Quality, Qind] = max(Quality,[],4);
+        %         helpdlg(['In broad terms, the highest SNR appears to be on layer ', ...
+        %             num2str(Qind+firstIR-1),...
+        %             ' of the stack. However, it may be useful to examine the stack in detail to select the best result.']);
+
+        compplot=figure('Name','Inspect the layers, then close to select in dim4');
+%         figure('Name','Cumulative Synchronous Averaged IRs',...
+%              'OuterPosition',[0 0 600 600]);
+        [r, c] = subplotpositions(size(IR,4), 0.5);
+        linecolor = HSVplotcolours2(chans, bands, dim5);
+        t = ((1:size(IR,1))'-1)./fs;
+       % maxval = 10*log10(max(max(max(max(max(max(IR.^2)))))));
+        for ch = 1:chans
+            for b = 1:bands
+                for d4 = 1:size(IR,4)
+                    for d5 = 1:dim5
+                        subplot(r,c,d4)
+                        plot(t,10*log10(IR(:,ch,b,d4,d5,1).^2),...
+                            'Color',permute(linecolor(ch,b,d5,:),[1,4,2,3]));
+                        title(['layer ' num2str(d4)])
+                        if size(IR,4)-c < d4
+                             xlabel('Time [s]');
+                        end
+%                         xlim([0 t(end)])
+%                         ylim([maxval-120 maxval])
+                        hold on
+                    end
+                end
+            end
+        end
+        iplots = get(compplot,'Children');
+        if length(iplots) > 1
+            %xlims = cell2mat(get(iplots,'Xlim'));
+            %set(iplots,'Xlim',[min(xlims(:,1)) max(xlims(:,2))])
+            set(iplots,'Xlim',[0 t(end)])
+            %ylims = cell2mat(get(iplots,'Ylim'));
+            %set(iplots,'Ylim',[min(ylims(:,1)) max(ylims(:,2))])
+            maxval = 10*log10(max(max(max(max(max(max(IR.^2)))))));
+            set(iplots,'Ylim',[maxval-120,maxval])
+            uicontrol('Style', 'pushbutton', 'String', 'Axes limits',...
+                'Position', [0 0 65 30],...
+                'Callback', 'setaxeslimits');
+%             uicontrol('Style', 'pushbutton', 'String', 'OK',...
+%                 'Position', [66 0 65 30],...
+%                 'Callback', 'delete(compplot)');
+           uiwait(compplot)
+        end
 end
 
 
