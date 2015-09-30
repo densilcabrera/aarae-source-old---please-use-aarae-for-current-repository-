@@ -1,4 +1,4 @@
-function out = thiroct_band_level_barplot(in, fs, cal, showpercentiles, flo, fhi, tau, energyorpower, dosubplots)
+function out = thiroct_band_level_barplot(in, fs, cal, showpercentiles, flo, fhi, tau, leveltype, dosubplots)
 % This function generates 1/3-octave-band bar plots of Leq and percentile 
 % values etc in decibels.
 %
@@ -34,7 +34,7 @@ else
 end
 %if nargin < 8, dotables = 0; end
 if nargin < 9, dosubplots = 0; end % default setting for multichannel plotting
-if nargin < 8, energyorpower = 0; end % power (use 1 for energy)
+if nargin < 8, leveltype = 0; end % power (use 1 for energy)
 if nargin < 7, tau = 0; end % default temporal integration constant in seconds
 if nargin < 6, fhi = 20000; end % default highest centre frequency
 if nargin < 5, flo = 12.5; end % default lowest centre frequency
@@ -45,11 +45,11 @@ if nargin < 4
         'Calibration offset (dB)'; ...
         'Highest third-octave band (Hz)'; ...
         'Lowest third-octave band (Hz)'; ...
-        'Calculate power [0] or energy [1]';...
+        'Level type: band power [0], band energy [1], spectrum level power [2], spectrum level energy [3]';...
         'Show percentiles [0 | 1]'}, ...
         'Analysis and display parameters',1, ...
         {num2str(dosubplots);num2str(tau); num2str(cal);num2str(fhi); ...
-        num2str(flo); num2str(energyorpower); num2str(showpercentiles)});
+        num2str(flo); num2str(leveltype); num2str(showpercentiles)});
     
    
             
@@ -60,7 +60,7 @@ if nargin < 4
         cal = str2num(char(param(3)));
         fhi = str2num(char(param(4)));
         flo = str2num(char(param(5)));
-        energyorpower = str2num(char(param(6)));
+        leveltype = str2num(char(param(6)));
         showpercentiles = str2num(char(param(7)));
     else
         out = [];
@@ -71,7 +71,7 @@ end
 if ~isempty(audio) && ~isempty(fs)...
         && ~isempty(cal) && ~isempty(showpercentiles)...
         && ~isempty(flo) && ~isempty(fhi) && ~isempty(tau)...
-        && ~isempty(dosubplots) && ~isempty(energyorpower)
+        && ~isempty(dosubplots) && ~isempty(leveltype)
      [~,chans,bands]=size(audio);
 
     if bands > 1
@@ -125,13 +125,18 @@ if ~isempty(audio) && ~isempty(fs)...
         Itemp = 10.^((10*log10(Itemp) + cal)./10);
     end
 
-    if energyorpower == 1
+    if leveltype == 1 || leveltype == 3
         Itemp = Itemp * size(Itemp,1)./fs;
         Lstring = 'Lenergy';
     else
         Lstring = 'Leq';
     end
 
+    if leveltype == 2 || leveltype == 3
+        for k = 1:length(flist)
+            Itemp(:,:,k) = Itemp(:,:,k) ./ (flist(k).*2.^(0.5/3) - flist(k)./2.^(0.5/3));
+        end
+    end
     
     out.Leq = 10*log10(mean(Itemp));
     out.Leq = permute(out.Leq,[3,2,1]);
@@ -155,7 +160,7 @@ if ~isempty(audio) && ~isempty(fs)...
     out.L90 = permute(out.L90,[3,2,1]);
     
     out.funcallback.name = 'thiroct_band_level_barplot.m';
-    out.funcallback.inarg = {fs,cal,showpercentiles,flo,fhi,tau,energyorpower,dosubplots};
+    out.funcallback.inarg = {fs,cal,showpercentiles,flo,fhi,tau,leveltype,dosubplots};
 
     ymax = 10*ceil(max(max(out.Lmax+5))/10);
     ymin = 10*floor(min(min(out.L90))/10);
@@ -182,7 +187,7 @@ if ~isempty(audio) && ~isempty(fs)...
             end
 
             % y-axis
-            if energyorpower == 1
+            if leveltype == 1 || leveltype == 3
                 ylabel('Energy Level (dB)')
             else
                 ylabel('Level (dB)')
@@ -247,7 +252,7 @@ if ~isempty(audio) && ~isempty(fs)...
             end
 
             % y-axis
-            if energyorpower == 1
+            if leveltype == 1 || leveltype == 3
                 ylabel('Energy Level (dB)')
             else
                 ylabel('Level (dB)')
