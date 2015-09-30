@@ -1,4 +1,4 @@
-function out = octave_band_level_barplot(in, fs, cal, showpercentiles, flo, fhi, tau, dosubplots)
+function out = octave_band_level_barplot(in, fs, cal, showpercentiles, flo, fhi, tau, energyorpower, dosubplots)
 % This function generates octave-band bar plots of Leq and percentile 
 % values etc in decibels.
 %
@@ -38,7 +38,8 @@ else
     end
     name = [];
 end
-if nargin < 8, dosubplots = 0; end % default setting for multichannel plotting
+if nargin < 9, dosubplots = 0; end % default setting for multichannel plotting
+if nargin < 8, energyorpower = 0; end % power (use 1 for energy)
 if nargin < 7, tau = 0; end % default temporal integration constant in seconds
 if nargin < 6, fhi = 16000; end % default highest centre frequency
 if nargin < 5, flo = 16; end % default lowest centre frequency
@@ -49,10 +50,11 @@ if nargin < 4,
         'Calibration offset (dB)'; ...
         'Highest octave band (Hz)'; ...
         'Lowest octave band (Hz)'; ...
+        'Calculate power [0] or energy [1]';...
         'Show percentiles [0 | 1]'}, ...
         'Analysis and display parameters',1, ...
         {num2str(dosubplots);num2str(tau); num2str(cal);num2str(fhi); ...
-        num2str(flo); num2str(showpercentiles)});
+        num2str(flo); num2str(energyorpower);num2str(showpercentiles)});
     
     %if length(param) < 6, param = []; end
     if ~isempty(param)
@@ -61,14 +63,18 @@ if nargin < 4,
         cal = str2num(char(param(3)));
         fhi = str2num(char(param(4)));
         flo = str2num(char(param(5)));
-        showpercentiles = str2num(char(param(6)));
+        energyorpower = str2num(char(param(6)));
+        showpercentiles = str2num(char(param(7)));
     else
         out = [];
         return
     end
 end
 
-if ~isempty(audio) && ~isempty(fs) && ~isempty(cal) && ~isempty(showpercentiles) && ~isempty(flo) && ~isempty(fhi) && ~isempty(tau) && ~isempty(dosubplots)
+if ~isempty(audio) && ~isempty(fs) && ~isempty(cal)...
+        && ~isempty(showpercentiles) && ~isempty(flo)...
+        && ~isempty(fhi) && ~isempty(tau)...
+        && ~isempty(energyorpower) && ~isempty(dosubplots)
 
     [~,chans,bands]=size(audio);
     if bands > 1
@@ -120,6 +126,13 @@ if ~isempty(audio) && ~isempty(fs) && ~isempty(cal) && ~isempty(showpercentiles)
     else
         Itemp = 10.^((10*log10(Itemp) + cal)./10);
     end
+    
+    if energyorpower == 1
+        Itemp = Itemp * size(Itemp,1)./fs;
+        Lstring = 'Lenergy';
+    else
+        Lstring = 'Leq';
+    end
 
     out.Leq = 10*log10(mean(Itemp));
     out.Leq = permute(out.Leq,[3,2,1]);
@@ -143,7 +156,7 @@ if ~isempty(audio) && ~isempty(fs) && ~isempty(cal) && ~isempty(showpercentiles)
     out.L90 = permute(out.L90,[3,2,1]);
     
     out.funcallback.name = 'octave_band_level_barplot.m';
-    out.funcallback.inarg = {fs,cal,showpercentiles,flo,fhi,tau,dosubplots};
+    out.funcallback.inarg = {fs,cal,showpercentiles,flo,fhi,tau,energyorpower,dosubplots};
 
     ymax = 10*ceil(max(max(out.Lmax+5))/10);
     ymin = 10*floor(min(min(out.L90))/10);
@@ -157,7 +170,7 @@ if ~isempty(audio) && ~isempty(fs) && ~isempty(cal) && ~isempty(showpercentiles)
 
             width = 0.5;
             bar(1:length(frequencies),out.Leq(:,ch),width,'FaceColor',[1,0.3,0.3],...
-                'EdgeColor',[0,0,0],'DisplayName', 'Leq','BaseValue',ymin);
+                'EdgeColor',[0,0,0],'DisplayName', Lstring,'BaseValue',ymin);
             hold on
 
             % x-axis
@@ -169,7 +182,11 @@ if ~isempty(audio) && ~isempty(fs) && ~isempty(cal) && ~isempty(showpercentiles)
             end
 
             % y-axis
-            ylabel('Level (dB)')
+            if energyorpower == 1
+                ylabel('Energy Level (dB)')
+            else
+                ylabel('Level (dB)')
+            end
             ylim([ymin ymax])
 
             if showpercentiles
@@ -200,7 +217,7 @@ if ~isempty(audio) && ~isempty(fs) && ~isempty(cal) && ~isempty(showpercentiles)
             end
             %fig = figure('Visible','off');
             table1 = uitable('Data',[out.Leq(:,ch),out.Lmax(:,ch),out.L1(:,ch),out.L5(:,ch),out.L10(:,ch),out.L50(:,ch),out.L90(:,ch)],...
-                             'ColumnName',{'Leq','Lmax','L1','L5','L10','L50','L90'},...
+                             'ColumnName',{Lstring,'Lmax','L1','L5','L10','L50','L90'},...
                              'RowName',num2cell(frequencies),'Parent',fig);
             %[fig,tables] = disptables(fig,table1,{['Chan' num2str(ch) ' - Octave band spectrum']});
             %delete(fig)
@@ -218,7 +235,7 @@ if ~isempty(audio) && ~isempty(fs) && ~isempty(cal) && ~isempty(showpercentiles)
 
                    width = 0.5;
             bar(1:length(frequencies),out.Leq(:,ch),width,'FaceColor',[1,0.3,0.3],...
-                'EdgeColor',[0,0,0],'DisplayName', 'Leq','BaseValue',ymin);
+                'EdgeColor',[0,0,0],'DisplayName', Lstring,'BaseValue',ymin);
             hold on
 
             % x-axis
@@ -230,7 +247,11 @@ if ~isempty(audio) && ~isempty(fs) && ~isempty(cal) && ~isempty(showpercentiles)
             end
 
             % y-axis
-            ylabel('Level (dB)')
+            if energyorpower == 1
+                ylabel('Energy Level (dB)')
+            else
+                ylabel('Level (dB)')
+            end
             ylim([ymin ymax])
 
             if showpercentiles
@@ -265,7 +286,7 @@ if ~isempty(audio) && ~isempty(fs) && ~isempty(cal) && ~isempty(showpercentiles)
 %             fig = figure('Visible','off','name',[name ...
 %                 ' Octave Band Spectrum, tau = ', num2str(tau),' s']);
             table1 = uitable('Data',[out.Leq(:,ch),out.Lmax(:,ch),out.L1(:,ch),out.L5(:,ch),out.L10(:,ch),out.L50(:,ch),out.L90(:,ch)],...
-                             'ColumnName',{'Leq','Lmax','L1','L5','L10','L50','L90'},...
+                             'ColumnName',{Lstring,'Lmax','L1','L5','L10','L50','L90'},...
                              'RowName',num2cell(frequencies),'Parent',fig);
             %[fig,tables] = disptables(fig,table1,{['Chan' num2str(ch) ' - Octave band spectrum']});
             %delete(fig)
