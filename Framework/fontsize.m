@@ -1,6 +1,6 @@
 function fontsize
-if ismac 
-    font = 11; %Default font for mac
+if ismac
+    font = 12; %Default font for mac
 else
     font = 8; %Default font for windows
 end
