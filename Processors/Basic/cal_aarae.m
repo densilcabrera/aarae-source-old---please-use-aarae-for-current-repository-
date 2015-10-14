@@ -183,7 +183,7 @@ switch method
     case 4
         cal_level = 10 .* log10(mean(IN.audio.^2,1));
         cal_level = repmat(20*log10(mean(10.^(cal_level./20),2)),1,size(IN.audio,2));
-        if ~isempty(values) && (length(values) == 1 || length(values) == chans)
+        if ~isempty(values) && (length(values) == 1 || length(values) == size(IN.audio,2))
             cal_offset = values;
         else
             cal_offset = inputdlg('Signal RMS level',...
@@ -248,5 +248,7 @@ if ~isempty(cal_level)
         OUT.cal = callevel;
         OUT.funcallback.name = 'cal_aarae.m';
         OUT.funcallback.inarg = {method,values,fileref};
+else
+    OUT = [];
 end
 
