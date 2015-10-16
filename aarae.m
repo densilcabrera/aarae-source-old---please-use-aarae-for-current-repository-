@@ -1773,7 +1773,9 @@ if ~isempty(cal_level)
         delete([cd '/Utilities/Backup/' selectedNodes(i).getName.char '.mat'])
         save([cd '/Utilities/Backup/' selectedNodes(i).getName.char '.mat'], 'signaldata','-v7.3');
         
-        selectedNodes(i).handle.UserData = signaldata;
+        handles.(signaldata.name).UserData = signaldata; % apply cal field directly to the audio loaded to the tree
+        
+%         selectedNodes(i).handle.UserData = signaldata; % produces error in MATLAB 2015b
         selectedParent = selectedNodes(i).getParent;
         handles.mytree.reloadNode(selectedParent);
         fprintf(handles.fid, ['%% ' datestr(now,16) ' - Calibrated "' char(selectedNodes(i).getName) '": adjusted to ' num2str(cal_level) 'dB \n\n']);
