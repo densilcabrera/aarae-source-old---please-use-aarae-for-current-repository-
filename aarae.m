@@ -205,7 +205,7 @@ end
 handles.alternate = 0;
 fprintf(handles.fid, ['%% AARAE session started ' datestr(now) ' \n\n']);
 fprintf(handles.fid, '%% Audio and Acoustical Response Environment (AARAE) for Matlab\n');
-fprintf(handles.fid, '%% Release 7 (July 2015).\n');
+fprintf(handles.fid, '%% Release 8 (2015).\n');
 fprintf(handles.fid, '%% http://aarae.org\n\n');
 fprintf(handles.fid, '%% Reference:\n');
 fprintf(handles.fid, '%% Cabrera, D., Jimenez, D., & Martens, W. L. (2014, November).\n');
@@ -1772,10 +1772,23 @@ if ~isempty(cal_level)
         % Save as you go
         delete([cd '/Utilities/Backup/' selectedNodes(i).getName.char '.mat'])
         save([cd '/Utilities/Backup/' selectedNodes(i).getName.char '.mat'], 'signaldata','-v7.3');
-        
-        handles.(signaldata.name).UserData = signaldata; % apply cal field directly to the audio loaded to the tree
-        
-%         selectedNodes(i).handle.UserData = signaldata; % produces error in MATLAB 2015b
+        % The following seems to work, but maybe it won't work in all
+        % circumstances. Therefore the try-catch has been included, with
+        % some rudimentary messages if errors occur. One possible reason
+        % for errors would be that the name field does not exist. Another
+        % possible reason might be if the name field is inconsistent with the
+        % tree.
+        try
+            if ~isfield(signaldata,'name')
+                disp('name field does not exist - see warning dialog')
+                fprintf(handles.fid,'name field does not exist - see below');
+            end
+            handles.(signaldata.name).UserData = signaldata; % apply cal field directly to the audio loaded to the tree
+            % selectedNodes(i).handle.UserData = signaldata; % produces error in MATLAB 2015b
+        catch
+            warndlg('Sorry - an error occured in writing cal to the tree. Please let Densil know about this. As an alternative you can calibrate using cal_aarae in Processors\Basic (or in the edit window).','Bug!');
+            fprintf(handles.fid,'Sorry - an error occured in writing cal to the tree. Please let Densil know about this. As an alternative you can calibrate using cal_aarae in Processors\Basic (or in the edit window).');
+        end
         selectedParent = selectedNodes(i).getParent;
         handles.mytree.reloadNode(selectedParent);
         fprintf(handles.fid, ['%% ' datestr(now,16) ' - Calibrated "' char(selectedNodes(i).getName) '": adjusted to ' num2str(cal_level) 'dB \n\n']);
