@@ -77,6 +77,30 @@ if isstruct(IN) % You should check that the function is being called within
     % analysis of the first three dimensions.
     IN = choose_from_higher_dimensions(IN,3,1); 
     
+    % Of course it is not difficult to accommodate all 6 dimensions using
+    % nested for-loops, but it takes some effort to organise the results
+    % (charts and tables) in a useful way. It may be better to avoid
+    % for-loops if vectorized alternatives are possible (to speed up
+    % processing), but for-loops can avoid out-of-memory errors when the
+    % input is large. 
+    % The following fields may be useful in interpreting
+    % multi-dimensional inputs:
+    % * chanID - a cell array of strings, identifying each channel
+    % (dimension 2)
+    % * bandID - a vector, listing the centre frequency of each band
+    % (dimension 3)
+    % * properties.startflag - a vector, listing the start indices of each
+    % cycle in a multicycle measurement prior to stacking in dimension 4.
+    % After stacking, the start indices are all 1.
+    % * properties.relgain - a vector, listing the relative gain in dB of
+    % each cycle in a multicycle measurement (dimension 4 after stacking)
+    % * properties.dim5ID - a cell array of strings in the same format as
+    % chanID, identifying the output channels in an asynchronous output
+    % measurement. Currently it is not in general use, but it is likely to 
+    % be developed in future releases.
+    % dimension 6 does not have an identifier because it does not have any
+    % standard use (it is a spare dimension).
+    
     audio = IN.audio; % Extract the audio data
     fs = IN.fs;       % Extract the sampling frequency of the audio data
     
@@ -90,16 +114,28 @@ if isstruct(IN) % You should check that the function is being called within
     % exiting from the function
     if isfield(IN,'cal') % Get the calibration offset if it exists
         cal = IN.cal;
-        % Note that the aarae basic processor cal_reset_aarae could be
-        % called here. However, in this template it is called later.
     else
-        % Here is an example of how to exit the function with a warning
-        % message
-        h=warndlg('Calibration data missing - please calibrate prior to calling this function.','AARAE info','modal');
+        % if the audio is not calibrated, we can get the user to calibrate
+        % it here:
+        h=warndlg('Calibration data missing - please calibrate now.','LoudnessCF','modal');
         uiwait(h)
-        OUT = []; % you need to return an empty output
-        return % get out of here!
+        IN = cal_aarae(IN); % cal_aarae is a Basic Processor that emulates AARAE's 'CAL' button
+        if isempty(IN) % user pressed cancel within cal_aarae, or the calibration failed
+            OUT = IN; % you need to return an empty output
+            return % get out of here!
+        end
+        cal = IN.cal; % get the cal field values
+        
+        % Alternatively, here is an example of how to exit the function 
+        % with a warning message
+%         h=warndlg('Calibration data missing - please calibrate prior to calling this function.','AARAE info','modal');
+%         uiwait(h)
+%         OUT = []; % you need to return an empty output
+%         return % get out of here!
     end
+    % Note that the aarae basic processor cal_reset_aarae could be
+    % called here (e.g. if you want to adjust the gain of the audio 
+    % such that cal = 0 dB. However, in this template it is called later.
     
     % chanID is a cell array of strings describing each channel
     if isfield(IN,'chanID') % Get the channel ID if it exists
@@ -108,7 +144,13 @@ if isstruct(IN) % You should check that the function is being called within
         % or make a chanID using AARAE's utility function
         chanID = makechanID(size(audio,2),0);
     end
-    % if you wish to interpret a pre-defined format of chanID, use AARAE's
+    % ChanID has several formats (format 0 is used in the above call of
+    % makechanID). Format 0 is simply a listing of channel numbers. Other
+    % formats identify spherical harmonics (order and degree) or provide
+    % spatial coordinates (Cartesian or polar) corresponding each channel.
+    % Refer to the comment in makechanID for specific information about
+    % this.
+    % If you wish to interpret a pre-defined format of chanID, use AARAE's
     % utility function readchanID
     
     % bandID is a vector, usually listing the centre frequencies of the
@@ -122,11 +164,11 @@ if isstruct(IN) % You should check that the function is being called within
     end
     
     % The name of the audio input could be useful in generating figures
-    % (for example, in the title of a figure). This is a string.
+    % (for example, in the title of a figure).
     if isfield(IN,'name') % Get the AARAE name if it exists
-        name = IN.name;
+        name = IN.name; % this is a string
     else
-        name = [];
+        name = ''; % empty string - can be concatenated without any problems
     end
     
     % *********************************************************************
@@ -252,7 +294,7 @@ if ~isempty(audio) && ~isempty(fs) && ~isempty(cal)
     %     accessing the results together with a complete record of the
     %     processing that led to the results.
     
-    fig1 = figure('Name','My results table');
+    fig1 = figure('Name',['My results table for ' name]); % use the name if it is not empty
     table1 = uitable('Data',[duration maximum minimum],...
                 'ColumnName',{'Duration','Maximum','Minimum'},...
                 'RowName',{'Results'});
@@ -291,11 +333,14 @@ if ~isempty(audio) && ~isempty(fs) && ~isempty(cal)
     % including tables). However, if you wish to write to the log file,
     % this is easily done using AARAE's logtext utility:
     logtext('%% This is a test of writing to the log file.\n');
+    % For consistency, it is best to start all non-executable lines with %%
+    % (which becomes a single % when written to the log file). Hence
+    % non-executable lines will be written as Matlab comments.
     
     % *** MAKING PLOTS ***
     % You may also include figures to display your results as plots.
     t = linspace(0,duration,length(audio));
-    figure;
+    figure('Name', ['Test figure of ' name]); % use the name of the input audio if it is not empty
     plot(t,audio);
     % All figures created by your function are stored in the AARAE
     % environment under the results box. 
