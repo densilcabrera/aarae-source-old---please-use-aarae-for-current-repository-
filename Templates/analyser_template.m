@@ -339,7 +339,7 @@ if ~isempty(audio) && ~isempty(fs) && ~isempty(cal)
     
     % *** MAKING PLOTS ***
     % You may also include figures to display your results as plots.
-    t = linspace(0,duration,length(audio));
+    t = linspace(0,duration,len);
     figure('Name', ['Test figure of ' name]); % use the name of the input audio if it is not empty
     plot(t,audio);
     % All figures created by your function are stored in the AARAE
