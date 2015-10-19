@@ -98,9 +98,9 @@ if ~isempty(audio) && ~isempty(fs) && ~isempty(cal)...
     else
         % Octave band filterbank from AARAE: in Processors/Filterbanks
         % construct or reconstruct the structure
-        hiband = round(10*log10(fhi));
+        hiband = 3*round(10*log10(fhi)/3);
         if hiband > 42, hiband = 42; end
-        loband = round(10*log10(flo));
+        loband = 3*round(10*log10(flo)/3);
         if loband <12, loband = 12; end
         if hiband > loband
             flist = 10.^((loband:3:hiband)./10);
