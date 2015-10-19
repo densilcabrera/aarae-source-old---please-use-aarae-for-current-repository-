@@ -18,7 +18,7 @@ function out = octave_band_level_barplot(in, fs, cal, showpercentiles, flo, fhi,
 % applied.
 %
 % Code by Densil Cabrera and Daniel Jimenez
-% version 1.02 (1 October 2015)
+% version 1.02 (19 October 2015)
 
 if isstruct(in)
     %in = choose_from_higher_dimensions(in,5,1);
@@ -33,7 +33,7 @@ if isstruct(in)
     if isfield(in,'name') % Get the AARAE name if it exists
         name = in.name;
     else
-        name = [];
+        name = '';
     end
 else
     audio = in;
@@ -47,7 +47,7 @@ else
             'Fs',1,{'48000'});
         fs = str2num(char(fs));
     end
-    name = [];
+    name = '';
 end
 if nargin < 9, dosubplots = 0; end % default setting for multichannel plotting
 if nargin < 8, leveltype = 0; end % power (use 1 for energy)
@@ -241,7 +241,7 @@ if ~isempty(audio) && ~isempty(fs) && ~isempty(cal)...
                             text(k-0.25,ymax-(ymax-ymin)*0.025, ...
                                 num2str(round(out.Leq(k,ch,d4,d5,d6)*10)/10),'Color',[1,0.3,0.3])
                         end
-                        fig = figure('Name',[name namestringch]);
+                        fig = figure('Name',namestringch);
                         table1 = uitable('Data',[out.Leq(:,ch,d4,d5,d6),out.Lmax(:,ch,d4,d5,d6),out.L1(:,ch,d4,d5,d6),out.L5(:,ch,d4,d5,d6),out.L10(:,ch,d4,d5,d6),out.L50(:,ch,d4,d5,d6),out.L90(:,ch,d4,d5,d6)],...
                             'ColumnName',{Lstring,'Lmax','L1','L5','L10','L50','L90'},...
                             'RowName',num2cell(frequencies),'Parent',fig);
@@ -313,7 +313,7 @@ if ~isempty(audio) && ~isempty(fs) && ~isempty(cal)...
                         namestringch = [name ' Octave Band Spectrum, tau = ', ...
                             num2str(tau),' s, Channel ' num2str(ch) ', '...
                             namestring];
-                        fig = figure('Name',[name namestringch]);
+                        fig = figure('Name',namestringch);
                         table1 = uitable('Data',[out.Leq(:,ch,d4,d5,d6),out.Lmax(:,ch,d4,d5,d6),out.L1(:,ch,d4,d5,d6),out.L5(:,ch,d4,d5,d6),out.L10(:,ch,d4,d5,d6),out.L50(:,ch,d4,d5,d6),out.L90(:,ch,d4,d5,d6)],...
                             'ColumnName',{Lstring,'Lmax','L1','L5','L10','L50','L90'},...
                             'RowName',num2cell(frequencies),'Parent',fig);
