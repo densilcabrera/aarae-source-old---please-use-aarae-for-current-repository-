@@ -117,7 +117,7 @@ if isstruct(IN) % You should check that the function is being called within
     else
         % if the audio is not calibrated, we can get the user to calibrate
         % it here:
-        h=warndlg('Calibration data missing - please calibrate now.','LoudnessCF','modal');
+        h=warndlg('Calibration data missing - please calibrate now.','Name of Analyser','modal');
         uiwait(h)
         IN = cal_aarae(IN); % cal_aarae is a Basic Processor that emulates AARAE's 'CAL' button
         if isempty(IN) % user pressed cancel within cal_aarae, or the calibration failed
