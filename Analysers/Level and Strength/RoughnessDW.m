@@ -643,7 +643,7 @@ end
  
     % Specific roughness spectrogram
     subplot(2,2,3)
-    imagesc(TimePoints, 0.1:0.1:24,mean(ri_mat,2));
+    imagesc(TimePoints, 0.1:0.1:24,ri_mat);
 %     cH = colorbar;
     set(gca,'YDir','normal');
     ax=gca;
