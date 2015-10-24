@@ -108,7 +108,7 @@ if mod(samples,N) ~= 0
         padEndsamp = zeros(nn/2,nchan);
     end
     audio = [padStartsamp;audio;padEndsamp];
-    samples = length(audio);
+    %samples = length(audio);
 end
    
         
@@ -156,10 +156,10 @@ Bark = [0     0	   50	 0.5
 Bark2	= [sort([Bark(:,2);Bark(:,3)]),sort([Bark(:,1);Bark(:,4)])];
 N0	= round(20*N/fs)+1;
 N01	= N0-1;
-N50     = round(50*N/fs)-N0+1;
+%N50     = round(50*N/fs)-N0+1;
 N2	= N/2+1;
 Ntop	= round(20000*N/fs)+1;
-Ntop2	= Ntop-N0+1;
+%Ntop2	= Ntop-N0+1;
 dFs	= fs/N;
 
 % Make list with Barknumber of each frequency bin
@@ -215,7 +215,7 @@ k = (N0:1:Ntop);
 MinExcdB = interp1(HTres(:,1),HTres(:,2),Barkno(k));
   
 % Initialize constants and variables
-zi    = 0.5:0.5:23.5;
+%zi    = 0.5:0.5:23.5;
 zb    = sort([Bf(1,:),Cf(1,:)]);
 MinBf = MinExcdB(zb);
 ei    = zeros(47,N);
@@ -431,8 +431,8 @@ AmpCal = db2mag(80)*2/(N*mean(blackman(N, 'periodic')));
 
 Chno	=	47;
 Cal	 	=	0.25;
-N2		=	N/2;
-q		=	1:1:N;
+%N2		=	N/2;
+%q		=	1:1:N;
 qb		=	N0:1:Ntop;
 freqs	=	(qb+1)*fs/N;
 hBPi	=	zeros(Chno,N);
@@ -630,7 +630,7 @@ end
     % Time-averaged roughness as a fucntion of critical band
     % figure
     subplot(2,2,4)
-    plot([1:47]'/2, mean(ri_mat,2),'r-');
+    plot((1:47)'/2, mean(ri_mat,2),'r-');
     ax=gca;
     ax.Title.String = 'Time-Averaged Roughness';
     ax.XLabel.String = 'Critical Band Rate (Bark)';
@@ -661,13 +661,13 @@ end
 
         % Time-averaged Specific roughness results leaf
         doresultleaf(mean(ri_mat,2),'Specific Roughness [sones/Bark]',{'Critical Band Rate'},...
-            'Critical Band Rate',[1:47]'/2,'Bark',true,...
+            'Critical Band Rate',(1:47)'/2,'Bark',true,...
             'roughnesstype', {'Roughness over critical band'}, 'categorical', [],...
             'name','Time_averaged_specific_roughness');
         
         % Specific roughness spectrogram results leaf
         doresultleaf(ri_mat','Specific Roughness [sones/Bark]',{'time','Critical Band Rate'},...
-            'Critical Band Rate',[1:47]'/2,'Bark',true,...
+            'Critical Band Rate',(1:47)'/2,'Bark',true,...
             'Time',TimePoints','s',true,...
             'roughnesstype', {'Roughness over critical band'}, 'categorical', [],...
             'name','Time_varying_specific_roughness');
