@@ -582,24 +582,24 @@ end
     % ********* TABLES *********
     
     % Roughness statistics, adopted from Loudness_MG2b code
-    Rmean = mean(mean(ri_mat,2));
-    Rstd = std(mean(ri_mat,2));
-    Rmax = max(mean(ri_mat,2));
-    R1 = prctile(mean(ri_mat,2),99);
-    R2 = prctile(mean(ri_mat,2),98);
-    R3 = prctile(mean(ri_mat,2),97);
-    R4 = prctile(mean(ri_mat,2),96);
-    R5 = prctile(mean(ri_mat,2),95);
-    R10 = prctile(mean(ri_mat,2),90);
-    R20 = prctile(mean(ri_mat,2),80);
-    R30 = prctile(mean(ri_mat,2),70);
-    R40 = prctile(mean(ri_mat,2),60);
-    R50 = median(mean(ri_mat,2));
-    R60 = prctile(mean(ri_mat,2),40);
-    R70 = prctile(mean(ri_mat,2),30);
-    R80 = prctile(mean(ri_mat,2),20);
-    R90 = prctile(mean(ri_mat,2),10);
-    Rmin = min(mean(ri_mat,2));
+    Rmean = mean(R_mat);
+    Rstd = std(R_mat);
+    Rmax = max(R_mat);
+    R1 = prctile(R_mat,99);
+    R2 = prctile(R_mat,98);
+    R3 = prctile(R_mat,97);
+    R4 = prctile(R_mat,96);
+    R5 = prctile(R_mat,95);
+    R10 = prctile(R_mat,90);
+    R20 = prctile(R_mat,80);
+    R30 = prctile(R_mat,70);
+    R40 = prctile(R_mat,60);
+    R50 = median(R_mat);
+    R60 = prctile(R_mat,40);
+    R70 = prctile(R_mat,30);
+    R80 = prctile(R_mat,20);
+    R90 = prctile(R_mat,10);
+    Rmin = min(R_mat);
     
     dataR = [Rmean;Rstd;Rmax;R1;R2;R3;R4;R5;R10;R20;R30;R40;R50;R60;R70;R80;R90;Rmin];
     
