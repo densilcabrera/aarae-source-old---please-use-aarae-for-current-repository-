@@ -443,10 +443,8 @@ ri		=	zeros(1,Chno);
 
 startIndex = 1;
 endIndex = N;
-TimePoints = zeros(n,1);
-R_mat = [];
-ri_mat = [];
-SPL_mat = [];
+[TimePoints,R_mat,SPL_mat] = deal(zeros(n,1));
+ri_mat = zeros(47,n);
 
     for windowNum = 1:n
 
@@ -627,7 +625,7 @@ end
     plot(TimePoints,R_mat,'r-');
     title ('Time-Varying Roughness');
     xlabel('Time (s)');
-    ylabel('Rouhghness (aspers)');
+    ylabel('Roughness (asper)');
     
     % Time-averaged roughness as a fucntion of critical band
     % figure
