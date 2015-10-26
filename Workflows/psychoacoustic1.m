@@ -1,6 +1,12 @@
 function Y = psychoacoustic1(X)
 % This workflow function runs a set of psychoacoustic analysers to derive 
 % loudness, sharpness, roughness and pitch from a 1-channel audio input.
+%
+% If the audio has more than one channel, then the user is prompted to
+% specify which to analyse.
+%
+% If the audio has not been calibrated, then the user is prompted to apply
+% calibration (or specify the sound pressure level).
 
 
 

@@ -6,7 +6,7 @@ function [OUT, varargout] = Loudness_MGB2b(IN,fs,filtermethod,cal,faster,decay,d
 % more information.
 %
 % Code by Densil Cabrera & Doheon Lee
-% version 1.01 (16 April 2014)
+% version 1.02 (27 October 2015)
 
 % SOME COMMENTS FROM ORIGINAL FUNCTION BELOW
 % INPUTS
@@ -164,15 +164,13 @@ if isstruct(IN)
     if isfield(IN,'name') % Get the AARAE name if it exists
         name = IN.name;
     else
-        name = [];
+        name = '';
     end
-    
-    
     
 elseif ~isempty(param) || nargin > 1
     
     signal = IN;
-    name = [];
+    name = '';
 end
 
 
@@ -219,7 +217,7 @@ if ~isempty(signal) && ~isempty(fs)
     end
     
     % use if you wish to monitor the sound pressure level here
-    disp(['rms level of the entire wave ', num2str(10*log10(mean(signal.^2)+10e-99)+59.9259), ' dB'])
+    % disp(['rms level of the entire wave ', num2str(10*log10(mean(signal.^2)+10e-99)+59.9259), ' dB'])
     % the offset of 59.9259 dB was chosen so that a 1 kHz tone at 40 dB yields
     % 1 sone. However, arguably 0.89 dB should be added to this (see comments
     % elsewhere).
@@ -398,7 +396,7 @@ if ~isempty(signal) && ~isempty(fs)
             b = fir2(4096,filtHzdB(:,1)./(0.5*fs),10.^(filtHzdB(:,2)./20));
             signal = filter(b,1,signal);
             
-            % case 4
+            % case 5
             % ADD MORE FILTERS HERE AS DESIRED
     end % switch
     

@@ -50,8 +50,12 @@ if isstruct(IN)
     if isfield(IN,'name') % Get the AARAE name if it exists
         name = IN.name;
     else
-        name = [];
+        name = '';
     end
+else
+    audio = IN(:,1,1,1,1,1);
+    cal = cal(1);
+    name = '';
 end
 % *********************************************************************
 
@@ -81,7 +85,7 @@ if ~isempty(audio) && ~isempty(fs) && ~isempty(cal)
         audio(:,2) = audio(:,2) .* 10.^(cal(2)/20);
     end
     
-    disp(['rms level of the entire wave ', num2str(10*log10(mean(audio.^2)+10e-99)+calconstant), ' dB'])
+    %disp(['rms level of the entire wave ', num2str(10*log10(mean(audio.^2)+10e-99)+calconstant), ' dB'])
     
     
     
