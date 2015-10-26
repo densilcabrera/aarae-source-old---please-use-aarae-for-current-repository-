@@ -7,35 +7,35 @@ function [OUT, varargout] = RoughnessDW(IN,fs,cal)
 % Reference signal: 60dB 1kHz tone 100% modulated at 70 Hz should output 1
 % asper.
 %
+% Only 1 channel of audio will be analysed.
+%
 % This is a port of the RoughnessDW analyser from PsySound3. The original
 % code for this implementation was provided by Dik Hermes. It was adapted
 % for PsySound3 by Matt Flax (2006), with further changes by Farhan Rizwi
 % (2007). It was ported to AARAE by Ella Manor and Densil Cabrera (2015).
 %
-
+%
 % INPUT ARGUMENTS
-% IN - audio signal (1 channel only)
-% ov - time window overlap in percentage
-% When run directly from the AARAE GUI ov equals zero. If you wish to
-% use non-zero input while using the AARAE GUI, one way is to write a
-% workflow function (by adapting code generated in AARAE's log file)
-% fs and cal inputs are only used if a non-structure (vector or matrix) is
-% the primary input.
+% IN - audio signal (only 1 channel will be analysed)
+% If IN is a structure, then results are returned via tables, charts and
+% AARAE results leaves. If IN is a vector, then results are only returned
+% via the function output arguments (without charts, tables and results
+% leaves).
+% fs and cal (sampling rate and calibration offset) are only used if IN is
+% a vector (rather than an AARAE structure).
 %
 % OUTPUTS
-% * Time-varying Roughness
-% * Time-averaged Specific Roughness
-% * Time-averaged Roughness statistics
+% * Time-varying roughness
+% * Time-averaged specific roughness
+% * Time-varying specific roughness
+% * Roughness statistics (when IN is a structure)
 
 
 % *************************************************************************
 
 % *************************************************************************
 if isstruct(IN)
-    
-    IN = choose_from_higher_dimensions(IN,1,1); % only 1 channel analysis at present:
-    
-    
+    IN = choose_from_higher_dimensions(IN,1,1); % only 1 channel analysis at present
     audio = IN.audio; % Extract the audio data
     fs = IN.fs;       % Extract the sampling frequency of the audio data
     
@@ -46,15 +46,12 @@ if isstruct(IN)
         IN = cal_aarae(IN);
         cal = IN.cal;
     end
-    
-    % The name of the audio input could be useful in generating figures
-    % (for example, in the title of a figure). This is a string.
+
     if isfield(IN,'name') % Get the AARAE name if it exists
         name = IN.name;
     else
         name = [];
     end
-    
 end
 % *********************************************************************
 
@@ -94,13 +91,16 @@ if ~isempty(audio) && ~isempty(fs) && ~isempty(cal)
     
     N = 8192; % window length
     window = blackman(N);
-    
-    samples = length(audio);
+
     if ~(fs == 44100 || fs == 40960 || fs == 48000)
-        error(['Incorrect sample rate for this roughness algorithm. Please ' ...
-            're-sample original file to be Fs=44100,40960 or 48000 ' ...
-            'Hz']);
+%         error(['Incorrect sample rate for this roughness algorithm. Please ' ...
+%             're-sample original file to be Fs=44100,40960 or 48000 ' ...
+%             'Hz']);
+        gcd_fs = gcd(48000,fs); % greatest common denominator
+        audio = resample(audio,48000/gcd_fs,fs/gcd_fs);
+        fs = 48000;
     end
+    samples = size(audio,1);
     
     if mod(samples,N) ~= 0
         n = ceil(samples/N)+1;
@@ -113,14 +113,15 @@ if ~isempty(audio) && ~isempty(fs) && ~isempty(cal)
             padEndsamp = zeros(nn/2,nchan);
         end
         audio = [padStartsamp;audio;padEndsamp];
-        %samples = length(audio);
     end
     
     
-    %  audio = audio*1.71; % added in psysound3 to improve the accuracy of the
-    %  algorithm, so that a 60dB tone 100% modulated at 70Hz would output an
-    % asper value of 1. This line is commented out here as the algorithm produces
-    % accurate result.
+    %  audio = audio*1.71; % added in psysound3 to improve the accuracy of
+    %  the algorithm, so that a 60 dB tone 100% modulated at 70 Hz would
+    %  yield a value of 1 asper. This line is commented out here as the
+    %  algorithm produces accurate result. The reason for this adjustment
+    %  in PsySound3 appears to be the way its SLM analyser works, which is
+    %  not relevant to AARAE.
     
     % overlap - not used
     % if ~exist('ov','var')
@@ -553,7 +554,7 @@ if ~isempty(audio) && ~isempty(fs) && ~isempty(cal)
         end
         ri(46)	=	(gzi(46)*mdept(46)*ki(44))^2;
         ri(47)	=	(gzi(47)*mdept(47)*ki(45))^2;
-        R		=	Cal*sum(ri);
+        R		=	Cal*sum(ri); 
         
         SPL = mean(rms(dataIn));
         if SPL > 0
@@ -583,83 +584,83 @@ end
 % *************************************************************************
 % Data Presentation
 % *************************************************************************
-
-% ********* TABLES *********
-
-% Roughness statistics, adopted from Loudness_MG2b code
-Rmean = mean(R_mat);
-Rstd = std(R_mat);
-Rmax = max(R_mat);
-R1 = prctile(R_mat,99);
-R2 = prctile(R_mat,98);
-R3 = prctile(R_mat,97);
-R4 = prctile(R_mat,96);
-R5 = prctile(R_mat,95);
-R10 = prctile(R_mat,90);
-R20 = prctile(R_mat,80);
-R30 = prctile(R_mat,70);
-R40 = prctile(R_mat,60);
-R50 = median(R_mat);
-R60 = prctile(R_mat,40);
-R70 = prctile(R_mat,30);
-R80 = prctile(R_mat,20);
-R90 = prctile(R_mat,10);
-Rmin = min(R_mat);
-
-dataR = [Rmean;Rstd;Rmax;R1;R2;R3;R4;R5;R10;R20;R30;R40;R50;R60;R70;R80;R90;Rmin];
-
-% generate tables of results
-
-fig1 = figure('Name','Time-varying Roughness (D&W) Statistics');
-table1 = uitable('Data',dataR,...
-    'ColumnName',{'Roughness'},...
-    'RowName',{'Mean','Standard deviation','Maximum',...
-    'R1','R2','R3','R4',...
-    'R5','R10','R20','R30','R40','R50 (median)','R60',...
-    'R70','R80','R90','Minimum'});
-
-[~,tables] = disptables(fig1,table1); % AARAE function
-
-OUT.tables = tables;
-
-% ********* CHARTS *********
-% Figure for charts
-figure('Name',['Roughness (D&W) of ',name])
-
-subplot(2,2,1:2)
-
-% Time-varying roughness
-plot(TimePoints,R_mat,'r-');
-title ('Time-Varying Roughness');
-xlabel('Time (s)');
-ylabel('Roughness (asper)');
-
-% Time-averaged roughness as a fucntion of critical band
-% figure
-subplot(2,2,4)
-plot((1:47)'/2, mean(ri_mat,2),'r-');
-ax=gca;
-ax.Title.String = 'Time-Averaged Roughness';
-ax.XLabel.String = 'Critical Band Rate (Bark)';
-%     ax.XLim = [0 length(T_spec_N)+10];
-%     ax.XTickLabel = {'0','5','10','15','20','25'};
-ax.YLabel.String = 'Specific Roughness (aspers/Bark)';
-hold off;
-
-% Specific roughness spectrogram
-subplot(2,2,3)
-imagesc(TimePoints, 0.1:0.1:24,ri_mat);
-%     cH = colorbar;
-set(gca,'YDir','normal');
-ax=gca;
-axis tight;
-ax.Title.String = 'Specific Roughness';
-ax.XLabel.String = 'Time (s)';
-ax.YLabel.String = 'Critical Band Rate (Bark)';
-hold off;
-
-% ******** AARAE RESULTS LEAVES **********
 if isstruct(IN)
+    % ********* TABLES *********
+    
+    % Roughness statistics, adopted from Loudness_MG2b code
+    Rmean = mean(R_mat);
+    Rstd = std(R_mat);
+    Rmax = max(R_mat);
+    R1 = prctile(R_mat,99);
+    R2 = prctile(R_mat,98);
+    R3 = prctile(R_mat,97);
+    R4 = prctile(R_mat,96);
+    R5 = prctile(R_mat,95);
+    R10 = prctile(R_mat,90);
+    R20 = prctile(R_mat,80);
+    R30 = prctile(R_mat,70);
+    R40 = prctile(R_mat,60);
+    R50 = median(R_mat);
+    R60 = prctile(R_mat,40);
+    R70 = prctile(R_mat,30);
+    R80 = prctile(R_mat,20);
+    R90 = prctile(R_mat,10);
+    Rmin = min(R_mat);
+    
+    dataR = [Rmean;Rstd;Rmax;R1;R2;R3;R4;R5;R10;R20;R30;R40;R50;R60;R70;R80;R90;Rmin];
+    
+    % generate tables of results
+    
+    fig1 = figure('Name','Time-varying Roughness (D&W) Statistics');
+    table1 = uitable('Data',dataR,...
+        'ColumnName',{'Roughness'},...
+        'RowName',{'Mean','Standard deviation','Maximum',...
+        'R1','R2','R3','R4',...
+        'R5','R10','R20','R30','R40','R50 (median)','R60',...
+        'R70','R80','R90','Minimum'});
+    
+    [~,tables] = disptables(fig1,table1); % AARAE function
+    
+    OUT.tables = tables;
+    
+    % ********* CHARTS *********
+    % Figure for charts
+    figure('Name',['Roughness (D&W) of ',name])
+    
+    subplot(2,2,1:2)
+    
+    % Time-varying roughness
+    plot(TimePoints,R_mat,'r-');
+    title ('Time-Varying Roughness');
+    xlabel('Time (s)');
+    ylabel('Roughness (asper)');
+    
+    % Time-averaged roughness as a fucntion of critical band
+    % figure
+    subplot(2,2,4)
+    plot((1:47)'/2, mean(ri_mat,2),'r-');
+    ax=gca;
+    ax.Title.String = 'Time-Averaged Roughness';
+    ax.XLabel.String = 'Critical Band Rate (Bark)';
+    %     ax.XLim = [0 length(T_spec_N)+10];
+    %     ax.XTickLabel = {'0','5','10','15','20','25'};
+    ax.YLabel.String = 'Specific Roughness (aspers/Bark)';
+    hold off;
+    
+    % Specific roughness spectrogram
+    subplot(2,2,3)
+    imagesc(TimePoints, 0.1:0.1:24,ri_mat);
+    %     cH = colorbar;
+    set(gca,'YDir','normal');
+    ax=gca;
+    axis tight;
+    ax.Title.String = 'Specific Roughness';
+    ax.XLabel.String = 'Time (s)';
+    ax.YLabel.String = 'Critical Band Rate (Bark)';
+    hold off;
+    
+    % ******** AARAE RESULTS LEAVES **********
+    
     % Time-varying roughness results leaf
     doresultleaf(R_mat','Roughness [asper]',{'time'},...
         'Time',TimePoints','s',true,...
@@ -681,16 +682,21 @@ if isstruct(IN)
     OUT.funcallback.name = 'RoughnessDW.m';
     OUT.funcallback.inarg = {fs,cal};
 else
-    OUT = R_mat;
-    varargout{1} = R_mat;
-    varargout{2} = ri_mat;
-    varargout{3} = TimePoints;
-    varargout{4} = (1:47)'/2;
+    % output numbers only
+    OUT = R_mat; % roughness
+    varargout{1} = ri_mat; % time-varying specific roughness
+    varargout{2} = mean(ri_mat,2); % mean specific roughness
+    varargout{3} = TimePoints; % time
+    varargout{4} = (1:47)'/2; % critical band rate (for specific roughness)
 end
-
-
-
-
-
-
-
+% THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS 
+% "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED
+% TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A 
+% PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER
+% OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+% EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+% PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+% PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+% LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING 
+% NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+% SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.

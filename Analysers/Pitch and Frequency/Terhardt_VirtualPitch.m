@@ -27,18 +27,16 @@ function [OUT] = Terhardt_VirtualPitch(IN,timestep,PitchShift,MINWEIGHT,MMAX,SPW
 % Version 1.00 May 2015
 
 % ***********************************************************************
-if nargin ==1
-    if isstruct(IN)
-        if isfield(IN,'cal')
-            cal = IN.cal;
-        else
-            cal = 70; % a useable cal offset for typical recordings
-        end
+if isstruct(IN)
+    if isfield(IN,'cal')
+        cal = IN.cal;
+    else
+        cal = 70; % a useable cal offset for typical recordings
     end
-    
-    
-    
-    
+end
+
+if nargin ==1
+
     param = inputdlg({'Time step between windows (ms) - normally < 80 ms';... % These are the input box titles in the
         'Apply pitch shift [0 | 1]';...
         'Minimum weight to output';...
