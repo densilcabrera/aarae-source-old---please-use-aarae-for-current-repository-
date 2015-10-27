@@ -59,7 +59,7 @@ end
 
 if nargin == 1
     prompt = {'Desired cal value (dB)'};
-    dlg_title = 'Gain';
+    dlg_title = 'Reset calibration';
     num_lines = 1;
     def = {'0'};
     answer = inputdlg(prompt,dlg_title,num_lines,def);
