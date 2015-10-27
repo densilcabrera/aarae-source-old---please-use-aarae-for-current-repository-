@@ -4,8 +4,8 @@ function [OUT, varargout] = RoughnessDW(IN,fs,cal)
 % Daniel, P., & Weber, R. (1997). Psychoacoustical roughness: implementation
 % of an optimized model. Acustica(83), 113-123.
 %
-% Reference signal: 60dB 1kHz tone 100% modulated at 70 Hz should output 1
-% asper.
+% Reference signal: 60 dB 1 kHz tone 100% modulated at 70 Hz should yield
+% 1 asper.
 %
 % Only 1 channel of audio will be analysed.
 %
@@ -639,7 +639,7 @@ if isstruct(IN)
     xlabel('Time (s)');
     ylabel('Roughness (asper)');
     
-    % Time-averaged roughness as a fucntion of critical band
+    % Time-averaged roughness as a function of critical band
     % figure
     subplot(2,2,4)
     plot((1:47)'/2, mean(ri_mat,2),'r-');
