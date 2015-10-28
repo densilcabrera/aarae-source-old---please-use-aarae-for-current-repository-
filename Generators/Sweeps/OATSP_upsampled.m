@@ -113,7 +113,10 @@ if ~isempty(param) || nargin ~=0
 
     
     if donorm == 1
-        S = S ./ max(abs(S));
+        IRscalingfactor = max(abs(S));
+        S = S ./ IRscalingfactor;
+    else
+        IRscalingfactor = 1;
     end
     
     if reverse == 1
@@ -134,6 +137,7 @@ if ~isempty(param) || nargin ~=0
     OUT.properties.resample_beta = resample_beta;
     OUT.properties.freq = [0, fs1/2];
     OUT.properties.reverse = reverse;
+    OUT.properties.IRscalingfactor = IRscalingfactor; % used by convolveaudiowithaudio2.m
     OUT.funcallback.name = 'OATSP_upsampled.m';
     OUT.funcallback.inarg = {dur,upsamplingfactor,resample_n,resample_beta,mratio,fs,donorm,reverse};
 else

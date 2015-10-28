@@ -55,7 +55,10 @@ if ~isempty(param) || nargin ~=0
     S = flipud(Sinv);
     
     if donorm == 1
-        S = S ./ max(abs(S));
+        IRscalingfactor = max(abs(S));
+        S = S ./ IRscalingfactor;
+    else
+        IRscalingfactor = 1;
     end
     
     if reverse == 1
@@ -73,6 +76,7 @@ if ~isempty(param) || nargin ~=0
     OUT.properties.N = N;
     OUT.properties.freq = [0, fs/2];
     OUT.properties.reverse = reverse;
+    OUT.properties.IRscalingfactor = IRscalingfactor; % used by convolveaudiowithaudio2.m
     OUT.funcallback.name = 'OATSP.m';
     OUT.funcallback.inarg = {dur,mratio,fs,donorm,reverse};
 else

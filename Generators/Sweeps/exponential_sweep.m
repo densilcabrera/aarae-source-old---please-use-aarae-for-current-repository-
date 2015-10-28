@@ -1,6 +1,9 @@
-% Generates a exponential sweep and its inverse for IR measurement
-%
 function OUT = exponential_sweep(dur,start_freq,end_freq,fs,reverse,rcos_ms)% generates an exponentially swept
+% This function generates an exponential sweep (also known as logarithmic
+% sweep), which is one of the most commonly used test signals for measuring
+% impulse responses.
+
+
 % signal S, starting at start_freq Hz and ending at end_freq Hz,
 % for duration = dur seconds long, and an
 % amplitude of ampl = 0.5, with a raised cosine window applied for rcos_ms = 15 ms.
@@ -33,7 +36,7 @@ if ~isempty(param) || nargin ~=0
     SI = 1/fs;
     ampl = 0.5;
     %rcos_ms = 15;
-    scale_inv = 0;
+    scale_inv = 1;
     if 2*round((rcos_ms*1e-3))>dur, rcos_ms = 15; end
 
     w1 = 2*pi*start_freq; w2 = 2*pi*end_freq;
@@ -42,7 +45,7 @@ if ~isempty(param) || nargin ~=0
     t = [0:round(dur/SI)-1]*SI;
     phi = K*(exp(t*L) - 1);
     freq = K*L*exp(t*L);
-    freqaxis = freq/(2*pi);
+    %freqaxis = freq/(2*pi);
     amp_env = 10.^((log10(0.5))*log2(freq/freq(1)));
     S = ampl*sin(phi);
     rcos_len = round(length(S)*((rcos_ms*1e-3)/dur));
@@ -62,8 +65,11 @@ if ~isempty(param) || nargin ~=0
        index = round(mid_freq/(fs/sig_len));
        const1 = abs(conj(fftS(index))/(abs(fftS(index))^2));
        const2 = abs(Sinvfft(index));
-       ratio = const1/const2;
-       Sinv = Sinv * ratio;
+       IRscalingfactor = const1/const2;
+       % Sinv = Sinv * IRscalingfactor; % scaling factor is applied in
+       % convolveaudiowithaudio2
+    else
+        IRscalingfactor = 1;
     end
     
     if reverse
@@ -80,6 +86,8 @@ if ~isempty(param) || nargin ~=0
     OUT.properties.freq = [start_freq, end_freq];
     OUT.properties.reverse = reverse;
     OUT.properties.rcos_ms = rcos_ms;
+    OUT.properties.scale_inv = scale_inv;
+    OUT.properties.IRscalingfactor = IRscalingfactor; % used by convolveaudiowithaudio2.m
     OUT.funcallback.name = 'exponential_sweep.m';
     OUT.funcallback.inarg = {dur,start_freq,end_freq,fs,reverse,rcos_ms};
 else

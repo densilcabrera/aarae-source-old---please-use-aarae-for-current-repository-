@@ -47,6 +47,16 @@ if ~isempty(param) || nargin ~=0
     else
         Sinv = flipud(S);
     end
+    
+    % IR scaling factor (this could be done much more simply)
+    fftS = fft(S);
+    Sinvfft = fft(Sinv);
+    mid_freq = (start_freq + end_freq)/2;
+    index = round(mid_freq/(fs/sig_len));
+    const1 = abs(conj(fftS(index))/(abs(fftS(index))^2));
+    const2 = abs(Sinvfft(index));
+    IRscalingfactor = const1/const2;
+    
 
     OUT.audio = S;
     OUT.audio2 = Sinv;
@@ -55,6 +65,7 @@ if ~isempty(param) || nargin ~=0
     OUT.properties.dur = dur;
     OUT.properties.freq = [start_freq,end_freq];
     OUT.properties.reverse = reverse;
+    OUT.properties.IRscalingfactor = IRscalingfactor; % used by convolveaudiowithaudio2.m
     OUT.funcallback.name = 'linear_sweep.m';
     OUT.funcallback.inarg = {dur,start_freq,end_freq,reverse,fs};
 else

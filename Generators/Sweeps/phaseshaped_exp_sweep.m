@@ -105,7 +105,7 @@ if ~isempty(param) || nargin ~=0
     
     SI = 1/fs;
     ampl = 0.5;
-    scale_inv = 0;
+    scale_inv = 1;
     maxfreq = (fs/2) / 2^overshoot(2); % maximum possible frequency, taking overshoot into account
     if end_freq > maxfreq, end_freq = maxfreq; end
     
@@ -169,13 +169,17 @@ if ~isempty(param) || nargin ~=0
     
     
     if scale_inv == 1
-        fftS = fft(S);
-        mid_freq = (start_freq + end_freq)/2;
-        index = round(mid_freq/(fs/sig_len));
-        const1 = abs(conj(fftS(index))/(abs(fftS(index))^2));
-        const2 = abs(Sinvfft(index));
-        ratio = const1/const2;
-        Sinv = Sinv * ratio;
+       fftS = fft(S);
+       Sinvfft = fft(Sinv);
+       mid_freq = (start_freq + end_freq)/2;
+       index = round(mid_freq/(fs/sig_len));
+       const1 = abs(conj(fftS(index))/(abs(fftS(index))^2));
+       const2 = abs(Sinvfft(index));
+       IRscalingfactor = const1/const2;
+       % Sinv = Sinv * IRscalingfactor; % scaling factor is applied in
+       % convolveaudiowithaudio2
+    else
+        IRscalingfactor = 1;
     end
     
     if reverse
@@ -194,6 +198,7 @@ if ~isempty(param) || nargin ~=0
     OUT.properties.overshoot = overshoot;
     OUT.properties.filter_order = order;
     OUT.properties.overshoot = phase;
+    OUT.properties.IRscalingfactor = IRscalingfactor; % used by convolveaudiowithaudio2.m
     OUT.funcallback.name = 'phaseshaped_exp_sweep.m';
     OUT.funcallback.inarg = {dur,start_freq,end_freq,overshoot,order,fs,reverse,phase,tukeywinratio};
 else
