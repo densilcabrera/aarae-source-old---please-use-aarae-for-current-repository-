@@ -172,12 +172,14 @@ end
 ir=circshift(ir,1);
 
 if combinehalves == 1
-    ir(1:end/2,:,:,:,:,:) = ir(1:end/2,:,:,:,:,:) - ir(end/2+1:end,:,:,:,:,:);
+    ir(1:end/2,:,:,:,:,:) = (ir(1:end/2,:,:,:,:,:) - ir(end/2+1:end,:,:,:,:,:))./2;
     ir = ir(1:end/2,:,:,:,:,:);
 end
 
+scalingfactor = 1/length(audio2);
+
 if isstruct(IN)
-    OUT.audio = ir;
+    OUT.audio = ir * scalingfactor;
     if exist('chanID','var')
         OUT.chanID = chanID;
     end
