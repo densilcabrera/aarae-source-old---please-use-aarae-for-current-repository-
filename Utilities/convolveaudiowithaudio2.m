@@ -133,8 +133,14 @@ if isfield(IN,'properties') && isfield(IN.properties,'startflag')
             average = false;
         end
         startflag = IN.properties.startflag;
-        %len = startflag(2)-startflag(1);
-        len = size(S,1)-startflag(end);
+        minlen = startflag(2)-startflag(1); % minimum meaningful length, but too short if cycles overlap
+        maxlen = size(S,1)-startflag(end); % maximum possible length
+        % The following should be refined
+        if minlen < size(invS,1)
+            len = maxlen;
+        else
+            len = minlen;
+        end
         switch method
             case 1
                 % Synchronous average (excluding silent cycle)
