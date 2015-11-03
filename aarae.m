@@ -1272,7 +1272,7 @@ else
         '21. Time domain deconvolution of audio2 from audio';...
         '22. Time domain deconvolution of audio from audio2';...
         '23. Time domain deconvolution of time-reversed audio2 from audio';...
-        '24. Time domain deconvolution of time-reversed audio from audio2';
+        '24. Time domain deconvolution of time-reversed audio from audio2';...
         '25. Time domain convolution of audio with audio2';...
         '26. Time domain convolution of audio with time-reversed audio2'};
 
@@ -1304,73 +1304,95 @@ else
                 [IR,method,scalingmethod] = convolveaudiowithaudio2(audiodata,[],0,4,1);
                 nameprefix = 'X_';
             case 5
-                % Transfer function from audio2 to audio with no
-                % threshold
+                % Transfer function from audio2 to audio (-200 dB threshold)
                 [IR,method,scalingmethod] = convolveaudiowithaudio2(audiodata,[],0,5,1);
                 nameprefix = 'IR_';
             case 6
+                % Transfer function from audio2 to audio (-90 dB threshold)
                 [IR,method,scalingmethod] = convolveaudiowithaudio2(audiodata,[],0,6,1);
                 nameprefix = 'IR_';
             case 7
+                % Transfer function from audio2 to audio (-80 dB threshold)
                 [IR,method,scalingmethod] = convolveaudiowithaudio2(audiodata,[],0,7,1);
                 nameprefix = 'IR_';
             case 8
+                % Transfer function from audio2 to audio (-70 dB threshold)
                 [IR,method,scalingmethod] = convolveaudiowithaudio2(audiodata,[],0,8,1);
                 nameprefix = 'IR_';
             case 9
+                % Transfer function from reversed audio2 to audio (-200 dB threshold)
                 [IR,method,scalingmethod] = convolveaudiowithaudio2(audiodata,[],0,9,1);
                 nameprefix = 'IR_';
             case 10
+                % Transfer function from reversed audio2 to audio (-90 dB threshold)
                 [IR,method,scalingmethod] = convolveaudiowithaudio2(audiodata,[],0,10,1);
                 nameprefix = 'IR_';
             case 11
+                % Transfer function from reversed audio2 to audio (-80 dB threshold)
                 [IR,method,scalingmethod] = convolveaudiowithaudio2(audiodata,[],0,11,1);
                 nameprefix = 'IR_';
             case 12
+                % Transfer function from reversed audio2 to audio (-70 dB threshold)
                 [IR,method,scalingmethod] = convolveaudiowithaudio2(audiodata,[],0,12,1);
                 nameprefix = 'IR_';
             case 13
+                % 13. Transfer function from audio to audio2 (-200 dB threshold)
                 [IR,method,scalingmethod] = convolveaudiowithaudio2(audiodata,[],0,13,1);
                 nameprefix = 'IR_';
             case 14
+                % 14. Transfer function from audio to audio2 (-90 dB threshold)
                 [IR,method,scalingmethod] = convolveaudiowithaudio2(audiodata,[],0,14,1);
                 nameprefix = 'IR_';
             case 15
+                % 15. Transfer function from audio to audio2 (-80 dB threshold)
                 [IR,method,scalingmethod] = convolveaudiowithaudio2(audiodata,[],0,15,1);
                 nameprefix = 'IR_';
-            case 116
+            case 16
+                % 16. Transfer function from audio to audio2 (-70 dB threshold)
                 [IR,method,scalingmethod] = convolveaudiowithaudio2(audiodata,[],0,16,1);
                 nameprefix = 'IR_';
             case 17
+                % 17. Transfer function from reversed audio to audio2 (-200 dB threshold)
                 [IR,method,scalingmethod] = convolveaudiowithaudio2(audiodata,[],0,17,1);
                 nameprefix = 'IR_';
             case 18
+                % 18. Transfer function from reversed audio to audio2 (-90 dB threshold)
                 [IR,method,scalingmethod] = convolveaudiowithaudio2(audiodata,[],0,18,1);
                 nameprefix = 'IR_';
             case 19
+                % 19. Transfer function from reversed audio to audio2 (-80 dB threshold)
                 [IR,method,scalingmethod] = convolveaudiowithaudio2(audiodata,[],0,19,1);
                 nameprefix = 'IR_';
             case 20
+                % 20. Transfer function from reversed audio to audio2 (-70 dB threshold)
                 [IR,method,scalingmethod] = convolveaudiowithaudio2(audiodata,[],0,20,1);
                 nameprefix = 'IR_';
             case 21
+                % 21. Time domain deconvolution of audio2 from audio
                 [IR,method,scalingmethod] = convolveaudiowithaudio2(audiodata,[],0,21,1);
                 nameprefix = 'X21_';
             case 22
+                % 22. Time domain deconvolution of audio from audio2
                 [IR,method,scalingmethod] = convolveaudiowithaudio2(audiodata,[],0,22,1);
                 nameprefix = 'X22_';
             case 23
+                % 23. Time domain deconvolution of time-reversed audio2 from audio
                 [IR,method,scalingmethod] = convolveaudiowithaudio2(audiodata,[],0,23,1);
                 nameprefix = 'X23_';
             case 24
+                % 24. Time domain deconvolution of time-reversed audio from audio2
                 [IR,method,scalingmethod] = convolveaudiowithaudio2(audiodata,[],0,24,1);
                 nameprefix = 'X24_';
             case 25
+                % 25. Time domain convolution of audio with audio2
                 [IR,method,scalingmethod] = convolveaudiowithaudio2(audiodata,[],0,25,1);
                 nameprefix = 'X25_';
             case 26
+                % 26. Time domain convolution of audio with time-reversed audio2
                 [IR,method,scalingmethod] = convolveaudiowithaudio2(audiodata,[],0,26,1);
                 nameprefix = 'X26_';
+                
+                % Auto-functions are not currently implemented here
 %             case 27
 %                 [IR,method,scalingmethod] = convolveaudiowithaudio2(audiodata,[],0,27,1);
 %                 nameprefix = 'X27_';
@@ -1398,7 +1420,6 @@ else
         guidata(hObject, handles);
         return
     end
-    
 end
 if ishandle(h), close(h); end
 if ~isempty(IR)
@@ -1524,10 +1545,34 @@ if ~isempty(IR)
                 fprintf(handles.fid,'calcmethod = 11; %% Transfer function from reversed audio2 to audio (-80 dB threshold)\n');
             case 12
                 fprintf(handles.fid,'calcmethod = 12; %% Transfer function from reversed audio2 to audio (-70 dB threshold)\n');
-%             case 13
-%                 fprintf(handles.fid,'calcmethod = 13; %% Convolution of audio2 with audio using Matlab''s conv function\n');
-%             case 14
-%                 fprintf(handles.fid,'calcmethod = 14; %% Deconvolution of audio2 from audio using Matlab''s conv function\n');
+            case 13
+                fprintf(handles.fid,'calcmethod = 13; %% Transfer function from audio to audio2 (-200 dB threshold)\n');
+            case 14
+                fprintf(handles.fid,'calcmethod = 14; %% Transfer function from audio to audio2 (-90 dB threshold)\n');
+            case 15
+                fprintf(handles.fid,'calcmethod = 15; %% Transfer function from audio to audio2 (-80 dB threshold)\n');
+            case 16
+                fprintf(handles.fid,'calcmethod = 16; %% Transfer function from audio to audio2 (-70 dB threshold)\n');
+            case 17
+                fprintf(handles.fid,'calcmethod = 17; %% Transfer function from reversed audio to audio2 (-200 dB threshold)\n');
+            case 18
+                fprintf(handles.fid,'calcmethod = 18; %% Transfer function from reversed audio to audio2 (-90 dB threshold)\n');
+            case 19
+                fprintf(handles.fid,'calcmethod = 19; %% Transfer function from reversed audio to audio2 (-80 dB threshold)\n');
+            case 20
+                fprintf(handles.fid,'calcmethod = 20; %% Transfer function from reversed audio to audio2 (-70 dB threshold)\n');
+            case 21
+                fprintf(handles.fid,'calcmethod = 21; %% Time domain deconvolution of audio2 from audio\n');
+            case 22
+                fprintf(handles.fid,'calcmethod = 22; %% Time domain deconvolution of audio from audio2\n');
+            case 23
+                fprintf(handles.fid,'calcmethod = 23; %% Time domain deconvolution of time-reversed audio2 from audio\n');
+            case 24
+                fprintf(handles.fid,'calcmethod = 24; %% Time domain deconvolution of time-reversed audio from audio2\n');
+            case 25
+                fprintf(handles.fid,'calcmethod = 25; %% Time domain convolution of audio with audio2\n');
+            case 26
+                fprintf(handles.fid,'calcmethod = 26; %% Time domain convolution of audio with time-reversed audio2\n');
         end
         switch method
             case 1
@@ -1546,6 +1591,12 @@ if ~isempty(IR)
                 fprintf(handles.fid,'method = 7; %% Select the cleanest single IR (best channel)\n');
             case 8
                 fprintf(handles.fid,'method = 8; %% Select the silent cycle or the IR with the lowest SNR (multichannel)\n');
+            case 9
+                fprintf(handles.fid,'method = 9; %% Exclude the IR with the lowest SNR (multichannel)\n');
+            case 10
+                fprintf(handles.fid,'method = 10; %% Stack of IRs cumulatively averaged from best to worst SNR, with silent cycle (if available)\n');
+            case 11
+                fprintf(handles.fid,'method = 11; %% Stack of IRs cumulatively averaged from best to worst SNR, with silent cycle (if available), and visualisation the stack\n');
         end
         
         fprintf(handles.fid,['X = convolveaudiowithaudio2(X,','method',',',num2str(scalingmethod),',calcmethod);\n']);

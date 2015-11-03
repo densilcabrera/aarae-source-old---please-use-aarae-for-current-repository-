@@ -45,13 +45,27 @@ function [OUT,method,scalingmethod] = convolveaudiowithaudio2(IN,method,scalingm
 % 10. Transfer function from reversed audio2 to audio (-90 dB threshold)
 % 11. Transfer function from reversed audio2 to audio (-80 dB threshold)
 % 12. Transfer function from reversed audio2 to audio (-70 dB threshold)
+% 13. Transfer function from audio to audio2 (-200 dB threshold)
+% 14. Transfer function from audio to audio2 (-90 dB threshold)
+% 15. Transfer function from audio to audio2 (-80 dB threshold)
+% 16. Transfer function from audio to audio2 (-70 dB threshold)
+% 17. Transfer function from reversed audio to audio2 (-200 dB threshold)
+% 18. Transfer function from reversed audio to audio2 (-90 dB threshold)
+% 19. Transfer function from reversed audio to audio2 (-80 dB threshold)
+% 20. Transfer function from reversed audio to audio2 (-70 dB threshold)
+% 21. Time domain deconvolution of audio2 from audio
+% 22. Time domain deconvolution of audio from audio2
+% 23. Time domain deconvolution of time-reversed audio2 from audio
+% 24. Time domain deconvolution of time-reversed audio from audio2
+% 25. Time domain convolution of audio with audio2
+% 26. Time domain convolution of audio with time-reversed audio2
 %
 % SCALINGMETHOD:
 % This is not fully implemented yet and the particular scaling methods are
 % likely to change in a future revision. Currenly aarae.m does not use
-% scalingmethod (i.e. scalingmethod = 0, no scaling).
-%
-%
+% scalingmethod (i.e. scalingmethod = 0, no scaling). (However, some
+% generators create a properties.IRscalingfactor field, which is used
+% within this function for impulse response scaling.)
 
 
 S = IN.audio;
@@ -546,6 +560,7 @@ switch method
         if isfield(IN.properties,'relgain')
             if isinf(IN.properties.relgain(1))
                 IR = IR(:,:,:,2:end,:,:);
+                dim4=dim4-1;
             end
         end
         IRtemp = zeros(len,chans,bands,dim4*dim5*dim6);
