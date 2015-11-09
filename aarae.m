@@ -5251,7 +5251,7 @@ if ~isempty(click) && ((click == handles.axesfreq) || (get(click,'Parent') == ha
             if units_type == 1
                 linea = 10.*log10(linea.^2 ./  units_ref.^2);
             else
-                linea = 10.*log10(linea.^2 ./  units_ref.^0.5);
+                linea = 10.*log10(linea.^2 ./  units_ref);
             end
             units_string = '';
         end
