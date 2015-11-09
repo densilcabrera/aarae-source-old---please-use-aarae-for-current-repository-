@@ -140,7 +140,7 @@ if nargout(handles.funname) == 1
                 while isfield(handles,matlab.lang.makeValidName([handles.funname,'_',num2str(index)])) == 1
                     index = index + 1;
                 end
-                handles.funname = [handles.funname,'_',num2str(index)];
+                handles.funname = matlab.lang.makeValidName([handles.funname,'_',num2str(index)]);
             end
             signaldata.name = handles.funname;
             % Save as you go

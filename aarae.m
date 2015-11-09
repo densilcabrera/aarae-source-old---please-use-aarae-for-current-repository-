@@ -1449,7 +1449,7 @@ if ~isempty(IR)
     
     % Create new leaf and update the tree
     handles.mytree.setSelectedNode(handles.root);
-    newleaf = [nameprefix selectedNodes(1).getName.char];
+    newleaf = matlab.lang.makeValidName([nameprefix selectedNodes(1).getName.char]);
     leafname = isfield(handles,matlab.lang.makeValidName(newleaf));
     if leafname == 1
         index = 1;
@@ -1459,7 +1459,7 @@ if ~isempty(IR)
         while isfield(handles,matlab.lang.makeValidName([newleaf,'_',num2str(index)])) == 1
             index = index + 1;
         end
-        newleaf = [newleaf,'_',num2str(index)];
+        newleaf = matlab.lang.makeValidName([newleaf,'_',num2str(index)]);
     end
     if ~isempty(getappdata(hMain,'testsignal'))
         signaldata = audiodata;
@@ -3797,7 +3797,7 @@ for nleafs = 1:length(selectedNodes)
     if ~isempty(processed)
         % Generate new leaf and update tree
         newleaf = cell(1,1);
-        newleaf{1,1} = [name ' ' char(processed.funcallback.inarg{1,1})];
+        newleaf{1,1} = matlab.lang.makeValidName([name '_' char(processed.funcallback.inarg{1,1})]);
         if ~isempty(signaldata)
             if isstruct(processed)
                 dif = intersect(fieldnames(signaldata),fieldnames(processed));
@@ -3840,13 +3840,13 @@ for nleafs = 1:length(selectedNodes)
             while isfield(handles,matlab.lang.makeValidName([newleaf{1,1},'_',num2str(index)])) == 1
                 index = index + 1;
             end
-            newleaf{1,1} = [newleaf{1,1},'_',num2str(index)];
+            newleaf{1,1} = matlab.lang.makeValidName([newleaf{1,1},'_',num2str(index)]);
         end
         
         newdata_fields = fieldnames(newdata);
         newdata_emptyfields = structfun(@isempty,newdata);
         newdata = rmfield(newdata,newdata_fields(newdata_emptyfields));
-        newdata.name = newleaf{1,1};
+        newdata.name = matlab.lang.makeValidName(newleaf{1,1});
         
         % Save as you go
         save([cd '/Utilities/Backup/' newleaf{1,1} '.mat'], 'newdata','-v7.3');
@@ -4154,7 +4154,7 @@ for nleafs = 1:length(selectedNodes)
                 % remove suffix if present
                 C = strsplit(char(file(multi,:)),'.');
                 file1 = C{1};
-                newleaf{1,1} = [name ' ' file1];
+                newleaf{1,1} = matlab.lang.makeValidName([name '_' file1]);
                 if ~isempty(signaldata)
                     if isstruct(processed)
                         dif = intersect(fieldnames(signaldata),fieldnames(processed));
@@ -4196,13 +4196,13 @@ for nleafs = 1:length(selectedNodes)
                         while isfield(handles,matlab.lang.makeValidName([newleaf{1,1},'_',num2str(index)])) == 1
                             index = index + 1;
                         end
-                        newleaf{1,1} = [newleaf{1,1},'_',num2str(index)];
+                        newleaf{1,1} = matlab.lang.makeValidName([newleaf{1,1},'_',num2str(index)]);
                     end
                     
                     newdata_fields = fieldnames(newdata);
                     newdata_emptyfields = structfun(@isempty,newdata);
                     newdata = rmfield(newdata,newdata_fields(newdata_emptyfields));
-                    newdata.name = newleaf{1,1};
+                    newdata.name = matlab.lang.makeValidName(newleaf{1,1});
                     
                     % Save as you go
                     save([cd '/Utilities/Backup/' newleaf{1,1} '.mat'], 'newdata','-v7.3');
@@ -4232,7 +4232,6 @@ for nleafs = 1:length(selectedNodes)
                         end
                         handles.(matlab.lang.makeValidName(newleaf{1,1})) = uitreenode('v0', newleaf{1,1},  newleaf{1,1},  iconPath, true);
                         handles.(matlab.lang.makeValidName(newleaf{1,1})).UserData = newdata;
-                        
                         handles.results.add(handles.(matlab.lang.makeValidName(newleaf{1,1})));
                         handles.mytree.reloadNode(handles.results);
                         handles.mytree.expand(handles.results);
@@ -4483,7 +4482,7 @@ for nleafs = 1:length(selectedNodes)
             aarae_fig = findobj('Tag','aarae');
             handles = guidata(aarae_fig);
             newleaf = cell(1,1);
-            newleaf{1,1} = [char(selectedNodes(nleafs).getName) ' ' funname];
+            newleaf{1,1} = matlab.lang.makeValidName([char(selectedNodes(nleafs).getName) '_' funname]);
             if ~isempty(out)
                 signaldata = out;
                 signaldata.datatype = 'results';
@@ -4504,7 +4503,7 @@ for nleafs = 1:length(selectedNodes)
                         while isfield(handles,matlab.lang.makeValidName([newleaf{1,1},'_',num2str(index)])) == 1
                             index = index + 1;
                         end
-                        newleaf{1,1} = [newleaf{1,1},'_',num2str(index)];
+                        newleaf{1,1} = matlab.lang.makeValidName([newleaf{1,1},'_',num2str(index)]);
                     end
                     
                     signaldata_fields = fieldnames(signaldata);

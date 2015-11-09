@@ -100,9 +100,9 @@ function varargout = genaudio_OutputFcn(hObject, ~, handles)
 % Get default command line output from handles structure
 if ~isempty(handles.signaldata)
     if isfield(handles.signaldata,'tag')
-        handles.newleaf = handles.signaldata.tag;
+        handles.newleaf = matlab.lang.makeValidName(handles.signaldata.tag);
     else
-        handles.newleaf = 'Audio signal';
+        handles.newleaf = 'AudioSignal';
     end
 end
 varargout{1} = handles.newleaf;

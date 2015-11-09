@@ -927,6 +927,7 @@ end
 guidata(hObject,handles);
 
 
+% write to new
 % --- Executes on button press in wn_btn.
 function wn_btn_Callback(hObject, ~, handles) %#ok : Executed when Write to new button is clicked
 % hObject    handle to wn_btn (see GCBO)
@@ -986,14 +987,14 @@ function IN_name_Callback(hObject, ~, handles) %#ok : Executed when the content 
 % Hints: get(hObject,'String') returns contents of IN_name as text
 %        str2double(get(hObject,'String')) returns contents of IN_name as a double
 if ~isempty(get(hObject,'String'))
-    handles.selNodeName = get(hObject,'String');
+    handles.selNodeName = matlab.lang.makeValidName(get(hObject,'String'));
 else
-    set(hObject,'String',handles.selNodeName)
+    set(hObject,'String',matlab.lang.makeValidName(handles.selNodeName))
 end
 % handles.testsignal.name = [handles.selNodeName '_edit'];
 % fprintf(handles.fid,['%% New name: ', [handles.selNodeName '_edit'],'\n']);
-handles.testsignal(2).name = handles.selNodeName;
-fprintf(handles.fid,['%% New name: ', handles.selNodeName,'\n']);
+handles.testsignal(2).name = matlab.lang.makeValidName(handles.selNodeName);
+fprintf(handles.fid,['%% New name: ', matlab.lang.makeValidName(handles.selNodeName),'\n']);
 guidata(hObject,handles)
 
 % --- Executes during object creation, after setting all properties.

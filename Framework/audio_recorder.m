@@ -631,7 +631,7 @@ else
         handles.recording.properties.units_ref = handles.syscalstats.units_ref;
         handles.recording.properties.units_type = handles.syscalstats.units_type;
     end
-    name = get(handles.IN_name,'String');
+    name = matlab.lang.makeValidName(get(handles.IN_name,'String'));
     if isempty(name), name = 'untitled'; end
     setappdata(hMain,'signalname',name);
 end
