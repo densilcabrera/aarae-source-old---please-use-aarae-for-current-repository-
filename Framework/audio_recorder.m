@@ -625,7 +625,12 @@ else
     end
     % Potentially add dim5ID or outchanID here (once its name is defined).
     % should it be a property or a first order field?
-    if get(handles.cal_chk,'Value') == 1, handles.recording.cal = handles.syscalstats.cal(1:size(handles.recording.audio,2)); end
+    if get(handles.cal_chk,'Value') == 1
+        handles.recording.cal = handles.syscalstats.cal(1:size(handles.recording.audio,2));
+        handles.recording.properties.units = handles.syscalstats.units;
+        handles.recording.properties.units_ref = handles.syscalstats.units_ref;
+        handles.recording.properties.units_type = handles.syscalstats.units_type;
+    end
     name = get(handles.IN_name,'String');
     if isempty(name), name = 'untitled'; end
     setappdata(hMain,'signalname',name);
@@ -966,6 +971,15 @@ if isfield(syscalstats,'cal')% && ~isnan(syscalstats.cal)
     end
     set(handles.cal_chk,'Enable','on','Value',1)
     set(handles.caltext,'String',[num2str(handles.syscalstats.cal) ' dB'])
+end
+if isfield(syscalstats,'units')
+    handles.syscalstats.units = syscalstats.units;
+end
+if isfield(syscalstats,'units_ref')
+    handles.syscalstats.units_ref = syscalstats.units_ref;
+end
+if isfield(syscalstats,'units')
+    handles.syscalstats.units_type = syscalstats.units_type;
 end
 if isfield(syscalstats,'invfilter') && ~isempty(syscalstats.invfilter)
     if isfield(handles.syscalstats,'invfilter')

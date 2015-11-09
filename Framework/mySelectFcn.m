@@ -155,6 +155,8 @@ function mySelectFcn(tree, ~)
             plot(mainHandles.axesfreq,0,0)
             set(mainHandles.axestime,'Visible','off');
             set(mainHandles.axesfreq,'Visible','off');
+            set(mainHandles.time_units_display,'Visible','off');
+            set(mainHandles.freq_units_display,'Visible','off');
             set([mainHandles.text16,mainHandles.text17,mainHandles.text18,mainHandles.text19,mainHandles.text20,mainHandles.text21],'Visible','off')
             if isfield(audiodata,'data') || isfield(audiodata,'tables')
                 set(mainHandles.axesdata,'Visible','on');

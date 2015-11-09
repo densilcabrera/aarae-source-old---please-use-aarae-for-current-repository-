@@ -26,13 +26,73 @@ plottype = get(handles.(matlab.lang.makeValidName([axes '_popup'])),'Value');
 %end
 if isfield(signaldata,'cal') && handles.Settings.calibrationtoggle == 1
     if size(linea,2) == length(signaldata.cal)
-        signaldata.cal(isnan(signaldata.cal)) = 0;
+                        if isfield(signaldata,'properties')
+                    if isfield(signaldata.properties,'units')
+                        units = signaldata.properties.units;
+                    else
+                        units = '';
+                    end
+                    if isfield(signaldata.properties,'units_ref')
+                        units_ref = signaldata.properties.units_ref;
+                    else
+                        units_ref = 1;
+                    end
+                    if isfield(signaldata.properties,'units_type')
+                        units_type = signaldata.properties.units_type;
+                    else
+                        units_type = 1;
+                    end
+                else
+                    units = '';
+                    units_ref = 1;
+                    units_type = 1;
+                end
+                signaldata.cal(isnan(signaldata.cal)) = 0;
+                if units_type == 1
+                    linea = linea * units_ref;
+                    signaldata.cal = signaldata.cal ./ 10.^(units_ref/20);
+                else
+                    linea = linea * units_ref.^0.5;
+                    signaldata.cal = signaldata.cal ./ 10.^(units_ref/10);
+                end
         linea = linea.*repmat(10.^(signaldata.cal./20),length(linea),1);
     elseif ~ismatrix(signaldata.audio) && size(signaldata.audio,2) == length(signaldata.cal)
-        signaldata.cal(isnan(signaldata.cal)) = 0;
+                        if isfield(signaldata,'properties')
+                    if isfield(signaldata.properties,'units')
+                        units = signaldata.properties.units;
+                    else
+                        units = '';
+                    end
+                    if isfield(signaldata.properties,'units_ref')
+                        units_ref = signaldata.properties.units_ref;
+                    else
+                        units_ref = 1;
+                    end
+                    if isfield(signaldata.properties,'units_type')
+                        units_type = signaldata.properties.units_type;
+                    else
+                        units_type = 1;
+                    end
+                else
+                    units = '';
+                    units_ref = 1;
+                    units_type = 1;
+                end
+                signaldata.cal(isnan(signaldata.cal)) = 0;
+                if units_type == 1
+                    linea = linea * units_ref;
+                    signaldata.cal = signaldata.cal ./ 10.^(units_ref/20);
+                else
+                    linea = linea * units_ref.^0.5;
+                    signaldata.cal = signaldata.cal ./ 10.^(units_ref/10);
+                end
         cal = repmat(signaldata.cal(str2double(get(handles.IN_nchannel,'String'))),1,size(linea,2));
         linea = linea.*repmat(10.^(cal./20),length(linea),1);
     end
+else
+    units = '';
+    units_ref = 1;
+    units_type = 1;
 end
 fftlength = length(linea);
 set(handles.(matlab.lang.makeValidName(['smooth' axes '_popup'])),'Visible','off');
@@ -48,12 +108,18 @@ switch handles.Settings.specmagscale;
 end
 if plottype == 1, linea = real(linea); end
 if plottype == 2, linea = linea.^2; end
-if plottype == 3, linea = 10.*log10(linea.^2); end
+if plottype == 3
+    if units_type == 1
+        linea = 10.*log10(linea.^2 ./ units_ref.^2);
+    else
+        linea = 10.*log10(linea.^2 ./ units_ref);
+    end
+end
 if plottype == 4, linea = abs(hilbert(real(linea))); end
 if plottype == 5, linea = medfilt1(diff([angle(hilbert(real(linea))); zeros(1,size(linea,2))])*signaldata.fs/2/pi, 5); end
 if plottype == 6, linea = abs(linea); end
 if plottype == 7, linea = imag(linea); end
-if plottype == 8, linea = 10*log10(abs(fft(linea).*spectscale).^2); end %freq
+if plottype == 8, linea = 10*log10(abs(fft(linea).*spectscale  ./ units_ref).^2); end %freq
 if plottype == 9, linea = (abs(fft(linea)).*spectscale).^2; end
 if plottype == 10, linea = abs(fft(linea)).*spectscale; end
 if plottype == 11, linea = real(fft(linea)).*spectscale; end
@@ -119,3 +185,33 @@ if plottype >= 8
         set(handles.(matlab.lang.makeValidName(['axes' axes])),'XTickLabel',num2str(get(handles.(matlab.lang.makeValidName(['axes' axes])),'XTick').'))
     end
 end
+
+switch plottype
+    case {1,4,6,7,10,11,12}
+        if ~isempty(units) && isfield(signaldata,'cal') && handles.Settings.calibrationtoggle == 1
+            if units_type == 1
+                units_text = units;
+            else
+                units_text = ['(' units ')^0.5'];
+            end
+            set(handles.(matlab.lang.makeValidName([axes '_units_display'])),'String',units_text);
+            set(handles.(matlab.lang.makeValidName([axes '_units_display'])),'Visible','on');
+        else
+            set(handles.(matlab.lang.makeValidName([axes '_units_display'])),'Visible','off');
+        end
+    case {2,9}
+        if ~isempty(units) && isfield(signaldata,'cal') && handles.Settings.calibrationtoggle == 1
+            if units_type == 2
+                units_text = units;
+            else
+                units_text = ['(' units ')^2'];
+            end
+            set(handles.(matlab.lang.makeValidName([axes '_units_display'])),'String',units_text);
+            set(handles.(matlab.lang.makeValidName([axes '_units_display'])),'Visible','on');
+        else
+            set(handles.(matlab.lang.makeValidName([axes '_units_display'])),'Visible','off');
+        end
+    otherwise
+        set(handles.(matlab.lang.makeValidName([axes '_units_display'])),'Visible','off');
+end
+

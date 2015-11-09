@@ -23,7 +23,7 @@ function varargout = aarae(varargin)
 
 % Edit the above text to modify the response to help aarae
 
-% Last Modified by GUIDE v2.5 15-Oct-2015 10:36:59
+% Last Modified by GUIDE v2.5 07-Nov-2015 18:13:07
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -1837,8 +1837,8 @@ if ~isempty(cal_level)
             handles.(signaldata.name).UserData = signaldata; % apply cal field directly to the audio loaded to the tree
             % selectedNodes(i).handle.UserData = signaldata; % produces error in MATLAB 2015b
         catch
-            warndlg('Sorry - an error occured in writing cal to the tree. Please let Densil know about this. As an alternative you can calibrate using cal_aarae in Processors\Basic (or in the edit window).','Bug!');
-            fprintf(handles.fid,'Sorry - an error occured in writing cal to the tree. Please let Densil know about this. As an alternative you can calibrate using cal_aarae in Processors\Basic (or in the edit window).');
+            warndlg('Sorry - an error occured in writing cal to the tree. Please let Densil know about this. As an alternative you can calibrate using cal_aarae in Processors-Basic (or in the edit window).','Bug!');
+            fprintf(handles.fid,'Sorry - an error occured in writing cal to the tree. Please let Densil know about this. As an alternative you can calibrate using cal_aarae in Processors-Basic (or in the edit window).');
         end
         selectedParent = selectedNodes(i).getParent;
         handles.mytree.reloadNode(selectedParent);
@@ -2339,6 +2339,34 @@ if handles.compareaudio == 1
             if isfield(signaldata,'cal') && cal_or_norm == 1  && handles.alternate~=1
                 if size(signaldata.audio,2) == length(signaldata.cal)
                     signaldata.cal(isnan(signaldata.cal)) = 0;
+                    if isfield(signaldata,'properties')
+                        if isfield(signaldata.properties,'units')
+                            units = signaldata.properties.units;
+                        else
+                            units = '';
+                        end
+                        if isfield(signaldata.properties,'units_ref')
+                            units_ref = signaldata.properties.units_ref;
+                        else
+                            units_ref = 1;
+                        end
+                        if isfield(signaldata.properties,'units_type')
+                            units_type = signaldata.properties.units_type;
+                        else
+                            units_type = 1;
+                        end
+                    else
+                        units = '';
+                        units_ref = 1;
+                        units_type = 1;
+                    end
+                    if units_type == 1
+                        signaldata.audio = signaldata.audio * units_ref;
+                        signaldata.cal = signaldata.cal ./ 10.^(units_ref/20);
+                    else
+                        signaldata.audio = signaldata.audio * units_ref.^0.5;
+                        signaldata.cal = signaldata.cal ./ 10.^(units_ref/10);
+                    end
                     signaldata.audio = signaldata.audio .* ...
                         repmat(10.^(signaldata.cal(:)'./20),[size(signaldata.audio,1),1,...
                         size(signaldata.audio,3),size(signaldata.audio,4),...
@@ -2371,7 +2399,17 @@ if handles.compareaudio == 1
             if plottype == 1
                 % REAL AMPLITUDE AS A FUNCTION OF TIME
                 signaldata.audio = real(signaldata.audio);
-                if cal_or_norm == 2
+                if cal_or_norm == 1
+                    if units_type == 1
+                        units_string = [' [' units ']'];
+                    else
+                        if ~isempty(units)
+                            units_string = [' [(' units ')^0.5]'];
+                        else
+                            units_string = '';
+                        end
+                    end
+                elseif cal_or_norm == 2
                     signaldata.audio = signaldata.audio...
                         ./ repmat(max(abs(signaldata.audio)),[size(signaldata.audio,1),1,1,1,1,1]);
                 elseif cal_or_norm == 3
@@ -2388,7 +2426,17 @@ if handles.compareaudio == 1
                 else
                     signaldata.audio = signaldata.audio.^2;
                 end
-                if cal_or_norm == 2
+                if cal_or_norm == 1
+                    if units_type == 2
+                        units_string = [' [' units ']'];
+                    else
+                        if ~isempty(units)
+                            units_string = [' [(' units ')^2]'];
+                        else
+                            units_string = '';
+                        end
+                    end
+                elseif cal_or_norm == 2
                     signaldata.audio = signaldata.audio...
                         ./ repmat(max(abs(signaldata.audio)),[size(signaldata.audio,1),1,1,1,1,1]);
                 elseif cal_or_norm == 3
@@ -2406,7 +2454,14 @@ if handles.compareaudio == 1
                 else
                     signaldata.audio = 10.*log10(signaldata.audio.^2);
                 end
-                if cal_or_norm == 2
+                if cal_or_norm == 1
+                    if units_type == 1
+                        signaldata.audio = signaldata.audio - 20*log10(units_ref);
+                    else
+                        signaldata.audio = signaldata.audio - 10*log10(units_ref);
+                    end
+                    units_string = ' [dB]';
+                elseif cal_or_norm == 2
                     signaldata.audio = signaldata.audio...
                         - repmat(max(signaldata.audio),[size(signaldata.audio,1),1,1,1,1,1]);
                 elseif cal_or_norm == 3
@@ -2431,7 +2486,17 @@ if handles.compareaudio == 1
                     signaldata.audio = filter(ones(1,smoothingmethod)/smoothingmethod,...
                         1,signaldata.audio);
                 end
-                if cal_or_norm == 2
+                if cal_or_norm == 1
+                    if units_type == 1
+                        units_string = [' [' units ']'];
+                    else
+                        if ~isempty(units)
+                            units_string = [' [(' units ')^0.5]'];
+                        else
+                            units_string = '';
+                        end
+                    end
+                elseif cal_or_norm == 2
                     signaldata.audio = signaldata.audio...
                         ./ repmat(max(abs(signaldata.audio)),[size(signaldata.audio,1),1,1,1,1,1]);
                 elseif cal_or_norm == 3
@@ -2469,7 +2534,17 @@ if handles.compareaudio == 1
                 else
                     signaldata.audio = abs(signaldata.audio);
                 end
-                if cal_or_norm == 2
+                if cal_or_norm == 1
+                    if units_type == 1
+                        units_string = [' [' units ']'];
+                    else
+                        if ~isempty(units)
+                            units_string = [' [(' units ')^0.5]'];
+                        else
+                            units_string = '';
+                        end
+                    end
+                elseif cal_or_norm == 2
                     signaldata.audio = signaldata.audio...
                         ./ repmat(max(abs(signaldata.audio)),[size(signaldata.audio,1),1,1,1,1,1]);
                 elseif cal_or_norm == 3
@@ -2481,7 +2556,17 @@ if handles.compareaudio == 1
             if plottype == 7
                 % IMAGINARY AMPLITUDE AS A FUNCTION OF TIME
                 signaldata.audio = imag(signaldata.audio);
-                if cal_or_norm == 2 && mean(mean(mean(mean(mean(max(abs(signaldata.audio))))))) > 0
+                if cal_or_norm == 1
+                    if units_type == 1
+                        units_string = [' [' units ']'];
+                    else
+                        if ~isempty(units)
+                            units_string = [' [(' units ')^0.5]'];
+                        else
+                            units_string = '';
+                        end
+                    end
+                elseif cal_or_norm == 2 && mean(mean(mean(mean(mean(max(abs(signaldata.audio))))))) > 0
                     signaldata.audio = signaldata.audio...
                         ./ repmat(max(abs(signaldata.audio)),[size(signaldata.audio,1),1,1,1,1,1]);
                 elseif cal_or_norm == 3
@@ -2534,7 +2619,9 @@ if handles.compareaudio == 1
                     f = f(f>lowlimit);
                     signaldata.audio = 10*log10(signaldata.audio);
                 end
-                if cal_or_norm == 2
+                if cal_or_norm == 1
+                    units_string = ' [dB]';
+                elseif cal_or_norm == 2
                     signaldata.audio = signaldata.audio...
                         - repmat(max(signaldata.audio),[size(signaldata.audio,1),1,1,1,1,1]);
                 elseif cal_or_norm == 3
@@ -2562,7 +2649,17 @@ if handles.compareaudio == 1
                     signaldata.audio = signaldata.audio(f>lowlimit,:,:,:,:,:);
                     f = f(f>lowlimit);
                 end
-                if cal_or_norm == 2
+                if cal_or_norm == 1
+                    if units_type == 2
+                        units_string = [' [' units ']'];
+                    else
+                        if ~isempty(units)
+                            units_string = [' [(' units ')^2]'];
+                        else
+                            units_string = '';
+                        end
+                    end
+                elseif cal_or_norm == 2
                     signaldata.audio = signaldata.audio...
                         ./ repmat(max(abs(signaldata.audio)),[size(signaldata.audio,1),1,1,1,1,1]);
                 elseif cal_or_norm == 3
@@ -2590,7 +2687,17 @@ if handles.compareaudio == 1
                     signaldata.audio = signaldata.audio(f>lowlimit,:,:,:,:,:);
                     f = f(f>lowlimit);
                 end
-                if cal_or_norm == 2
+                if cal_or_norm == 1
+                    if units_type == 1
+                        units_string = [' [' units ']'];
+                    else
+                        if ~isempty(units)
+                            units_string = [' [(' units ')^0.5]'];
+                        else
+                            units_string = '';
+                        end
+                    end
+                elseif cal_or_norm == 2
                     signaldata.audio = signaldata.audio...
                         ./ repmat(max(abs(signaldata.audio)),[size(signaldata.audio,1),1,1,1,1,1]);
                 elseif cal_or_norm == 3
@@ -2602,7 +2709,17 @@ if handles.compareaudio == 1
             if plottype == 11
                 % REAL SPECTRUM
                 signaldata.audio = real(signaldata.audio).*spectscale;
-                if cal_or_norm == 2
+                if cal_or_norm == 1
+                    if units_type == 1
+                        units_string = [' [' units ']'];
+                    else
+                        if ~isempty(units)
+                            units_string = [' [(' units ')^0.5]'];
+                        else
+                            units_string = '';
+                        end
+                    end
+                elseif cal_or_norm == 2
                     signaldata.audio = signaldata.audio...
                         ./ repmat(max(abs(signaldata.audio)),[size(signaldata.audio,1),1,1,1,1,1]);
                 elseif cal_or_norm == 3
@@ -2614,7 +2731,17 @@ if handles.compareaudio == 1
             if plottype == 12
                 % IMAGINARY SPECTRUM
                 signaldata.audio = imag(signaldata.audio).*spectscale;
-                if cal_or_norm == 2
+                if cal_or_norm == 1
+                    if units_type == 1
+                        units_string = [' [' units ']'];
+                    else
+                        if ~isempty(units)
+                            units_string = [' [(' units ')^0.5]'];
+                        else
+                            units_string = '';
+                        end
+                    end
+                elseif cal_or_norm == 2
                     signaldata.audio = signaldata.audio...
                         ./ repmat(max(abs(signaldata.audio)),[size(signaldata.audio,1),1,1,1,1,1]);
                 elseif cal_or_norm == 3
@@ -2958,6 +3085,11 @@ if handles.compareaudio == 1
                                     if numberofsubplots-c < plotnum
                                         xlabel('Time [s]');
                                     end
+                                    if exist('units_string','var')
+                                        if rem(plotnum-1,c) == 0
+                                            ylabel(units_string);
+                                        end
+                                    end
                                 elseif strcmp(plotcategory,'Freqaxis')
                                     % FREQ X-AXIS
                                     h=subplot(r,c,plotnum);
@@ -2977,6 +3109,11 @@ if handles.compareaudio == 1
                                         set(h,'XScale','log')
                                     else
                                         set(h,'XScale','linear','XTickLabelMode','auto')
+                                    end
+                                    if exist('units_string','var')
+                                        if rem(plotnum-1,c) == 0
+                                            ylabel(units_string);
+                                        end
                                     end
                                 elseif plottype == 21 || plottype == 22 % strcmp(plotcategory,'Scatter3axis')
                                     mark = pointmark{mod(plotnum-1,12)+1};
@@ -4682,15 +4819,75 @@ if ~isempty(click) && ((click == handles.axestime) || (get(click,'Parent') == ha
             end
             cmap = colormap(lines(size(data,2)));
         end
-        if isfield(signaldata,'cal') && handles.Settings.calibrationtoggle == 1
+if isfield(signaldata,'cal') && handles.Settings.calibrationtoggle == 1
             if size(linea,2) == length(signaldata.cal)
+                if isfield(signaldata,'properties')
+                    if isfield(signaldata.properties,'units')
+                        units = signaldata.properties.units;
+                    else
+                        units = '';
+                    end
+                    if isfield(signaldata.properties,'units_ref')
+                        units_ref = signaldata.properties.units_ref;
+                    else
+                        units_ref = 1;
+                    end
+                    if isfield(signaldata.properties,'units_type')
+                        units_type = signaldata.properties.units_type;
+                    else
+                        units_type = 1;
+                    end
+                else
+                    units = '';
+                    units_ref = 1;
+                    units_type = 1;
+                end
+                if units_type == 1
+                    linea = linea * units_ref;
+                    signaldata.cal = signaldata.cal ./ 10.^(units_ref/20);
+                else
+                    linea = linea * units_ref.^0.5;
+                    signaldata.cal = signaldata.cal ./ 10.^(units_ref/10);
+                end
                 signaldata.cal(isnan(signaldata.cal)) = 0;
                 linea = linea.*repmat(10.^(signaldata.cal./20),length(linea),1);
             elseif ~ismatrix(signaldata.audio) && size(signaldata.audio,2) == length(signaldata.cal)
+                if isfield(signaldata,'properties')
+                    if isfield(signaldata.properties,'units')
+                        units = signaldata.properties.units;
+                    else
+                        units = '';
+                    end
+                    if isfield(signaldata.properties,'units_ref')
+                        units_ref = signaldata.properties.units_ref;
+                    else
+                        units_ref = 1;
+                    end
+                    if isfield(signaldata.properties,'units_type')
+                        units_type = signaldata.properties.units_type;
+                    else
+                        units_type = 1;
+                    end
+                else
+                    units = '';
+                    units_ref = 1;
+                    units_type = 1;
+                end
+                if units_type == 1
+                    linea = linea .* units_ref;
+                    signaldata.cal = signaldata.cal ./ 10.^(units_ref/20);
+                else
+                    linea = linea .* units_ref.^0.5;
+                    signaldata.cal = signaldata.cal ./ 10.^(units_ref/10);
+                end
                 signaldata.cal(isnan(signaldata.cal)) = 0;
                 cal = repmat(signaldata.cal(str2double(get(handles.IN_nchannel,'String'))),1,size(linea,2));
                 linea = linea.*repmat(10.^(cal./20),length(linea),1);
             end
+            else
+                units = '';
+                %units_ref = 1;
+                units_type = 1;
         end
         t = linspace(To,Tf,length(linea))./signaldata.fs;
         f = signaldata.fs .* ((1:length(linea))-1) ./ length(linea);
@@ -4707,29 +4904,156 @@ if ~isempty(click) && ((click == handles.axestime) || (get(click,'Parent') == ha
         h = figure;
         set(h,'DefaultAxesColorOrder',cmap);
         plottype = get(handles.time_popup,'Value');
-        if plottype == 1, linea = real(linea); end
-        if plottype == 2, linea = linea.^2; end
-        if plottype == 3, linea = 10.*log10(linea.^2); end
-        if plottype == 4, linea = abs(hilbert(real(linea))); end
-        if plottype == 5, linea = medfilt1(diff([angle(hilbert(real(linea))); zeros(1,size(linea,2))])*signaldata.fs/2/pi, 5); end
-        if plottype == 6, linea = abs(linea); end
-        if plottype == 7, linea = imag(linea); end
-        if plottype == 8, linea = 10*log10(abs(fft(linea).*spectscale).^2); end %freq
-        if plottype == 9, linea = (abs(fft(linea)).*spectscale).^2; end
-        if plottype == 10, linea = abs(fft(linea)).*spectscale; end
-        if plottype == 11, linea = real(fft(linea)).*spectscale; end
-        if plottype == 12, linea = imag(fft(linea)).*spectscale; end
-        if plottype == 13, linea = angle(fft(linea)); end
-        if plottype == 14, linea = unwrap(angle(fft(linea))); end
-        if plottype == 15, linea = angle(fft(linea)) .* 180/pi; end
-        if plottype == 16, linea = unwrap(angle(fft(linea))) ./(2*pi); end
-        if plottype == 17, linea = -diff(unwrap(angle(fft(linea)))).*length(linea)/(signaldata.fs*2*pi).*1000; end
+        if plottype == 1
+            linea = real(linea);
+            if units_type == 1
+                units_string = [' [' units ']'];
+            else
+                if ~isempty(units)
+                    units_string = [' [(' units ')^0.5]'];
+                else
+                    units_string = '';
+                end
+            end
+        end
+        if plottype == 2
+            linea = linea.^2; 
+            if units_type == 2
+                units_string = [' [' units ']'];
+            else
+                if ~isempty(units)
+                    units_string = [' [(' units ')^2]'];
+                else
+                    units_string = '';
+                end
+            end
+        end
+        if plottype == 3
+            if units_type == 1
+                linea = 10.*log10(real(linea).^2 ./ units_ref.^2); 
+            else
+                linea = 10.*log10(real(linea).^2 ./ units_ref); 
+            end
+            units_string = '';
+        end
+        if plottype == 4
+            linea = abs(hilbert(real(linea))); 
+            if units_type == 1
+                units_string = [' [' units ']'];
+            else
+                if ~isempty(units)
+                    units_string = [' [(' units ')^0.5]'];
+                else
+                    units_string = '';
+                end
+            end
+        end
+        if plottype == 5
+            linea = medfilt1(diff([angle(hilbert(real(linea))); zeros(1,size(linea,2))])*signaldata.fs/2/pi, 5); 
+            units_string = '';
+        end
+        if plottype == 6
+            linea = abs(linea); 
+            if units_type == 1
+                units_string = [' [' units ']'];
+            else
+                if ~isempty(units)
+                    units_string = [' [(' units ')^0.5]'];
+                else
+                    units_string = '';
+                end
+            end
+        end
+        if plottype == 7
+            linea = imag(linea);
+            if units_type == 1
+                units_string = [' [' units ']'];
+            else
+                if ~isempty(units)
+                    units_string = [' [(' units ')^0.5]'];
+                else
+                    units_string = '';
+                end
+            end
+        end
+        if plottype == 8
+            linea = 10*log10(abs(fft(linea).*spectscale ./ units_ref).^2); 
+            units_string = '';
+        end %freq
+        if plottype == 9
+            linea = (abs(fft(linea)).*spectscale).^2; 
+            if units_type == 2
+                units_string = [' [' units ']'];
+            else
+                if ~isempty(units)
+                    units_string = [' [(' units ')^2]'];
+                else
+                    units_string = '';
+                end
+            end
+        end
+        if plottype == 10
+            linea = abs(fft(linea)).*spectscale; 
+            if units_type == 1
+                units_string = [' [' units ']'];
+            else
+                if ~isempty(units)
+                    units_string = [' [(' units ')^0.5]'];
+                else
+                    units_string = '';
+                end
+            end
+        end
+        if plottype == 11
+            linea = real(fft(linea)).*spectscale; 
+            if units_type == 1
+                units_string = [' [' units ']'];
+            else
+                if ~isempty(units)
+                    units_string = [' [(' units ')^0.5]'];
+                else
+                    units_string = '';
+                end
+            end
+        end
+        if plottype == 12
+            linea = imag(fft(linea)).*spectscale; 
+            if units_type == 1
+                units_string = [' [' units ']'];
+            else
+                if ~isempty(units)
+                    units_string = [' [(' units ')^0.5]'];
+                else
+                    units_string = '';
+                end
+            end
+        end
+        if plottype == 13
+            linea = angle(fft(linea)); 
+            units_string = '';
+        end
+        if plottype == 14
+            linea = unwrap(angle(fft(linea))); 
+            units_string = '';
+        end
+        if plottype == 15
+            linea = angle(fft(linea)) .* 180/pi; 
+            units_string = '';
+        end
+        if plottype == 16
+            linea = unwrap(angle(fft(linea))) ./(2*pi); 
+            units_string = '';
+        end
+        if plottype == 17
+            linea = -diff(unwrap(angle(fft(linea)))).*length(linea)/(signaldata.fs*2*pi).*1000; 
+            units_string = '';
+        end
         if plottype <= 7
             plot(t,real(linea)) % Plot signal in time domain
             xlabel('Time [s]');
             yl = cellstr(get(handles.time_popup,'String'));
             yl = yl{get(handles.time_popup,'Value')};
-            ylabel(yl(8:end));
+            ylabel([yl(8:end) units_string]);
         end
         if plottype >= 8
             if plottype == 8
@@ -4744,16 +5068,16 @@ if ~isempty(click) && ((click == handles.axestime) || (get(click,'Parent') == ha
             %if plottype == 17,
             plot(f(1:length(linea)),linea)%,'Marker','None'); end
             %if plottype ~= 17, semilogx(f,linea); end % Plot signal in frequency domain
-            log_check = get(handles.logtime_chk,'Value');
             xlabel('Frequency [Hz]');
             yl = cellstr(get(handles.time_popup,'String'));
             yl = yl{get(handles.time_popup,'Value')};
-            ylabel(yl(9:end));
+            ylabel([yl(9:end) units_string]);
             if ischar(handles.Settings.frequencylimits)
                 xlim([f(2) signaldata.fs/2])
             else
                 xlim(handles.Settings.frequencylimits)
             end
+            log_check = get(handles.logtime_chk,'Value');
             if log_check == 1
                 set(gca,'XScale','log')
                 %set(gca,'XTickLabel',num2str(get(gca,'XTick').'))
@@ -4811,13 +5135,74 @@ if ~isempty(click) && ((click == handles.axesfreq) || (get(click,'Parent') == ha
         end
         if isfield(signaldata,'cal') && handles.Settings.calibrationtoggle == 1
             if size(linea,2) == length(signaldata.cal)
+                if isfield(signaldata,'properties')
+                    if isfield(signaldata.properties,'units')
+                        units = signaldata.properties.units;
+                    else
+                        units = '';
+                    end
+                    if isfield(signaldata.properties,'units_ref')
+                        units_ref = signaldata.properties.units_ref;
+                    else
+                        units_ref = 1;
+                    end
+                    if isfield(signaldata.properties,'units_type')
+                        units_type = signaldata.properties.units_type;
+                    else
+                        units_type = 1;
+                    end
+                else
+                    units = '';
+                    units_ref = 1;
+                    units_type = 1;
+                end
                 signaldata.cal(isnan(signaldata.cal)) = 0;
+                if units_type == 1
+                    linea = linea * units_ref;
+                    signaldata.cal = signaldata.cal ./ 10.^(units_ref/20);
+                else
+                    linea = linea * units_ref.^0.5;
+                    signaldata.cal = signaldata.cal ./ 10.^(units_ref/10);
+                end
+                
                 linea = linea.*repmat(10.^(signaldata.cal./20),length(linea),1);
             elseif ~ismatrix(signaldata.audio) && size(signaldata.audio,2) == length(signaldata.cal)
+                if isfield(signaldata,'properties')
+                    if isfield(signaldata.properties,'units')
+                        units = signaldata.properties.units;
+                    else
+                        units = '';
+                    end
+                    if isfield(signaldata.properties,'units_ref')
+                        units_ref = signaldata.properties.units_ref;
+                    else
+                        units_ref = 1;
+                    end
+                    if isfield(signaldata.properties,'units_type')
+                        units_type = signaldata.properties.units_type;
+                    else
+                        units_type = 1;
+                    end
+                else
+                    units = '';
+                    units_ref = 1;
+                    units_type = 1;
+                end
+                if units_type == 1
+                    linea = linea .* units_ref;
+                    signaldata.cal = signaldata.cal ./ 10.^(units_ref/20);
+                else
+                    linea = linea .* units_ref.^0.5;
+                    signaldata.cal = signaldata.cal ./ 10.^(units_ref/10);
+                end
                 signaldata.cal(isnan(signaldata.cal)) = 0;
                 cal = repmat(signaldata.cal(str2double(get(handles.IN_nchannel,'String'))),1,size(linea,2));
                 linea = linea.*repmat(10.^(cal./20),length(linea),1);
             end
+            else
+                units = '';
+                %units_ref = 1;
+                units_type = 1;
         end
         t = linspace(To,Tf,length(linea))./signaldata.fs;
         f = signaldata.fs .* ((1:length(linea))-1) ./ length(linea);
@@ -4834,29 +5219,152 @@ if ~isempty(click) && ((click == handles.axesfreq) || (get(click,'Parent') == ha
         h = figure;
         set(h,'DefaultAxesColorOrder',cmap);
         plottype = get(handles.freq_popup,'Value');
-        if plottype == 1, linea = real(linea); end
-        if plottype == 2, linea = linea.^2; end
-        if plottype == 3, linea = 10.*log10(linea.^2); end
-        if plottype == 4, linea = abs(hilbert(real(linea))); end
-        if plottype == 5, linea = medfilt1(diff([angle(hilbert(real(linea))); zeros(1,size(linea,2))])*signaldata.fs/2/pi, 5); end
-        if plottype == 6, linea = abs(linea); end
-        if plottype == 7, linea = imag(linea); end
-        if plottype == 8, linea = 10*log10(abs(fft(linea).*spectscale).^2); end %freq
-        if plottype == 9, linea = (abs(fft(linea)).*spectscale).^2; end
-        if plottype == 10, linea = abs(fft(linea)).*spectscale; end
-        if plottype == 11, linea = real(fft(linea)).*spectscale; end
-        if plottype == 12, linea = imag(fft(linea)).*spectscale; end
-        if plottype == 13, linea = angle(fft(linea)); end
-        if plottype == 14, linea = unwrap(angle(fft(linea))); end
-        if plottype == 15, linea = angle(fft(linea)) .* 180/pi; end
-        if plottype == 16, linea = unwrap(angle(fft(linea))) ./(2*pi); end
-        if plottype == 17, linea = -diff(unwrap(angle(fft(linea)))).*length(linea)/(signaldata.fs*2*pi).*1000; end
+        if plottype == 1
+            linea = real(linea);
+            if units_type == 1
+                units_string = [' [' units ']'];
+            else
+                if ~isempty(units)
+                    units_string = [' [(' units ')^0.5]'];
+                else
+                    units_string = '';
+                end
+            end
+        end
+        if plottype == 2
+            linea = linea.^2; 
+            if units_type == 2
+                units_string = [' [' units ']'];
+            else
+                if ~isempty(units)
+                    units_string = [' [(' units ')^2]'];
+                else
+                    units_string = '';
+                end
+            end
+        end
+        if plottype == 3
+            linea = 10.*log10(linea.^2 ./  units_ref.^2); 
+            units_string = '';
+        end
+        if plottype == 4
+            linea = abs(hilbert(real(linea))); 
+            if units_type == 1
+                units_string = [' [' units ']'];
+            else
+                if ~isempty(units)
+                    units_string = [' [(' units ')^0.5]'];
+                else
+                    units_string = '';
+                end
+            end
+        end
+        if plottype == 5
+            linea = medfilt1(diff([angle(hilbert(real(linea))); zeros(1,size(linea,2))])*signaldata.fs/2/pi, 5); 
+            units_string = '';
+        end
+        if plottype == 6
+            linea = abs(linea); 
+            if units_type == 1
+                units_string = [' [' units ']'];
+            else
+                if ~isempty(units)
+                    units_string = [' [(' units ')^0.5]'];
+                else
+                    units_string = '';
+                end
+            end
+        end
+        if plottype == 7
+            linea = imag(linea);
+            if units_type == 1
+                units_string = [' [' units ']'];
+            else
+                if ~isempty(units)
+                    units_string = [' [(' units ')^0.5]'];
+                else
+                    units_string = '';
+                end
+            end
+        end
+        if plottype == 8
+            linea = 10*log10(abs(fft(linea).*spectscale ./  units_ref).^2); 
+            units_string = '';
+        end %freq
+        if plottype == 9
+            linea = (abs(fft(linea)).*spectscale).^2; 
+            if units_type == 2
+                units_string = [' [' units ']'];
+            else
+                if ~isempty(units)
+                    units_string = [' [(' units ')^2]'];
+                else
+                    units_string = '';
+                end
+            end
+        end
+        if plottype == 10
+            linea = abs(fft(linea)).*spectscale; 
+            if units_type == 1
+                units_string = [' [' units ']'];
+            else
+                if ~isempty(units)
+                    units_string = [' [(' units ')^0.5]'];
+                else
+                    units_string = '';
+                end
+            end
+        end
+        if plottype == 11
+            linea = real(fft(linea)).*spectscale; 
+            if units_type == 1
+                units_string = [' [' units ']'];
+            else
+                if ~isempty(units)
+                    units_string = [' [(' units ')^0.5]'];
+                else
+                    units_string = '';
+                end
+            end
+        end
+        if plottype == 12
+            linea = imag(fft(linea)).*spectscale; 
+            if units_type == 1
+                units_string = [' [' units ']'];
+            else
+                if ~isempty(units)
+                    units_string = [' [(' units ')^0.5]'];
+                else
+                    units_string = '';
+                end
+            end
+        end
+        if plottype == 13
+            linea = angle(fft(linea)); 
+            units_string = '';
+        end
+        if plottype == 14
+            linea = unwrap(angle(fft(linea))); 
+            units_string = '';
+        end
+        if plottype == 15
+            linea = angle(fft(linea)) .* 180/pi; 
+            units_string = '';
+        end
+        if plottype == 16
+            linea = unwrap(angle(fft(linea))) ./(2*pi); 
+            units_string = '';
+        end
+        if plottype == 17
+            linea = -diff(unwrap(angle(fft(linea)))).*length(linea)/(signaldata.fs*2*pi).*1000; 
+            units_string = '';
+        end
         if plottype <= 7
             plot(t,real(linea)) % Plot signal in time domain
             xlabel('Time [s]');
             yl = cellstr(get(handles.freq_popup,'String'));
             yl = yl{get(handles.freq_popup,'Value')};
-            ylabel(yl(8:end));
+            ylabel([yl(8:end) units_string]);
         end
         if plottype >= 8
             if plottype == 8
@@ -4874,7 +5382,7 @@ if ~isempty(click) && ((click == handles.axesfreq) || (get(click,'Parent') == ha
             xlabel('Frequency [Hz]');
             yl = cellstr(get(handles.freq_popup,'String'));
             yl = yl{get(handles.freq_popup,'Value')};
-            ylabel(yl(9:end));
+            ylabel([yl(9:end) units_string]);
             if ischar(handles.Settings.frequencylimits)
                 xlim([f(2) signaldata.fs/2])
             else
@@ -5242,7 +5750,21 @@ if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgr
     set(hObject,'BackgroundColor','white');
 end
 
+% --- Executes during object creation, after setting all properties.
+function time_units_display_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to time_units_display (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+set(hObject,'Visible','off');
+guidata(hObject,handles)
 
+% --- Executes during object creation, after setting all properties.
+function freq_units_display_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to freq_units_display (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+set(hObject,'Visible','off');
+guidata(hObject,handles)
 
 
 
@@ -5357,6 +5879,7 @@ function ntable_popup_Callback(hObject, eventdata, handles) %#ok
 eventdata.NewValue = get(handles.Xvalues_sel,'SelectedObject');
 Xvalues_sel_SelectionChangeFcn(hObject, eventdata, handles)
 Yvalues_box_Callback(hObject, eventdata, handles)
+
 
 % --- Executes during object creation, after setting all properties.
 function ntable_popup_CreateFcn(hObject, ~, ~) %#ok
