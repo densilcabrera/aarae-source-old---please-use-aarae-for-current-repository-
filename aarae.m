@@ -4977,7 +4977,11 @@ if isfield(signaldata,'cal') && handles.Settings.calibrationtoggle == 1
             end
         end
         if plottype == 8
-            linea = 10*log10(abs(fft(linea).*spectscale ./ units_ref).^2); 
+            if units_type == 1
+                linea = 10*log10(abs(fft(linea).*spectscale ./ units_ref).^2);
+            else
+                linea = 10*log10(abs(fft(linea).*spectscale ./ units_ref.^0.5).^2);
+            end
             units_string = '';
         end %freq
         if plottype == 9
@@ -5244,7 +5248,11 @@ if ~isempty(click) && ((click == handles.axesfreq) || (get(click,'Parent') == ha
             end
         end
         if plottype == 3
-            linea = 10.*log10(linea.^2 ./  units_ref.^2); 
+            if units_type == 1
+                linea = 10.*log10(linea.^2 ./  units_ref.^2);
+            else
+                linea = 10.*log10(linea.^2 ./  units_ref.^0.5);
+            end
             units_string = '';
         end
         if plottype == 4
@@ -5288,7 +5296,11 @@ if ~isempty(click) && ((click == handles.axesfreq) || (get(click,'Parent') == ha
             end
         end
         if plottype == 8
-            linea = 10*log10(abs(fft(linea).*spectscale ./  units_ref).^2); 
+            if units_type == 1
+                linea = 10*log10(abs(fft(linea).*spectscale ./ units_ref).^2);
+            else
+                linea = 10*log10(abs(fft(linea).*spectscale ./ units_ref.^0.5).^2);
+            end
             units_string = '';
         end %freq
         if plottype == 9

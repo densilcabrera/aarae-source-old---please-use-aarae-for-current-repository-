@@ -119,7 +119,13 @@ if plottype == 4, linea = abs(hilbert(real(linea))); end
 if plottype == 5, linea = medfilt1(diff([angle(hilbert(real(linea))); zeros(1,size(linea,2))])*signaldata.fs/2/pi, 5); end
 if plottype == 6, linea = abs(linea); end
 if plottype == 7, linea = imag(linea); end
-if plottype == 8, linea = 10*log10(abs(fft(linea).*spectscale  ./ units_ref).^2); end %freq
+if plottype == 8
+    if units_type == 1
+        linea = 10*log10(abs(fft(linea).*spectscale  ./ units_ref).^2);
+    else
+        linea = 10*log10(abs(fft(linea).*spectscale  ./ units_ref.^0.5).^2);
+    end
+end %freq
 if plottype == 9, linea = (abs(fft(linea)).*spectscale).^2; end
 if plottype == 10, linea = abs(fft(linea)).*spectscale; end
 if plottype == 11, linea = real(fft(linea)).*spectscale; end
