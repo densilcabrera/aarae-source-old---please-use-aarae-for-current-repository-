@@ -1834,7 +1834,8 @@ if ~isempty(cal_level)
                 disp('name field does not exist - see warning dialog')
                 fprintf(handles.fid,'name field does not exist - see below');
             end
-            handles.(signaldata.name).UserData = signaldata; % apply cal field directly to the audio loaded to the tree
+%             handles.(signaldata.name).UserData = signaldata; % apply cal field directly to the audio loaded to the tree
+            handles.(matlab.lang.makeValidName(char(selectedNodes(i).getName))).UserData = signaldata; 
             % selectedNodes(i).handle.UserData = signaldata; % produces error in MATLAB 2015b
         catch
             warndlg('Sorry - an error occured in writing cal to the tree. Please let Densil know about this. As an alternative you can calibrate using cal_aarae in Processors-Basic (or in the edit window).','Bug!');
