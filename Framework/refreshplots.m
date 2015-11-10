@@ -26,66 +26,66 @@ plottype = get(handles.(matlab.lang.makeValidName([axes '_popup'])),'Value');
 %end
 if isfield(signaldata,'cal') && handles.Settings.calibrationtoggle == 1
     if size(linea,2) == length(signaldata.cal)
-                        if isfield(signaldata,'properties')
-                    if isfield(signaldata.properties,'units')
-                        units = signaldata.properties.units;
-                    else
-                        units = '';
-                    end
-                    if isfield(signaldata.properties,'units_ref')
-                        units_ref = signaldata.properties.units_ref;
-                    else
-                        units_ref = 1;
-                    end
-                    if isfield(signaldata.properties,'units_type')
-                        units_type = signaldata.properties.units_type;
-                    else
-                        units_type = 1;
-                    end
-                else
-                    units = '';
-                    units_ref = 1;
-                    units_type = 1;
-                end
-                signaldata.cal(isnan(signaldata.cal)) = 0;
-                if units_type == 1
-                    linea = linea * units_ref;
-                    signaldata.cal = signaldata.cal ./ 10.^(units_ref/20);
-                else
-                    linea = linea * units_ref.^0.5;
-                    signaldata.cal = signaldata.cal ./ 10.^(units_ref/10);
-                end
+        if isfield(signaldata,'properties')
+            if isfield(signaldata.properties,'units')
+                units = signaldata.properties.units;
+            else
+                units = '';
+            end
+            if isfield(signaldata.properties,'units_ref')
+                units_ref = signaldata.properties.units_ref;
+            else
+                units_ref = 1;
+            end
+            if isfield(signaldata.properties,'units_type')
+                units_type = signaldata.properties.units_type;
+            else
+                units_type = 1;
+            end
+        else
+            units = '';
+            units_ref = 1;
+            units_type = 1;
+        end
+        signaldata.cal(isnan(signaldata.cal)) = 0;
+        if units_type == 1
+            linea = linea * units_ref;
+            signaldata.cal = signaldata.cal ./ 10.^(units_ref/20);
+        else
+            linea = linea * units_ref.^0.5;
+            signaldata.cal = signaldata.cal ./ 10.^(units_ref/10);
+        end
         linea = linea.*repmat(10.^(signaldata.cal./20),length(linea),1);
     elseif ~ismatrix(signaldata.audio) && size(signaldata.audio,2) == length(signaldata.cal)
-                        if isfield(signaldata,'properties')
-                    if isfield(signaldata.properties,'units')
-                        units = signaldata.properties.units;
-                    else
-                        units = '';
-                    end
-                    if isfield(signaldata.properties,'units_ref')
-                        units_ref = signaldata.properties.units_ref;
-                    else
-                        units_ref = 1;
-                    end
-                    if isfield(signaldata.properties,'units_type')
-                        units_type = signaldata.properties.units_type;
-                    else
-                        units_type = 1;
-                    end
-                else
-                    units = '';
-                    units_ref = 1;
-                    units_type = 1;
-                end
-                signaldata.cal(isnan(signaldata.cal)) = 0;
-                if units_type == 1
-                    linea = linea * units_ref;
-                    signaldata.cal = signaldata.cal ./ 10.^(units_ref/20);
-                else
-                    linea = linea * units_ref.^0.5;
-                    signaldata.cal = signaldata.cal ./ 10.^(units_ref/10);
-                end
+        if isfield(signaldata,'properties')
+            if isfield(signaldata.properties,'units')
+                units = signaldata.properties.units;
+            else
+                units = '';
+            end
+            if isfield(signaldata.properties,'units_ref')
+                units_ref = signaldata.properties.units_ref;
+            else
+                units_ref = 1;
+            end
+            if isfield(signaldata.properties,'units_type')
+                units_type = signaldata.properties.units_type;
+            else
+                units_type = 1;
+            end
+        else
+            units = '';
+            units_ref = 1;
+            units_type = 1;
+        end
+        signaldata.cal(isnan(signaldata.cal)) = 0;
+        if units_type == 1
+            linea = linea * units_ref;
+            signaldata.cal = signaldata.cal ./ 10.^(units_ref/20);
+        else
+            linea = linea * units_ref.^0.5;
+            signaldata.cal = signaldata.cal ./ 10.^(units_ref/10);
+        end
         cal = repmat(signaldata.cal(str2double(get(handles.IN_nchannel,'String'))),1,size(linea,2));
         linea = linea.*repmat(10.^(cal./20),length(linea),1);
     end

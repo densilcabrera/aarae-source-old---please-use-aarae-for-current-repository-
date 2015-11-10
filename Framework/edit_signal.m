@@ -88,6 +88,39 @@ else
     hMain = getappdata(0,'hMain');
     handles.version = 1;
     handles.testsignal(handles.version) = getappdata(hMain,'testsignal');
+    
+    % *********************************************************************    
+    % Note that it is not possible for a basic processor to add a field
+    % when used from the Edit GUI, so it is necessary to add the following
+    % fields if missing (with null values) so that they can be edited:
+    % * cal
+    % * properties.units, properties.units_ref, properties.units_type
+    % * another possible candidate could be chanID (not implemented) or any
+    % other field that a basic processor works with.
+    % It would be possible to automatically remove these fields from the
+    % output of the function if they still have null values (not
+    % implemented).
+    if ~isfield(handles.testsignal(handles.version),'cal')
+        handles.testsignal(handles.version).cal = ...
+            nan(1,size(handles.testsignal(handles.version).audio,2));
+    end
+    if ~isfield(handles.testsignal(handles.version),'properties')
+        handles.testsignal(handles.version).properties.units = '';
+        handles.testsignal(handles.version).properties.units_ref = 1;
+        handles.testsignal(handles.version).properties.units_type = 1;
+    else
+        if ~isfield(handles.testsignal(handles.version).properties,'units')
+            handles.testsignal(handles.version).properties.units = '';
+        end
+        if ~isfield(handles.testsignal(handles.version).properties,'units_ref')
+            handles.testsignal(handles.version).properties.units_ref = 1;
+        end
+        if ~isfield(handles.testsignal(handles.version).properties,'units_type')
+            handles.testsignal(handles.version).properties.units_type = 1;
+        end
+    end
+    % *********************************************************************
+    
     % Bring up the data from the selected leaf to be edited
     audiodata = handles.testsignal(handles.version);
     mainHandles = guidata(handles.main_stage1);
@@ -612,8 +645,10 @@ if ~isempty(processed)
     set([handles.undo_btn handles.reset_btn],'Enable','on');
     set(handles.redo_btn,'Enable','off');
     if isstruct(processed)
+        % The following prevents new fields from being added - maybe this
+        % is too limiting
+        newdata = handles.testsignal(handles.version - 1); 
         dif = intersect(fieldnames(handles.testsignal(handles.version - 1)),fieldnames(processed));
-        newdata = handles.testsignal(handles.version - 1);
         for i = 1:size(dif,1)
             newdata.(dif{i,1}) = processed.(dif{i,1});
         end

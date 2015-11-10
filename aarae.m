@@ -4886,7 +4886,7 @@ if isfield(signaldata,'cal') && handles.Settings.calibrationtoggle == 1
             end
             else
                 units = '';
-                %units_ref = 1;
+                units_ref = 1;
                 units_type = 1;
         end
         t = linspace(To,Tf,length(linea))./signaldata.fs;
@@ -4904,48 +4904,49 @@ if isfield(signaldata,'cal') && handles.Settings.calibrationtoggle == 1
         h = figure;
         set(h,'DefaultAxesColorOrder',cmap);
         plottype = get(handles.time_popup,'Value');
-        if plottype == 1
+if plottype == 1
             linea = real(linea);
-            if units_type == 1
-                units_string = [' [' units ']'];
-            else
-                if ~isempty(units)
-                    units_string = [' [(' units ')^0.5]'];
+            if ~isempty(units)
+                if units_type == 1
+                    units_string = [' [' units ']'];
                 else
-                    units_string = '';
+                    units_string = [' [(' units ')^0.5]'];
                 end
+            else
+                units_string = '';
             end
         end
         if plottype == 2
-            linea = linea.^2; 
-            if units_type == 2
-                units_string = [' [' units ']'];
-            else
-                if ~isempty(units)
-                    units_string = [' [(' units ')^2]'];
+            linea = linea.^2;
+            if ~isempty(units)
+                if units_type == 2
+                    units_string = [' [' units ']'];
                 else
-                    units_string = '';
+                    
+                    units_string = [' [(' units ')^2]'];
                 end
+            else
+                units_string = '';
             end
         end
         if plottype == 3
             if units_type == 1
-                linea = 10.*log10(real(linea).^2 ./ units_ref.^2); 
+                linea = 10.*log10(linea.^2 ./  units_ref.^2);
             else
-                linea = 10.*log10(real(linea).^2 ./ units_ref); 
+                linea = 10.*log10(linea.^2 ./  units_ref);
             end
             units_string = '';
         end
         if plottype == 4
             linea = abs(hilbert(real(linea))); 
-            if units_type == 1
-                units_string = [' [' units ']'];
-            else
-                if ~isempty(units)
-                    units_string = [' [(' units ')^0.5]'];
+            if ~isempty(units)
+                if units_type == 1
+                    units_string = [' [' units ']'];
                 else
-                    units_string = '';
+                    units_string = [' [(' units ')^0.5]'];
                 end
+            else
+                units_string = '';
             end
         end
         if plottype == 5
@@ -4954,26 +4955,26 @@ if isfield(signaldata,'cal') && handles.Settings.calibrationtoggle == 1
         end
         if plottype == 6
             linea = abs(linea); 
-            if units_type == 1
-                units_string = [' [' units ']'];
-            else
-                if ~isempty(units)
-                    units_string = [' [(' units ')^0.5]'];
+            if ~isempty(units)
+                if units_type == 1
+                    units_string = [' [' units ']'];
                 else
-                    units_string = '';
+                    units_string = [' [(' units ')^0.5]'];
                 end
+            else
+                units_string = '';
             end
         end
         if plottype == 7
             linea = imag(linea);
-            if units_type == 1
-                units_string = [' [' units ']'];
-            else
-                if ~isempty(units)
-                    units_string = [' [(' units ')^0.5]'];
+            if ~isempty(units)
+                if units_type == 1
+                    units_string = [' [' units ']'];
                 else
-                    units_string = '';
+                    units_string = [' [(' units ')^0.5]'];
                 end
+            else
+                units_string = '';
             end
         end
         if plottype == 8
@@ -4986,50 +4987,51 @@ if isfield(signaldata,'cal') && handles.Settings.calibrationtoggle == 1
         end %freq
         if plottype == 9
             linea = (abs(fft(linea)).*spectscale).^2; 
-            if units_type == 2
-                units_string = [' [' units ']'];
-            else
-                if ~isempty(units)
-                    units_string = [' [(' units ')^2]'];
+            if ~isempty(units)
+                if units_type == 2
+                    units_string = [' [' units ']'];
                 else
-                    units_string = '';
+                    
+                    units_string = [' [(' units ')^2]'];
                 end
+            else
+                units_string = '';
             end
         end
         if plottype == 10
             linea = abs(fft(linea)).*spectscale; 
-            if units_type == 1
-                units_string = [' [' units ']'];
-            else
-                if ~isempty(units)
-                    units_string = [' [(' units ')^0.5]'];
+            if ~isempty(units)
+                if units_type == 1
+                    units_string = [' [' units ']'];
                 else
-                    units_string = '';
+                    units_string = [' [(' units ')^0.5]'];
                 end
+            else
+                units_string = '';
             end
         end
         if plottype == 11
             linea = real(fft(linea)).*spectscale; 
-            if units_type == 1
-                units_string = [' [' units ']'];
-            else
-                if ~isempty(units)
-                    units_string = [' [(' units ')^0.5]'];
+            if ~isempty(units)
+                if units_type == 1
+                    units_string = [' [' units ']'];
                 else
-                    units_string = '';
+                    units_string = [' [(' units ')^0.5]'];
                 end
+            else
+                units_string = '';
             end
         end
         if plottype == 12
             linea = imag(fft(linea)).*spectscale; 
-            if units_type == 1
-                units_string = [' [' units ']'];
-            else
-                if ~isempty(units)
-                    units_string = [' [(' units ')^0.5]'];
+            if ~isempty(units)
+                if units_type == 1
+                    units_string = [' [' units ']'];
                 else
-                    units_string = '';
+                    units_string = [' [(' units ')^0.5]'];
                 end
+            else
+                units_string = '';
             end
         end
         if plottype == 13
@@ -5205,7 +5207,7 @@ if ~isempty(click) && ((click == handles.axesfreq) || (get(click,'Parent') == ha
             end
             else
                 units = '';
-                %units_ref = 1;
+                units_ref = 1;
                 units_type = 1;
         end
         t = linspace(To,Tf,length(linea))./signaldata.fs;
@@ -5225,26 +5227,27 @@ if ~isempty(click) && ((click == handles.axesfreq) || (get(click,'Parent') == ha
         plottype = get(handles.freq_popup,'Value');
         if plottype == 1
             linea = real(linea);
-            if units_type == 1
-                units_string = [' [' units ']'];
-            else
-                if ~isempty(units)
-                    units_string = [' [(' units ')^0.5]'];
+            if ~isempty(units)
+                if units_type == 1
+                    units_string = [' [' units ']'];
                 else
-                    units_string = '';
+                    units_string = [' [(' units ')^0.5]'];
                 end
+            else
+                units_string = '';
             end
         end
         if plottype == 2
-            linea = linea.^2; 
-            if units_type == 2
-                units_string = [' [' units ']'];
-            else
-                if ~isempty(units)
-                    units_string = [' [(' units ')^2]'];
+            linea = linea.^2;
+            if ~isempty(units)
+                if units_type == 2
+                    units_string = [' [' units ']'];
                 else
-                    units_string = '';
+                    
+                    units_string = [' [(' units ')^2]'];
                 end
+            else
+                units_string = '';
             end
         end
         if plottype == 3
@@ -5257,14 +5260,14 @@ if ~isempty(click) && ((click == handles.axesfreq) || (get(click,'Parent') == ha
         end
         if plottype == 4
             linea = abs(hilbert(real(linea))); 
-            if units_type == 1
-                units_string = [' [' units ']'];
-            else
-                if ~isempty(units)
-                    units_string = [' [(' units ')^0.5]'];
+            if ~isempty(units)
+                if units_type == 1
+                    units_string = [' [' units ']'];
                 else
-                    units_string = '';
+                    units_string = [' [(' units ')^0.5]'];
                 end
+            else
+                units_string = '';
             end
         end
         if plottype == 5
@@ -5273,26 +5276,26 @@ if ~isempty(click) && ((click == handles.axesfreq) || (get(click,'Parent') == ha
         end
         if plottype == 6
             linea = abs(linea); 
-            if units_type == 1
-                units_string = [' [' units ']'];
-            else
-                if ~isempty(units)
-                    units_string = [' [(' units ')^0.5]'];
+            if ~isempty(units)
+                if units_type == 1
+                    units_string = [' [' units ']'];
                 else
-                    units_string = '';
+                    units_string = [' [(' units ')^0.5]'];
                 end
+            else
+                units_string = '';
             end
         end
         if plottype == 7
             linea = imag(linea);
-            if units_type == 1
-                units_string = [' [' units ']'];
-            else
-                if ~isempty(units)
-                    units_string = [' [(' units ')^0.5]'];
+            if ~isempty(units)
+                if units_type == 1
+                    units_string = [' [' units ']'];
                 else
-                    units_string = '';
+                    units_string = [' [(' units ')^0.5]'];
                 end
+            else
+                units_string = '';
             end
         end
         if plottype == 8
@@ -5305,50 +5308,51 @@ if ~isempty(click) && ((click == handles.axesfreq) || (get(click,'Parent') == ha
         end %freq
         if plottype == 9
             linea = (abs(fft(linea)).*spectscale).^2; 
-            if units_type == 2
-                units_string = [' [' units ']'];
-            else
-                if ~isempty(units)
-                    units_string = [' [(' units ')^2]'];
+            if ~isempty(units)
+                if units_type == 2
+                    units_string = [' [' units ']'];
                 else
-                    units_string = '';
+                    
+                    units_string = [' [(' units ')^2]'];
                 end
+            else
+                units_string = '';
             end
         end
         if plottype == 10
             linea = abs(fft(linea)).*spectscale; 
-            if units_type == 1
-                units_string = [' [' units ']'];
-            else
-                if ~isempty(units)
-                    units_string = [' [(' units ')^0.5]'];
+            if ~isempty(units)
+                if units_type == 1
+                    units_string = [' [' units ']'];
                 else
-                    units_string = '';
+                    units_string = [' [(' units ')^0.5]'];
                 end
+            else
+                units_string = '';
             end
         end
         if plottype == 11
             linea = real(fft(linea)).*spectscale; 
-            if units_type == 1
-                units_string = [' [' units ']'];
-            else
-                if ~isempty(units)
-                    units_string = [' [(' units ')^0.5]'];
+            if ~isempty(units)
+                if units_type == 1
+                    units_string = [' [' units ']'];
                 else
-                    units_string = '';
+                    units_string = [' [(' units ')^0.5]'];
                 end
+            else
+                units_string = '';
             end
         end
         if plottype == 12
             linea = imag(fft(linea)).*spectscale; 
-            if units_type == 1
-                units_string = [' [' units ']'];
-            else
-                if ~isempty(units)
-                    units_string = [' [(' units ')^0.5]'];
+            if ~isempty(units)
+                if units_type == 1
+                    units_string = [' [' units ']'];
                 else
-                    units_string = '';
+                    units_string = [' [(' units ')^0.5]'];
                 end
+            else
+                units_string = '';
             end
         end
         if plottype == 13
