@@ -1823,17 +1823,11 @@ if ~isempty(cal_level)
         % Save as you go
         delete([cd '/Utilities/Backup/' selectedNodes(i).getName.char '.mat'])
         save([cd '/Utilities/Backup/' selectedNodes(i).getName.char '.mat'], 'signaldata','-v7.3');
-        % The following seems to work, but maybe it won't work in all
-        % circumstances. Therefore the try-catch has been included, with
-        % some rudimentary messages if errors occur. One possible reason
-        % for errors would be that the name field does not exist. Another
-        % possible reason might be if the name field is inconsistent with the
-        % tree.
         try
-            if ~isfield(signaldata,'name')
-                disp('name field does not exist - see warning dialog')
-                fprintf(handles.fid,'name field does not exist - see below');
-            end
+%             if ~isfield(signaldata,'name')
+%                 disp('name field does not exist - see warning dialog')
+%                 fprintf(handles.fid,'name field does not exist - see below');
+%             end
             % handles.(signaldata.name).UserData = signaldata; % apply cal field directly to the audio loaded to the tree
             % selectedNodes(i).handle.UserData = signaldata; % produces error in MATLAB 2015b
             handles.(matlab.lang.makeValidName(char(selectedNodes(i).getName))).UserData = signaldata;
