@@ -1,4 +1,4 @@
-function OUT = SilenceSweep_Farina2009(fs,gapdur)
+function OUT = SilenceSweep_Farina2009(n,fadeindur,fadeoutdur,fs,gapdur)
 % This function generates the 'silence sweep' as described by Angelo
 % Farina:
 %
@@ -6,7 +6,11 @@ function OUT = SilenceSweep_Farina2009(fs,gapdur)
 % electro-acoustical devices," 126th AES Convention, Munich, Germany
 %
 % The test signal consists of a period of silence, then the silence sweep,
-% then the exponential sweep
+% then the exponential sweep. The default parameters are those used in the
+% paper, however a more sensitive analysis can be achived by using a longer
+% fade-in and fade-out duration for the sweep (e.g. 1 s, perhaps with a
+% higher order MLS). This can be explored by analysing the test signal
+% itself (without playing it through an audio system).
 %
 % Use the SilenceSweepAnalysis (in Non-LTI analysis) to analyse recordings
 % made with this test signal.
@@ -16,18 +20,24 @@ function OUT = SilenceSweep_Farina2009(fs,gapdur)
 
 if nargin == 0
     
-    param = inputdlg({'Sampling rate (Hz)';...
+    param = inputdlg({'MLS order (e.g., 16, 17, or 18)';...
+        'Sweep fade-in duration (s)';...
+        'Sweep fade-out duration (s)';...
+        'Sampling rate (Hz) - must be at least 44100';...
         'Duration of gap between silence, silence sweep and sweep'},...
         'Silence Sweep',... 
         [1 60],... 
-        {'48000';'1'}); 
+        {'17';'0';'0.1';'48000';'1'}); 
     
     param = str2num(char(param)); 
     
-    if length(param) < 2, param = []; end 
+    if length(param) < 5, param = []; end 
     if ~isempty(param) 
-        fs = round(param(1));
-        gapdur = param(2);
+        n = round(param(1));
+        fadeindur = param(2);
+        fadeoutdur = param(3);
+        fs = round(param(4));
+        gapdur = param(5);
     else
         % get out of here if the user presses 'cancel'
         OUT = [];
@@ -41,7 +51,7 @@ if fs < 44100, fs = 44100; end
 if ~isempty(gapdur) && ~isempty(fs)
     
     % Generate MLS repeated sequence
-    n = 17;
+    %n = 17;
     cycles = 41;
     mls = GenerateMLSSequence(cycles, n, 0);
     
@@ -52,10 +62,10 @@ if ~isempty(gapdur) && ~isempty(fs)
     SI = 1/fs;
     dur = 10*mlslen*SI;
     ampl = 0.5;
-    start_freq = 20;
-    end_freq = 20480;
-    rcos_ms1 = 1;
-    rcos_ms2 = 100;
+    start_freq = 20; % Hz
+    end_freq = 20480; % Hz
+    rcos_ms1 = fadeindur*1000; % fade-in duration in ms
+    rcos_ms2 = fadeoutdur*1000; % fade-out duration in ms
     scale_inv = 1;
     w1 = 2*pi*start_freq; w2 = 2*pi*end_freq;
     K = (dur*w1)/(log(w2/w1));
@@ -105,9 +115,12 @@ if ~isempty(gapdur) && ~isempty(fs)
     OUT.audio2 = Sinv;
     OUT.tag = 'SilenceSweep';
     OUT.funcallback.name = 'SilenceSweep_Farina2009.m'; 
-    OUT.funcallback.inarg = {fs,gapdur};
+    OUT.funcallback.inarg = {n,fadeindur,fadeoutdur,fs,gapdur};
     OUT.properties.IRscalingfactor = IRscalingfactor;
+    OUT.properties.MLSorder = n;
     OUT.properties.gapdur = gapdur;
+    OUT.properties.fadeindur = fadeindur;
+    OUT.properties.fadeoutdur = fadeoutdur;
     OUT.properties.SilenceSweep = 1; % currently the analyser just checks that this exists. In future this could have more meaning.
 else
     OUT = [];
