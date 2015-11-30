@@ -1,19 +1,35 @@
-function OUT = SilenceSweep_Farina2009(n,fadeindur,fadeoutdur,fs,gapdur)
+function OUT = SilenceSweep_Farina2009(n,fadeindur,fadeoutdur,fs,gapdur,deltaL)
 % This function generates the 'silence sweep' as described by Angelo
 % Farina:
 %
-% Angelo Farina (2009) "Silence Sweep: a novel method for measuring
+% A. Farina (2009) "Silence Sweep: a novel method for measuring
 % electro-acoustical devices," 126th AES Convention, Munich, Germany
 %
 % The test signal consists of a period of silence, then the silence sweep,
-% then the exponential sweep. The default parameters are those used in the
-% paper, however a more sensitive analysis can be achived by using a longer
-% fade-in and fade-out duration for the sweep (e.g. 1 s, perhaps with a
-% higher order MLS). This can be explored by analysing the test signal
-% itself (without playing it through an audio system).
+% then the exponential sweep. The duration of the gap between these 3
+% elements is specified as a user parameter. The default parameters are
+% those used in the paper, however a more sensitive analysis can be achived
+% by using a longer fade-in and fade-out duration for the sweep (e.g. 1 s,
+% perhaps with a higher order MLS). However, note that the fade-in and
+% fade-out duration limit the effective frequency range of the sweep. The
+% sensitivity of the test signal can be explored by analysing the test
+% signal itself (without playing it through an audio system).
 %
-% Use the SilenceSweepAnalysis (in Non-LTI analysis) to analyse recordings
-% made with this test signal.
+% Although Farina puts the silence in the middle, in this implementation
+% the silence is first because this avoids any possibility that system
+% reverberation could intrude into the silence.
+%
+% Note that in his presentation, Angelo Farina speculated that the rms
+% level of the sweep should perhaps be 8-12 dB less than that of the
+% silence sweep, although in his examples he states that they were the same
+% rms level (creating a strange result where 2nd order harmonic distortion
+% from the sweep is greater than THD+N from the silence sweep). This can be
+% controlled using the last user parameter (deltaL), which attenuates the
+% silence sweep, regardless of its sign.
+%
+% Use the SilenceSweepAnalysis analyser (in Non-LTI analysis) to analyse
+% recordings made with this test signal. Alternatively, you can analyse it
+% 'manually' by using the '*' (convolve audio with audio2) button.
 
 
 
@@ -24,20 +40,22 @@ if nargin == 0
         'Sweep fade-in duration (s)';...
         'Sweep fade-out duration (s)';...
         'Sampling rate (Hz) - must be at least 44100';...
-        'Duration of gap between silence, silence sweep and sweep'},...
+        'Duration of the gap between silence, silence sweep and sweep (s)';...
+        'Level difference (Leq) between MLS (silence sweep) and sweep (dB)'},...
         'Silence Sweep',... 
         [1 60],... 
-        {'17';'0';'0.1';'48000';'1'}); 
+        {'17';'0';'0.1';'48000';'1';'0'}); 
     
     param = str2num(char(param)); 
     
-    if length(param) < 5, param = []; end 
+    if length(param) < 6, param = []; end 
     if ~isempty(param) 
         n = round(param(1));
         fadeindur = param(2);
         fadeoutdur = param(3);
         fs = round(param(4));
         gapdur = param(5);
+        deltaL = abs(param(6));
     else
         % get out of here if the user presses 'cancel'
         OUT = [];
@@ -59,9 +77,10 @@ if ~isempty(gapdur) && ~isempty(fs)
     mls(mlslen*floor(cycles/2)+1:mlslen*ceil(cycles/2)) = 0;
     
     % generate sweep 10 octaves
+    % code adapted from prior code by Nicholas Epain
     SI = 1/fs;
     dur = 10*mlslen*SI;
-    ampl = 0.5;
+    ampl = 0.25;
     start_freq = 20; % Hz
     end_freq = 20480; % Hz
     rcos_ms1 = fadeindur*1000; % fade-in duration in ms
@@ -73,7 +92,6 @@ if ~isempty(gapdur) && ~isempty(fs)
     t = (1:10*mlslen-1)*SI;
     phi = K*(exp(t*L) - 1);
     freq = K*L*exp(t*L);
-    %freqaxis = freq/(2*pi);
     amp_env = 10.^((log10(0.5))*log2(freq/freq(1)));
     S = ampl*sin(phi);
     rcos_len1 = round(length(S)*((rcos_ms1*1e-3)/dur));
@@ -106,8 +124,10 @@ if ~isempty(gapdur) && ~isempty(fs)
     fftlen = length(mls) + length(S) - 1;
     gaplen = round(fs*gapdur);
     audio = [zeros(gaplen,1); ifft(fft(mls,fftlen) .* fft(S,fftlen)); zeros(gaplen,1)];
-    audio = ampl * audio ./ max(abs(audio));
-    audio(1:length(S)) = 0; % silence
+    audio = 0.5.^0.5 * ampl * audio ./ ...
+        (rms(audio(length(S)+gaplen+1:end-(length(S)+gaplen)))...
+        * db2mag(deltaL));
+    audio(1:length(S)+gaplen) = 0; % silence
     audio(1+end-(length(S)+gaplen):end) = [zeros(gaplen,1);S]; % sweep
     
     OUT.fs = fs;
@@ -115,12 +135,16 @@ if ~isempty(gapdur) && ~isempty(fs)
     OUT.audio2 = Sinv;
     OUT.tag = 'SilenceSweep';
     OUT.funcallback.name = 'SilenceSweep_Farina2009.m'; 
-    OUT.funcallback.inarg = {n,fadeindur,fadeoutdur,fs,gapdur};
+    OUT.funcallback.inarg = {n,fadeindur,fadeoutdur,fs,gapdur,deltaL};
     OUT.properties.IRscalingfactor = IRscalingfactor;
     OUT.properties.MLSorder = n;
     OUT.properties.gapdur = gapdur;
+    OUT.properties.deltaL = deltaL;
     OUT.properties.fadeindur = fadeindur;
     OUT.properties.fadeoutdur = fadeoutdur;
+    OUT.properties.start_freq = start_freq;
+    OUT.properties.end_freq = end_freq;
+    OUT.properties.sweepdur = dur;
     OUT.properties.SilenceSweep = 1; % currently the analyser just checks that this exists. In future this could have more meaning.
 else
     OUT = [];
