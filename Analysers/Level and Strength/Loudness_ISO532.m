@@ -1,7 +1,7 @@
 function [OUT] = Loudness_ISO532(IN, field, method, TIME_SKIP)
 % This function implements Fastl & Zwicker Loudness model for stationary 
 % signals (Method A) and for arbitrary signals (Method B) as detailed in
-% ISO 532-1 "Acousics - Mthods for calculating loudness - Part 1: Zwicker
+% ISO 532-1 "Acousics - Methods for calculating loudness - Part 1: Zwicker
 % method", 2014.
 %
 % INPUT ARGUMENTS
@@ -9,15 +9,11 @@ function [OUT] = Loudness_ISO532(IN, field, method, TIME_SKIP)
 % field - free field = 0; diffuse field = 1
 % method - stationary = 0; time varying = 1;
 % TIME_SKIP - in seconds for level calculation (stationary signals) 
-
-
 %
 % OUTPUTS
 % * Time-varying Loudness
-% * Time-varying Sharpness (Zwicker & Fastl)
 % * Time-averaged Specific Loudness
-% * Time-averaged Loudness statistics, including fluctuation rate
-% * Time-averaged Sharpness statistics
+% * Time-averaged Loudness statistics
 
 % Source: C code is provided in the ISO532 Annex A (2014)
 % MATLAB code with adjustments to the C code by Ella Manor for AARAE (2015)
@@ -32,7 +28,12 @@ if nargin == 1
                       'Parameters',... 
                       [1 50],... 
                       {'0';'0';'0.'}); % And the preset answers for your dialog.
-
+    if str2double(param(2)) == 1 && str2double(param(3)) > 0
+        h=warndlg('When using time varying method the calculation must start from time 0');
+        uiwait(h)
+        param{3} = '0';
+    end
+    
     if length(param) < 2, param = []; end % You should check that the user 
                                           % has input all the required
                                           % fields.
@@ -47,12 +48,6 @@ if nargin == 1
         return
     end
     
-    if (TIME_SKIP > 0) && (method == 1)
-        h=warndlg('Start calculation time for Time varying method should be equal to zero'); 
-        uiwait(h)
-        TIME_SKIP = 0.;
-    end
-
 else
     param = [];
 end
@@ -145,7 +140,6 @@ if fs ~= 48000
     gcd_fs = gcd(48000,fs); % greatest common denominator
     audio = resample(audio,48000/gcd_fs,fs/gcd_fs);
     fs = 48000;
-    len = size(audio,1);
 end
 
 % ******************************************************************
@@ -162,10 +156,10 @@ elseif method == 1
     SampleRateLoudness = SR_LOUDNESS;
     DecFactorLevel = fs/SampleRateLevel;
     DecFactorLoudness = SampleRateLevel/SampleRateLoudness;
-    NumSamplesTime = len;
-    NumSamplesLevel = ceil(NumSamplesTime/DecFactorLevel);
+    NumSamplesLevel = len/DecFactorLevel;
+    NumSamplesLoudness = NumSamplesLevel/DecFactorLoudness;
+
 end
-NumDecSamples = ceil(len/DecFactorLevel);
 
 % **************************************************
 % STEP 2 - Create filter bank and filter the signal
@@ -312,7 +306,7 @@ end
 NumSkip = floor(TIME_SKIP * fs);
 % squaredaudio = zeros(len,28);
 smoothedaudio = zeros(len-NumSkip,28);
-ThirdOctaveLevel = zeros(NumDecSamples,28);
+ThirdOctaveLevel = zeros(NumSamplesLevel,28);
 for i = 1:28
     if method == 1
         if CenterFrequency(i) <= 1000
@@ -341,7 +335,7 @@ for i = 1:28
         end
         
         c=1;
-        for j = 1:NumDecSamples
+        for j = 1:NumSamplesLevel
               ThirdOctaveLevel(j,i) = 20*log10(sqrt(smoothedaudio(c,i).^2))*Time_fact; 
             c = c+DecFactorLevel;
         end
@@ -353,7 +347,7 @@ for i = 1:28
         end
         if NumSkip == 0; NumSkip = 1;end
         smoothedaudio(1:len-NumSkip,i) = filteredaudio(NumSkip:len-1,i);
-        ThirdOctaveLevel(NumDecSamples,i) = 20*log10(sqrt(sum(smoothedaudio(:,i).^2)/len))+TINY_VALUE/I_REF;
+        ThirdOctaveLevel(NumSamplesLevel,i) = 20*log10(sqrt(sum(smoothedaudio(:,i).^2)/len))+TINY_VALUE/I_REF;
     end
 
 end
@@ -745,7 +739,9 @@ for l = 1:NumSamplesLevel
 end
 
 % specific Loudness as a function of Bark number 
-Spec_N = mean(ns,1);
+for i = 1:240
+    Spec_N(i) = max(ns(:,i));
+end
 
 
 % **********************************************************************
@@ -802,16 +798,16 @@ if method == 1
     % Decimate signal for decreased computation time by factor of 24 (fs =
     % 2 Hz) 
     
-    Total_Loudness = zeros(SR_LOUDNESS,1);
+    Total_Loudness = zeros(NumSamplesLoudness,1);
     sC = 1;
-    for i = 1:SR_LOUDNESS
+    for i = 1:NumSamplesLoudness
             Total_Loudness(i) = Loudness(sC);
             sC = sC+DecFactorLoudness;
     end
     
-    ns_dec = zeros(SR_LOUDNESS,240);
+    ns_dec = zeros(NumSamplesLoudness,240);
     sC = 1;
-    for i = 1:SR_LOUDNESS
+    for i = 1:NumSamplesLoudness
             ns_dec(i,:) = ns(sC,:);
             sC = sC+DecFactorLoudness;
     end
@@ -845,7 +841,7 @@ if method == 1
     fig1 = figure('Name','Time-varying Dynamic Loudness (C&F) and Sharpness Statistics');
     table1 = uitable('Data',data_Total_Loudness,...
         'ColumnName',{'Loudness'},...
-        'RowName',{'Mean','Standard deviation','Maximum','Fluctuation',...
+        'RowName',{'Mean','Standard deviation','Maximum',...
         'N1','N2','N3','N4',...
         'N5','N10','N20','N30','N40','N50 (median)','N60',...
         'N70','N80','N90','Minimum'});
@@ -867,11 +863,11 @@ if method == 1
     
     subplot(2,2,4)
     % Time-averaged specific loudness as a fucntion of critical band
-    plot((1:240)/10,Spec_N,'r-');
+    plot(1:240,Spec_N,'r-');
     ax=gca;
     ax.Title.String = 'Time-Averaged Specific Loudness';
     ax.XLabel.String = 'Critical Band Rate (Bark)';
-    ax.XLim = [0 length(Spec_N)/10+1];
+    ax.XLim = [0 length(Spec_N)+10];
     % ax.XTickLabel = {'0','5','10','15','20','25'};
     ax.YLabel.String = 'Loudness (sones/Bark)';
     hold off;
@@ -889,26 +885,24 @@ if method == 1
     hold off;
     
 elseif method == 0
+    data = [N;LN];
+    fig1 = figure('Name','Overall Loudness and Loudness Level');
+    table1 = uitable('Data',data,...
+        'RowName',{'N (sone)','LN (phone)'});
     
-    [M,I] = max(Spec_N);
-    if I > 120
-        x = 1;
-    else
-        x = I*0.15;
-    end
-    y = M*80/100;
-    yy = M*70/100;
+    [~,tables] = disptables(fig1,table1); % AARAE function
+    
+    OUT.tables = tables;
+  
     % Figure for charts
     figure('Name',['Stationary method Loudness (ISO532-1) of ',name])
     % Time-averaged specific loudness as a fucntion of critical band
-    plot((1:240)/10,Spec_N,'r-');
+    plot(1:240,Spec_N,'r-');
     ax=gca;
     ax.FontSize = 14.;
     ax.Title.String = 'Time-Averaged Specific Loudness';
-    text(x,y,['Loudness (N) = ', num2str(round(N,1)),' sone'],'FontSize',14.,'FontWeight','bold');
-    text(x,yy,['Loudness level (LN) = ', num2str(round(LN,1)),' phon'],'FontSize',14.,'FontWeight','bold');
     ax.XLabel.String = 'Critical Band Rate (Bark)';
-    ax.XLim = [0 length(Spec_N)/10+1];
+    ax.XLim = [0 length(Spec_N)+10];
     ax.YLabel.String = 'Loudness (sones/Bark)';
     hold off;
     
