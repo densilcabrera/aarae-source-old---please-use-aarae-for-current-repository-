@@ -125,10 +125,9 @@ if ~isempty(gapdur) && ~isempty(fs)
     gaplen = round(fs*gapdur);
     audio = [zeros(gaplen,1); ifft(fft(mls,fftlen) .* fft(S,fftlen)); zeros(gaplen,1)];
     audio = 0.5.^0.5 * ampl * audio ./ ...
-        (rms(audio(length(S)+gaplen+1:end-(length(S)+gaplen)))...
-        * db2mag(deltaL));
+        (rms(audio(length(S)+gaplen+1:end-(length(S)+gaplen))));
     audio(1:length(S)+gaplen) = 0; % silence
-    audio(1+end-(length(S)+gaplen):end) = [zeros(gaplen,1);S]; % sweep
+    audio(1+end-(length(S)+gaplen):end) = [zeros(gaplen,1);S./db2mag(deltaL)]; % sweep
     
     OUT.fs = fs;
     OUT.audio = audio;
