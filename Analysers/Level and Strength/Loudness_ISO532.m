@@ -156,8 +156,8 @@ elseif method == 1
     SampleRateLoudness = SR_LOUDNESS;
     DecFactorLevel = fs/SampleRateLevel;
     DecFactorLoudness = SampleRateLevel/SampleRateLoudness;
-    NumSamplesLevel = len/DecFactorLevel;
-    NumSamplesLoudness = NumSamplesLevel/DecFactorLoudness;
+    NumSamplesLevel = ceil(len/DecFactorLevel);
+    NumSamplesLoudness = ceil(NumSamplesLevel/DecFactorLoudness);
 
 end
 
@@ -863,11 +863,11 @@ if method == 1
     
     subplot(2,2,4)
     % Time-averaged specific loudness as a fucntion of critical band
-    plot(1:240,Spec_N,'r-');
+    plot((1:240)/10,Spec_N,'r-');
     ax=gca;
     ax.Title.String = 'Time-Averaged Specific Loudness';
     ax.XLabel.String = 'Critical Band Rate (Bark)';
-    ax.XLim = [0 length(Spec_N)+10];
+    ax.XLim = [0 length(Spec_N)/10+1];
     % ax.XTickLabel = {'0','5','10','15','20','25'};
     ax.YLabel.String = 'Loudness (sones/Bark)';
     hold off;
@@ -897,12 +897,12 @@ elseif method == 0
     % Figure for charts
     figure('Name',['Stationary method Loudness (ISO532-1) of ',name])
     % Time-averaged specific loudness as a fucntion of critical band
-    plot(1:240,Spec_N,'r-');
+    plot((1:240)/10,Spec_N,'r-');
     ax=gca;
     ax.FontSize = 14.;
     ax.Title.String = 'Time-Averaged Specific Loudness';
     ax.XLabel.String = 'Critical Band Rate (Bark)';
-    ax.XLim = [0 length(Spec_N)+10];
+    ax.XLim = [0 length(Spec_N)/10+1];
     ax.YLabel.String = 'Loudness (sones/Bark)';
     hold off;
     
