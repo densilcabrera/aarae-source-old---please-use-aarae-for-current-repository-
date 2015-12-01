@@ -1,5 +1,5 @@
 function [OUT] = Loudness_ISO532(IN, field, method, TIME_SKIP)
-% This function implements Fastle & Zwicker Loudness model for stationary 
+% This function implements Fastl & Zwicker Loudness model for stationary 
 % signals (Method A) and for arbitrary signals (Method B) as detailed in
 % ISO 532-1 "Acousics - Mthods for calculating loudness - Part 1: Zwicker
 % method", 2014.
@@ -145,6 +145,7 @@ if fs ~= 48000
     gcd_fs = gcd(48000,fs); % greatest common denominator
     audio = resample(audio,48000/gcd_fs,fs/gcd_fs);
     fs = 48000;
+    len = size(audio,1);
 end
 
 % ******************************************************************
@@ -162,9 +163,9 @@ elseif method == 1
     DecFactorLevel = fs/SampleRateLevel;
     DecFactorLoudness = SampleRateLevel/SampleRateLoudness;
     NumSamplesTime = len;
-    NumSamplesLevel = NumSamplesTime/DecFactorLevel;
+    NumSamplesLevel = ceil(NumSamplesTime/DecFactorLevel);
 end
-NumDecSamples = len/DecFactorLevel;
+NumDecSamples = ceil(len/DecFactorLevel);
 
 % **************************************************
 % STEP 2 - Create filter bank and filter the signal
@@ -866,11 +867,11 @@ if method == 1
     
     subplot(2,2,4)
     % Time-averaged specific loudness as a fucntion of critical band
-    plot(1:240,Spec_N,'r-');
+    plot((1:240)/10,Spec_N,'r-');
     ax=gca;
     ax.Title.String = 'Time-Averaged Specific Loudness';
     ax.XLabel.String = 'Critical Band Rate (Bark)';
-    ax.XLim = [0 length(Spec_N)+10];
+    ax.XLim = [0 length(Spec_N)/10+1];
     % ax.XTickLabel = {'0','5','10','15','20','25'};
     ax.YLabel.String = 'Loudness (sones/Bark)';
     hold off;
@@ -891,23 +892,23 @@ elseif method == 0
     
     [M,I] = max(Spec_N);
     if I > 120
-        x = 10;
+        x = 1;
     else
-        x = I*1.5;
+        x = I*0.15;
     end
     y = M*80/100;
     yy = M*70/100;
     % Figure for charts
     figure('Name',['Stationary method Loudness (ISO532-1) of ',name])
     % Time-averaged specific loudness as a fucntion of critical band
-    plot(1:240,Spec_N,'r-');
+    plot((1:240)/10,Spec_N,'r-');
     ax=gca;
     ax.FontSize = 14.;
     ax.Title.String = 'Time-Averaged Specific Loudness';
     text(x,y,['Loudness (N) = ', num2str(round(N,1)),' sone'],'FontSize',14.,'FontWeight','bold');
     text(x,yy,['Loudness level (LN) = ', num2str(round(LN,1)),' phon'],'FontSize',14.,'FontWeight','bold');
     ax.XLabel.String = 'Critical Band Rate (Bark)';
-    ax.XLim = [0 length(Spec_N)+10];
+    ax.XLim = [0 length(Spec_N)/10+1];
     ax.YLabel.String = 'Loudness (sones/Bark)';
     hold off;
     
