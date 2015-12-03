@@ -303,6 +303,10 @@ end
 NumSkip = floor(TIME_SKIP * fs);
 smoothedaudio = zeros(len-NumSkip,28);
 ThirdOctaveLevel = zeros(NumSamplesLevel,28);
+
+% square the filtered audio for both methods
+filteredaudio = filteredaudio.^2;
+
 for i = 1:28
     if method == 1
         if CenterFrequency(i) <= 1000
@@ -325,8 +329,7 @@ for i = 1:28
         
         c=1;
         for j = 1:NumSamplesLevel
-%             ThirdOctaveLevel(j,i) = 10*log10((smoothedaudio(c,i)+TINY_VALUE)/I_REF);
-            ThirdOctaveLevel(j,i) = 20*log10(sqrt(smoothedaudio(c,i).^2))*Time_fact;
+            ThirdOctaveLevel(j,i) = 10*log10(smoothedaudio(c,i)+TINY_VALUE/I_REF)*0.956;
             c = c+DecFactorLevel;
         end
        
@@ -337,8 +340,7 @@ for i = 1:28
         end
         if NumSkip == 0; NumSkip = 1;end
         smoothedaudio(1:len-NumSkip,i) = filteredaudio(NumSkip:len-1,i);
-%         ThirdOctaveLevel(NumSamplesLevel,i) = 10*log10((filteredaudio(:,i)+TINY_VALUE)/I_REF);
-        ThirdOctaveLevel(NumSamplesLevel,i) = 20*log10(sqrt(sum(filteredaudio(:,i).^2)/len))+TINY_VALUE/I_REF;
+        ThirdOctaveLevel(NumSamplesLevel,i) = 10*log10((sum(filteredaudio(:,i))/len)+TINY_VALUE/I_REF);
     end
 
 end
