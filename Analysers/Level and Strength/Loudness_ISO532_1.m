@@ -123,12 +123,11 @@ if ~isempty(audio) && ~isempty(fs)
     % Sampling rate to which output/total summed loudness is downsampled 
     SR_LOUDNESS = 500;  
     % Tiny value for adjusting intensity levels for stationary signals
-    TINY_VALUE = 5e-11; % originally 1e-12, modified so that Loudness of 
-                        % 1000 Hz 40dB = 1 sone
+    TINY_VALUE = 1e-12; 
     % ref value for stationary signals
     I_REF =4e-10; 
     % Factor added to adjust the intensity levels for arbitrary signals
-    Time_fact = 0.96;
+    Time_fact = 0.956;
     
 % ***************************
 % STEP 1 - Resample to 48 kHz
@@ -138,6 +137,7 @@ if fs ~= 48000
     gcd_fs = gcd(48000,fs); % greatest common denominator
     audio = resample(audio,48000/gcd_fs,fs/gcd_fs);
     fs = 48000;
+    len = size(audio,1);
 end
 
 % ******************************************************************
@@ -329,7 +329,7 @@ for i = 1:28
         
         c=1;
         for j = 1:NumSamplesLevel
-            ThirdOctaveLevel(j,i) = 10*log10(smoothedaudio(c,i)+TINY_VALUE/I_REF)*0.956;
+            ThirdOctaveLevel(j,i) = 10*log10(smoothedaudio(c,i)+TINY_VALUE/I_REF)*Time_fact;
             c = c+DecFactorLevel;
         end
        
