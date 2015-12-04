@@ -30,6 +30,13 @@ function OUT = SilenceSweep_Farina2009(n,fadeindur,fadeoutdur,fs,gapdur,deltaL)
 % Use the SilenceSweepAnalysis analyser (in Non-LTI analysis) to analyse
 % recordings made with this test signal. Alternatively, you can analyse it
 % 'manually' by using the '*' (convolve audio with audio2) button.
+%
+% This method of assessing distortion may be helpful because it allows the
+% distortion due to broadband excitation to be assessed (rather than
+% distortion from one or two excitation frequencies). The silence sweep
+% does not distinguish between harmonic and other types of distortion.
+%
+% Code by Densil Cabrera, December 2015
 
 
 
