@@ -16,7 +16,25 @@ if ~isfield(IN.properties,'SilenceSweep')
     return
 end
 
-octsmooth = 0;
+if nargin == 1
+    param = inputdlg({'Fractional octave smoothing (use 0 for no smoothin, 3 for 1/3-octave smoothing, 1 for octave smoothing)';...
+        },...
+        'Silence Sweep Analysis',... 
+        [1 60],... 
+        {'0'}); 
+    
+    param = str2num(char(param)); 
+    
+    if length(param) < 1, param = []; end 
+    if ~isempty(param) 
+        octsmooth = param(1);
+    else
+        % get out of here if the user presses 'cancel'
+        OUT = [];
+        return
+    end
+end
+
 DCCoupling = 0;
 MLSlen = 2^IN.properties.MLSorder-1;
 sweeplen = round(IN.properties.sweepdur * IN.fs);
@@ -88,7 +106,7 @@ if isfield(IN,'audio2') % this indicates that convolution has not been done
     
     % Generate figure(s) for SNR analysis
     for d6 = 1:dim6
-        figure('Name','Signal, Noise, and SNR');
+        figure('Name','SNR without inverse filtering');
         for ch = 1:chans
             for d5 = 1:dim5
                 labelstring = 'hello';
@@ -211,7 +229,7 @@ end
 
 % Generate figure(s) for SNR analysis
 for d6 = 1:dim6
-    figure('Name','Signal, Noise, and SNR');
+    figure('Name','SNR & SINAD after inverse filtering');
     for ch = 1:chans
         for d5 = 1:dim5
             labelstring = 'hello';
@@ -276,7 +294,7 @@ clear ir1 ir2
 %preshift = round(MLSlen*0.025);
 MLSir = circshift(MLSir,round(winlen/2));
 MLSir = MLSir(1:winlen,:,:,:,:,:);
-MLSspect = 10*log10(fft(MLSir.*repmat(wf,[1,chans,1,1,dim5,dim6])).^2);
+
 
 % ANALYSE IR FROM SWEEP, INCLUDING HARMONIC DISTORTION
 IRstartindex = sweeplen+gaplen+32*MLSlen+gaplen+sweeplen-round(winlen/2)+1;
@@ -289,11 +307,15 @@ sweepIR2 = IN.audio(IRstartindex-harmonicoffsets(2):IRstartindex-harmonicoffsets
 sweepIR3 = IN.audio(IRstartindex-harmonicoffsets(3):IRstartindex-harmonicoffsets(3)+winlen-1,:,:,:,:,:);
 sweepIR4 = IN.audio(IRstartindex-harmonicoffsets(4):IRstartindex-harmonicoffsets(4)+winlen-1,:,:,:,:,:);
 sweepIR5 = IN.audio(IRstartindex-harmonicoffsets(5):IRstartindex-harmonicoffsets(5)+winlen-1,:,:,:,:,:);
-sweepspect1 = 10*log10(fft(sweepIR1.*repmat(wf,[1,chans,1,1,dim5,dim6])).^2);
-sweepspect2 = 10*log10(fft(sweepIR2.*repmat(wf,[1,chans,1,1,dim5,dim6])).^2);
-sweepspect3 = 10*log10(fft(sweepIR3.*repmat(wf,[1,chans,1,1,dim5,dim6])).^2);
-sweepspect4 = 10*log10(fft(sweepIR4.*repmat(wf,[1,chans,1,1,dim5,dim6])).^2);
-sweepspect5 = 10*log10(fft(sweepIR5.*repmat(wf,[1,chans,1,1,dim5,dim6])).^2);
+sweepspect1 = abs(fft(sweepIR1.*repmat(wf,[1,chans,1,1,dim5,dim6]))).^2;
+sweepspect2 = abs(fft(sweepIR2.*repmat(wf,[1,chans,1,1,dim5,dim6]))).^2;
+sweepspect3 = abs(fft(sweepIR3.*repmat(wf,[1,chans,1,1,dim5,dim6]))).^2;
+sweepspect4 = abs(fft(sweepIR4.*repmat(wf,[1,chans,1,1,dim5,dim6]))).^2;
+sweepspect5 = abs(fft(sweepIR5.*repmat(wf,[1,chans,1,1,dim5,dim6]))).^2;
+
+% match MLS peak amplitude to sweepIR1 peak
+MLSir = max(max(max(max(max(max(abs(sweepIR1))))))) .* MLSir ./ max(max(max(max(max(max(abs(MLSir)))))));
+MLSspect = abs(fft(MLSir.*repmat(wf,[1,chans,1,1,dim5,dim6]))).^2;
 
 % ANALYSE INVERSE-FILTERED SILENCE AT THE START TO ESTIMATE EFFECTIVE
 % BACKGROUND NOISE USING EQUIVALENT TIME PERIODS TO THOSE OF THE SWEEP
@@ -303,59 +325,149 @@ silenceIR2 = IN.audio(IRstartindex-harmonicoffsets(2):IRstartindex-harmonicoffse
 silenceIR3 = IN.audio(IRstartindex-harmonicoffsets(3):IRstartindex-harmonicoffsets(3)+winlen-1,:,:,:,:,:);
 silenceIR4 = IN.audio(IRstartindex-harmonicoffsets(4):IRstartindex-harmonicoffsets(4)+winlen-1,:,:,:,:,:);
 silenceIR5 = IN.audio(IRstartindex-harmonicoffsets(5):IRstartindex-harmonicoffsets(5)+winlen-1,:,:,:,:,:);
-silencespect1 = 10*log10(fft(silenceIR1.*repmat(wf,[1,chans,1,1,dim5,dim6])).^2);
-silencespect2 = 10*log10(fft(silenceIR2.*repmat(wf,[1,chans,1,1,dim5,dim6])).^2);
-silencespect3 = 10*log10(fft(silenceIR3.*repmat(wf,[1,chans,1,1,dim5,dim6])).^2);
-silencespect4 = 10*log10(fft(silenceIR4.*repmat(wf,[1,chans,1,1,dim5,dim6])).^2);
-silencespect5 = 10*log10(fft(silenceIR5.*repmat(wf,[1,chans,1,1,dim5,dim6])).^2);
-
-
+silencespect1 = abs(fft(silenceIR1.*repmat(wf,[1,chans,1,1,dim5,dim6]))).^2;
+silencespect2 = abs(fft(silenceIR2.*repmat(wf,[1,chans,1,1,dim5,dim6]))).^2;
+silencespect3 = abs(fft(silenceIR3.*repmat(wf,[1,chans,1,1,dim5,dim6]))).^2;
+silencespect4 = abs(fft(silenceIR4.*repmat(wf,[1,chans,1,1,dim5,dim6]))).^2;
+silencespect5 = abs(fft(silenceIR5.*repmat(wf,[1,chans,1,1,dim5,dim6]))).^2;
 
 t = (0:winlen-1)'./fs;
 f = fs*(0:round(winlen/2))'./winlen;
+
+if octsmooth > 0
+    for ch = 1:chans
+        for d5 = 1:dim5
+            for d6 = 1:dim6
+                MLSspect(:,ch,1,1,d5,d6) = octavesmoothing(MLSspect(:,ch,1,1,d5,d6),octsmooth, fs);
+                sweepspect1(:,ch,1,1,d5,d6) = octavesmoothing(sweepspect1(:,ch,1,1,d5,d6),octsmooth, fs);
+                sweepspect2(:,ch,1,1,d5,d6) = octavesmoothing(sweepspect2(:,ch,1,1,d5,d6),octsmooth, fs);
+                sweepspect3(:,ch,1,1,d5,d6) = octavesmoothing(sweepspect3(:,ch,1,1,d5,d6),octsmooth, fs);
+                sweepspect4(:,ch,1,1,d5,d6) = octavesmoothing(sweepspect4(:,ch,1,1,d5,d6),octsmooth, fs);
+                sweepspect5(:,ch,1,1,d5,d6) = octavesmoothing(sweepspect5(:,ch,1,1,d5,d6),octsmooth, fs);
+                silencespect1(:,ch,1,1,d5,d6) = octavesmoothing(silencespect1(:,ch,1,1,d5,d6),octsmooth, fs);
+                silencespect2(:,ch,1,1,d5,d6) = octavesmoothing(silencespect2(:,ch,1,1,d5,d6),octsmooth, fs);
+                silencespect3(:,ch,1,1,d5,d6) = octavesmoothing(silencespect3(:,ch,1,1,d5,d6),octsmooth, fs);
+                silencespect4(:,ch,1,1,d5,d6) = octavesmoothing(silencespect4(:,ch,1,1,d5,d6),octsmooth, fs);
+                silencespect5(:,ch,1,1,d5,d6) = octavesmoothing(silencespect5(:,ch,1,1,d5,d6),octsmooth, fs);
+            end
+        end
+    end
+    lowlimit = 128/(winlen/fs); % avoid very low freq hump error
+    MLSspect = MLSspect(f>lowlimit,:,:,:,:,:);
+    sweepspect1 = sweepspect1(f>lowlimit,:,:,:,:,:);
+    sweepspect2 = sweepspect2(f>lowlimit,:,:,:,:,:);
+    sweepspect3 = sweepspect3(f>lowlimit,:,:,:,:,:);
+    sweepspect4 = sweepspect4(f>lowlimit,:,:,:,:,:);
+    sweepspect5 = sweepspect5(f>lowlimit,:,:,:,:,:);
+    silencespect1 = silencespect1(f>lowlimit,:,:,:,:,:);
+    silencespect2 = silencespect2(f>lowlimit,:,:,:,:,:);
+    silencespect3 = silencespect3(f>lowlimit,:,:,:,:,:);
+    silencespect4 = silencespect4(f>lowlimit,:,:,:,:,:);
+    silencespect5 = silencespect5(f>lowlimit,:,:,:,:,:);
+    MLSspect(MLSspect<0)=0;
+    sweepspect1(sweepspect1<0)=0;
+    sweepspect2(sweepspect2<0)=0;
+    sweepspect3(sweepspect3<0)=0;
+    sweepspect4(sweepspect4<0)=0;
+    sweepspect5(sweepspect5<0)=0;
+    silencespect1(silencespect1<0)=0;
+    silencespect2(silencespect2<0)=0;
+    silencespect3(silencespect3<0)=0;
+    silencespect4(silencespect4<0)=0;
+    silencespect5(silencespect5<0)=0;
+    f=f(f>lowlimit);
+end
+
+
+
 for d6 = 1:dim6
     compplot=figure('Name','SilenceSweep IR analysis');
     for d5 = 1:dim5
         for ch = 1:chans
             subplot(3,2,1)
-            colr = permute(linecolor(ch,1,d5,:),[1,4,2,3]);
+            colr = permute(linecolor(ch,5,d5,:),[1,4,2,3]);
             plot(t,10*log10(MLSir(:,ch,1,1,d5,d6).^2),...
                 'color',colr,...
                 'DisplayName',labelstring);
+            hold on
+
             
             subplot(3,2,2)
-            colr = permute(linecolor(ch,1,d5,:),[1,4,2,3]);
+            colr = permute(linecolor(ch,5,d5,:),[1,4,2,3]);
             plot(t,10*log10(sweepIR1(:,ch,1,1,d5,d6).^2),...
+                'color',colr,...
+                'DisplayName',labelstring);
+            hold on
+            colr = permute(linecolor(ch,1,d5,:),[1,4,2,3]);
+            plot(t,10*log10(silenceIR1(:,ch,1,1,d5,d6).^2),...
                 'color',colr,...
                 'DisplayName',labelstring);
             
             subplot(3,2,3)
-            colr = permute(linecolor(ch,1,d5,:),[1,4,2,3]);
+            colr = permute(linecolor(ch,5,d5,:),[1,4,2,3]);
             plot(t,10*log10(sweepIR2(:,ch,1,1,d5,d6).^2),...
+                'color',colr,...
+                'DisplayName',labelstring);
+            hold on
+            colr = permute(linecolor(ch,1,d5,:),[1,4,2,3]);
+            plot(t,10*log10(silenceIR2(:,ch,1,1,d5,d6).^2),...
                 'color',colr,...
                 'DisplayName',labelstring);
             
             subplot(3,2,4)
-            colr = permute(linecolor(ch,1,d5,:),[1,4,2,3]);
+            colr = permute(linecolor(ch,5,d5,:),[1,4,2,3]);
             plot(t,10*log10(sweepIR3(:,ch,1,1,d5,d6).^2),...
+                'color',colr,...
+                'DisplayName',labelstring);
+            hold on
+            colr = permute(linecolor(ch,1,d5,:),[1,4,2,3]);
+            plot(t,10*log10(silenceIR3(:,ch,1,1,d5,d6).^2),...
                 'color',colr,...
                 'DisplayName',labelstring);
             
             subplot(3,2,5)
-            colr = permute(linecolor(ch,1,d5,:),[1,4,2,3]);
+            colr = permute(linecolor(ch,5,d5,:),[1,4,2,3]);
             plot(t,10*log10(sweepIR4(:,ch,1,1,d5,d6).^2),...
+                'color',colr,...
+                'DisplayName',labelstring);
+            hold on
+            colr = permute(linecolor(ch,1,d5,:),[1,4,2,3]);
+            plot(t,10*log10(silenceIR4(:,ch,1,1,d5,d6).^2),...
                 'color',colr,...
                 'DisplayName',labelstring);
             
             subplot(3,2,6)
-            colr = permute(linecolor(ch,1,d5,:),[1,4,2,3]);
+            colr = permute(linecolor(ch,5,d5,:),[1,4,2,3]);
             plot(t,10*log10(sweepIR5(:,ch,1,1,d5,d6).^2),...
+                'color',colr,...
+                'DisplayName',labelstring);
+            hold on
+            colr = permute(linecolor(ch,1,d5,:),[1,4,2,3]);
+            plot(t,10*log10(silenceIR5(:,ch,1,1,d5,d6).^2),...
                 'color',colr,...
                 'DisplayName',labelstring);
             
             
         end
     end
+    subplot(3,2,1)
+    title('MLS')
+    ylabel('Level [dB]')
+    subplot(3,2,2)
+    title('Sweep linear response')
+    subplot(3,2,3)
+    title('Sweep 2nd harmonic')
+    ylabel('Level [dB]')
+    subplot(3,2,4)
+    title('Sweep 3rd harmonic')
+    subplot(3,2,5)
+    title('Sweep 4th harmonic')
+    xlabel('Time [s]')
+    ylabel('Level [dB]')
+    subplot(3,2,6)
+    title('Sweep 5th harmonic')
+    xlabel('Time [s]')
+    
     iplots = get(compplot,'Children');
     if length(iplots) > 1
         xlims = cell2mat(get(iplots,'Xlim'));
@@ -374,47 +486,90 @@ for d6 = 1:dim6
         for ch = 1:chans
             
             subplot(3,2,1)
-            colr = permute(linecolor(ch,1,d5,:),[1,4,2,3]);
-            semilogx(f,MLSspect(1:length(f),ch,1,1,d5,d6),...
+            colr = permute(linecolor(ch,5,d5,:),[1,4,2,3]);
+            semilogx(f,10*log10(MLSspect(1:length(f),ch,1,1,d5,d6)),...
                 'color',colr,...
                 'DisplayName',labelstring);
+            hold on
             
             subplot(3,2,2)
+            colr = permute(linecolor(ch,5,d5,:),[1,4,2,3]);
+            semilogx(f,10*log10(sweepspect1(1:length(f),ch,1,1,d5,d6)),...
+                'color',colr,...
+                'DisplayName',labelstring);
+            hold on
             colr = permute(linecolor(ch,1,d5,:),[1,4,2,3]);
-            semilogx(f,sweepspect1(1:length(f),ch,1,1,d5,d6),...
+            plot(f,10*log10(silencespect1(1:length(f),ch,1,1,d5,d6)),...
                 'color',colr,...
                 'DisplayName',labelstring);
             
             subplot(3,2,3)
+            colr = permute(linecolor(ch,5,d5,:),[1,4,2,3]);
+            semilogx(f,10*log10(sweepspect2(1:length(f),ch,1,1,d5,d6)),...
+                'color',colr,...
+                'DisplayName',labelstring);
+            hold on
             colr = permute(linecolor(ch,1,d5,:),[1,4,2,3]);
-            semilogx(f,sweepspect2(1:length(f),ch,1,1,d5,d6),...
+            plot(f,10*log10(silencespect2(1:length(f),ch,1,1,d5,d6)),...
                 'color',colr,...
                 'DisplayName',labelstring);
             
             subplot(3,2,4)
+            colr = permute(linecolor(ch,5,d5,:),[1,4,2,3]);
+            semilogx(f,10*log10(sweepspect3(1:length(f),ch,1,1,d5,d6)),...
+                'color',colr,...
+                'DisplayName',labelstring);
+            hold on
             colr = permute(linecolor(ch,1,d5,:),[1,4,2,3]);
-            semilogx(f,sweepspect3(1:length(f),ch,1,1,d5,d6),...
+            plot(f,10*log10(silencespect3(1:length(f),ch,1,1,d5,d6)),...
                 'color',colr,...
                 'DisplayName',labelstring);
             
             subplot(3,2,5)
+            colr = permute(linecolor(ch,5,d5,:),[1,4,2,3]);
+            semilogx(f,10*log10(sweepspect4(1:length(f),ch,1,1,d5,d6)),...
+                'color',colr,...
+                'DisplayName',labelstring);
+            hold on
             colr = permute(linecolor(ch,1,d5,:),[1,4,2,3]);
-            semilogx(f,sweepspect4(1:length(f),ch,1,1,d5,d6),...
+            plot(f,10*log10(silencespect4(1:length(f),ch,1,1,d5,d6)),...
                 'color',colr,...
                 'DisplayName',labelstring);
             
             subplot(3,2,6)
-            colr = permute(linecolor(ch,1,d5,:),[1,4,2,3]);
-            semilogx(f,sweepspect5(1:length(f),ch,1,1,d5,d6),...
+            colr = permute(linecolor(ch,5,d5,:),[1,4,2,3]);
+            semilogx(f,10*log10(sweepspect5(1:length(f),ch,1,1,d5,d6)),...
                 'color',colr,...
                 'DisplayName',labelstring);
-            
+            hold on
+            colr = permute(linecolor(ch,1,d5,:),[1,4,2,3]);
+            plot(f,10*log10(silencespect5(1:length(f),ch,1,1,d5,d6)),...
+                'color',colr,...
+                'DisplayName',labelstring);
         end
     end
+    subplot(3,2,1)
+    title('MLS')
+    ylabel('Level [dB]')
+    subplot(3,2,2)
+    title('Sweep linear response')
+    subplot(3,2,3)
+    title('Sweep 2nd harmonic')
+    ylabel('Level [dB]')
+    subplot(3,2,4)
+    title('Sweep 3rd harmonic')
+    subplot(3,2,5)
+    title('Sweep 4th harmonic')
+    xlabel('Frequency [Hz]')
+    ylabel('Level [dB]')
+    subplot(3,2,6)
+    title('Sweep 5th harmonic')
+    xlabel('Frequency [Hz]')
     iplots = get(compplot,'Children');
     if length(iplots) > 1
-        xlims = cell2mat(get(iplots,'Xlim'));
-        set(iplots,'Xlim',[min(xlims(:,1)) max(xlims(:,2))])
+        %xlims = cell2mat(get(iplots,'Xlim'));
+        %set(iplots,'Xlim',[min(xlims(:,1)) max(xlims(:,2))])
+        set(iplots,'Xlim',[20 20000])
         ylims = cell2mat(get(iplots,'Ylim'));
         set(iplots,'Ylim',[min(ylims(:,1)) max(ylims(:,2))])
         uicontrol('Style', 'pushbutton', 'String', 'Axes limits',...
