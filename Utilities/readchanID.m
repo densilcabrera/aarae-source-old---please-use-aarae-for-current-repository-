@@ -27,6 +27,32 @@ if ~isempty(regexp(char(chanID{1}),'Chan','once'))
     end
     format = 0;
     
+elseif ~isempty(regexp(char(chanID{1}),'Outchan','once'))
+    % generic dimension 4 (output channel) ID in the form of 'Outchan1', 'Outchan2', etc
+    out = zeros(length(chanID),1);
+    for n = 1:length(chanID)
+         cellval = regexp(chanID{n},'-?\d+\.?\d*|-?\d*\.?\d+','match');
+         if size(cellval,2)~=1
+            out = [];
+            return
+        end
+         out(n) = str2double(cellval{1});
+    end
+    format = 10;
+    
+elseif ~isempty(regexp(char(chanID{1}),'Dim6_','once'))
+    % generic dimension 6 ID in the form of 'Dim6_1', 'Dim6_2', etc
+    out = zeros(length(chanID),1);
+    for n = 1:length(chanID)
+         cellval = regexp(chanID{n},'-?\d+\.?\d*|-?\d*\.?\d+','match');
+         if size(cellval,2)~=1
+            out = [];
+            return
+        end
+         out(n) = str2double(cellval{1});
+    end
+    format = 20;
+    
 elseif ~isempty(regexp(char(chanID{1}),'Y','once'))
     % Spherical harmonic chanIDs, showing order and degree (e.g., for 
         % HOA signals)

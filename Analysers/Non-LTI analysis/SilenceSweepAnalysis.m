@@ -67,6 +67,35 @@ if dim4 > 1 % multicycle
     end
 end
 
+if chans > 1
+    if isfield(IN,'chanID')
+        chanID = IN.chanID;
+    else
+        chanID = makechanID(chans,0);
+    end
+else
+    chanID = {''};
+end
+
+if dim5 > 1
+    if isfield(IN,'dim5ID')
+        dim5ID = IN.dim5ID;
+    else
+        dim5ID = makechanID(dim5,10);
+    end
+else
+    dim5ID = {''};
+end
+
+if dim6 > 1
+    if isfield(IN,'dim6ID')
+        dim6ID = IN.dim6ID;
+    else
+        dim6ID = makechanID(dim5,20);
+    end
+else
+    dim6ID = {''};
+end
 
 linecolor = HSVplotcolours2(chans, 5, dim5); % H,S,V
 % ANALYSE SNR, USING UNCONVOLVED RECORDING
@@ -109,18 +138,18 @@ if isfield(IN,'audio2') % this indicates that convolution has not been done
         figure('Name','SNR without inverse filtering');
         for ch = 1:chans
             for d5 = 1:dim5
-                labelstring = 'hello';
+                labelstring = [char(chanID(ch)), ' ', char(dim5ID(d5)), ' ' char(dim6ID(d6))];
                 
                 subplot(2,1,1) % plot of Signal and Noise spectra
                 colr = permute(linecolor(ch,1,d5,:),[1,4,2,3]);
                 semilogx(f,10*log10(NoisePow(:,ch,d5,d6)),...
                     'color',colr,...
-                    'DisplayName',labelstring);
+                    'DisplayName',['Noise ' labelstring]);
                 hold on
                 colr = permute(linecolor(ch,3,d5,:),[1,4,2,3]);
                 semilogx(f,10*log10(SigPow(:,ch,d5,d6)),...
                     'color',colr,...
-                    'DisplayName',labelstring);
+                    'DisplayName',['Signal ' labelstring]);
                 
                 
                 colr = permute(linecolor(ch,2,d5,:),[1,4,2,3]);
@@ -232,7 +261,7 @@ for d6 = 1:dim6
     figure('Name','SNR & SINAD after inverse filtering');
     for ch = 1:chans
         for d5 = 1:dim5
-            labelstring = 'hello';
+            labelstring = [char(chanID(ch)), ' ', char(dim5ID(d5)), ' ' char(dim6ID(d6))];
             
             subplot(2,1,1) % plot of Signal and Noise spectra
             colr = permute(linecolor(ch,1,d5,:),[1,4,2,3]);
@@ -295,6 +324,8 @@ clear ir1 ir2
 MLSir = circshift(MLSir,round(winlen/2));
 MLSir = MLSir(1:winlen,:,:,:,:,:);
 
+wf = window(@blackmanharris,winlen);
+wf(1:round(end/2)) = wf(1:round(end/2)).^4; % much stronger windowing in first half because we assume that is mainly noise
 
 % ANALYSE IR FROM SWEEP, INCLUDING HARMONIC DISTORTION
 IRstartindex = sweeplen+gaplen+32*MLSlen+gaplen+sweeplen-round(winlen/2)+1;
@@ -315,7 +346,7 @@ sweepspect5 = abs(fft(sweepIR5.*repmat(wf,[1,chans,1,1,dim5,dim6]))).^2;
 
 % match MLS peak amplitude to sweepIR1 peak
 MLSir = max(max(max(max(max(max(abs(sweepIR1))))))) .* MLSir ./ max(max(max(max(max(max(abs(MLSir)))))));
-MLSspect = abs(fft(MLSir.*repmat(wf,[1,chans,1,1,dim5,dim6]))).^2;
+MLSspect = abs(fft(MLSir.*repmat(wf,[1,chans,dim5,dim6]))).^2;
 
 % ANALYSE INVERSE-FILTERED SILENCE AT THE START TO ESTIMATE EFFECTIVE
 % BACKGROUND NOISE USING EQUIVALENT TIME PERIODS TO THOSE OF THE SWEEP
@@ -338,7 +369,7 @@ if octsmooth > 0
     for ch = 1:chans
         for d5 = 1:dim5
             for d6 = 1:dim6
-                MLSspect(:,ch,1,1,d5,d6) = octavesmoothing(MLSspect(:,ch,1,1,d5,d6),octsmooth, fs);
+                MLSspect(:,ch,d5,d6) = octavesmoothing(MLSspect(:,ch,d5,d6),octsmooth, fs);
                 sweepspect1(:,ch,1,1,d5,d6) = octavesmoothing(sweepspect1(:,ch,1,1,d5,d6),octsmooth, fs);
                 sweepspect2(:,ch,1,1,d5,d6) = octavesmoothing(sweepspect2(:,ch,1,1,d5,d6),octsmooth, fs);
                 sweepspect3(:,ch,1,1,d5,d6) = octavesmoothing(sweepspect3(:,ch,1,1,d5,d6),octsmooth, fs);
@@ -353,7 +384,7 @@ if octsmooth > 0
         end
     end
     lowlimit = 128/(winlen/fs); % avoid very low freq hump error
-    MLSspect = MLSspect(f>lowlimit,:,:,:,:,:);
+    MLSspect = MLSspect(f>lowlimit,:,:,:);
     sweepspect1 = sweepspect1(f>lowlimit,:,:,:,:,:);
     sweepspect2 = sweepspect2(f>lowlimit,:,:,:,:,:);
     sweepspect3 = sweepspect3(f>lowlimit,:,:,:,:,:);
@@ -381,12 +412,13 @@ end
 
 
 for d6 = 1:dim6
-    compplot=figure('Name','SilenceSweep IR analysis');
+    compplot=figure('Name','SilenceSweep IR & noise floor');
     for d5 = 1:dim5
         for ch = 1:chans
+            labelstring = [char(chanID(ch)), ' ', char(dim5ID(d5)), ' ' char(dim6ID(d6))];
             subplot(3,2,1)
             colr = permute(linecolor(ch,5,d5,:),[1,4,2,3]);
-            plot(t,10*log10(MLSir(:,ch,1,1,d5,d6).^2),...
+            plot(t,10*log10(MLSir(:,ch,d5,d6).^2),...
                 'color',colr,...
                 'DisplayName',labelstring);
             hold on
@@ -481,13 +513,13 @@ for d6 = 1:dim6
 end
 
 for d6 = 1:dim6
-    compplot=figure('Name','SilenceSweep IR spectrum analysis');
+    compplot=figure('Name','SilenceSweep IR spectrum & noise floor');
     for d5 = 1:dim5
         for ch = 1:chans
-            
+            labelstring = [char(chanID(ch)), ' ', char(dim5ID(d5)), ' ' char(dim6ID(d6))];
             subplot(3,2,1)
             colr = permute(linecolor(ch,5,d5,:),[1,4,2,3]);
-            semilogx(f,10*log10(MLSspect(1:length(f),ch,1,1,d5,d6)),...
+            semilogx(f,10*log10(MLSspect(1:length(f),ch,d5,d6)),...
                 'color',colr,...
                 'DisplayName',labelstring);
             hold on
@@ -578,7 +610,66 @@ for d6 = 1:dim6
     end
 end
 
-% plot MLSir and sweepIRs in time & frequency domains (dB)
+for d6 = 1:dim6
+    compplot = figure('Name','Harmonic distortion relative to linear response');
+    numberofsubplots = chans * dim5;
+    maxsubplots = 100;
+    if numberofsubplots > maxsubplots, numberofsubplots = maxsubplots; end
+    [r, c] = subplotpositions(numberofsubplots,0.7);
+    plotnum = 1;
+    for d5 = 1:dim5
+        for ch = 1:chans
+            if plotnum <= maxsubplots
+                subplot(r,c,plotnum)
+                h = sweepspect2(1:length(f),ch,1,1,d5,d6);
+                h(h<=silencespect2(1:length(f),ch,1,1,d5,d6)) = 0;
+                h = 10*log10(h ./ sweepspect1(1:length(f),ch,1,1,d5,d6));
+                semilogx(f./2,h,...
+                    'color',[1,0,0],...
+                    'DisplayName','2nd harmonic');
+                title([char(chanID(ch)) ' ' char(dim5ID(d5))])
+                hold on
+                h = sweepspect3(1:length(f),ch,1,1,d5,d6);
+                h(h<=silencespect3(1:length(f),ch,1,1,d5,d6)) = 0;
+                h = 10*log10(h ./ sweepspect1(1:length(f),ch,1,1,d5,d6));
+                semilogx(f./3,h,...
+                    'color',[0.8,0.8,0],...
+                    'DisplayName','3rd harmonic');
+                h = sweepspect4(1:length(f),ch,1,1,d5,d6);
+                h(h<=silencespect4(1:length(f),ch,1,1,d5,d6)) = 0;
+                h = 10*log10(h ./ sweepspect1(1:length(f),ch,1,1,d5,d6));
+                semilogx(f./4,h,...
+                    'color',[0,0.8,0],...
+                    'DisplayName','4th harmonic');
+                h = sweepspect5(1:length(f),ch,1,1,d5,d6);
+                h(h<=silencespect5(1:length(f),ch,1,1,d5,d6)) = 0;
+                h = 10*log10(h ./ sweepspect1(1:length(f),ch,1,1,d5,d6));
+                semilogx(f./5,h,...
+                    'color',[0,0,1],...
+                    'DisplayName','5th harmonic');
+                semilogx([20 20000], [0 0],...
+                    'color',[0.6 0.6 0.6]);
+                xlim([20 10000])
+                ylim([-120 20])
+                xlabel('Excitation Freq [Hz]')
+                ylabel('Relative Level [dB]')
+            end
+            plotnum = plotnum+1;
+        end
+    end
+    iplots = get(compplot,'Children');
+    if length(iplots) > 1
+        %xlims = cell2mat(get(iplots,'Xlim'));
+        %set(iplots,'Xlim',[min(xlims(:,1)) max(xlims(:,2))])
+        set(iplots,'Xlim',[20 20000])
+        ylims = cell2mat(get(iplots,'Ylim'));
+        set(iplots,'Ylim',[min(ylims(:,1)) max(ylims(:,2))])
+        uicontrol('Style', 'pushbutton', 'String', 'Axes limits',...
+            'Position', [0 0 65 30],...
+            'Callback', 'setaxeslimits');
+    end
+end
+
 
 
 OUT.funcallback.name = 'SilenceSweepAnalysis.m';
