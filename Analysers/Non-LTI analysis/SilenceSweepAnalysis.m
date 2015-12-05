@@ -1,4 +1,48 @@
 function OUT = SilenceSweepAnalysis(IN,octsmooth)
+% Use this function to analyse recordings made using the
+% SilenceSweep_Farina2009 test signal.
+%
+% For background information, see:
+% A. Farina (2009) "Silence Sweep: a novel method for measuring
+% electro-acoustical devices," 126th AES Convention, Munich, Germany
+%
+% It is best to analyse the actual recording, rather than convolving the
+% recording with its inverse filter (audio2).
+%
+% The following analyses are done: 
+% 1. Signal, noise, and signal-to-noise ratio (SNR) of the recording, where
+% the recorded MLS is taken as singal, and the sound before it as the
+% noise. The analysis is done using a series of Hann windows, power
+% averaged. The window length is equal to half the MLS length.
+%
+% 2. Signal, noise, noise + distortion, SNR, and
+% signal-to-noise-and-distortion (SINAD) of the recording after convolution
+% with the inverse filter. Here the MLS is taken as the signal, the period
+% of silence just before the MLS (the 'gap' between the silence recording
+% and the MLS, which is at least 1 MLS cycle long) is taken as the noise,
+% and the 1-cycle interruption of the MLS is taken as the noise with
+% distortion. Note that, due to inverse filtering, the spectral slope of
+% signal and noise is changed by 3 dB/octave, compared to the first
+% analysis.
+%
+% 3. Impulse response visualisation in the time domain, of the MLS signal
+% and the sweep. This includes the first four distortion pseudo-IRs from
+% the sweep. The effective noise floor is taken from equivalent time
+% intervals in the silence at the start of the recording (which was
+% convolved with the inverse filter).
+%
+% 4. Frequency domain visualisation of the MLS and sweep impulse responses
+% (including the first four distortion pseudo IRs. A window function is
+% applied prior to FFT, consisting of a Blackman-Harris window, the first
+% half of which has been raised to a power of 4. The effective noise floor
+% is analysed the same way.
+%
+% 5. Frequency domain visualisation of the harmonic distortion relative to
+% the fundamental, as a function of excitation frequency. Only values that
+% are greater than the effective noise floor are shown.
+%
+% Code by Densil Cabrera, December 2015
+
 
 if ~isfield(IN,'properties')
     if nargin == 1
@@ -332,7 +376,6 @@ IRstartindex = sweeplen+gaplen+32*MLSlen+gaplen+sweeplen-round(winlen/2)+1;
 harmonicoffsets=round((log10(1:5))./...
     (1./sweeplen...
     .*log10(IN.properties.end_freq./IN.properties.start_freq))); % harmonics 1:5 are separated by more than MLSlen.
-diffharmonicoffsets=diff(harmonicoffsets);
 sweepIR1 = IN.audio(IRstartindex:IRstartindex+winlen-1,:,:,:,:,:);
 sweepIR2 = IN.audio(IRstartindex-harmonicoffsets(2):IRstartindex-harmonicoffsets(2)+winlen-1,:,:,:,:,:);
 sweepIR3 = IN.audio(IRstartindex-harmonicoffsets(3):IRstartindex-harmonicoffsets(3)+winlen-1,:,:,:,:,:);
