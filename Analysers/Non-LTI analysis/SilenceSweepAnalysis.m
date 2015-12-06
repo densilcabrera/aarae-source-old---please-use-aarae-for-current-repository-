@@ -1,4 +1,4 @@
-function OUT = SilenceSweepAnalysis(IN,octsmooth,thrsholddB)
+function OUT = SilenceSweepAnalysis(IN,octsmooth,thresholddB)
 % Use this function to analyse recordings made using the
 % SilenceSweep_Farina2009 test signal.
 %
@@ -469,19 +469,10 @@ if octsmooth > 0
             end
         end
     end
-    lowlimit = 128/(winlen/fs); % avoid very low freq hump error
-%     MLSspect = MLSspect(f>lowlimit,:,:,:);
-%     sweepspect1 = sweepspect1(f>lowlimit,:,:,:,:,:);
-%     sweepspect2 = sweepspect2(f>lowlimit,:,:,:,:,:);
-%     sweepspect3 = sweepspect3(f>lowlimit,:,:,:,:,:);
-%     sweepspect4 = sweepspect4(f>lowlimit,:,:,:,:,:);
-%     sweepspect5 = sweepspect5(f>lowlimit,:,:,:,:,:);
-%     silencespect1 = silencespect1(f>lowlimit,:,:,:,:,:);
-%     silencespect2 = silencespect2(f>lowlimit,:,:,:,:,:);
-%     silencespect3 = silencespect3(f>lowlimit,:,:,:,:,:);
-%     silencespect4 = silencespect4(f>lowlimit,:,:,:,:,:);
-%     silencespect5 = silencespect5(f>lowlimit,:,:,:,:,:);
-
+    lowlimit = 128/(winlen/fs); % avoid very low freq hump error.
+    % we zero (rather than delete) the LF components because this make the
+    % interpolation of the frequency scale for harmonic distortion simpler
+    % to implement.
     MLSspect(f<lowlimit,:,:,:)=0;
     sweepspect1(f<lowlimit,:,:,:,:,:)=0;
     sweepspect2(f<lowlimit,:,:,:,:,:)=0;
@@ -505,7 +496,6 @@ if octsmooth > 0
     silencespect3(silencespect3<0)=0;
     silencespect4(silencespect4<0)=0;
     silencespect5(silencespect5<0)=0;
-%    f=f(f>lowlimit);
 end
 
 
@@ -521,8 +511,7 @@ for d6 = 1:dim6
                 'color',colr,...
                 'DisplayName',labelstring);
             hold on
-            
-            
+                     
             subplot(3,2,2)
             colr = permute(linecolor(ch,5,d5,:),[1,4,2,3]);
             plot(t,10*log10(sweepIR1(:,ch,1,1,d5,d6).^2),...
