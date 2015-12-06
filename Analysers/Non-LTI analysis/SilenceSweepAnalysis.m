@@ -7,7 +7,8 @@ function OUT = SilenceSweepAnalysis(IN,octsmooth)
 % electro-acoustical devices," 126th AES Convention, Munich, Germany
 %
 % It is best to analyse the actual recording, rather than convolving the
-% recording with its inverse filter (audio2).
+% recording with its inverse filter (audio2). The inverse filtering is done
+% within this function (if it has not already been done).
 %
 % The following analyses are done: 
 % 1. Signal, noise, and signal-to-noise ratio (SNR) of the recording, where
@@ -40,6 +41,11 @@ function OUT = SilenceSweepAnalysis(IN,octsmooth)
 % 5. Frequency domain visualisation of the harmonic distortion relative to
 % the fundamental, as a function of excitation frequency. Only values that
 % are greater than the effective noise floor are shown.
+%
+% You can assess the limits of these analyses by analysing the test signal
+% itself (without playing it through the system). It is possible to change
+% the sensitivity of the analysis by changing the test signal parameters
+% (especially the fade-in and fade-out duration and the MLS order).
 %
 % Code by Densil Cabrera, December 2015
 
@@ -92,7 +98,7 @@ fs = IN.fs;
 
 if bands > 1
     % sum multiple bands
-    audio = sum(audio,3);
+    IN.audio = sum(IN.audio,3);
 end
 
 
@@ -103,11 +109,11 @@ if dim4 > 1 % multicycle
         if isinf(IN.properties.relgain(1))
             % discard silent cycle (it is redundant because the test signal
             % includes silence) & apply synchronous average
-            audio = mean(audio(:,:,1,2:end,:,:),4);
+            IN.audio = mean(IN.audio(:,:,1,2:end,:,:),4);
         end
     else
         % synchronous average
-        audio = mean(audio,4);
+        IN.audio = mean(IN.audio,4);
     end
 end
 
