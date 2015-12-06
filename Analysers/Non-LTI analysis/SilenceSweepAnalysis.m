@@ -1,4 +1,4 @@
-function OUT = SilenceSweepAnalysis(IN,octsmooth)
+function OUT = SilenceSweepAnalysis(IN,octsmooth,thrsholddB)
 % Use this function to analyse recordings made using the
 % SilenceSweep_Farina2009 test signal.
 %
@@ -10,9 +10,9 @@ function OUT = SilenceSweepAnalysis(IN,octsmooth)
 % recording with its inverse filter (audio2). The inverse filtering is done
 % within this function (if it has not already been done).
 %
-% The following analyses are done: 
+% The following analyses are done:
 % 1. Signal, noise, and signal-to-noise ratio (SNR) of the recording, where
-% the recorded MLS is taken as singal, and the sound before it as the
+% the recorded MLS is taken as signal, and the sound before it as the
 % noise. The analysis is done using a series of Hann windows, power
 % averaged. The window length is equal to half the MLS length.
 %
@@ -68,16 +68,17 @@ end
 
 if nargin == 1
     param = inputdlg({'Fractional octave smoothing (use 0 for no smoothin, 3 for 1/3-octave smoothing, 1 for octave smoothing)';...
-        },...
-        'Silence Sweep Analysis',... 
-        [1 60],... 
-        {'0'}); 
+        'Threshold above background noise to display as distortion [dB]'},...
+        'Silence Sweep Analysis',...
+        [1 60],...
+        {'0','0'});
     
-    param = str2num(char(param)); 
+    param = str2num(char(param));
     
-    if length(param) < 1, param = []; end 
-    if ~isempty(param) 
+    if length(param) < 2, param = []; end
+    if ~isempty(param)
         octsmooth = param(1);
+        thresholddB = param(2);
     else
         % get out of here if the user presses 'cancel'
         OUT = [];
@@ -206,7 +207,7 @@ if isfield(IN,'audio2') % this indicates that convolution has not been done
                 subplot(2,1,2) % plot of SNR
                 semilogx(f,10*log10(SNR(:,ch,d5,d6)),...
                     'color',colr,...
-                    'DisplayName',labelstring);
+                    'DisplayName',['SNR ' labelstring]);
                 hold on
             end
         end
@@ -317,30 +318,30 @@ for d6 = 1:dim6
             colr = permute(linecolor(ch,1,d5,:),[1,4,2,3]);
             semilogx(f,10*log10(NoisebeforeMLSPow(:,ch,d5,d6)),...
                 'color',colr,...
-                'DisplayName',labelstring);
+                'DisplayName',['Noise ' labelstring]);
             hold on
             
             colr = permute(linecolor(ch,2,d5,:),[1,4,2,3]);
             semilogx(f,10*log10(NoiseDistPow(:,ch,d5,d6)),...
                 'color',colr,...
-                'DisplayName',labelstring);
+                'DisplayName',['N+D ' labelstring]);
             
             colr = permute(linecolor(ch,3,d5,:),[1,4,2,3]);
             semilogx(f,10*log10(SigPow2(:,ch,d5,d6)),...
                 'color',colr,...
-                'DisplayName',labelstring);
+                'DisplayName',['Sig ' labelstring]);
             
             
             colr = permute(linecolor(ch,2,d5,:),[1,4,2,3]);
             subplot(2,1,2) % plot of SNR
             semilogx(f,10*log10(SNR2(:,ch,d5,d6)),...
                 'color',colr,...
-                'DisplayName',labelstring);
+                'DisplayName',['SNR ' labelstring]);
             hold on
             colr = permute(linecolor(ch,4,d5,:),[1,4,2,3]);
             semilogx(f,10*log10(SINAD(:,ch,d5,d6)),...
                 'color',colr,...
-                'DisplayName',labelstring);
+                'DisplayName',['SINAD ' labelstring]);
         end
     end
     subplot(2,1,1)
@@ -387,11 +388,29 @@ sweepIR2 = IN.audio(IRstartindex-harmonicoffsets(2):IRstartindex-harmonicoffsets
 sweepIR3 = IN.audio(IRstartindex-harmonicoffsets(3):IRstartindex-harmonicoffsets(3)+winlen-1,:,:,:,:,:);
 sweepIR4 = IN.audio(IRstartindex-harmonicoffsets(4):IRstartindex-harmonicoffsets(4)+winlen-1,:,:,:,:,:);
 sweepIR5 = IN.audio(IRstartindex-harmonicoffsets(5):IRstartindex-harmonicoffsets(5)+winlen-1,:,:,:,:,:);
-sweepspect1 = abs(fft(sweepIR1.*repmat(wf,[1,chans,1,1,dim5,dim6]))).^2;
-sweepspect2 = abs(fft(sweepIR2.*repmat(wf,[1,chans,1,1,dim5,dim6]))).^2;
-sweepspect3 = abs(fft(sweepIR3.*repmat(wf,[1,chans,1,1,dim5,dim6]))).^2;
-sweepspect4 = abs(fft(sweepIR4.*repmat(wf,[1,chans,1,1,dim5,dim6]))).^2;
-sweepspect5 = abs(fft(sweepIR5.*repmat(wf,[1,chans,1,1,dim5,dim6]))).^2;
+if numel(sweepIR1)<1e6
+    sweepspect1 = abs(fft(sweepIR1.*repmat(wf,[1,chans,1,1,dim5,dim6]))).^2;
+    sweepspect2 = abs(fft(sweepIR2.*repmat(wf,[1,chans,1,1,dim5,dim6]))).^2;
+    sweepspect3 = abs(fft(sweepIR3.*repmat(wf,[1,chans,1,1,dim5,dim6]))).^2;
+    sweepspect4 = abs(fft(sweepIR4.*repmat(wf,[1,chans,1,1,dim5,dim6]))).^2;
+    sweepspect5 = abs(fft(sweepIR5.*repmat(wf,[1,chans,1,1,dim5,dim6]))).^2;
+else
+    % nested for loops to reduce the chance of memory blow-out for
+    % multidimensional measurements
+    [sweepspect1,sweepspect2,sweepspect3,sweepspect4,sweepspect5] = ...
+        deal(zeros(size(sweepIR1)));
+    for ch = 1:chans
+        for d5 = 1:dim5
+            for d6 = 1:dim6
+                sweepspect1 = abs(fft(sweepIR1(:,ch,1,1,d5,d6).*wf)).^2;
+                sweepspect2 = abs(fft(sweepIR2(:,ch,1,1,d5,d6).*wf)).^2;
+                sweepspect3 = abs(fft(sweepIR3(:,ch,1,1,d5,d6).*wf)).^2;
+                sweepspect4 = abs(fft(sweepIR4(:,ch,1,1,d5,d6).*wf)).^2;
+                sweepspect5 = abs(fft(sweepIR5(:,ch,1,1,d5,d6).*wf)).^2;
+            end
+        end
+    end
+end
 
 % match MLS peak amplitude to sweepIR1 peak
 MLSir = max(max(max(max(max(max(abs(sweepIR1))))))) .* MLSir ./ max(max(max(max(max(max(abs(MLSir)))))));
@@ -405,11 +424,29 @@ silenceIR2 = IN.audio(IRstartindex-harmonicoffsets(2):IRstartindex-harmonicoffse
 silenceIR3 = IN.audio(IRstartindex-harmonicoffsets(3):IRstartindex-harmonicoffsets(3)+winlen-1,:,:,:,:,:);
 silenceIR4 = IN.audio(IRstartindex-harmonicoffsets(4):IRstartindex-harmonicoffsets(4)+winlen-1,:,:,:,:,:);
 silenceIR5 = IN.audio(IRstartindex-harmonicoffsets(5):IRstartindex-harmonicoffsets(5)+winlen-1,:,:,:,:,:);
-silencespect1 = abs(fft(silenceIR1.*repmat(wf,[1,chans,1,1,dim5,dim6]))).^2;
-silencespect2 = abs(fft(silenceIR2.*repmat(wf,[1,chans,1,1,dim5,dim6]))).^2;
-silencespect3 = abs(fft(silenceIR3.*repmat(wf,[1,chans,1,1,dim5,dim6]))).^2;
-silencespect4 = abs(fft(silenceIR4.*repmat(wf,[1,chans,1,1,dim5,dim6]))).^2;
-silencespect5 = abs(fft(silenceIR5.*repmat(wf,[1,chans,1,1,dim5,dim6]))).^2;
+if numel(silenceIR1)<1e6
+    silencespect1 = abs(fft(silenceIR1.*repmat(wf,[1,chans,1,1,dim5,dim6]))).^2;
+    silencespect2 = abs(fft(silenceIR2.*repmat(wf,[1,chans,1,1,dim5,dim6]))).^2;
+    silencespect3 = abs(fft(silenceIR3.*repmat(wf,[1,chans,1,1,dim5,dim6]))).^2;
+    silencespect4 = abs(fft(silenceIR4.*repmat(wf,[1,chans,1,1,dim5,dim6]))).^2;
+    silencespect5 = abs(fft(silenceIR5.*repmat(wf,[1,chans,1,1,dim5,dim6]))).^2;
+else
+    % nested for loops to reduce the chance of memory blow-out for
+    % multidimensional measurements
+    [silencespect1,silencespect2,silencespect3,silencespect4,silencespect5] = ...
+        deal(zeros(size(silenceIR1)));
+    for ch = 1:chans
+        for d5 = 1:dim5
+            for d6 = 1:dim6
+                silencespect1 = abs(fft(silenceIR1(:,ch,1,1,d5,d6).*wf)).^2;
+                silencespect2 = abs(fft(silenceIR2(:,ch,1,1,d5,d6).*wf)).^2;
+                silencespect3 = abs(fft(silenceIR3(:,ch,1,1,d5,d6).*wf)).^2;
+                silencespect4 = abs(fft(silenceIR4(:,ch,1,1,d5,d6).*wf)).^2;
+                silencespect5 = abs(fft(silenceIR5(:,ch,1,1,d5,d6).*wf)).^2;
+            end
+        end
+    end
+end
 
 t = (0:winlen-1)'./fs;
 f = fs*(0:round(winlen/2))'./winlen;
@@ -433,17 +470,30 @@ if octsmooth > 0
         end
     end
     lowlimit = 128/(winlen/fs); % avoid very low freq hump error
-    MLSspect = MLSspect(f>lowlimit,:,:,:);
-    sweepspect1 = sweepspect1(f>lowlimit,:,:,:,:,:);
-    sweepspect2 = sweepspect2(f>lowlimit,:,:,:,:,:);
-    sweepspect3 = sweepspect3(f>lowlimit,:,:,:,:,:);
-    sweepspect4 = sweepspect4(f>lowlimit,:,:,:,:,:);
-    sweepspect5 = sweepspect5(f>lowlimit,:,:,:,:,:);
-    silencespect1 = silencespect1(f>lowlimit,:,:,:,:,:);
-    silencespect2 = silencespect2(f>lowlimit,:,:,:,:,:);
-    silencespect3 = silencespect3(f>lowlimit,:,:,:,:,:);
-    silencespect4 = silencespect4(f>lowlimit,:,:,:,:,:);
-    silencespect5 = silencespect5(f>lowlimit,:,:,:,:,:);
+%     MLSspect = MLSspect(f>lowlimit,:,:,:);
+%     sweepspect1 = sweepspect1(f>lowlimit,:,:,:,:,:);
+%     sweepspect2 = sweepspect2(f>lowlimit,:,:,:,:,:);
+%     sweepspect3 = sweepspect3(f>lowlimit,:,:,:,:,:);
+%     sweepspect4 = sweepspect4(f>lowlimit,:,:,:,:,:);
+%     sweepspect5 = sweepspect5(f>lowlimit,:,:,:,:,:);
+%     silencespect1 = silencespect1(f>lowlimit,:,:,:,:,:);
+%     silencespect2 = silencespect2(f>lowlimit,:,:,:,:,:);
+%     silencespect3 = silencespect3(f>lowlimit,:,:,:,:,:);
+%     silencespect4 = silencespect4(f>lowlimit,:,:,:,:,:);
+%     silencespect5 = silencespect5(f>lowlimit,:,:,:,:,:);
+
+    MLSspect(f<lowlimit,:,:,:)=0;
+    sweepspect1(f<lowlimit,:,:,:,:,:)=0;
+    sweepspect2(f<lowlimit,:,:,:,:,:)=0;
+    sweepspect3(f<lowlimit,:,:,:,:,:)=0;
+    sweepspect4(f<lowlimit,:,:,:,:,:)=0;
+    sweepspect5(f<lowlimit,:,:,:,:,:)=0;
+    silencespect1(f<lowlimit,:,:,:,:,:)=0;
+    silencespect2(f<lowlimit,:,:,:,:,:)=0;
+    silencespect3(f<lowlimit,:,:,:,:,:)=0;
+    silencespect4(f<lowlimit,:,:,:,:,:)=0;
+    silencespect5(f<lowlimit,:,:,:,:,:)=0;
+    
     MLSspect(MLSspect<0)=0;
     sweepspect1(sweepspect1<0)=0;
     sweepspect2(sweepspect2<0)=0;
@@ -455,7 +505,7 @@ if octsmooth > 0
     silencespect3(silencespect3<0)=0;
     silencespect4(silencespect4<0)=0;
     silencespect5(silencespect5<0)=0;
-    f=f(f>lowlimit);
+%    f=f(f>lowlimit);
 end
 
 
@@ -471,7 +521,7 @@ for d6 = 1:dim6
                 'color',colr,...
                 'DisplayName',labelstring);
             hold on
-
+            
             
             subplot(3,2,2)
             colr = permute(linecolor(ch,5,d5,:),[1,4,2,3]);
@@ -671,31 +721,47 @@ for d6 = 1:dim6
             if plotnum <= maxsubplots
                 subplot(r,c,plotnum)
                 h = sweepspect2(1:length(f),ch,1,1,d5,d6);
-                h(h<=silencespect2(1:length(f),ch,1,1,d5,d6)) = 0;
-                h = 10*log10(h ./ sweepspect1(1:length(f),ch,1,1,d5,d6));
-                semilogx(f./2,h,...
+                h(h<=silencespect2(1:length(f),ch,1,1,d5,d6)*db2pow(thresholddB)) = 0;
+                h0 = interp(sweepspect1((1:length(f)),ch,1,1,d5,d6),2);
+                h = 10*log10(h ./ h0(1:length(f)));
+                hindex = isreal(h) | ~isnan(h);
+                h(isinf(h))=nan;
+                semilogx(f(hindex)./2,real(h(hindex)),...
                     'color',[1,0,0],...
                     'DisplayName','2nd harmonic');
                 title([char(chanID(ch)) ' ' char(dim5ID(d5))])
                 hold on
+                
                 h = sweepspect3(1:length(f),ch,1,1,d5,d6);
-                h(h<=silencespect3(1:length(f),ch,1,1,d5,d6)) = 0;
-                h = 10*log10(h ./ sweepspect1(1:length(f),ch,1,1,d5,d6));
-                semilogx(f./3,h,...
+                h(h<=silencespect3(1:length(f),ch,1,1,d5,d6)*db2pow(thresholddB)) = 0;
+                h0 = interp(sweepspect1((1:length(f)),ch,1,1,d5,d6),3);
+                h = 10*log10(h ./ h0(1:length(f)));
+                hindex = isreal(h) | ~isnan(h);
+                h(isinf(h))=nan;
+                semilogx(f(hindex)./3,real(h(hindex)),...
                     'color',[0.8,0.8,0],...
                     'DisplayName','3rd harmonic');
+                
                 h = sweepspect4(1:length(f),ch,1,1,d5,d6);
-                h(h<=silencespect4(1:length(f),ch,1,1,d5,d6)) = 0;
-                h = 10*log10(h ./ sweepspect1(1:length(f),ch,1,1,d5,d6));
-                semilogx(f./4,h,...
+                h(h<=silencespect4(1:length(f),ch,1,1,d5,d6)*db2pow(thresholddB)) = 0;
+                h0 = interp(sweepspect1((1:length(f)),ch,1,1,d5,d6),4);
+                h = 10*log10(h ./ h0(1:length(f)));
+                hindex = isreal(h) | ~isnan(h);
+                h(isinf(h))=nan;
+                semilogx(f(hindex)./4,real(h(hindex)),...
                     'color',[0,0.8,0],...
                     'DisplayName','4th harmonic');
+                
                 h = sweepspect5(1:length(f),ch,1,1,d5,d6);
-                h(h<=silencespect5(1:length(f),ch,1,1,d5,d6)) = 0;
-                h = 10*log10(h ./ sweepspect1(1:length(f),ch,1,1,d5,d6));
-                semilogx(f./5,h,...
+                h(h<=silencespect5(1:length(f),ch,1,1,d5,d6)*db2pow(thresholddB)) = 0;
+                h0 = interp(sweepspect1((1:length(f)),ch,1,1,d5,d6),5);
+                h = 10*log10(h ./ h0(1:length(f)));
+                hindex = isreal(h) | ~isnan(h);
+                h(isinf(h))=nan;
+                semilogx(f(hindex)./5,real(h(hindex)),...
                     'color',[0,0,1],...
                     'DisplayName','5th harmonic');
+                
                 semilogx([20 20000], [0 0],...
                     'color',[0.6 0.6 0.6]);
                 xlim([20 10000])
@@ -722,7 +788,7 @@ end
 
 
 OUT.funcallback.name = 'SilenceSweepAnalysis.m';
-OUT.funcallback.inarg = {octsmooth};
+OUT.funcallback.inarg = {octsmooth,thresholddB};
 
 
 %**************************************************************************
