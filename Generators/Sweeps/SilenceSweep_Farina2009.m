@@ -11,7 +11,7 @@ function OUT = SilenceSweep_Farina2009(n,fadeindur,fadeoutdur,fs,gapdur,deltaL)
 % those used in the paper, however a more sensitive analysis can be achived
 % by using a longer fade-in and fade-out duration for the sweep (e.g. 1 s,
 % perhaps with a higher order MLS). However, note that the fade-in and
-% fade-out duration limit the effective frequency range of the sweep. The
+% fade-out durations limit the effective frequency range of the sweep. The
 % sensitivity of the test signal can be explored by analysing the test
 % signal itself (without playing it through an audio system).
 %
@@ -27,6 +27,12 @@ function OUT = SilenceSweep_Farina2009(n,fadeindur,fadeoutdur,fs,gapdur,deltaL)
 % controlled using the last user parameter (deltaL), which attenuates the
 % silence sweep, regardless of its sign.
 %
+% Like all measurements of non-linear distortion, it is best to make the
+% measurement in quiet conditions, because otherwise it may be difficult to
+% distinguish distortion from noise. The analysis assumes that background
+% noise is steady state, and significant time-variance or impulsiveness in
+% the noise may introduce artefacts in the analysed results.
+%
 % Use the SilenceSweepAnalysis analyser (in Non-LTI analysis) to analyse
 % recordings made with this test signal. Alternatively, you can analyse it
 % 'manually' by using the '*' (convolve audio with audio2) button.
@@ -34,7 +40,8 @@ function OUT = SilenceSweep_Farina2009(n,fadeindur,fadeoutdur,fs,gapdur,deltaL)
 % This method of assessing distortion may be helpful because it allows the
 % distortion due to broadband excitation to be assessed (rather than
 % distortion from one or two excitation frequencies). The silence sweep
-% does not distinguish between harmonic and other types of distortion.
+% does not distinguish between harmonic and other types of non-linear 
+% distortion.
 %
 % Code by Densil Cabrera, December 2015
 

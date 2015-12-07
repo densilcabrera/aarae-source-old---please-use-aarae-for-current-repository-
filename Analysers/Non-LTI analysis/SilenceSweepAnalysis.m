@@ -10,42 +10,58 @@ function OUT = SilenceSweepAnalysis(IN,octsmooth,thresholddB)
 % recording with its inverse filter (audio2). The inverse filtering is done
 % within this function (if it has not already been done).
 %
-% The following analyses are done:
+% The following analyses are done, represented by five figures (charts).
+% Fractional octave band smoothing can be applied (to the frequency domain
+% analyses).
+%
 % 1. Signal, noise, and signal-to-noise ratio (SNR) of the recording, where
-% the recorded MLS is taken as signal, and the sound before it as the
-% noise. The analysis is done using a series of Hann windows, power
-% averaged. The window length is equal to half the MLS length.
+%    the recorded MLS is taken as signal, and the sound before it as the
+%    noise. The analysis is done using a series of Hann windows, power
+%    averaged. The window length is equal to half the MLS length.
 %
 % 2. Signal, noise, noise + distortion, SNR, and
-% signal-to-noise-and-distortion (SINAD) of the recording after convolution
-% with the inverse filter. Here the MLS is taken as the signal, the period
-% of silence just before the MLS (the 'gap' between the silence recording
-% and the MLS, which is at least 1 MLS cycle long) is taken as the noise,
-% and the 1-cycle interruption of the MLS is taken as the noise with
-% distortion. Note that, due to inverse filtering, the spectral slope of
-% signal and noise is changed by 3 dB/octave, compared to the first
-% analysis.
+%    signal-to-noise-and-distortion (SINAD) of the recording after convolution
+%    with the inverse filter. Here the MLS is taken as the signal, the period
+%    of silence just before the MLS (the 'gap' between the silence recording
+%    and the MLS, which is at least 1 MLS cycle long) is taken as the noise,
+%    and the 1-cycle interruption of the MLS is taken as the noise with
+%    distortion. Note that, due to inverse filtering, the spectral slope of
+%    signal and noise is changed by 3 dB/octave, compared to the first
+%    analysis. SNR and SINAD are both displayed in dB, using positive values
+%    (assuming signal is stronger than noise and distortion). Hence, if
+%    distortion is significant, the SINAD curve should be lower than the SNR
+%    curve. If the SINAD curve is higher than the SNR curve, that implies that
+%    the background noise varied during the measurement.
 %
 % 3. Impulse response visualisation in the time domain, of the MLS signal
-% and the sweep. This includes the first four distortion pseudo-IRs from
-% the sweep. The effective noise floor is taken from equivalent time
-% intervals in the silence at the start of the recording (which was
-% convolved with the inverse filter).
+%    and the sweep. This includes the first four distortion pseudo-IRs from
+%    the sweep. The effective noise floor is taken from equivalent time
+%    intervals in the silence at the start of the recording (which was
+%    convolved with the inverse filter).
 %
 % 4. Frequency domain visualisation of the MLS and sweep impulse responses
-% (including the first four distortion pseudo IRs. A window function is
-% applied prior to FFT, consisting of a Blackman-Harris window, the first
-% half of which has been raised to a power of 4. The effective noise floor
-% is analysed the same way.
+%    (including the first four distortion pseudo IRs). A window function is
+%    applied prior to FFT, consisting of a Blackman-Harris window, the first
+%    half of which has been raised to a power of 4. This asymmetric window
+%    function assumes that most of the period before the expected IR arrival
+%    time is noise. The effective noise floor is analysed the same way.
 %
 % 5. Frequency domain visualisation of the harmonic distortion relative to
-% the fundamental, as a function of excitation frequency. Only values that
-% are greater than the effective noise floor are shown.
+%    the fundamental, as a function of excitation frequency. Only values that
+%    are greater than a threshold relative to the effective noise floor are
+%    shown. By default, this threshold is 0 dB, but arguably it should be
+%    higher (you can change it in the dialog box or in the function call).
 %
 % You can assess the limits of these analyses by analysing the test signal
 % itself (without playing it through the system). It is possible to change
 % the sensitivity of the analysis by changing the test signal parameters
 % (especially the fade-in and fade-out duration and the MLS order).
+%
+% Note that this function automatically time-aligns the recorded signal to
+% the expected envelope (by cross-correlation), but this may fail in the
+% unlikely event that there was a very long time mis-match. This function
+% assumes that the recording is at least as long as the test signal, and it
+% cannot analyse a shorter recording.
 %
 % Code by Densil Cabrera, December 2015
 
@@ -67,7 +83,7 @@ if ~isfield(IN.properties,'SilenceSweep')
 end
 
 if nargin == 1
-    param = inputdlg({'Fractional octave smoothing (use 0 for no smoothin, 3 for 1/3-octave smoothing, 1 for octave smoothing)';...
+    param = inputdlg({'Fractional octave smoothing (use 0 for no smoothing, 3 for 1/3-octave smoothing, 1 for octave smoothing)';...
         'Threshold above background noise to display as distortion [dB]'},...
         'Silence Sweep Analysis',...
         [1 60],...
@@ -470,7 +486,7 @@ if octsmooth > 0
         end
     end
     lowlimit = 128/(winlen/fs); % avoid very low freq hump error.
-    % we zero (rather than delete) the LF components because this make the
+    % we zero (rather than delete) the LF components because this makes the
     % interpolation of the frequency scale for harmonic distortion simpler
     % to implement.
     MLSspect(f<lowlimit,:,:,:)=0;
