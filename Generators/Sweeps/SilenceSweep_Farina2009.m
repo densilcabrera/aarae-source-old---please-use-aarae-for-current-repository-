@@ -25,7 +25,7 @@ function OUT = SilenceSweep_Farina2009(n,fadeindur,fadeoutdur,fs,gapdur,deltaL)
 % rms level (creating a strange result where 2nd order harmonic distortion
 % from the sweep is greater than THD+N from the silence sweep). This can be
 % controlled using the last user parameter (deltaL), which attenuates the
-% silence sweep, regardless of its sign.
+% sweep, regardless of its sign.
 %
 % Like all measurements of non-linear distortion, it is best to make the
 % measurement in quiet conditions, because otherwise it may be difficult to
