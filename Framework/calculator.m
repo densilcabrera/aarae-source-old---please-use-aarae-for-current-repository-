@@ -132,23 +132,50 @@ if nargout(handles.funname) == 1
         if length(fieldnames(signaldata)) ~= 1
             signaldata.datatype = 'results';
             leafname = isfield(mainHandles,matlab.lang.makeValidName(handles.funname));
+            
+            % THE FOLLOWING HAS BEEN REPLACED BY THE CODE THAT FOLLOWS IT
+            % (SEE COMMENT ABOUT BUG FROM CHANGING handles.funname)
+%             if leafname == 1
+%                 index = 1;
+%                 % This while cycle is just to make sure no signals are
+%                 % overwriten
+%                 if length(matlab.lang.makeValidName(handles.funname)) >= namelengthmax, handles.funname = handles.funname(1:round(end/2)); end
+%                 while isfield(handles,matlab.lang.makeValidName([handles.funname,'_',num2str(index)])) == 1
+%                     index = index + 1;
+%                 end
+%                 % the following causes a bug if you run the function 3
+%                 % times without closing Calculators
+%                 handles.funname = matlab.lang.makeValidName([handles.funname,'_',num2str(index)]);
+%             end
+%             signaldata.name = handles.funname;
+%             
+%             % Save as you go
+%             save([cd '/Utilities/Backup/' handles.funname '.mat'], 'signaldata');
+%             
+%             mainHandles.(matlab.lang.makeValidName(handles.funname)) = uitreenode('v0', handles.funname,  handles.funname,  iconPath, true);
+%             mainHandles.(matlab.lang.makeValidName(handles.funname)).UserData = signaldata;
+%             mainHandles.results.add(mainHandles.(matlab.lang.makeValidName(handles.funname)));
+
+            signaldata.name = handles.funname;
             if leafname == 1
                 index = 1;
                 % This while cycle is just to make sure no signals are
                 % overwriten
-                if length(matlab.lang.makeValidName(handles.funname)) >= namelengthmax, handles.funname = handles.funname(1:round(end/2)); end
-                while isfield(handles,matlab.lang.makeValidName([handles.funname,'_',num2str(index)])) == 1
+                
+                if length(matlab.lang.makeValidName(signaldata.name)) >= namelengthmax, signaldata.name = signaldata.name(1:round(end/2)); end
+                while isfield(handles,matlab.lang.makeValidName([signaldata.name,'_',num2str(index)])) == 1
                     index = index + 1;
                 end
-                handles.funname = matlab.lang.makeValidName([handles.funname,'_',num2str(index)]);
+                signaldata.name = matlab.lang.makeValidName([signaldata.name,'_',num2str(index)]);
             end
-            signaldata.name = handles.funname;
+            
             % Save as you go
-            save([cd '/Utilities/Backup/' handles.funname '.mat'], 'signaldata');
+            save([cd '/Utilities/Backup/' signaldata.name '.mat'], 'signaldata');
             
             mainHandles.(matlab.lang.makeValidName(handles.funname)) = uitreenode('v0', handles.funname,  handles.funname,  iconPath, true);
             mainHandles.(matlab.lang.makeValidName(handles.funname)).UserData = signaldata;
             mainHandles.results.add(mainHandles.(matlab.lang.makeValidName(handles.funname)));
+
             mainHandles.mytree.reloadNode(mainHandles.results);
             mainHandles.mytree.expand(mainHandles.results);
             mainHandles.mytree.setSelectedNode(mainHandles.(matlab.lang.makeValidName(handles.funname)));

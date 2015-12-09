@@ -95,6 +95,18 @@ alpha = 8.686.*frequencies.^2.*((0.0000000000184.*pa_on_pr.^-1.*T_on_T0.^0.5)...
     +T_on_T0.^(-5/2).*(0.01275.*exp(-2239.1./temperatures).*(FrO+frequencies.^2./FrO).^-1 ...
     +0.1068.*exp(-3352./temperatures).*(FrN+frequencies.^2./FrN).^-1));
 %out.alpha = alpha;
+% 
+% speed of sound
+h=h./100;
+Mw = 29 - 11*h;
+yw = (7+h)./(5+h);
+c = 331.3 * (1 + (temperatures-273.15) ./ 273.15).^0.5...
+    .* 4.5513 .* (yw./Mw).^0.5;
+%disp(['Speed of sound: ' num2str(c(1)) ' m/s'])
+
+% characteristic acoustic impedance
+% rho = pressures ./ (287.05*temperatures) +
+% z = rho .* c;
 
 clear T_on_T0 psat_on_pr h pa_on_pr FrO FrN
 frequencies = squeeze(frequencies(:,1,1,1));
@@ -103,7 +115,8 @@ relhumidities = squeeze(relhumidities(1,1,:,1));
 pressures = squeeze(pressures(1,1,1,:));
 
 
-% Generate a filter
+
+% Generate a filter for dissipation
 if nargin == 0
     magnitude = 10.^((-alpha * distance) / 20);
     h = fir2(filterlen,frequencies./(fs/2),magnitude)';
@@ -138,6 +151,7 @@ if doplot
         ylabel('alpha (dB/m)')
         title(['Atmospheric attenuation, temp ', num2str(temperatures), ' deg, rh ', ...
             num2str(relhumidities), ' %, pres ', num2str(pressures), ' kPa'])
+        text(1000,max(squeeze(alpha))*0.97,['c = ' num2str(c(1)) ' m/s'])
     end
     if ~plotlogic(1) && plotlogic(2) && ~plotlogic(3) && ~plotlogic(4)
         figure('Name','Dissipation')
