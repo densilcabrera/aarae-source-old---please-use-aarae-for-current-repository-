@@ -8,7 +8,7 @@ function OUT = dissipation(frequencies, temperatures, relhumidities, pressures, 
 % distance.
 %
 % Code by Densil Cabrera
-% version 1.01 (21 December 2013)
+% version 1.02 (9 December 2015)
 
 % Inputs are frequencies (Hz), temperatures (deg C), relative humidities
 % (%),  and atmospheric presures (kPa).
@@ -125,8 +125,15 @@ if nargin == 0
     end
     OUT.audio = h;
     OUT.fs = fs;
-    
-    
+    OUT.properties.temperature = temperatures;
+    OUT.properties.relhumidity = relhumidities;
+    OUT.properties.pressure = pressures;
+    OUT.properties.distance = distance;
+    if minphase == 1
+        OUT.properties.phasetype = 'minimum';
+    else
+        OUT.properties.phasetype = 'linear';
+    end
     
 else
     OUT = alpha;
