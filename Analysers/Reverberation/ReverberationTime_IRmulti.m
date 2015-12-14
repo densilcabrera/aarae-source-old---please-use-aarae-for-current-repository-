@@ -139,10 +139,10 @@ if nargin < 14, SNR = 10; end % minimum raw SNR in each chan & band (if this req
 if nargin < 13, averagingmethod = 2; end
 if nargin < 12, additionalaudio = 0; end
 if nargin < 10, f_low = 125; f_hi = 8000; end
-if nargin < 9, autotrunc = 0; end
-if nargin < 8, noisecomp = 0; end
-if nargin < 7, phasemode = 0; end
-if nargin < 6, filterstrength = 1; end
+if nargin < 9, autotrunc = 1; end
+if nargin < 8, noisecomp = 1; end
+if nargin < 7, phasemode = -1; end
+if nargin < 6, filterstrength = 2; end
 if nargin < 5, doplot = 1; end
 if nargin < 4, bpo = 1; end
 if nargin < 3

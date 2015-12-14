@@ -154,10 +154,10 @@ else
     end
 end
 if nargin < 10, f_low = 125; f_hi = 8000; end
-if nargin < 9, autotrunc = 0; end
-if nargin < 8, noisecomp = 0; end
-if nargin < 7, phasemode = 0; end
-if nargin < 6, filterstrength = 1; end
+if nargin < 9, autotrunc = 1; end
+if nargin < 8, noisecomp = 1; end
+if nargin < 7, phasemode = -1; end
+if nargin < 6, filterstrength = 2; end
 if nargin < 5, doplot = 1; end
 if nargin < 4, bpo = 1; end
 if nargin < 3
