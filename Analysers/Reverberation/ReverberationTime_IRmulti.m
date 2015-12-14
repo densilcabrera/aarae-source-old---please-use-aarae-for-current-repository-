@@ -72,7 +72,7 @@ function out = ReverberationTime_IRmulti(data,fs,startthresh,bpo,doplot,filterst
 % 2: Extrapolate late decay from crosspoint
 % 3: Nonlinear fitting of entire reverse-integrated decay, following Xiang
 % 4: Nonlinear fitting of entire reverse-integrated decay in dB, similar to
-% Xiang (but probably works better)
+% Xiang
 % 5: Nonlinear fitting of EDT, T20 and T30 evaluation ranges in dB
 %
 % SEE: N. Xiang  (1995) 'Evaluation of reverberation times using a
