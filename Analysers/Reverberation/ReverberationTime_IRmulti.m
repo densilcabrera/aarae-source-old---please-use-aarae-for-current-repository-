@@ -387,6 +387,7 @@ if ~isempty(ir) && ~isempty(fs) && ~isempty(startthresh) && ~isempty(bpo) && ~is
     
     ir_end10 = ir(round(0.9*len):end,:);
     
+    
     if noisecomp == 2;
         autotrunc = 1;
     end
@@ -500,6 +501,7 @@ if ~isempty(ir) && ~isempty(fs) && ~isempty(startthresh) && ~isempty(bpo) && ~is
                 iroct = iroct ./ repmat(mean(iroct),[len,1,1]);
                 ir_end10oct = ir_end10oct ./ repmat(mean(iroct),[size(ir_end10oct,1),1,1]);
         end
+
         
 %         iroct(isinf(iroct)) = 0;
 %         iroct(isnan(iroct)) = 0;
@@ -527,13 +529,26 @@ if ~isempty(ir) && ~isempty(fs) && ~isempty(startthresh) && ~isempty(bpo) && ~is
             return
         end
         
+        
+%         PNR = nan(1,ch,b);
+%         for ch = 1:chans
+%             for b = 1:bands
+%                 if max(iroct(:,ch,b)) > 0
+%                     PNR(1,ch,b) = 10*log10(max(iroct(:,ch,b))./mean(ir_end10oct(:,ch,b)));
+%                 end
+%             end
+%         end
         % apply noise subtraction (Chu) to individual channels
         if noisecomp == 1
             iroct = iroct - repmat(mean(ir_end10oct),[len,1,1]);
+            iroct(iroct<0)=0;
         end
+
         
         % AVERAGE SQUARED IRs
         iroct = mean(iroct,2);
+        % peak-to-noise ratio (using last 10% as 'noise'
+        PNR = 10*log10(max(iroct)./mean(mean(ir_end10oct,1),2));
         chans = 1;
         
         
@@ -1051,6 +1066,7 @@ if ~isempty(ir) && ~isempty(fs) && ~isempty(startthresh) && ~isempty(bpo) && ~is
     out.T20r2 = permute(T20r2,[2,3,1]);
     out.T30r2 = permute(T30r2,[2,3,1]);
     out.T20T30ratio = permute(T20T30r,[2,3,1]);
+    out.PNR = permute(PNR,[2,3,1]);
     if exist('EDTmid','var')
         out.EDTmid = permute(EDTmid,[2,3,1]);
         out.T20mid = permute(T20mid,[2,3,1]);
@@ -1177,7 +1193,7 @@ if ~isempty(ir) && ~isempty(fs) && ~isempty(startthresh) && ~isempty(bpo) && ~is
             %                 'Ratio of T20 to T30 %%'};
             dat1 = [out.EDT(ch,:);out.T20(ch,:);out.T30(ch,:);...
                 out.EDTr2(ch,:);out.T20r2(ch,:);out.T30r2(ch,:);...
-                out.T20T30ratio(ch,:)];
+                out.T20T30ratio(ch,:);out.PNR(ch,:)];
             cnames1 = num2cell(bandfc);
             rnames1 = {'Early decay time (s)',...
                 'Reverberation time T20 (s)',...
@@ -1185,7 +1201,8 @@ if ~isempty(ir) && ~isempty(fs) && ~isempty(startthresh) && ~isempty(bpo) && ~is
                 'Correlation coefficient EDT r^2',...
                 'Correlation coefficient T20 r^2',...
                 'Correlation coefficient T30 r^2',...
-                'Ratio of T20 to T30 %%'};
+                'Ratio of T20 to T30 %%',...
+                'Dynamic range: peak to final 10% (dB)'};
             t1 =uitable('Data',dat1,'ColumnName',cnames1,'RowName',rnames1);
             set(t1,'ColumnWidth',{60});
             
@@ -1234,7 +1251,7 @@ if ~isempty(ir) && ~isempty(fs) && ~isempty(startthresh) && ~isempty(bpo) && ~is
             
             for ch = 1:chans
                 
-                figure('Name',['Channel ', num2str(ch), ', Level Decay and Regression Lines'])
+                figure('Name','Power-averaged Level Decay and Regression Lines')
                 
                 for band = 1:bands
                     

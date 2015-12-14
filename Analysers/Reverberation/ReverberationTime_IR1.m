@@ -206,11 +206,11 @@ if ~isempty(ir) && ~isempty(fs) && ~isempty(startthresh) && ~isempty(bpo) && ~is
         multibandIR = 0;
     end
     
-    % Get last 10 % for Chu noise compensation if set (before the circular
-    % shift is done as part of startpoint detection/allignment)
-    if noisecomp == 1
-        ir_end10 = ir(round(0.9*len):end,:,:);
-    end
+    % Get last 10 % for Chu noise compensation if set, and to return the
+    % Peak to noise ratio (this needs to be done before the circular shift
+    % is done as part of startpoint detection/allignment)
+    ir_end10 = ir(round(0.9*len):end,:,:);
+
     if noisecomp == 2;
         autotrunc = 1;
     end
@@ -305,9 +305,8 @@ if ~isempty(ir) && ~isempty(fs) && ~isempty(startthresh) && ~isempty(bpo) && ~is
                 late50oct = octbandfilter_viaFFT(late50,fs,bandfc,order,0,1000,0,phasemode);
                 late80oct = octbandfilter_viaFFT(late80,fs,bandfc,order,0,1000,0,phasemode);
             end
-            if noisecomp == 1
-                ir_end10oct = octbandfilter_viaFFT(ir_end10,fs,bandfc,order,0,1000,0,phasemode);
-            end
+            ir_end10oct = octbandfilter_viaFFT(ir_end10,fs,bandfc,order,0,1000,0,phasemode);
+            
             
         else
             order = [36,24] * filterstrength;
@@ -320,9 +319,8 @@ if ~isempty(ir) && ~isempty(fs) && ~isempty(startthresh) && ~isempty(bpo) && ~is
                 late50oct = thirdoctbandfilter_viaFFT(late50,fs,bandfc,order,0,1000,0,phasemode);
                 late80oct = thirdoctbandfilter_viaFFT(late80,fs,bandfc,order,0,1000,0,phasemode);
             end
-            if noisecomp == 1
-                ir_end10oct = thirdoctbandfilter_viaFFT(ir_end10,fs,bandfc,order,0,1000,0,phasemode);
-            end
+            ir_end10oct = thirdoctbandfilter_viaFFT(ir_end10,fs,bandfc,order,0,1000,0,phasemode);
+
         end
         
         % check the number of bands again, in case some were not ok to filter
@@ -465,13 +463,14 @@ if ~isempty(ir) && ~isempty(fs) && ~isempty(startthresh) && ~isempty(bpo) && ~is
     end % if multibandIR == 1
     
     % mean square of last 10%
-    if noisecomp == 1
-        if (multibandIR == 0) && ((bpo==1) || (bpo==3))
-            ir_end10oct = mean(ir_end10oct.^2);
-        else
-            ir_end10oct = mean(ir_end10.^2);
-        end
+    if (multibandIR == 0) && ((bpo==1) || (bpo==3))
+        ir_end10oct = mean(ir_end10oct.^2);
     else
+        ir_end10oct = mean(ir_end10.^2);
+    end
+    % peak-to-noise ratio (using last 10% as 'noise'
+    PNR = 10*log10(max(ir.^2)./ir_end10oct);
+    if noisecomp ~= 1
         ir_end10oct = zeros(1,chans,bands);
     end
     
@@ -502,7 +501,7 @@ if ~isempty(ir) && ~isempty(fs) && ~isempty(startthresh) && ~isempty(bpo) && ~is
     end
     
     % Reverse integrate squared IR, and express the result in decibels
-    levdecay = 10*log10(flipdim(cumsum(flipdim(iroct2,1)),1));
+    levdecay = 10*log10(flip(cumsum(flip(iroct2,1)),1));
     
     for dim2 = 1:chans
         for dim3 = 1:bands
@@ -929,6 +928,7 @@ if ~isempty(ir) && ~isempty(fs) && ~isempty(startthresh) && ~isempty(bpo) && ~is
     out.T20r2 = permute(T20r2,[2,3,1]);
     out.T30r2 = permute(T30r2,[2,3,1]);
     out.T20T30ratio = permute(T20T30r,[2,3,1]);
+    out.PNR = permute(PNR,[2,3,1]);
     if exist('EDTmid','var')
         out.EDTmid = permute(EDTmid,[2,3,1]);
         out.T20mid = permute(T20mid,[2,3,1]);
@@ -1039,7 +1039,7 @@ if ~isempty(ir) && ~isempty(fs) && ~isempty(startthresh) && ~isempty(bpo) && ~is
                 out.C80(ch,:);out.D50(ch,:); ...
                 out.D80(ch,:);out.Ts(ch,:); ...
                 out.EDTr2(ch,:);out.T20r2(ch,:);out.T30r2(ch,:);...
-                out.T20T30ratio(ch,:)];
+                out.T20T30ratio(ch,:);out.PNR(ch,:)];
             cnames1 = num2cell(bandfc);
             rnames1 = {'Early decay time (s)',...
                 'Reverberation time T20 (s)',...
@@ -1052,7 +1052,8 @@ if ~isempty(ir) && ~isempty(fs) && ~isempty(startthresh) && ~isempty(bpo) && ~is
                 'Correlation coefficient EDT r^2',...
                 'Correlation coefficient T20 r^2',...
                 'Correlation coefficient T30 r^2',...
-                'Ratio of T20 to T30 %%'};
+                'Ratio of T20 to T30 %%',...
+                'Dynamic range: Peak to last 10% (dB)'};
             t1 =uitable('Data',dat1,'ColumnName',cnames1,'RowName',rnames1);
             set(t1,'ColumnWidth',{60});
             
