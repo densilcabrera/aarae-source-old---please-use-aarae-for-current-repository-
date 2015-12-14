@@ -175,7 +175,7 @@ if nargin < 3
     dlg_title = 'Settings';
     num_lines = [1 60];
     def = {'-20',num2str(bpo),num2str(f_low),num2str(f_hi),...
-        '1','0','0','0','1'};
+        '2','-1','1','1','1'};
     answer = inputdlg(prompt,dlg_title,num_lines,def);
     if length(answer) < 9, answer = []; end
     if ~isempty(answer)
