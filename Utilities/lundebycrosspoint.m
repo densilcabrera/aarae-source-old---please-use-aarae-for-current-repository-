@@ -1,4 +1,4 @@
-function [crosspoint, Tlate, ok] = lundebycrosspoint(IR2, fs, fc)
+function [crosspoint, Tlate, ok, prelimcrosspoint] = lundebycrosspoint(IR2, fs, fc)
 % This function implements the crosspoint finding algorithm
 % described in:
 % A. Lundeby, T.E. Vigran, H. Bietz and M. Vorlaender, "Uncertainties of
@@ -21,6 +21,9 @@ function [crosspoint, Tlate, ok] = lundebycrosspoint(IR2, fs, fc)
 % band/channel etc) - in some cases it may not be possible to reasonably
 % execute it (e.g. due to poor signal-to-noise ratio).
 %
+% prelimcrosspoint is the initial preliminary crosspoint index (rather than
+% the final crosspoint after refinement).
+%
 % The main difference in this implementation is that the windows used for
 % smoothing the squared decay are implemented with a fftfilt (and so do not
 % involve any downsampling). Presumably this should slightly improve the
@@ -28,7 +31,7 @@ function [crosspoint, Tlate, ok] = lundebycrosspoint(IR2, fs, fc)
 %
 %
 % Code by Densil Cabrera
-% version 0.03 (9 June 2015)
+% version 0.04 (Dec 2015)
 
 
 %**************************************************************************
@@ -80,7 +83,7 @@ end
 
 Tlate = zeros(1,chans,bands,dim4,dim5,dim6);
 ok = true(1,chans,bands,dim4,dim5,dim6);
-crosspoint = round(0.9*len)*ones(1,chans,bands,dim4,dim5,dim6);
+[crosspoint,prelimcrosspoint] = deal(round(0.9*len)*ones(1,chans,bands,dim4,dim5,dim6));
 
 % The following nested for-loops are a quick and dirty way of making this
 % function compatible with up to 6 dimensional audio input. (Originally the
@@ -168,7 +171,7 @@ for d4 = 1:dim4
                 end
             end
             crosspoint1(crosspoint1>round(0.9*len)) = round(0.9*len);
-            
+            prelimcrosspoint(1,:,:,d4,d5,d6) = crosspoint1;
             
             % 5. FIND NEW LOCAL TIME INTERVAL LENGTH
             slopelength = crosspoint1 - maxind;

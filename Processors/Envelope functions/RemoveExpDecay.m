@@ -69,7 +69,7 @@ if ~isempty(audio) && ~isempty(fs)
     if Tend > len, Tend = len; end
     
     Tstart = floor(abs(start_time * fs));
-    decaycurve = flipdim(10*log10(cumsum(flipdim(audio.^2,1))+1e-300),1);
+    decaycurve = flip(10*log10(cumsum(flip(audio.^2,1))+1e-300),1);
     decaycurve = decaycurve - repmat(decaycurve(1,:,:,:,:,:),[len,1,1,1,1,1]);
     slope = zeros(chans, bands);
     for ch = 1:chans
