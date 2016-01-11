@@ -155,7 +155,7 @@ else
     end
 end
 if nargin < 10, f_low = 125; f_hi = 8000; end
-if nargin < 9, autotrunc = 1; end
+if nargin < 9, autotrunc = 2; end
 if nargin < 8, noisecomp = 1; end
 if nargin < 7, phasemode = -1; end
 if nargin < 6, filterstrength = 2; end
@@ -168,7 +168,7 @@ if nargin < 3
         'Bands per octave (0 | 1 | 3)', ...
         'Lowest centre frequency (Hz)', ...
         'Highest centre frequency (Hz)', ...
-        'Filter strength', ...
+        'Filter strength (use 1 for 12th order 72 dB/oct; use 2 for 24th order 144 dB/oct)', ...
         'Zero phase (0), Maximum phase (-1) or Minimum phase (1) filters',...
         'Noise compensation: None (0), Subtract final 10% Chu (1), Extrapolate Late Decay (2)', ...
         'Automatic end truncation: None (0), Lundeby (1), Crosspoint from nonlinear fitting (2)',...
@@ -179,7 +179,7 @@ if nargin < 3
     dlg_title = 'Settings';
     num_lines = [1 60];
     def = {'-20',num2str(bpo),num2str(f_low),num2str(f_hi),...
-        '2','-1','1','1','0','-5','-15','1'};
+        '2','-1','1','2','0','-5','-15','1'};
     answer = inputdlg(prompt,dlg_title,num_lines,def);
     if length(answer) < 1, answer = []; end
     if ~isempty(answer)
@@ -341,7 +341,7 @@ if ~isempty(ir) && ~isempty(fs) && ~isempty(startthresh) && ~isempty(bpo) && ~is
         
         
         
-        
+        refilter = false;
         if autotrunc == 1 || autotrunc == 2
             switch autotrunc
                 case 1
@@ -349,7 +349,8 @@ if ~isempty(ir) && ~isempty(fs) && ~isempty(startthresh) && ~isempty(bpo) && ~is
             [crosspoint, Tlate, okcrosspoint] =...
                 lundebycrosspoint(iroct(1:(end-max(max(max(startpoint)))),:,:).^2, fs,fc);
                 case 2
-                    crosspoint = crosspointnonlinfit(iroct(1:(end-max(max(max(startpoint)))),:,:).^2, fs, fc);
+                    noisemultiplier = 8;
+                    crosspoint = crosspointnonlinfit(iroct(1:(end-max(max(max(startpoint)))),:,:).^2, fs, fc,noisemultiplier);
                     okcrosspoint=ones(1,chans,bands);
                 case 3
                     % use initial preliminary crosspoint from Lundeby
@@ -368,11 +369,36 @@ if ~isempty(ir) && ~isempty(fs) && ~isempty(startthresh) && ~isempty(bpo) && ~is
             if refilter
                 iroct = repmat(ir,[1,1,bands]); % this overwrites the filtered audio!
             end
+            softcrop = 1;
+            if softcrop == 1
+                % short half-Hann fade-out to reduce problems with
+                % discontinuities when cropping is done
+                winperiods = 4;
+                win = zeros(ceil(winperiods*fs/bandfc(1)),bands);
+                for b = 1:bands
+                    winx = hann(round(2*winperiods*fs/bandfc(b)));
+                    winx = winx(round(end/2):end);
+                    win(1:length(winx),b) = winx;
+                end 
+                winlen = length(win);
+            end
             % autotruncation
             for ch = 1:chans
                 for b = 1:bands
                     if crosspoint(1,ch,b) < len
-                        iroct(crosspoint(1,ch,b):end,ch,b) = 0;
+                        if softcrop == 0
+                            iroct(crosspoint(1,ch,b):end,ch,b) = 0;
+                        % soft crop
+                        else
+                            if crosspoint(1,ch,b)+ winlen <= len
+                                iroct(crosspoint(1,ch,b):crosspoint(1,ch,b)+winlen-1,ch,b) =...
+                                    iroct(crosspoint(1,ch,b):crosspoint(1,ch,b)+winlen-1,ch,b).*win(:,b);
+                                iroct(crosspoint(1,ch,b)+winlen-1:end,ch,b) = 0;
+                            else
+                                win1 = win(1:len-crosspoint(1,ch,b)+1,b);
+                                iroct(crosspoint(1,ch,b):end,ch,b) = iroct(crosspoint(1,ch,b):end,ch,b).*win1;
+                            end
+                        end
                         if crosspoint(1,ch,b) > fs*0.05
                             if do50
                                 late50oct(round(crosspoint(1,ch,b)-fs*0.05+1):end,ch,b)=0;
@@ -397,7 +423,7 @@ if ~isempty(ir) && ~isempty(fs) && ~isempty(startthresh) && ~isempty(bpo) && ~is
                 if bpo == 1
                     iroct(:,:,b) = octbandfilter_viaFFT(iroct(:,:,b),fs,bandfc(b),order,0,1000,0,phasemode);
                 else
-                    iroct(:,:,b) = thirdoctbandfilter_viaFFT(iroct(:,:,b),fs,bandfc,order,0,1000,0,phasemode);
+                    iroct(:,:,b) = thirdoctbandfilter_viaFFT(iroct(:,:,b),fs,bandfc(b),order,0,1000,0,phasemode);
                 end
             end
         end
@@ -465,10 +491,31 @@ if ~isempty(ir) && ~isempty(fs) && ~isempty(startthresh) && ~isempty(bpo) && ~is
         end
         if autotrunc == 1 || autotrunc == 2
             % autotruncation
+            softcrop = 1;
+            if softcrop == 1
+                % short half-Hann fade-out to avoid problems with
+                % discontinuities when cropping is done
+                win = hann(round(fs/1000)); 
+                win = win(round(end/2:end));
+                winlen = length(win);
+            end
             for ch = 1:chans
                 for b = 1:bands
                     if crosspoint(1,ch,b) < len
-                        iroct(crosspoint(1,ch,b):end,ch,b) = 0;
+                        % hard crop - can introduce discontinuities
+                        if softcrop == 0
+                            iroct(crosspoint(1,ch,b):end,ch,b) = 0;
+                        % soft crop
+                        else
+                            if crosspoint(1,ch,b)+ winlen <= len
+                                iroct(crosspoint(1,ch,b):crosspoint(1,ch,b)+winlen-1,ch,b) =...
+                                    iroct(crosspoint(1,ch,b):crosspoint(1,ch,b)+winlen-1,ch,b).*win;
+                                iroct(crosspoint(1,ch,b)+winlen-1:end,ch,b) = 0;
+                            else
+                                win1 = win(1:len-crosspoint);
+                                iroct(crosspoint(1,ch,b):end,ch,b) = iroct(crosspoint(1,ch,b):end,ch,b).*win1;
+                            end
+                        end
                         if crosspoint(1,ch,b) > fs*0.05
                             late50(round(crosspoint(1,ch,b)-fs*0.05+1):end,ch,b)=0;
                         end
@@ -478,7 +525,6 @@ if ~isempty(ir) && ~isempty(fs) && ~isempty(startthresh) && ~isempty(bpo) && ~is
                     end
                 end
             end
-            
         end
         
         
