@@ -2329,6 +2329,10 @@ if handles.compareaudio == 1
         if handles.alternate==1 && isfield(selectedNodes(i).handle.UserData,'audio2')
             signaldata.audio = signaldata.audio2;
         end
+        % default units settings, changed below if relevant
+        units = '';
+        units_ref = 1;
+        units_type = 1;
         if ~isempty(signaldata) && isfield(signaldata,'audio')
             % apply calibration (if requested and if possible)
             if isfield(signaldata,'cal') && cal_or_norm == 1  && handles.alternate~=1
@@ -2350,10 +2354,10 @@ if handles.compareaudio == 1
                         else
                             units_type = 1;
                         end
-                    else
-                        units = '';
-                        units_ref = 1;
-                        units_type = 1;
+%                     else
+%                         units = '';
+%                         units_ref = 1;
+%                         units_type = 1;
                     end
                     if units_type == 1
                         signaldata.audio = signaldata.audio * units_ref;
