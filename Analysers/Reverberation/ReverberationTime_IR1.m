@@ -349,7 +349,22 @@ if ~isempty(ir) && ~isempty(fs) && ~isempty(startthresh) && ~isempty(bpo) && ~is
             [crosspoint, Tlate, okcrosspoint] =...
                 lundebycrosspoint(iroct(1:(end-max(max(max(startpoint)))),:,:).^2, fs,fc);
                 case 2
-                    noisemultiplier = 8;
+                    % truncation point depends on the peak to noise ratio
+                    % earlier truncation if PNR is smaller (done by
+                    % multiplying the noise floor by a value between 1 and
+                    % maxmultiplier). 
+%                     PNR = 10*log10(max(iroct.^2)./mean(ir_end10oct.^2));
+%                     noisemultiplier = PNR./30;
+%                     noisemultiplier(noisemultiplier>10) = 10;
+%                     noisemultiplier(noisemultiplier<1) = 1; % 0 dB
+%                     crosspoint = zeros(1,chans,bands);
+%                     for ch = 1:chans
+%                         for b = 1:bands
+%                             crosspoint(1,ch,b) = crosspointnonlinfit(iroct(1:(end-max(max(max(startpoint)))),ch,b).^2, fs, fc,noisemultiplier(1,ch,b));
+%                         end
+%                     end
+                
+                    noisemultiplier = 1; % reduce noise floor by 3 dB when finding preliminary crosspoint
                     crosspoint = crosspointnonlinfit(iroct(1:(end-max(max(max(startpoint)))),:,:).^2, fs, fc,noisemultiplier);
                     okcrosspoint=ones(1,chans,bands);
                 case 3
@@ -374,9 +389,9 @@ if ~isempty(ir) && ~isempty(fs) && ~isempty(startthresh) && ~isempty(bpo) && ~is
                 % short half-Hann fade-out to reduce problems with
                 % discontinuities when cropping is done
                 winperiods = 4;
-                win = zeros(ceil(winperiods*fs/bandfc(1)),bands);
+                win = zeros(ceil(fs/100 + winperiods*fs/bandfc(1)),bands);
                 for b = 1:bands
-                    winx = hann(round(2*winperiods*fs/bandfc(b)));
+                    winx = hann(round(2*(fs/100 + winperiods*fs/bandfc(b))));
                     winx = winx(round(end/2):end);
                     win(1:length(winx),b) = winx;
                 end 
@@ -575,7 +590,8 @@ if ~isempty(ir) && ~isempty(fs) && ~isempty(startthresh) && ~isempty(bpo) && ~is
     % Derive the reverse-integrated decay curve(s)
     
     % square and correct for background noise (Chu method) if set
-    iroct2 = iroct.^2 - repmat(ir_end10oct,[len,1,1]);
+    noisepowerfactor = 1; % arguably this could be greater than 1 to compensate for in-phase addition of noise with IR
+    iroct2 = iroct.^2 - noisepowerfactor*repmat(ir_end10oct,[len,1,1]);
     iroct2(iroct2<0) = 0;
     
     if noisecomp == 2
@@ -1184,7 +1200,7 @@ if ~isempty(ir) && ~isempty(fs) && ~isempty(startthresh) && ~isempty(bpo) && ~is
                 'Correlation coefficient Tcustom r^2',...
                 'Correlation coefficient Tnonlinear r^2',...
                 'Ratio of T20 to T30 %%',...
-                'Dynamic range: Peak to last 10% (dB)'};
+                'Dynamic range: Peak to last 10%% (dB)'};
             t1 =uitable('Data',dat1,'ColumnName',cnames1,'RowName',rnames1);
             set(t1,'ColumnWidth',{60});
             
