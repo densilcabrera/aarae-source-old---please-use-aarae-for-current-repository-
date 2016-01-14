@@ -1,4 +1,4 @@
-function [OUT, varargout] = ExponentiallyDecayingTones(tpo, flow,fhigh,duration,fs,SNR,T)
+function [OUT, varargout] = ExponentiallyDecayingTones(tpo, flow,fhigh,duration,fs,PNR,T)
 % This function generates exponentially decaying tones for testing
 % impulse response analysis functions - such as reverberation time etc.
 %
@@ -16,8 +16,13 @@ function [OUT, varargout] = ExponentiallyDecayingTones(tpo, flow,fhigh,duration,
 % possible to vary this greatly between adjacent tones (e.g., for testing 
 % the effect of bandpass filter selectivity).
 %
+% The noise floor is tonal, 90 degrees phase shifted from the decay tone,
+% so that it adds like a random noise floor, but without the randomness.
+% The noise floor is specified in terms of the peak (maximum) to the noise
+% rms ratio (PNR).
+%
 % code by Densil Cabrera
-% version 1.00 (6 February 2013)
+% version 2.00 (14 January 2016)
 
 if nargin == 0
     param = inputdlg({'Tones per octave [1 | 3]';...
@@ -25,7 +30,7 @@ if nargin == 0
         'Highest frequency (Hz)';...
         'Duration (s)';...
         'Sampling rate (Hz)';...
-        'SNR (dB)'},...
+        'Peak (max) to noise (rms) ratio (dB)'},...
         'Settings 1',... % dialog window title.
         [1 60],...
         {'1';'125';'8000';'2';'48000';'inf'}); % preset answers for dialog.
@@ -39,7 +44,7 @@ if nargin == 0
         fhigh = param(3);
         duration = param(4);
         fs = param(5);
-        SNR = param(6);
+        PNR = param(6);
     end
 else
     param = [];
@@ -113,10 +118,8 @@ if (~isempty(param) && ~isempty(T)) || nargin ~= 0
     t = ((1:length(IR))-1)' ./ fs;
     for k = 1:length(freq)
         IR = IR + sin(2*pi*freq(k).*t)./ exp(t./tau(k))...
-            +db2mag(-SNR)*sin(2*pi*freq(k).*t);
+            +2^0.5*db2mag(-PNR)*cos(2*pi*freq(k).*t);
     end
-%     rms_IR = rms (IR);
-%    IR = awgn (IR,SNR,rms_IR);
     IR = IR ./max(abs(IR)); % normalize
     
     
@@ -127,7 +130,7 @@ if (~isempty(param) && ~isempty(T)) || nargin ~= 0
         OUT.fs = fs;       % You NEED to provide the sampling frequency of your audio.
         %OUT.tag = tag;      You may assign it a name to be identified in AARAE.
         OUT.funcallback.name = 'ExponentiallyDecayingTones.m';
-        OUT.funcallback.inarg = {tpo, flow,fhigh,duration,fs,SNR,T};
+        OUT.funcallback.inarg = {tpo, flow,fhigh,duration,fs,PNR,T};
 
 else
     % AARAE requires that in case that the user doesn't input enough
@@ -138,7 +141,7 @@ end
 end % End of function
 
 %**************************************************************************
-% Copyright (c) 2014, Densil Cabrera
+% Copyright (c) 2014-16, Densil Cabrera
 % All rights reserved.
 %
 % Redistribution and use in source and binary forms, with or without
