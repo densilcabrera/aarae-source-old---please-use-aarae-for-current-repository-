@@ -264,7 +264,6 @@ if autotrunc == 1 || autotrunc == 2
         
         for d5 = 1:dim5
             for d6 = 1:dim6
-                % 1. AVERAGE SQUARED IR IN LOCAL TIME INTERVALS
                 IR2smooth = zeros(len,chans,bands); %just for preallocation
                 for b = 1:bands
                     IR2smooth(:,:,b) = fftfilt(ones(winlen(1,1,b),1)./winlen(1,1,b),iroct(:,:,b,1,d5,d6).^2);
@@ -350,7 +349,6 @@ if autotrunc == 1 || autotrunc == 2
     end
     for d5 = 1:dim5
         for d6 = 1:dim6
-            % 1. AVERAGE SQUARED IR IN LOCAL TIME INTERVALS
             for b = 1:bands
                 IR2smooth(:,:,b) = fftfilt(ones(winlen(1,1,b),1)./winlen(1,1,b),iroct(:,:,b,1,d5,d6).^2);
             end
@@ -382,7 +380,7 @@ if autotrunc == 1 || autotrunc == 2
                         % find where decay intersects noise * noisemultiplier
                         x = find(10.^(c.a.*times./10) <= c.b*noisemultiplier,1,'first');
                         if ~isempty(x)
-                            crosspoint(1,ch,b,1,d5,d6) = x+Tstart-1;
+                            crosspoint(1,ch,b,1,d5,d6) = x+Tstart-winlen(b);
                         end
                         iroct(crosspoint(1,ch,b,1,d5,d6):end,ch,b,1,d5,d6) = 0;
                         if autotrunc == 2
