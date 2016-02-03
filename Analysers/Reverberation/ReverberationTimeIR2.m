@@ -1,10 +1,22 @@
 function OUT = ReverberationTimeIR2(IN,startthresh,bpo,f_low,f_hi,filterstrength,phasemode,noisecomp,autotrunc,customstart,customend,doplot)
-
+% This function calculates reverberation time and associated parameters
+% from an impulse response.
+%
+% The function accepts up to six dimensional data, and dimensions are
+% treated in the following ways:
+% * Dimensions 2 (input channels), 5 (output channels) and 6 are
+% power-averagerd prior to calculating reverberation time
+% * Dimension 4 (cycles) is synchronously averaged
+% * Dimension 3 (bands) is normally singleton as input so that filtering
+% can be done. If not, filtering is not done.
+%
 % This function is intended to replace ReverberationTime_IR1, which was
 % originally written by Grant Cuthbert and Densil Cabrera. However, the
 % numerous revisions of and extensions to to the older function over some
-% years made a re-organisation, simplification and re-write needed.
-%
+% years made a re-organisation, simplification and re-write needed. Several
+% changes to the calculation have been made, and it is highly likely that
+% further changes will be made in the future (following a performance
+% evaluation that was conducted in late 2015 - early 2016). 
 % 
 
 
@@ -75,7 +87,7 @@ if nargin == 1
     dlg_title = 'Settings';
     num_lines = [1 60];
     def = {'-20','1','125','8000',...
-        '2','-1','1','2','-5','-15','1'};
+        '1','-1','1','2','-5','-15','1'};
     answer = inputdlg(prompt,dlg_title,num_lines,def);
     if length(answer) < 1, answer = []; end
     if ~isempty(answer)
@@ -139,8 +151,8 @@ end
 
 
 try
-    early50 = ir(1:1+floor(fs*0.05),:,:,:,:,:); % Truncate Early50
-    late50 = ir(ceil(fs*0.05):end,:,:,:,:,:); % Truncate Late50
+    early50 = [zeros(fs,chans,bands,1,dim5,dim6);ir(1:1+floor(fs*0.05),:,:,:,:,:);zeros(fs,chans,bands,1,dim5,dim6)]; % Truncate Early50
+    late50 = [zeros(fs,chans,bands,1,dim5,dim6);ir(ceil(fs*0.05):end,:,:,:,:,:);zeros(fs,chans,bands,1,dim5,dim6)]; % Truncate Late50
     do50 = true;
 catch
     [early50, late50] = deal(NaN(1,chans,bands,1,dim5,dim6));
@@ -148,8 +160,8 @@ catch
 end
 
 try
-    early80 = ir(1:1+floor(fs*0.08),:,:,:,:,:); % Truncate Early80
-    late80 = ir(ceil(fs*0.08):end,:,:,:,:,:); % Truncate Late80
+    early80 = [zeros(fs,chans,bands,1,dim5,dim6);ir(1:1+floor(fs*0.08),:,:,:,:,:);zeros(fs,chans,bands,1,dim5,dim6)]; % Truncate Early80
+    late80 = [zeros(fs,chans,bands,1,dim5,dim6);ir(ceil(fs*0.08):end,:,:,:,:,:);zeros(fs,chans,bands,1,dim5,dim6)]; % Truncate Late80
     do80 = true;
 catch
     [early80, late80] = deal(NaN(1,chans,bands,1,dim5,dim6));
@@ -247,9 +259,9 @@ if autotrunc == 1 || autotrunc == 2
     Tstartoffset = -10; % level in dB relative to max from which reverberation will be fitted
     if dofilter == true && (phasemode == 0 || phasemode == -1)
         if noisecomp == 1
-            noisemultiplier = 0.065; % lower the modelled noise floor by 12 dB when finding the preliminary crosspoint
+            noisemultiplier = 0.125; % lower the modelled noise floor by 9 dB when finding the preliminary crosspoint
         else
-            noisemultiplier = 0.125; % -9 dB
+            noisemultiplier = 0.25; % -6 dB
         end
         % make short half-Hann window fade-outs to reduce problems with
         % discontinuities when preliminary trunation is done (soft-cropping over 4 periods)
@@ -274,7 +286,7 @@ if autotrunc == 1 || autotrunc == 2
                 maxind = ones(1,chans,bands);
                 for ch = 1:chans
                     for b = 1:bands
-                        %try
+                        try
                             maxind(1,ch,b) = find(IR2smoothdB(:,ch,b) == maxIR2smoothdB(1,ch,b),1,'first');
                             IR2smoothdB(:,ch,b) = IR2smoothdB(:,ch,b) - maxIR2smoothdB(1,ch,b);
                             Tstart = [];
@@ -306,8 +318,8 @@ if autotrunc == 1 || autotrunc == 2
                                 win1 = fadewin(1:len-crosspoint(1,ch,b,1,d5,d6)+1,b);
                                 iroct(crosspoint(1,ch,b,1,d5,d6):end,ch,b,1,d5,d6) = iroct(crosspoint(1,ch,b,1,d5,d6):end,ch,b,1,d5,d6).*win1;
                             end
-%                         catch
-%                         end
+                        catch
+                        end
                     end
                 end
             end
@@ -358,7 +370,7 @@ if autotrunc == 1 || autotrunc == 2
             maxind = ones(1,chans,bands);
             for ch = 1:chans
                 for b = 1:bands
-%                     try
+                    try
                         maxind(1,ch,b) = find(IR2smoothdB(:,ch,b) == maxIR2smoothdB(1,ch,b),1,'first');
                         IR2smoothdB(:,ch,b) = IR2smoothdB(:,ch,b) - maxIR2smoothdB(1,ch,b);
                         Tstart = [];
@@ -384,39 +396,40 @@ if autotrunc == 1 || autotrunc == 2
                         end
                         iroct(crosspoint(1,ch,b,1,d5,d6):end,ch,b,1,d5,d6) = 0;
                         if autotrunc == 2
-                            % calculate the constant C (in ISO3382-1) from the
-                            % decay starting 10 dB above the crosspoint to the
-                            % crosspoint
+%                             % calculate the constant C (in ISO3382-1) from the
+%                             % decay starting 10 dB above the crosspoint to the
+%                             % crosspoint
+%                             
+%                             % find 10 dB above crosspoint (multiplying noise by 10
+%                             % give 10 dB increase
+%                             % we do this on the regression to avoid problems with
+%                             % short term irregularities in the smoothed IR
+%                             x10 = find(10.^(c.a.*times./10) <= c.b*noisemultiplier*10,1,'first');
+%                             % linear fit to crosspoint (subtracting noise floor)
+%                             subtractnoise=10.^(IR2smoothdB(:,ch,b)./10)-c.b;
+%                             subtractnoise(subtractnoise<0)=0;
+%                             IR2smoothdB(:,ch,b) = 10*log10(subtractnoise);
+%                             if ~isempty(x10)
+%                                 q = polyfit((times(x10:x))', ...
+%                                     IR2smoothdB(x10:x,ch,b),1)'; % linear regression with noise subtraction
+%                                 
+%                                 %                 figure;
+%                                 %                 plot(q(1)*times)
+%                                 %                 hold on
+%                                 %                 plot([zeros(Tstart(ch,band),1); 10*log10(10.^(a(ch,band)*times'./10)+b(ch,band))],'r')
+%                                 %                 plot(IR2smoothdB(:,ch,band),'g')
+%                                 
+%                                 % determine late reverb time
+%                                 Tlate(1,ch,b) = -60/q(1);
+%                             end
                             
-                            % find 10 dB above crosspoint (multiplying noise by 10
-                            % give 10 dB increase
-                            % we do this on the regression to avoid problems with
-                            % short term irregularities in the smoothed IR
-                            x10 = find(10.^(c.a.*times./10) <= c.b*noisemultiplier*10,1,'first');
-                            % linear fit to crosspoint (subtracting noise floor)
-                            subtractnoise=10.^(IR2smoothdB(:,ch,b)./10)-c.b;
-                            subtractnoise(subtractnoise<0)=0;
-                            IR2smoothdB(:,ch,b) = 10*log10(subtractnoise);
-                            if ~isempty(x10)
-                                q = polyfit((times(x10:x))', ...
-                                    IR2smoothdB(x10:x,ch,b),1)'; % linear regression with noise subtraction
-                                
-                                %                 figure;
-                                %                 plot(q(1)*times)
-                                %                 hold on
-                                %                 plot([zeros(Tstart(ch,band),1); 10*log10(10.^(a(ch,band)*times'./10)+b(ch,band))],'r')
-                                %                 plot(IR2smoothdB(:,ch,band),'g')
-                                
-                                % determine late reverb time
-                                Tlate(1,ch,b) = -60/q(1);
-                            end
-                            
-                            % sum energy from crosspoint to end
+                            % sum energy from crosspoint to end - this
+                            % could be done analytically instead
                             C(1,ch,b,1,d5,d6) = sum(10.^(c.a.*times(crosspoint(1,ch,b,1,d5,d6):end)./10))./fs;
                             %C = sum(10.^(q(1)*times(crosspoint(1,ch,band,d4,d5,d6):end)+q(2))./10)./fs;
                         end
-%                     catch
-%                     end
+                    catch
+                    end
                 end
             end
         end
@@ -432,7 +445,8 @@ if do50
     early50 = permute(sum(sum(sum(sum(early50.^2),2),5),6),[1,3,2,4,5,6]);
     late50 = permute(sum(sum(sum(sum(late50.^2),2),5),6),[1,3,2,4,5,6]);
     C50 = 10*log10(early50 ./ late50); % C50
-    D50 = (early50 ./ alloct); % D50
+    %D50 = (early50 ./ alloct); % D50
+    D50 = early50 ./ (early50+late50); % D50
 else
     [C50,D50] = deal(NaN(1,bands));
 end
@@ -441,7 +455,8 @@ if do80
     early80 = permute(sum(sum(sum(sum(early80.^2),2),5),6),[1,3,2,4,5,6]);
     late80 = permute(sum(sum(sum(sum(late80.^2),2),5),6),[1,3,2,4,5,6]);
     C80 = 10*log10(early80 ./ late80); % C80
-    D80 = (early80 ./ alloct); % D80
+    %D80 = (early80 ./ alloct); % D80
+    D80 = early80 ./ (early80+late80); % D50
 else
     [C80,D80] = deal(NaN(1,bands));
 end
@@ -758,3 +773,32 @@ OUT.funcallback.name = 'ReverberationTimeIR2.m';
 OUT.funcallback.inarg = {startthresh,bpo,f_low,f_hi,filterstrength,phasemode,noisecomp,autotrunc,customstart,customend,doplot};
 end
 
+% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Copyright (c) 2015,2016, Densil Cabrera
+% All rights reserved.
+%
+% Redistribution and use in source and binary forms, with or without
+% modification, are permitted provided that the following conditions are
+% met:
+%
+%  * Redistributions of source code must retain the above copyright notice,
+%    this list of conditions and the following disclaimer.
+%  * Redistributions in binary form must reproduce the above copyright
+%    notice, this list of conditions and the following disclaimer in the
+%    documentation and/or other materials provided with the distribution.
+%  * Neither the name of the University of Sydney nor the names of its
+%    contributors may be used to endorse or promote products derived from
+%    this software without specific prior written permission.
+%
+% THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+% "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED
+% TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A
+% PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER
+% OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+% EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+% PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+% PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+% LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+% NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+% SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
