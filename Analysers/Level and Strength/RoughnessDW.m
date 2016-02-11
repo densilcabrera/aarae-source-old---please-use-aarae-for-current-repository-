@@ -1,4 +1,4 @@
-function [OUT, varargout] = RoughnessDW(IN,fs,cal)
+function [OUT, varargout] = RoughnessDW(IN,fs,cal,hopsize)
 % This function calculates time-varying roughness and time-averaged specific
 % roughness using the roughness model by Daniel & Weber:
 % Daniel, P., & Weber, R. (1997). Psychoacoustical roughness: implementation
@@ -23,6 +23,8 @@ function [OUT, varargout] = RoughnessDW(IN,fs,cal)
 % leaves).
 % fs and cal (sampling rate and calibration offset) are only used if IN is
 % a vector (rather than an AARAE structure).
+% hopsize is the number of samples hop between successive windows (window
+% length is 8192).
 %
 % OUTPUTS
 % * Time-varying roughness
@@ -58,6 +60,23 @@ else
     name = '';
 end
 % *********************************************************************
+
+if ~exist('hopsize','var')
+    param = inputdlg({'Hop between windows in samples (window length is 8192 samples)'},...
+        'Sound Logger Settings',...
+        [1 60],...
+        {'4096'}); % default values
+    
+    if length(param) < 1, param = []; end
+    if ~isempty(param)
+        hopsize = round(str2num(char(param(1))));
+    else
+        OUT = [];
+        return
+    end
+end
+if hopsize < 1, hopsize = 128; end
+if hopsize > 8192, hopsize = 8192; end
 
 if ~isempty(audio) && ~isempty(fs) && ~isempty(cal)
     
@@ -104,20 +123,24 @@ if ~isempty(audio) && ~isempty(fs) && ~isempty(cal)
         audio = resample(audio,48000/gcd_fs,fs/gcd_fs);
         fs = 48000;
     end
-    samples = size(audio,1);
+%    samples = size(audio,1);
     
-    if mod(samples,N) ~= 0
-        n = ceil(samples/N)+1;
-        nn = n*N-samples;
-        if mod(nn,2)
-            padStartsamp = zeros(nn/2,nchan);
-            padEndsamp = zeros(nn/2,nchan);
-        else
-            padStartsamp = zeros(nn/2,nchan);
-            padEndsamp = zeros(nn/2,nchan);
-        end
-        audio = [padStartsamp;audio;padEndsamp];
-    end
+%     if mod(samples,N) ~= 0
+%         n = ceil(samples/N)+1;
+%         nn = n*N-samples;
+%         if mod(nn,2)
+%             padStartsamp = zeros(nn/2,nchan);
+%             padEndsamp = zeros(nn/2,nchan);
+%         else
+%             padStartsamp = zeros(nn/2,nchan);
+%             padEndsamp = zeros(nn/2,nchan);
+%         end
+%         audio = [padStartsamp;audio;padEndsamp];
+%     end
+    [padStartsamp,padEndsamp] = deal(zeros(round(N/2),nchan));
+    audio = [padStartsamp;audio;padEndsamp];
+    samples = size(audio,1);
+    n = floor((samples-N)/hopsize);
     
     
     %  audio = audio*1.71; % added in psysound3 to improve the accuracy of
@@ -572,8 +595,8 @@ if ~isempty(audio) && ~isempty(fs) && ~isempty(cal)
         ri_mat(1:47,windowNum) = ri;
         SPL_mat(windowNum) = SPL;
         
-        startIndex = startIndex+N;
-        endIndex = endIndex+N;
+        startIndex = startIndex+hopsize;
+        endIndex = endIndex+hopsize;
         TimePoints(windowNum,1) = currentTimePoint;
     end
 else
@@ -684,7 +707,7 @@ if isstruct(IN)
         'roughnesstype', {'Roughness over critical band'}, 'categorical', [],...
         'name','Time_varying_specific_roughness');
     OUT.funcallback.name = 'RoughnessDW.m';
-    OUT.funcallback.inarg = {fs,cal};
+    OUT.funcallback.inarg = {fs,cal,hopsize};
 else
     % output numbers only
     OUT = R_mat; % roughness
