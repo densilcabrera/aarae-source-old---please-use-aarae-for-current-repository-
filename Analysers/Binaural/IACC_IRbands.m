@@ -1,4 +1,4 @@
-function OUT = IACC_IRbands(IN, fs, startthresh, bpo, highestband, lowestband,maxlag,earlyendtime,doplot)
+function OUT = IACC_IRbands(IN,fs,startthresh,bpo,highestband,lowestband,maxlagtime,earlyendtime,doplot)
 % This function calculates the interaural cross correlation function and
 % IACC value from a binaural impulse response. Values are calculated in
 % octave or 1/3-octave bands (or in the bands supplied by the audio if it
@@ -10,7 +10,7 @@ function OUT = IACC_IRbands(IN, fs, startthresh, bpo, highestband, lowestband,ma
 % lowest centre frequency parameters are ignored.
 %
 % By default, the lag ranges between +- 1 ms, and this can be adjusted via
-% the maximum lag time (maxlag).
+% the maximum lag time (maxlagtime).
 %
 % By default, the time at which early ends and late begins is 80 ms, and
 % this can be adjusted (earlyendtime).
@@ -23,7 +23,7 @@ function OUT = IACC_IRbands(IN, fs, startthresh, bpo, highestband, lowestband,ma
 % be use to suppress the output table and figure.
 %
 % Code by Densil Cabrera
-% Version 1.01 (18 December 2013)
+% Version 1.02 (22 Feb 2016)
 
 if nargin < 2
     param = inputdlg({'Threshold for IR start detection';...
@@ -44,7 +44,7 @@ if nargin < 2
         bpo = param(2);
         highestband = param(3);
         lowestband = param(4);
-        maxlag = param(5);
+        maxlagtime = param(5);
         earlyendtime = param(6);
     end
 else
@@ -154,17 +154,18 @@ if ~isempty(audio) && ~isempty(fs)
     % Cross-correlate
     % ---------------------------------------------------------------------
     
-    maxlag = round(fs * maxlag / 1000);
+    maxlag = round(fs * maxlagtime / 1000);
     
-    cE = zeros(maxlag*2+1,bands);
-    cL = zeros(maxlag*2+1,bands);
-    cA = zeros(maxlag*2+1,bands);
+    [cE,cL,cA] = deal(zeros(maxlag*2+1,bands));
+
     
     % Early
     Eend = floor(fs*earlyendtime/1000)+1;
     for bnd = 1:length(flist)
         [cE(:,bnd)] = xcorr(audio(1:Eend,1,bnd),audio(1:Eend,2,bnd),maxlag,'coeff');
     end
+    ILDE = pow2db(mean(audio(1:Eend,1,:).^2) ./ mean(audio(1:Eend,2,:).^2));
+    
     
     % Late
     Lstart = Eend+1;
@@ -172,11 +173,13 @@ if ~isempty(audio) && ~isempty(fs)
     for bnd = 1:length(flist)
         cL(:,bnd) = xcorr(audio(Lstart:Lend,1,bnd),audio(Lstart:Lend,2,bnd),maxlag,'coeff');
     end
+    ILDL = pow2db(mean(audio(Lstart:Lend,1,:).^2) ./ mean(audio(Lstart:Lend,2,:).^2));
     
     % All
     for bnd = 1:length(flist)
         cA(:,bnd) = xcorr(audio(1:Lend,1,bnd),audio(1:Lend,2,bnd),maxlag,'coeff');
     end
+    ILDA = pow2db(mean(audio(1:Lend,1,:).^2) ./ mean(audio(1:Lend,2,:).^2));
     
     IACC_E = max(abs(cE));
     IACC_L = max(abs(cL));
@@ -205,9 +208,12 @@ if ~isempty(audio) && ~isempty(fs)
     OUT.IACC_Early = IACC_E;
     OUT.IACC_Late = IACC_L;
     OUT.IACC_All = IACC_A;
-    OUT.tau_Early = tau_E;
-    OUT.tau_Late = tau_L;
-    OUT.tau_All = tau_A;
+    OUT.tau_Early = tau_E';
+    OUT.tau_Late = tau_L';
+    OUT.tau_All = tau_A';
+    OUT.ILDE = permute(ILDE,[1,3,2]);
+    OUT.ILDL = permute(ILDL,[1,3,2]);
+    OUT.ILDA = permute(ILDA,[1,3,2]);
     
     % IACC E3 and L3
     ind500 = find(flist == 500, 1,'first');
@@ -220,8 +226,9 @@ if ~isempty(audio) && ~isempty(fs)
         OUT.BQI = 1-OUT.IACC_E3;
     end
     
+    
     OUT.funcallback.name = 'IACC_IRbands.m';
-    OUT.funcallback.inarg = {fs,startthresh,bpo,highestband,lowestband,maxlag,earlyendtime,doplot};
+    OUT.funcallback.inarg = {fs,startthresh,bpo,highestband,lowestband,maxlagtime,earlyendtime,doplot};
     
     % ---------------------------------------------------------------------
     % Display data in a table
@@ -229,9 +236,13 @@ if ~isempty(audio) && ~isempty(fs)
     if doplot == 1
         OUT.tables = [];
         fig1 = figure('Name','Interaural Cross Correlation of a Room Impulse Response');
-        table1 = uitable('Data',[OUT.IACC_Early; OUT.IACC_Late; OUT.IACC_All],...
+        table1 = uitable('Data',[OUT.IACC_Early; OUT.IACC_Late; OUT.IACC_All;...
+            OUT.tau_Early;OUT.tau_Late;OUT.tau_All;...
+            OUT.ILDE;OUT.ILDL;OUT.ILDA],...
             'ColumnName',num2cell(flist),...
-            'RowName',{'IACC Early'; 'IACC Late'; 'IACC All'});
+            'RowName',{'IACC Early'; 'IACC Late'; 'IACC All';...
+            'tau Early (ms)'; 'tau Late (ms)'; 'tau All (ms)';
+            'ILD Early (dB)';'ILD Late (dB)';'ILD All (dB)'});
         set(table1,'ColumnWidth',{60});
         
         if isfield(OUT,'BQI')
@@ -290,7 +301,7 @@ else
 end
 
 %**************************************************************************
-% Copyright (c) 2013, Densil Cabrera
+% Copyright (c) 2013-16, Densil Cabrera
 % All rights reserved.
 %
 % Redistribution and use in source and binary forms, with or without
