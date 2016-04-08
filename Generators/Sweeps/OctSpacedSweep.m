@@ -7,18 +7,18 @@ function OUT = OctSpacedSweep(durfinal,fs,reverse,tukeyratio,hannexp)
 
 if nargin == 0 
     
-    param = inputdlg({'Waveform duration (s)';... % These are the input box titles in the
+    param = inputdlg({'Waveform duration (s)';... 
         'Time per octave (s)';...
         'Sampling rate (Hz)';
         'Ascending [0] or descending [1] sweep';
         'Overall fade-in, fade-out Tukey window ratio';
-        'Hann window exponent for log spectrum envelope'},...
+        'Hann window exponent for spectrum envelope'},...
         'Octave Spaced Sweep',... % This is the dialog window title.
         [1 60],... 
         {'60';'10';'48000';'0';'0.1';'1'}); % defaults
     
     param = str2num(char(param));  
-    if length(param) < 5, param = []; end 
+    if length(param) < 6, param = []; end 
     if ~isempty(param) 
         durfinal = param(1);
         octdur = param(2);
@@ -55,7 +55,6 @@ if ~isempty(param) || nargin ~= 0
     L = log(w2/w1)/dur;
     t = (0:round(dur/SI)-1)*SI;
     phi = K*(exp(t*L) - 1);
-    freq = K*L*exp(t*L);
     S = (ampl*sin(phi))';
     if reverse == 1, S = flip(S); end
     
@@ -75,7 +74,7 @@ if ~isempty(param) || nargin ~= 0
     OUT.audio = Smix; % You NEED to provide the audio you generated.
     %OUT.audio2 = ?;     You may provide additional audio derived from your function.
     OUT.fs = fs;       % You NEED to provide the sampling frequency of your audio.
-    OUT.tag = OctSpacedSweep;      %You may assign it a name to be identified in AARAE.
+    OUT.tag = 'OctSpacedSweep';      %You may assign it a name to be identified in AARAE.
     %OUT.properties.prop1 = prop1;
     %OUT.properties.prop2 = prop2; You may provide additional info
     %OUT.properties.prop3 = prop3; about your generated signal in
