@@ -52,6 +52,10 @@ if nargin ==1
     end
 end
 
+if ~exist('phase','var')
+    phase = 0;
+end
+
 if fhi > flo ...
         && fhi <= fs/2 ...
         && flo >= 0
