@@ -429,7 +429,9 @@ if ~isempty(audio) && ~isempty(fs) && ~isempty(T)
     if isstruct(IN)
         OUT = IN;
         OUT.audio = sum(audio,3);
-        OUT.tables = table;
+        % OUT.tables = table; % this is commented out because in the
+        % current version of AARAE it will result in the audio field being
+        % empty
         OUT.funcallback.name = 'AdjustIR_RT.m';
         OUT.funcallback.inarg = {T,freq,iterations,autocrop,openclosed,Tevalrange,filterstrength,fs};
     else
