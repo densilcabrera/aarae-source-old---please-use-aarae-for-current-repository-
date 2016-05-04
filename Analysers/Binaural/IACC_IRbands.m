@@ -190,9 +190,9 @@ if ~isempty(audio) && ~isempty(fs)
     ind_L = zeros(length(flist),1);
     ind_A = zeros(length(flist),1);
     for bnd = 1:length(flist)
-        ind_E(bnd) = find(abs(cE(:,bnd)) == max(abs(cE(:,bnd))), '1', 'first');
-        ind_L(bnd) = find(abs(cL(:,bnd)) == max(abs(cL(:,bnd))), '1', 'first');
-        ind_A(bnd) = find(abs(cA(:,bnd)) == max(abs(cA(:,bnd))), '1', 'first');
+        ind_E(bnd) = find(abs(cE(:,bnd)) == max(abs(cE(:,bnd))), 1, 'first');
+        ind_L(bnd) = find(abs(cL(:,bnd)) == max(abs(cL(:,bnd))), 1, 'first');
+        ind_A(bnd) = find(abs(cA(:,bnd)) == max(abs(cA(:,bnd))), 1, 'first');
     end
     
     tau_E = (ind_E-maxlag) * 1000/fs;
