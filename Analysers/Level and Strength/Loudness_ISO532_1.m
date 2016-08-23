@@ -51,7 +51,6 @@ else
     param = [];
 end
 
-
 % *************************************************************************
 if isstruct(IN) 
     
@@ -88,6 +87,7 @@ if isstruct(IN)
         name = ''; % empty string - can be concatenated without any problems
     end
 end
+
 % *************************************************************************
 
 if ~isempty(audio) && ~isempty(fs)
@@ -111,24 +111,22 @@ if ~isempty(audio) && ~isempty(fs)
         chans = 1;
     end
     
-    % Time constants for non-linear temporal decay
-    Tshort = 0.005;
-    Tlong = 0.015;
-    Tvar = 0.075;
+% Time constants for non-linear temporal decay
+Tshort = 0.005;
+Tlong = 0.015;
+Tvar = 0.075;
 
-    % Factors for virtual upsampling/inner iterations
-    NL_ITER = 24;
-    % Sampling rate to which third-octave-levels are downsampled 
-    SR_LEVEL = 2000;
-    % Sampling rate to which output/total summed loudness is downsampled 
-    SR_LOUDNESS = 500;  
-    % Tiny value for adjusting intensity levels for stationary signals
-    TINY_VALUE = 1e-12; 
-    % ref value for stationary signals
-    I_REF =4e-10; 
-    % Factor added to adjust the intensity levels for arbitrary signals
-    Time_fact = 0.956;
-    
+% Factors for virtual upsampling/inner iterations
+NL_ITER = 24;
+% Sampling rate to which third-octave-levels are downsampled 
+SR_LEVEL = 2000;
+% Sampling rate to which output/total summed loudness is downsampled 
+SR_LOUDNESS = 500;  
+% Tiny value for adjusting intensity levels for stationary signals
+TINY_VALUE = 1e-12; 
+% ref value for SPL calculation
+I_REF = 4e-10; 
+
 % ***************************
 % STEP 1 - Resample to 48 kHz
 % ***************************
@@ -290,6 +288,7 @@ filtgain = [4.30764e-011;... % 25 Hz
 
 filteredaudio = zeros(len,28);
 
+
 for n = 1:28
     filteredaudio(:,n) = filtgain(n) * filter(br(3,:),ar(3,:)-ad(3,:,n),...
     filter(br(2,:),ar(2,:)-ad(2,:,n),...
@@ -300,51 +299,46 @@ end
 % STEP 3 - Squaring and smoothing by 3 1st order lowpass filters 
 % **************************************************************
 
+% square the filtered audio for both methods
+filteredaudio = filteredaudio.^2;
+
 NumSkip = floor(TIME_SKIP * fs);
 smoothedaudio = zeros(len-NumSkip,28);
 ThirdOctaveLevel = zeros(NumSamplesLevel,28);
 
-% square the filtered audio for both methods
-filteredaudio = filteredaudio.^2;
-
-for i = 1:28
-    if method == 1
-        if CenterFrequency(i) <= 1000
-            Tau = 2/(3*CenterFrequency(i));
-        else
-            Tau = 2/(3*1000.);
-        end
-        
-        % 3x smoothing 1st order low-pass filters in series
-        A1 = exp(-1 ./ (fs * Tau));
-        B0 = 1 - A1;
-        for k = 1:3
-            Y1 = 0;
-            if k == 1; temp = filteredaudio; else temp = smoothedaudio; end
-            for j = 1:len
-                smoothedaudio(j,i) = A1*temp(j,i) + B0*Y1;
-                Y1 = smoothedaudio(j,i);
+if method == 1
+    for i = 1:28
+            if CenterFrequency(i) <= 1000
+                Tau = 2/(3*CenterFrequency(i));
+            else
+                Tau = 2/(3*1000.);
             end
-        end
-        
-        c=1;
-        for j = 1:NumSamplesLevel
-            ThirdOctaveLevel(j,i) = 10*log10(smoothedaudio(c,i)+TINY_VALUE/I_REF)*Time_fact;
-            c = c+DecFactorLevel;
-        end
-       
-    elseif method == 0
+
+            % 3x smoothing 1st order low-pass filters in series
+            A1 = exp(-1 ./ (fs * Tau));
+            B0 = 1 - A1;
+        smoothedaudio(:,i)= filter(B0,A1,...
+            filter(B0,A1,...
+            filter(B0,A1,filteredaudio(:,i))));
+    end
+
+    for i = 1:28
+        soomthedaudioDecimated = decimate(filteredaudio(:,i),DecFactorLevel/6,12);
+        soomthedaudioDecimated = decimate(soomthedaudioDecimated,DecFactorLevel/4,12);
+        ThirdOctaveLevel(:,i) = real(10*log10(soomthedaudioDecimated+TINY_VALUE/I_REF));
+    end
+          
+elseif method == 0
         if NumSkip > len/2
             warndlg('time signal too short');
             uiwait(h)
         end
         if NumSkip == 0; NumSkip = 1;end
-        smoothedaudio(1:len-NumSkip,i) = filteredaudio(NumSkip:len-1,i);
-        ThirdOctaveLevel(NumSamplesLevel,i) = 10*log10((sum(filteredaudio(:,i))/len)+TINY_VALUE/I_REF);
-    end
-
+        for i = 1:28
+            smoothedaudio(1:len-NumSkip,i) = filteredaudio(NumSkip:len-1,i);
+            ThirdOctaveLevel(NumSamplesLevel,i) = 10*log10((sum(smoothedaudio(:,i))/len)+TINY_VALUE/I_REF);
+        end
 end
-
 
 % ***********************************************************
 % STEP 4 - Apply weighting factor to first 3 1/1 octave bands
@@ -441,7 +435,7 @@ for j = 1:NumSamplesLevel
             S = 0.25;
             Le(j,i) = Le(j,i) - DCB(i);
             MP1 = 0.0635 * 10.^(0.025 * LTQ(i));
-            MP2 = (1 - S + S*10^(0.1*(Le(j,i)-LTQ(i))))^0.25 - 1;
+            MP2 = (1. - S + S*10^(0.1*(Le(j,i)-LTQ(i))))^0.25 - 1.;
             CoreL(j,i) = MP1 * MP2;
             if CoreL(j,i) <= 0
                 CoreL(j,i) = 0;
@@ -789,21 +783,14 @@ if method == 1
             Loudness(i) = (0.47 * Loudness_t1(i)) + (0.53 * Loudness_t2(i));
     end
 
-    % Decimate signal for decreased computation time by factor of 24 (fs =
-    % 2 Hz) 
+    % Decimate signal for decreased computation time by factor of fs =
+    % 2 Hz 
     
-    Total_Loudness = zeros(NumSamplesLoudness,1);
-    sC = 1;
-    for i = 1:NumSamplesLoudness
-            Total_Loudness(i) = Loudness(sC);
-            sC = sC+DecFactorLoudness;
-    end
+    Total_Loudness = decimate(Loudness,DecFactorLoudness);
     
     ns_dec = zeros(NumSamplesLoudness,240);
-    sC = 1;
-    for i = 1:NumSamplesLoudness
-            ns_dec(i,:) = ns(sC,:);
-            sC = sC+DecFactorLoudness;
+    for i = 1:240
+        ns_dec(:,i) = decimate(ns(:,i),DecFactorLoudness);
     end
 
     % statistics
